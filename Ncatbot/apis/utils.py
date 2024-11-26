@@ -1,10 +1,12 @@
 import os
 import imgkit
 import mistune
+import zipfile
+import sys
+
 from PIL import Image, ImageDraw
 
 path = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/')
-
 
 def markdown_to_image_beautified(md_text, output_path=path+'/output.png', wkhtmltoimage_path=path+'/wkhtmltoimage.exe'):
     """
@@ -19,10 +21,8 @@ def markdown_to_image_beautified(md_text, output_path=path+'/output.png', wkhtml
     # 定义HTML样式
     style = """
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@700&display=swap');
-
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: "华文细黑", "Microsoft YaHei";
             color: #333;
             padding: 5px;
             border-radius: 3px;
@@ -58,15 +58,26 @@ def markdown_to_image_beautified(md_text, output_path=path+'/output.png', wkhtml
     </style>
     """
 
+    if 'win' in sys.platform:
+        if not os.path.exists(wkhtmltoimage_path):
+            print("wkhtmltoimage.exe未找到，启动初始化，第一次初始化可能比较慢，并且导致发送失败，请稍后重试")
+            with zipfile.ZipFile(path+'/wkhtmltoimage.zip', 'r') as zip_ref:
+                zip_ref.extractall(path)
+        else:
+            pass
+    elif 'linux' in sys.platform:
+        print("灰度...无法使用")
+        # TODO: 等待linux大佬添加支持
+        pass
+    else:
+        print("不支持的操作系统")
+
     # 使用mistune将Markdown文本转换为HTML
-    renderer = mistune.HTMLRenderer()
-    markdown = mistune.Markdown(renderer=renderer)
+    markdown = mistune.Markdown(renderer=mistune.HTMLRenderer())
     html_content = markdown(md_text)
 
     # 包装HTML内容以便应用样式
     full_html = f"<!DOCTYPE html><html><head>{style}</head><body><div class='container'>{html_content}</div></body></html>"
-
-    # 设置wkhtmltoimage路径（如果需要）
     config = imgkit.config(wkhtmltoimage=wkhtmltoimage_path) if wkhtmltoimage_path else None
 
     # 使用imgkit将HTML内容转换为临时图片
@@ -80,7 +91,7 @@ def markdown_to_image_beautified(md_text, output_path=path+'/output.png', wkhtml
     # 创建一个带有圆角的掩码
     mask = Image.new("L", (width, height), 0)
     draw = ImageDraw.Draw(mask)
-    radius = 15  # 圆角半径
+    radius = 20  # 圆角半径
     draw.rounded_rectangle((0, 0, width, height), radius, fill=255)
 
     # 应用掩码并保存最终图片
