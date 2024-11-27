@@ -8,10 +8,11 @@ from PIL import Image, ImageDraw
 
 path = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/')
 
-def markdown_to_image_beautified(md_text, output_path=path+'/output.png', wkhtmltoimage_path=path+'/wkhtmltoimage.exe'):
+
+def markdown_to_image_beautified(md_text, output_path=path+'/output.png', wkhtmltoimage_path=path+'/wkhtmltoimage'):
     """
     将Markdown文本转换为美化后的图片文件，并对图片进行圆角处理。
-    下载wkhtmltoimage.exe的地址：https://wkhtmltopdf.org/downloads.html
+    下载wkhtmltoimage的地址：https://wkhtmltopdf.org/downloads.html
 
     :param md_text: Markdown格式的字符串
     :param output_path: 输出图片的文件路径，默认为'output.png'
