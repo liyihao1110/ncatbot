@@ -12,54 +12,81 @@ class BotClient:
 
         创建消息处理器、消息发送处理器、请求处理器和通知处理器的字典。
         """
-        self.message_handlers = {
-            'group': [],
-            'private': []
+
+        self.private_message_handlers = {
+            'text': [],
+            'face': [],
+            'image': [],
+            'record': [],
+            'video': [],
+            'at': [],
+            'rps': [],
+            'dice': [],
+            'poke': [],
+            'share': [],
+            'contact': [],
+            'location': [],
+            'music': [],
+            'reply': [],
+            'forward': [],
+            'node': [],
+            'json': [],
+            'mface': [],
+            'file': [],
+            'lightapp': []
         }
-        self.message_sent_handlers = {
-            'group': [],
-            'private': []
+        self.group_message_handlers = {
+            'text': [],
+            'face': [],
+            'image': [],
+            'record': [],
+            'video': [],
+            'at': [],
+            'rps': [],
+            'dice': [],
+            'poke': [],
+            'share': [],
+            'contact': [],
+            'location': [],
+            'music': [],
+            'reply': [],
+            'forward': [],
+            'node': [],
+            'json': [],
+            'mface': [],
+            'file': [],
+            'lightapp': []
         }
-        self.request_handlers = {
-            'friend': [],
-            'group': []
-        }
+
+        self.request_handlers = []
         self.notice_handlers = []
 
-    async def message_handle(self, message):
-        """
-        处理接收到的消息。
+    async def private_message_handle(self, message):
+        message_ = message.get('message', [])
+        types = list(set(i['type'] for i in message_))
+        message_obj = PrivateMessage(message)
+        for message_type in types:
+            for handler in self.private_message_handlers.get(message_type, []):
+                await handler(message_obj)
+            break
 
-        根据消息类型调用相应的处理器。
-        """
-        message_type = message.get('message_type')
-        for handler in self.message_handlers.get(message_type, []):
-            # 如果订阅了group，则message=GroupMessage(message)，否则为PrivateMessage(message)
-            message = GroupMessage(message) if message_type == 'group' else PrivateMessage(message)
-            await handler(message)
 
-    async def message_sent_handle(self, message):
-        """
-        处理发送的消息。
+    async def group_message_handle(self, message):
+        message_ = message.get('message', [])
+        types = list(set(i['type'] for i in message_))
+        message_obj = GroupMessage(message)
+        for message_type in types:
+            for handler in self.group_message_handlers.get(message_type, []):
+                await handler(message_obj)
+            break
 
-        根据消息类型调用相应的处理器。
-        """
-        message_type = message.get('message_type')
-        for handler in self.message_sent_handlers.get(message_type, []):
-            message = GroupMessage(message) if message_type == 'group' else PrivateMessage(message)
-            await handler(message)
-
-    """
-    TODO:等待处理，还不能使用
-    """
     async def request_handle(self, message):
         """
         处理请求。
 
         根据请求类型调用相应的处理器。
         """
-        request_type = message.get('request_type')
-        for handler in self.request_handlers.get(request_type, []):
+        for handler in self.request_handlers:
             await handler(message)
 
     async def notice_handle(self, message):
@@ -82,41 +109,22 @@ class BotClient:
         for t in types:
             handlers_dict[t].append(func)
 
-    def message(self, types):
-        """
-        装饰器，用于注册消息处理器。
-
-        :param types: 消息类型列表。
-        :return: 注册的处理器函数。
-        """
+    def private_message(self, types):
         def decorator(func):
-            self.register_handler(self.message_handlers, types, func)
+            self.register_handler(self.private_message_handlers, types, func)
             return func
         return decorator
 
-    def message_sent(self, types):
-        """
-        装饰器，用于注册消息发送处理器。
-
-        :param types: 消息类型列表。
-        :return: 注册的处理器函数。
-        """
+    def group_message(self, types):
         def decorator(func):
-            self.register_handler(self.message_sent_handlers, types, func)
+            self.register_handler(self.group_message_handlers, types, func)
             return func
         return decorator
 
-    def request(self, types):
-        """
-        装饰器，用于注册请求处理器。
+    def request(self, func):
+        self.request_handlers.append(func)
+        return func
 
-        :param types: 请求类型列表。
-        :return: 注册的处理器函数。
-        """
-        def decorator(func):
-            self.register_handler(self.request_handlers, types, func)
-            return func
-        return decorator
 
     def notice(self, func):
         """

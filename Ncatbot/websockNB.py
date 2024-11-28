@@ -24,7 +24,7 @@ class BotWebSocket:
     一个 WebSocket 客户端类，用于与机器人服务器进行通信。
     """
 
-    def __init__(self, port_or_http=3001):
+    def __init__(self, port_or_http=None):
         """
         初始化 BotWebSocket 实例。
 
@@ -43,20 +43,20 @@ class BotWebSocket:
 
         event = message.get('post_type')
         event_type = message.get('meta_event_type')
-        TIME = message.get('time')
-        time_tuple = time.localtime(TIME)
+        _time = message.get('time')
+        time_tuple = time.localtime(_time)
         formatted_time = time.strftime("%Y-%m-%d %H:%M:%S", time_tuple)
-        bot_id = message.get('self_id')
 
         if event == "meta_event" and event_type == 'lifecycle':
             nickname = await api.get_login_info()
             print(f"ncatbot({formatted_time})| 机器人 [{nickname['data']['nickname']}] 成功上线!")
 
-        elif event == "message":
-            await self.client.message_handle(message)  # 使用 self.client 调用方法
+        elif event == "message" and "message_sent":
+            if message.get('message_type') == 'private':
+                await self.client.private_message_handle(message)
+            elif message.get('message_type') == 'group':
+                await self.client.group_message_handle(message)
 
-        elif event == "message_sent":
-            await self.client.message_sent_handle(message)  # 使用 self.client 调用方法
 
         elif event == "request":
             await self.client.request_handle(message)  # 使用 self.client 调用方法
