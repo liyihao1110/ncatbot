@@ -3,12 +3,22 @@ import imgkit
 import mistune
 import zipfile
 import sys
+import platform
 
 from PIL import Image, ImageDraw
 
 path = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/')
 
-def markdown_to_image_beautified(md_text, output_path=path+'/output.png', wkhtmltoimage_path=path+'/wkhtmltoimage.exe'):
+# 定义wkhtmltoimage可执行文件的路径
+if sys.platform.startswith('win'):
+    wkhtmltoimage = '/wkhtmltoimage.exe'
+elif sys.platform.startswith('linux'):
+    wkhtmltoimage = '/wkhtmltoimage'
+else:
+    wkhtmltoimage = '/wkhtmltoimage.exe'
+#用Mac的大哥们对不起
+
+def markdown_to_image_beautified(md_text, output_path=path+'/output.png', wkhtmltoimage_path=path+wkhtmltoimage):
     """
     将Markdown文本转换为美化后的图片文件，并对图片进行圆角处理。
     下载wkhtmltoimage.exe的地址：https://wkhtmltopdf.org/downloads.html
