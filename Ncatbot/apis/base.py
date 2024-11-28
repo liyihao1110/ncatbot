@@ -48,6 +48,19 @@ class Base:
         self.headers = {'Content-Type': 'application/json'}
         self.url = port_or_http if str(port_or_http).startswith('http') else f'http://localhost:{port_or_http}'
 
+    @staticmethod
+    def get_media_path(media_path):
+        """
+        获取媒体的本地绝对路径或网络路径
+        """
+        if media_path:
+            if media_path.startswith('http'):
+                return media_path
+            elif os.path.isfile(media_path):
+                abspath = os.path.abspath(os.path.join(os.getcwd(), media_path)).replace('\\', '\\\\')
+                return f"file:///{abspath}"
+        return ''
+    
     @replace_none
     async def get(self, *args, **kwargs):
         async with aiohttp.ClientSession(self.url, headers=self.headers) as session:
