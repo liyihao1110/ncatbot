@@ -19,7 +19,6 @@ class BotClient:
             'image': [],
             'record': [],
             'video': [],
-            'at': [],
             'rps': [],
             'dice': [],
             'poke': [],
