@@ -22,7 +22,7 @@
 - [x] 各类消息监听
 - [x] 各类消息发送
 - [x] 各类接口的定义与测试
-- [x] windows发送markdown
+- [x] windows和Linux发送markdown
 - [x] 添加了各类设置登录号的接口
 - [ ] 不知道自己还做了什么...
 
