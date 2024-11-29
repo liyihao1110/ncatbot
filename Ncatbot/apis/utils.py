@@ -5,6 +5,9 @@ import mistune
 import zipfile
 
 from PIL import Image, ImageDraw
+from ..log import get_logger
+
+_log = get_logger()
 
 path = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/')
 
@@ -70,7 +73,7 @@ def markdown_to_image_beautified(md_text, output_path=path+'/output.png', wkhtml
 
     if 'win' in sys.platform:
         if not os.path.exists(wkhtmltoimage_path):
-            print("wkhtmltoimage.exe未找到，启动初始化，第一次初始化可能比较慢，并且导致发送失败，请稍后重试")
+            _log.warning("wkhtmltoimage.exe未找到，启动初始化，第一次初始化可能比较慢，并且导致发送失败，请稍后重试")
             with zipfile.ZipFile(path+'/wkhtmltoimage.zip', 'r') as zip_ref:
                 zip_ref.extractall(path)
         else:
@@ -78,7 +81,7 @@ def markdown_to_image_beautified(md_text, output_path=path+'/output.png', wkhtml
     elif 'linux' in sys.platform:
         pass
     else:
-        print("不支持的操作系统，用Mac的大哥们对不起~")
+        _log.warning("不支持的操作系统，用Mac的大哥们对不起~")
 
     # 使用mistune将Markdown文本转换为HTML
     markdown = mistune.Markdown(renderer=mistune.HTMLRenderer())

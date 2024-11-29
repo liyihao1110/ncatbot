@@ -192,7 +192,7 @@ class GroupMessage(BaseMessage):
             self.message = message
 
         def __str__(self):
-            return str(self.message)
+            return str(self.__dict__)
 
         def __get_messages_by_type(self, msg_type):
             for msg in self.message:
@@ -365,7 +365,7 @@ class PrivateMessage(BaseMessage):
             self.message = message
 
         def __str__(self):
-            return str(self.message)
+            return str(self.__dict__)
 
 
         def __get_messages_by_type(self, msg_type):

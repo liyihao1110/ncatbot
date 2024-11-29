@@ -6,6 +6,9 @@ import websockets
 from .api import BotAPI
 from .client import BotClient  # 注意首字母大写
 from .settings import settings
+from .log import get_logger
+
+_log = get_logger()
 
 api: BotAPI
 
@@ -49,7 +52,7 @@ class BotWebSocket:
 
         if event == "meta_event" and event_type == 'lifecycle':
             nickname = await api.get_login_info()
-            print(f"ncatbot({formatted_time})| 机器人 [{nickname['data']['nickname']}] 成功上线!")
+            _log.info(f"机器人 [{nickname['data']['nickname']}] 成功上线!")
 
         elif event == "message" and "message_sent":
             if message.get('message_type') == 'private':
@@ -68,19 +71,19 @@ class BotWebSocket:
         """
         处理错误。
         """
-        print(error)
+        _log.error(error)
 
     async def on_close(self, ws, close_status_code, close_msg):
         """
         处理连接关闭。
         """
-        print("### closed ###")
+        _log.warning("### closed ###")
 
     async def on_open(self, ws):
         """
         处理连接打开。
         """
-        print("### connection success ###")
+        _log.info("### connection success ###")
 
     async def ws_run(self):
         """
