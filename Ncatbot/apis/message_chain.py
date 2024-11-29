@@ -86,16 +86,19 @@ class MessageChain(Base):
         })
         return self
 
-    def add_face(self, face_id: (int, str)):
+    def add_face(self, face_id: (int, str), name: str = None, summary: str = None):
         """
         QQ表情
         :param face_id: QQ表情编号
             表情编号参考（系统表情）：https://bot.q.qq.com/wiki/develop/api-v2/openapi/emoji/model.html#Emoji%20%E5%88%97%E8%A1%A8
+        :param name: 表情名称
+        :param summary: 表情简介
         """
         self.messages.append({
             "type": "face",
             "data": {
                 "id": str(face_id),
+                **replace_none(dict)(json=dict(name=name, summary=summary)).get('json', {})
             }
         })
         return self
