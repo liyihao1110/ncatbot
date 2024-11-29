@@ -2,7 +2,8 @@
 # https://github.com/gaojj2000
 
 from .base import Base
-from .utils import replace_none, markdown_to_image_beautified
+from .base import replace_none
+from .utils import markdown_to_image_beautified
 
 
 class MessageChain(Base):
