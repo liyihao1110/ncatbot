@@ -2,7 +2,7 @@
 # https://github.com/gaojj2000
 
 from .base import Base
-from .utils import markdown_to_image_beautified
+from .utils import replace_none, markdown_to_image_beautified
 
 
 class MessageChain(Base):
@@ -86,21 +86,24 @@ class MessageChain(Base):
         })
         return self
 
-    def add_face(self, face_id: (int, str)):
+    def add_face(self, face_id: (int, str), name: str = None, summary: str = None):
         """
         QQ表情
         :param face_id: QQ表情编号
             表情编号参考（系统表情）：https://bot.q.qq.com/wiki/develop/api-v2/openapi/emoji/model.html#Emoji%20%E5%88%97%E8%A1%A8
+        :param name: 表情名称
+        :param summary: 表情简介
         """
         self.messages.append({
             "type": "face",
             "data": {
                 "id": str(face_id),
+                **replace_none(dict)(json=dict(name=name, summary=summary)).get('json', {})
             }
         })
         return self
 
-    def add_media(self, media_type: str, media_path: str):
+    def add_media(self, media_type: str, media_path: str, **kwargs):
         """
         添加媒体资源（复用函数）
         :param media_type: 媒体资源类型
@@ -111,17 +114,21 @@ class MessageChain(Base):
             self.messages.append({
                 "type": media_type,
                 "data": {
-                    "file": media_path
+                    "file": media_path,
+                    **kwargs
                 }
             })
         return self
 
-    def add_image(self, image: str):
+    def add_image(self, image: str, name: str = None, summary: str = None, sub_type: str = None):
         """
         图片
         :param image: 图片地址
+        :param name: 图片名称
+        :param summary: 图片简介
+        :param sub_type: 子类型
         """
-        self.add_media('image', image)
+        self.add_media('image', image, **replace_none(dict)(json=dict(name=name, summary=summary, sub_type=sub_type)).get('json', {}))
         return self
 
     def add_record(self, record: str):

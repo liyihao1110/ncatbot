@@ -1,9 +1,8 @@
 import os
+import sys
 import imgkit
 import mistune
 import zipfile
-import sys
-import platform
 
 from PIL import Image, ImageDraw
 
@@ -17,6 +16,26 @@ elif sys.platform.startswith('linux'):
 else:
     wkhtmltoimage = '/wkhtmltoimage.exe'
 #用Mac的大哥们对不起
+
+
+# Python3.8版本出现 'staticmethod' object is not callable 报错
+def replace_none(fun):
+    """
+    去除 json 参数中为 None 的键值对（装饰器自动操作版）
+    """
+    def decorator(*args, **kwargs):
+        data = kwargs.get('json', {})
+        if data:
+            for key, value in data.copy().items():
+                if value is None:
+                    del data[key]
+            if data:
+                kwargs['json'] = data
+            else:
+                del kwargs['json']
+        return fun(*args, **kwargs)
+    return decorator
+
 
 def markdown_to_image_beautified(md_text, output_path=path+'/output.png', wkhtmltoimage_path=path+wkhtmltoimage):
     """
@@ -76,11 +95,9 @@ def markdown_to_image_beautified(md_text, output_path=path+'/output.png', wkhtml
         else:
             pass
     elif 'linux' in sys.platform:
-        print("灰度...无法使用")
-        # TODO: 等待linux大佬添加支持
         pass
     else:
-        print("不支持的操作系统")
+        print("不支持的操作系统，用Mac的大哥们对不起~")
 
     # 使用mistune将Markdown文本转换为HTML
     markdown = mistune.Markdown(renderer=mistune.HTMLRenderer())
