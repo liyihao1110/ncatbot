@@ -131,20 +131,23 @@ class MessageChain(Base):
         self.add_media('image', image, **replace_none(dict)(json=dict(name=name, summary=summary, sub_type=sub_type)).get('json', {}))
         return self
 
-    def add_record(self, record: str):
+    def add_record(self, record: str, name: str = None):
         """
         语音
         :param record: 语音地址
+        :param name: 语言名称
         """
-        self.add_media('record', record)
+        self.add_media('record', record, **replace_none(dict)(json=dict(name=name)).get('json', {}))
         return self
 
-    def add_video(self, video: str):
+    def add_video(self, video: str, name: str = None, thumb: str = None):
         """
         视频
         :param video: 视频地址
+        :param name: 视频名称
+        :param thumb: 视频缩略图
         """
-        self.add_media('video', video)
+        self.add_media('video', video, **replace_none(dict)(json=dict(name=name, thumb=self.get_media_path(thumb))).get('json', {}))
         return self
 
     def add_at(self, target: (int, str) = 'all'):
@@ -179,6 +182,22 @@ class MessageChain(Base):
         }]
         return self
 
+    def contact(self, qq: (int, str) = None, group: (int, str) = None):
+        """
+        推荐好友或群聊（将清空所有消息列表）
+        :param qq: user_id
+        :param group: group_id
+        """
+        if qq or group:
+            self.messages =[{
+                "type": "contact",
+                "data": {
+                    "type": "qq" if qq else "group",
+                    "id": qq or group
+                }
+            }]
+        return self
+
     def music(self, music_type: str = 'custom', **kwargs):
         """
         音乐分享（将清空所有消息列表）
@@ -207,6 +226,20 @@ class MessageChain(Base):
         })
         return self
 
+    def node(self, id_: (int, str) = None, content: list = None, user_id: (int, str) = None, nickname: str = None):
+        """
+        构造合并转发消息节点
+        :param id_: 消息id号（与消息链二选一）
+        :param content: 消息链（与消息id号二选一）
+        :param user_id: user_id（伪造消息用，暂时没发现有用）
+        :param nickname: 用户昵称（伪造消息用，暂时没发现有用）
+        """
+        self.messages = [{
+            "type": "node",
+            "data": replace_none(dict)(json=dict(id=id_, content=content, user_id=user_id, nickname=nickname)).get('json', {})
+        }]
+        return self
+
     def add_json(self, data: (int, str)):
         """
         回复消息（建议放在第一个消息参数位置）
@@ -220,12 +253,13 @@ class MessageChain(Base):
         })
         return self
 
-    def add_file(self, file: str):
+    def add_file(self, file: str, name: str = None):
         """
         文件
         :param file: 文件地址
+        :param name: 文件名称
         """
-        self.add_media('file', file)
+        self.add_media('file', file, **replace_none(dict)(json=dict(name=name)).get('json', {}))
         return self
 
     def add_markdown(self, markdown: str):

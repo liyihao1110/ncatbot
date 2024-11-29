@@ -12,6 +12,12 @@ bot_client = bot_websocket.client
 @bot_client.group_message(['text','face', 'image'])
 # 处理群消息，可用监听的数据在这：https://napneko.github.io/develop/msg
 async def group_message_handler(message: GroupMessage):
+    # 合并转发上条消息
+    if 'node' in message.raw_message:
+        await message.node(id_=message.message_id).reply()
+    # 推荐自身
+    if message.raw_message == 'me':
+        await message.contact(qq=message.sender.user_id).reply()
     # 自动贴表情包
     f = message.message.face
     if f:
