@@ -2,7 +2,7 @@
 # https://github.com/gaojj2000
 
 from .base import Base
-from .utils import markdown_to_image_beautified
+from .utils import replace_none, markdown_to_image_beautified
 
 
 class MessageChain(Base):
@@ -100,7 +100,7 @@ class MessageChain(Base):
         })
         return self
 
-    def add_media(self, media_type: str, media_path: str):
+    def add_media(self, media_type: str, media_path: str, **kwargs):
         """
         添加媒体资源（复用函数）
         :param media_type: 媒体资源类型
@@ -111,7 +111,8 @@ class MessageChain(Base):
             self.messages.append({
                 "type": media_type,
                 "data": {
-                    "file": media_path
+                    "file": media_path,
+                    **kwargs
                 }
             })
         return self

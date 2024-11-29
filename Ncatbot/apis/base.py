@@ -4,25 +4,7 @@
 import os
 import asyncio
 import aiohttp
-
-
-# Python3.8版本出现 'staticmethod' object is not callable 报错
-def replace_none(fun):
-    """
-    去除 json 参数中为 None 的键值对（装饰器自动操作版）
-    """
-    def decorator(*args, **kwargs):
-        data = kwargs.get('json', {})
-        if data:
-            for key, value in data.copy().items():
-                if value is None:
-                    del data[key]
-            if data:
-                kwargs['json'] = data
-            else:
-                del kwargs['json']
-        return fun(*args, **kwargs)
-    return decorator
+from .utils import replace_none
 
 
 class Base:
