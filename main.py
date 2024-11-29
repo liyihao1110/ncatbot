@@ -9,13 +9,17 @@ bot_websocket, bot_api = core(http_port=3000, ws_port=3001)
 bot_client = bot_websocket.client
 
 
-@bot_client.group_message(['text','face'])
+@bot_client.group_message(['text','face', 'image'])
 # 处理群消息，可用监听的数据在这：https://napneko.github.io/develop/msg
 async def group_message_handler(message: GroupMessage):
     # 自动贴表情包
     f = message.message.face
     if f:
         await message.set_msg_emoji_like(message_id=message.message_id, emoji_id=f.id)
+    # 重复发图片
+    i = message.message.image
+    if i:
+        await message.add_image(i.url).reply()
     if '第二个表情包' in message.raw_message:
         bqb = await message.fetch_custom_face(count=2)
         if bqb['data']:

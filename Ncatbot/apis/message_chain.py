@@ -117,12 +117,15 @@ class MessageChain(Base):
             })
         return self
 
-    def add_image(self, image: str):
+    def add_image(self, image: str, name: str = None, summary: str = None, sub_type: str = None):
         """
         图片
         :param image: 图片地址
+        :param name: 图片名称
+        :param summary: 图片简介
+        :param sub_type: 子类型
         """
-        self.add_media('image', image)
+        self.add_media('image', image, **replace_none(dict)(json=dict(name=name, summary=summary, sub_type=sub_type)).get('json', {}))
         return self
 
     def add_record(self, record: str):
