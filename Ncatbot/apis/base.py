@@ -4,7 +4,25 @@
 import os
 import asyncio
 import aiohttp
-from .utils import replace_none
+
+
+# Python3.8版本出现 'staticmethod' object is not callable 报错
+def replace_none(fun):
+    """
+    去除 json 参数中为 None 的键值对（装饰器自动操作版）
+    """
+    def decorator(*args, **kwargs):
+        data = kwargs.get('json', {})
+        if data:
+            for key, value in data.copy().items():
+                if value is None:
+                    del data[key]
+            if data:
+                kwargs['json'] = data
+            else:
+                del kwargs['json']
+        return fun(*args, **kwargs)
+    return decorator
 
 
 class Base:
@@ -19,10 +37,12 @@ class Base:
     @staticmethod
     def get_media_path(media_path):
         """
-        获取媒体的本地绝对路径或网络路径
+        获取媒体的base64属性、本地绝对路径或网络路径
         """
         if media_path:
-            if media_path.startswith('http'):
+            if media_path.startswith('base64://'):
+                return media_path
+            elif media_path.startswith('http'):
                 return media_path
             elif os.path.isfile(media_path):
                 abspath = os.path.abspath(os.path.join(os.getcwd(), media_path)).replace('\\', '\\\\')

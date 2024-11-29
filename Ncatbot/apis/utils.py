@@ -18,25 +18,6 @@ else:
 #用Mac的大哥们对不起
 
 
-# Python3.8版本出现 'staticmethod' object is not callable 报错
-def replace_none(fun):
-    """
-    去除 json 参数中为 None 的键值对（装饰器自动操作版）
-    """
-    def decorator(*args, **kwargs):
-        data = kwargs.get('json', {})
-        if data:
-            for key, value in data.copy().items():
-                if value is None:
-                    del data[key]
-            if data:
-                kwargs['json'] = data
-            else:
-                del kwargs['json']
-        return fun(*args, **kwargs)
-    return decorator
-
-
 def markdown_to_image_beautified(md_text, output_path=path+'/output.png', wkhtmltoimage_path=path+wkhtmltoimage):
     """
     将Markdown文本转换为美化后的图片文件，并对图片进行圆角处理。
