@@ -226,6 +226,20 @@ class MessageChain(Base):
         })
         return self
 
+    def node(self, id_: (int, str) = None, content: list = None, user_id: (int, str) = None, nickname: str = None):
+        """
+        构造合并转发消息节点
+        :param id_: 消息id号
+        :param content: 消息链
+        :param user_id: user_id（伪造消息用，暂时没发现有用）
+        :param nickname: 用户昵称（伪造消息用，暂时没发现有用）
+        """
+        self.messages = [{
+            "type": "node",
+            "data": replace_none(dict)(json=dict(id=id_, content=content, user_id=user_id, nickname=nickname)).get('json', {})
+        }]
+        return self
+
     def add_json(self, data: (int, str)):
         """
         回复消息（建议放在第一个消息参数位置）
