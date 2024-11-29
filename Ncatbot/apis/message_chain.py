@@ -182,6 +182,22 @@ class MessageChain(Base):
         }]
         return self
 
+    def contact(self, qq: (int, str) = None, group: (int, str) = None):
+        """
+        推荐好友或群聊（将清空所有消息列表）
+        :param qq: user_id
+        :param group: group_id
+        """
+        if qq or group:
+            self.messages =[{
+                "type": "contact",
+                "data": {
+                    "type": "qq" if qq else "group",
+                    "id": qq or group
+                }
+            }]
+        return self
+
     def music(self, music_type: str = 'custom', **kwargs):
         """
         音乐分享（将清空所有消息列表）
