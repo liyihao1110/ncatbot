@@ -4,6 +4,9 @@ import asyncio
 from Ncatbot.api import face
 from Ncatbot.websockNB import core
 from Ncatbot.message import GroupMessage,PrivateMessage
+from Ncatbot.log import get_logger
+
+_log = get_logger()
 
 bot_websocket, bot_api = core(http_port=3000, ws_port=3001)
 bot_client = bot_websocket.client
@@ -44,10 +47,10 @@ async def group_message_handler(message: GroupMessage):
 
 @bot_client.private_message(['text','face'])
 async def private_message_handler(message: PrivateMessage):
-    print(message)
-    print(message.message)
-    print(message.message.text)
-    print(message.message.reply)
+    _log.info(message)
+    _log.info(message.message)
+    _log.info(message.message.text)
+    _log.info(message.message.reply)
     if message.raw_message == '你好':
         await message.add_text('hi').reply()
     elif message.raw_message == 'md':
@@ -72,10 +75,10 @@ async def private_message_handler(message: PrivateMessage):
 
 @bot_client.request
 async def request_handler(message):
-    print(message)
+    _log.info(message)
 
 @bot_client.notice
 async def notice_handler(message):
-    print(message)
+    _log.info(message)
 # 启动 WebSocket 客户端
 asyncio.run(bot_websocket.ws_run())
