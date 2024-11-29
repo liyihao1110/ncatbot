@@ -27,7 +27,7 @@ class Base:
             elif os.path.isfile(media_path):
                 abspath = os.path.abspath(os.path.join(os.getcwd(), media_path)).replace('\\', '\\\\')
                 return f"file:///{abspath}"
-        return ''
+        return None
     
     @replace_none
     async def get(self, *args, **kwargs):

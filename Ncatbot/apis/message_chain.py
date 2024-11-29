@@ -140,12 +140,14 @@ class MessageChain(Base):
         self.add_media('record', record, **replace_none(dict)(json=dict(name=name)).get('json', {}))
         return self
 
-    def add_video(self, video: str):
+    def add_video(self, video: str, name: str = None, thumb: str = None):
         """
         视频
         :param video: 视频地址
+        :param name: 视频名称
+        :param thumb: 视频缩略图
         """
-        self.add_media('video', video)
+        self.add_media('video', video, **replace_none(dict)(json=dict(name=name, thumb=self.get_media_path(thumb))).get('json', {}))
         return self
 
     def add_at(self, target: (int, str) = 'all'):
