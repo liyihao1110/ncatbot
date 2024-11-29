@@ -229,8 +229,8 @@ class MessageChain(Base):
     def node(self, id_: (int, str) = None, content: list = None, user_id: (int, str) = None, nickname: str = None):
         """
         构造合并转发消息节点
-        :param id_: 消息id号
-        :param content: 消息链
+        :param id_: 消息id号（与消息链二选一）
+        :param content: 消息链（与消息id号二选一）
         :param user_id: user_id（伪造消息用，暂时没发现有用）
         :param nickname: 用户昵称（伪造消息用，暂时没发现有用）
         """
@@ -253,12 +253,13 @@ class MessageChain(Base):
         })
         return self
 
-    def add_file(self, file: str):
+    def add_file(self, file: str, name: str = None):
         """
         文件
         :param file: 文件地址
+        :param name: 文件名称
         """
-        self.add_media('file', file)
+        self.add_media('file', file, **replace_none(dict)(json=dict(name=name)).get('json', {}))
         return self
 
     def add_markdown(self, markdown: str):
