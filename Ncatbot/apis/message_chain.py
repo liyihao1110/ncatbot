@@ -131,12 +131,13 @@ class MessageChain(Base):
         self.add_media('image', image, **replace_none(dict)(json=dict(name=name, summary=summary, sub_type=sub_type)).get('json', {}))
         return self
 
-    def add_record(self, record: str):
+    def add_record(self, record: str, name: str = None):
         """
         语音
         :param record: 语音地址
+        :param name: 语言名称
         """
-        self.add_media('record', record)
+        self.add_media('record', record, **replace_none(dict)(json=dict(name=name)).get('json', {}))
         return self
 
     def add_video(self, video: str):
