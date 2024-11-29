@@ -28,7 +28,15 @@ class MessageChain(Base):
         message_id = None
         for message in self.messages.copy():
             if message['type'] == 'reply':
-                message_id = message['data']['id']
+                message_id = message
+                self.messages.remove(message)
+        if message_id is not None:  # 将reply消息前置
+            self.messages = [message_id] + self.messages
+            message_id = message_id['data']['id']
+        for message in self.messages.copy():  # 强制保证此类消息独占消息链
+            if message['type'] in ['rps', 'dice', 'contact', 'music', 'node']:
+                self.messages = [message]
+                break
         if self.messages:
             if message_id:
                 data = {
@@ -60,6 +68,10 @@ class MessageChain(Base):
         for message in self.messages.copy():
             if message['type'] == 'at':
                 self.messages.remove(message)
+        for message in self.messages.copy():  # 强制保证此类消息独占消息链
+            if message['type'] in ['rps', 'dice', 'contact', 'music', 'node']:
+                self.messages = [message]
+                break
         if self.messages:
             data = {
                 "user_id": user_id,
