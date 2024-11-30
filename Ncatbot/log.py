@@ -28,11 +28,13 @@ COLOR_MAP = {
 
 RESET_COLOR = '\033[0m'
 
+
 class ColoredFormatter(logging.Formatter):
     def format(self, record):
         levelname = record.levelname
         record.levelname = COLOR_MAP[levelname] + levelname + RESET_COLOR
         return super().format(record)
+
 
 def get_logger():
     """

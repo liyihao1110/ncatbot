@@ -4,6 +4,9 @@
 from .base import Base
 from .base import replace_none
 from .utils import markdown_to_image_beautified
+from ..log import get_logger
+
+_log = get_logger()
 
 
 class MessageChain(Base):
@@ -14,6 +17,9 @@ class MessageChain(Base):
         self.max_ids = max_ids  # 最大保留已发送消息的消息id数量
 
     def add_id(self, mid):
+        """
+        存储自身发送的消息，方便确认别人是否引用的是自己的消息
+        """
         self.message_ids.append(mid)
         if len(self.message_ids) >= self.max_ids:
             self.message_ids = self.message_ids[-self.max_ids:]
@@ -23,17 +29,18 @@ class MessageChain(Base):
         发送群聊消息
         :param group_id: group_id
         :param clear_message: 是否清空消息缓存
-        :return: 群聊消息请求类
         """
         message_id = None
         for message in self.messages.copy():
             if message['type'] == 'reply':
                 message_id = message
                 self.messages.remove(message)
-        if message_id is not None:  # 将reply消息前置
+        # 将reply消息前置
+        if message_id is not None:
             self.messages = [message_id] + self.messages
             message_id = message_id['data']['id']
-        for message in self.messages.copy():  # 强制保证此类消息独占消息链
+        # 强制保证此类消息独占消息链
+        for message in self.messages.copy():
             if message['type'] in ['rps', 'dice', 'contact', 'music', 'node']:
                 self.messages = [message]
                 break
@@ -55,7 +62,7 @@ class MessageChain(Base):
             if result['data']:
                 self.add_id(result['data']['message_id'])
             else:
-                print(result)
+                _log.error(result)
         return self
 
     async def send_private_msg(self, user_id: (int, str), clear_message: bool = True):
@@ -63,12 +70,13 @@ class MessageChain(Base):
         发送私聊消息（自动去除@信息）
         :param user_id: user_id
         :param clear_message: 是否清空消息缓存
-        :return: 私聊消息请求类
         """
         for message in self.messages.copy():
+            # 移除私聊中的 @ 消息
             if message['type'] == 'at':
                 self.messages.remove(message)
-        for message in self.messages.copy():  # 强制保证此类消息独占消息链
+        # 强制保证此类消息独占消息链
+        for message in self.messages.copy():
             if message['type'] in ['rps', 'dice', 'contact', 'music', 'node']:
                 self.messages = [message]
                 break
@@ -83,7 +91,7 @@ class MessageChain(Base):
             if result['data']:
                 self.add_id(result['data']['message_id'])
             else:
-                print(result)
+                _log.error(result)
         return self
 
     def add_text(self, text: str):
@@ -228,7 +236,7 @@ class MessageChain(Base):
 
     def add_reply(self, message_id: (int, str)):
         """
-        回复消息（建议放在第一个消息参数位置）
+        回复消息（更新后在发送消息前将会自动排序 reply 至最前面）
         :param message_id: 消息id号
         """
         self.messages.append({
@@ -255,8 +263,8 @@ class MessageChain(Base):
 
     def add_json(self, data: (int, str)):
         """
-        回复消息（建议放在第一个消息参数位置）
-        :param data: 消息id号
+        添加json消息
+        :param data: json字符串
         """
         self.messages.append({
             "type": "json",
@@ -284,5 +292,8 @@ class MessageChain(Base):
         return self
 
     def clear(self):
+        """
+        清空消息链
+        """
         self.messages = []
         return self

@@ -12,7 +12,7 @@ bot_websocket, bot_api = core(http_port=3000, ws_port=3001)
 bot_client = bot_websocket.client
 
 
-@bot_client.group_message(['text','face', 'image'])
+@bot_client.group_message(['text', 'face', 'image'])
 # 处理群消息，可用监听的数据在这：https://napneko.github.io/develop/msg
 async def group_message_handler(message: GroupMessage):
     # 媒体文件base64支持
@@ -77,8 +77,11 @@ async def private_message_handler(message: PrivateMessage):
 async def request_handler(message):
     _log.info(message)
 
+
 @bot_client.notice
 async def notice_handler(message):
     _log.info(message)
+
+
 # 启动 WebSocket 客户端
 asyncio.run(bot_websocket.ws_run())

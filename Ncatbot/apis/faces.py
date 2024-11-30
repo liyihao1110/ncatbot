@@ -2,6 +2,7 @@
 # https://github.com/gaojj2000
 
 
+# 系统表情
 class Face:
     得意 = "4"
     流泪 = "5"

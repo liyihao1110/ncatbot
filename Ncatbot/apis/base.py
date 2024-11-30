@@ -7,6 +7,7 @@ import aiohttp
 
 
 # Python3.8版本出现 'staticmethod' object is not callable 报错
+# 所以从类中单独拎出来使用
 def replace_none(fun):
     """
     去除 json 参数中为 None 的键值对（装饰器自动操作版）
