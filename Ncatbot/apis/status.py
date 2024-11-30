@@ -2,6 +2,7 @@
 # https://github.com/gaojj2000
 
 
+# 在线状态
 class Status:
     在线 = {"status": 10, "ext_status": 0}
     Q我吧 = {"status": 60, "ext_status": 0}
@@ -44,4 +45,3 @@ class Status:
     熬夜中 = {"status": 10, "ext_status": 1032}
     追剧中 = {"status": 10, "ext_status": 1021}
     我的电量 = {"status": 10, "ext_status": 1000}
-
