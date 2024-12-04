@@ -1,4 +1,10 @@
 
+# 为了方便大家使用，项目已经移植到gitee，请前往>>>[ncatbot](https://gitee.com/li-yihao0328/ncat-bot)
+
+
+
+
+
 ![ncatbot](https://github.com/user-attachments/assets/b22bc036-3945-40ba-a093-3ea62855e397)
 
 [![Language](https://img.shields.io/badge/language-python-green.svg?style=plastic)](https://www.python.org/)
