@@ -17,7 +17,7 @@ NcatBot是一个开源的基于Napcat.QQ开发的PythonSDK，使用python调用Q
 可以通过本命令安装itchat：
 
 ```bash
-git clone https://gitee.com/li-yihao0328/NcatBot.git
+git clone https://github.com/liyihao1110/NcatBot.git
 ```
 
 #### 简单入门实例
