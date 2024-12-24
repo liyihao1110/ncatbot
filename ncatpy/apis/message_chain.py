@@ -4,9 +4,9 @@
 from .base import Base
 from .base import replace_none
 from .utils import markdown_to_image_beautified
-from ..log import get_logger
+from .. import logging
 
-_log = get_logger()
+_log = logging.get_logger()
 
 
 class MessageChain(Base):

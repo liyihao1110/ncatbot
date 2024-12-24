@@ -5,9 +5,9 @@ import mistune
 import zipfile
 
 from PIL import Image, ImageDraw
-from ..log import get_logger
+from .. import logging
 
-_log = get_logger()
+_log = logging.get_logger()
 
 path = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/')
 

@@ -1,63 +1,98 @@
-
-# 为了方便大家使用，项目已经移植到gitee，请前往>>>[ncatbot](https://gitee.com/li-yihao0328/ncat-bot)
-
-
-
-
-
-![ncatbot](https://github.com/user-attachments/assets/b22bc036-3945-40ba-a093-3ea62855e397)
-
-[![Language](https://img.shields.io/badge/language-python-green.svg?style=plastic)](https://www.python.org/)
-[![License](https://img.shields.io/badge/license-MIT-orange.svg?style=plastic)](https://github.com/liyihao1110/NcatBot/blob/master/LICENSE)
-![Python](https://img.shields.io/badge/python-3.8+-blue)
-![PyPI](https://img.shields.io/pypi/v/NcatBot)
+# NcatBot
 
 ---
-### NcatBot
 
-基于Napcat的PythonSDK
+NcatBot是一个开源的基于Napcat.QQ开发的PythonSDK，使用python调用QQ。
 
-欢迎大家来pr👋
+使用简单的代码，你就可以完成一个能够处理所有信息的QQ机器人。
 
-如果你觉得本项目不错，请帮忙点个star✨
+你还可以使用别人编写的插件！！！
 
-### 介绍
-✨ 基于 NapcatQQ API 实现的机器人框架 ✨
+#### 安装
 
-### 实现进度
-- [x] 各类消息监听
-- [x] 各类消息发送
-- [x] 各类接口的定义与测试
-- [x] windows和Linux发送markdown
-- [x] 添加了各类设置登录号的接口
-- [ ] 不知道自己还做了什么...
+---
 
-### 帮助文档
-1. [下载NapCat](https://github.com/NapNeko/NapCatQQ/releases) 找到 **NapCat.Shell.zip** 并解压
-2. 启动NapCat：
-   1. 第一次启动机器人：直接双击 **launcher.bat** 文件
-   2. 启动已经扫码登录过的机器人，当前目录地址栏输入 **cmd** 或右击打开命令行，在当前目录打开 **cmd** 命令行，输入 **start launcher.bat \[你的QQ号\]**
-3. 部分使用参考代码可查看main.py
-4. **example** 文件夹里是每个经过测试的 **api** 类别例子，没有标注其他情况的是完全执行成功过的，可以使用异步正常插入代码中
-5. 每个 **api** 提供了有限帮助支持（在编辑器里按住 <kbd>Ctrl</kbd> 并单击 **api** 方法即可跳转）
-6. 部分教程可查看[NapCatQQ开发机器人PythonSDK](https://blog.csdn.net/qq_71745595/article/details/143988362)
-7. 如果可以，希望你可以帮助完善😀
+可以通过本命令安装itchat：
 
-### 简单的示例
-在example和main.py中都有简单的例子，欢迎参考
+```bash
+git clone https://gitee.com/li-yihao0328/NcatBot.git
+```
 
-### 欢迎交流开发，贡献者们
+#### 简单入门实例
 
-👋欢迎加入 [学习QQ群](https://qm.qq.com/q/dRTyqlFCRG) ！
+---
 
-🔗[微信公众号](https://mp.weixin.qq.com/s/8i-AoSQFf0nXJRRJLrPxLQ)
+首先你需要填写config.yaml文件:
 
-### 致谢
+```yaml
+ws:
+  Protocol: ws
+  ip: 127.0.0.1
+  port: 3001
 
-感谢 [NapCatQQ](https://github.com/NapNeko/NapCatQQ)
+http:
+  Protocol: http
+  ip: 127.0.0.1
+  port: 3000
 
-### 想要更多的Star⭐
+plugin:
+  xunfei:
+    api_url:
+    api_key:
+    model: generalv3.5
+    personality: You are a helpful assistant.
+```
 
+然后运行以下代码：
 
-[![Star History Chart](https://api.star-history.com/svg?repos=NcatBot/NcatBot&type=Date)](https://star-history.com/#NcatBot/NcatBot&Date)
+```python
+# encoding: utf-8
 
+import ncatpy
+from ncatpy import logging
+from ncatpy.message import GroupMessage,PrivateMessage
+
+_log = logging.get_logger()
+
+class MyClient(ncatpy.Client):
+    async def on_group_message(self, message: GroupMessage):
+        _log.info(f"收到群消息，ID: {message.message.text.text}")
+        _log.info(message.user_id)
+        if message.user_id == 2793415370:
+            # 当提问者的QQ号是2793415370时，调用XunfeiGPT插件回答他的问题
+            t = await self._XunfeiGPT.ai_response(input=message.message.text.text, group_id = message.group_id)
+            _log.info(t)
+
+    async def on_private_message(self, message: PrivateMessage):
+        _log.info(f"收到私聊消息，ID: {message.message.text.text}")
+        if message.message.text.text == "你好":
+            t = await self._api.send_msg(user_id=message.user_id, text="你好,o")
+            _log.info(t)
+
+if __name__ == "__main__":
+    intents = ncatpy.Intents.public()
+    client = MyClient(intents=intents, plugins=["XunfeiGPT"])# 如果没有插件，则不需要添加plugins=["XunfeiGPT"]
+    client.run()# 只支持本地端口<-目前
+```
+
+#### 插件
+
+---
+
+插件是NcatBot的扩展，你可以使用别人编写的插件，也可以自己编写插件。
+
+插件编写逻辑具体查看ncatpy/plugins/XunfeiGPT.py
+
+编写好的插件进行pr，必须给出详细的示例和说明，目前不提供在线安装，自行安装只需要下载别人的插件，将其放入plugins文件夹即可。
+
+此方案只是预览版！！！所有要求提在[QQ群](https://qm.qq.com/q/LSdJ4p9UOW)里面
+
+时间有限，如果有不好的地方，欢迎提issue，或者加QQ群交流。
+
+#### 致谢
+
+---
+
+[botpy](https://github.com/tencent-connect/botpy) - 一个基于 Python 的 QQ 机器人 SDK，参考了logging
+
+[Napcat](https://github.com/tencent-connect/botpy) - 现代化的基于 NTQQ 的 Bot 协议端实现
