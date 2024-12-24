@@ -1,5 +1,7 @@
 # NcatBot
 
+![logo](https://gitee.com/li-yihao0328/NcatBot/raw/master/resource/logo.png)
+
 ---
 
 NcatBot是一个开源的基于Napcat.QQ开发的PythonSDK，使用python调用QQ。
