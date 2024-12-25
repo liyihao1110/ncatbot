@@ -26,4 +26,4 @@ class MyClient(ncatpy.Client):
 if __name__ == "__main__":
     intents = ncatpy.Intents.public()
     client = MyClient(intents=intents, plugins=["XunfeiGPT"])# 如果没有插件，则不需要添加plugins=["XunfeiGPT"]
-    client.run()# 只支持本地端口<-目前
+    client.run()# 只支持配置文件设置<-目前

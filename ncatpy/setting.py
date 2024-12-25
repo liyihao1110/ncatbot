@@ -23,19 +23,20 @@ class SetConfig:
         except Exception as e:
             _log.error(f"[ncatpy] 未知错误：{e}")
             exit(1)
-        ws_protocol = config['ws']['Protocol']
-        ws_ip = config['ws']['ip']
-        ws_port = config['ws']['port']
-        http_protocol = config['http']['Protocol']
-        http_ip = config['http']['ip']
-        http_port = config['http']['port']
-        self.ws_url = f"{ws_protocol}://{ws_ip}:{ws_port}"
-        self.http_url = f"{http_protocol}://{http_ip}:{http_port}"
-        self.ws_protocol = ws_protocol
-        self.ws_ip = ws_ip
-        self.ws_port = ws_port
-        self.http_protocol = http_protocol
-        self.http_ip = http_ip
-        self.http_port = http_port
-
-
+        try:
+            ws_protocol = config['ws']['Protocol']
+            ws_ip = config['ws']['ip']
+            ws_port = config['ws']['port']
+            http_protocol = config['http']['Protocol']
+            http_ip = config['http']['ip']
+            http_port = config['http']['port']
+            self.ws_url = f"{ws_protocol}://{ws_ip}:{ws_port}"
+            self.http_url = f"{http_protocol}://{http_ip}:{http_port}"
+            self.ws_protocol = ws_protocol
+            self.ws_ip = ws_ip
+            self.ws_port = ws_port
+            self.http_protocol = http_protocol
+            self.http_ip = http_ip
+            self.http_port = http_port
+        except KeyError:
+            _log.error('[nactpy] 主要配置文件缺少关键设置，请检查！')
