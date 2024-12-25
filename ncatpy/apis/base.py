@@ -34,11 +34,8 @@ class Base:
     def __init__(self, port_or_http: (int, str), sync: bool = False):
         self.sync = sync  # 是否使用同步请求
         self.headers = {'Content-Type': 'application/json'}
-        config = SetConfig()
-        self.http_protocol = config.http_protocol
-        self.http_ip = config.http_ip
-        self.http_port = config.http_port
-        self.url = port_or_http if str(port_or_http).startswith('http') else f'{self.http_protocol}://{self.http_ip}:{self.http_port}'
+        self.http_url = SetConfig().http_url
+        self.url = port_or_http if str(port_or_http).startswith('http') else self.http_url
 
     @staticmethod
     def get_media_path(media_path):
