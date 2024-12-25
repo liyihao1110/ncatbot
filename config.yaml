@@ -1,12 +1,15 @@
 ws:
   Protocol: ws
-  ip: 127.0.0.1
+  ip: 192.168.3.14
   port: 3001
 
 http:
   Protocol: http
-  ip: 127.0.0.1
+  ip: 192.168.3.14
   port: 3000
+
+bot:
+  master: QQ
 
 plugin:
   xunfei:

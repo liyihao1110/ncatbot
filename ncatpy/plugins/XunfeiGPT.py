@@ -1,5 +1,5 @@
 # encoding=utf-8
-
+'''仅供参考'''
 from ..wsapi import WsApi
 from .. import logging
 

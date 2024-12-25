@@ -5,6 +5,7 @@ import os
 import asyncio
 import aiohttp
 
+from ..setting import SetConfig
 
 # Python3.8版本出现 'staticmethod' object is not callable 报错
 # 所以从类中单独拎出来使用
@@ -33,7 +34,8 @@ class Base:
     def __init__(self, port_or_http: (int, str), sync: bool = False):
         self.sync = sync  # 是否使用同步请求
         self.headers = {'Content-Type': 'application/json'}
-        self.url = port_or_http if str(port_or_http).startswith('http') else f'http://localhost:{port_or_http}'
+        self.http_url = SetConfig().http_url
+        self.url = port_or_http if str(port_or_http).startswith('http') else self.http_url
 
     @staticmethod
     def get_media_path(media_path):
