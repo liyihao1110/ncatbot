@@ -105,4 +105,4 @@ if __name__ == "__main__":
 
 [botpy](https://github.com/tencent-connect/botpy) - 一个基于 Python 的 QQ 机器人 SDK，参考了logging
 
-[Napcat](https://github.com/tencent-connect/botpy) - 现代化的基于 NTQQ 的 Bot 协议端实现
+[Napcat](https://github.com/NapNeko/NapCatQQ) - 现代化的基于 NTQQ 的 Bot 协议端实现
