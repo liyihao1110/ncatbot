@@ -9,9 +9,6 @@ http:
   port: 3000
   sync: true
 
-bot:
-  master: QQ
-
 plugin:
   xunfei:
     api_url:

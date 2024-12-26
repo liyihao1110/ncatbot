@@ -1,12 +1,11 @@
 # encoding=utf-8
-'''仅供参考'''
+
 from ..wsapi import WsApi
 from .. import logging
 
 import yaml
 import os
 import httpx
-import json
 
 _log = logging.get_logger()
 
