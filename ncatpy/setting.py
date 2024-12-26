@@ -23,19 +23,17 @@ class SetConfig:
         except Exception as e:
             _log.error(f"[ncatpy] 未知错误：{e}")
             exit(1)
-        ws_protocol = config['ws']['Protocol']
-        ws_ip = config['ws']['ip']
-        ws_port = config['ws']['port']
-        http_protocol = config['http']['Protocol']
-        http_ip = config['http']['ip']
-        http_port = config['http']['port']
-        self.ws_url = f"{ws_protocol}://{ws_ip}:{ws_port}"
-        self.http_url = f"{http_protocol}://{http_ip}:{http_port}"
-        self.ws_protocol = ws_protocol
-        self.ws_ip = ws_ip
-        self.ws_port = ws_port
-        self.http_protocol = http_protocol
-        self.http_ip = http_ip
-        self.http_port = http_port
-
+        try:
+            self.ws_protocol = config['ws']['Protocol']
+            self.ws_ip = config['ws']['ip']
+            self.ws_port = config['ws']['port']
+            self.http_protocol = config['http']['Protocol']
+            self.http_ip = config['http']['ip']
+            self.http_port = config['http']['port']
+            self.sync = config['http']['sync']
+            self.ws_url = f"{self.ws_protocol}://{self.ws_ip}:{self.ws_port}"
+            self.http_url = f"{self.http_protocol}://{self.http_ip}:{self.http_port}"
+        except KeyError as e:
+            _log.error(f"[ncatpy] 缺少配置项，请检查！详情:{e}")
+            exit(1)
 
