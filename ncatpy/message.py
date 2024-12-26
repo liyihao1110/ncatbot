@@ -1,8 +1,6 @@
 # encoding: utf-8
 
 from .api import BotAPI
-from .setting import SetConfig
-
 
 class Mate:
     def __str__(self):
@@ -132,7 +130,7 @@ class FileMessage(Mate):
 
 class BaseMessage(BotAPI):
     def __init__(self, message):
-        super().__init__(port_or_http=SetConfig().http_port)
+        super().__init__()
         self.self_id = message.get("self_id", None)
         self.user_id = message.get("user_id", None)
         self.time = message.get("time", None)
