@@ -1,4 +1,4 @@
-# encoding: utf-8
+# __init__.py
 
 from .logging import get_logger
 from .client import *
