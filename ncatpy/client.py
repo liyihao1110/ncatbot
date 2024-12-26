@@ -4,10 +4,13 @@
 
 import asyncio
 import importlib
-from . import logging
+
 from .wsapi import WsApi
+from .api import BotAPI
 from .flags import Intents
 from .wstart import BotWebSocket
+
+from . import logging
 from . import message
 
 _log = logging.get_logger()
@@ -18,6 +21,8 @@ class Client:
         self._websocket = None
         self._plugins = plugins or []
         self._api = WsApi()
+        self._hpapi = BotAPI()
+
         for plugin_name in self._plugins:
             try:
                 module = importlib.import_module(f".plugins.{plugin_name}", __package__)
