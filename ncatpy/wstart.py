@@ -8,15 +8,15 @@ import asyncio
 import websockets
 import json
 
-from . import logging
 from .setting import SetConfig
+
+from . import logging
 
 _log = logging.get_logger()
 
 class BotWebSocket:
     def __init__(self, client):
         self.client = client
-        self.ws_port = SetConfig().ws_port
 
     async def on_message(self, ws, message):
         try:
@@ -30,7 +30,7 @@ class BotWebSocket:
     async def ws_connect(self):
         for attempt in range(3):
             try:
-                async with websockets.connect(f"ws://localhost:{self.ws_port}/event") as ws:
+                async with websockets.connect(f"{SetConfig().ws_url}/event") as ws:
                     _log.info("[ncatpy] WebSocket 连接成功")
                     while True:
                         message = await ws.recv()
