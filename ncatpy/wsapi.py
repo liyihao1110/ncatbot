@@ -2,7 +2,7 @@
 
 import websockets
 import json
-from .types import message
+from .apis import message
 
 from .setting import SetConfig
 
