@@ -153,6 +153,9 @@ class BaseMessage(BotAPI):
             for msg in self.message:
                 if msg['type'] == msg_type:
                     return msg.get('data', {})
+                
+        def __get_messages_by_type_iterable(self, msg_type):
+            return [msg.get('data', {}) for msg in self.message if msg['type'] == msg_type]
 
         @property
         def text(self):
@@ -280,7 +283,14 @@ class GroupMessage(BaseMessage):
             at_data = self.__get_messages_by_type('at')
             if at_data:
                 return AtMessage(at_data)
-
+        
+        @property
+        def ats(self):
+            return [AtMessage(at) for at in self.__get_messages_by_type_iterable('at')]
+           
+    def at_self(self):
+        return any([str(self.self_id) == str(at.qq) for at in self.message.ats])    
+    
     async def reply(self, reply=False):
         if reply:
             self.add_reply(self.message_id)
