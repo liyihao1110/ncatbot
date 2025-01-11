@@ -10,11 +10,6 @@ class MyClient(ncatpy.Client):
     async def on_group_message(self, message: GroupMessage):
         _log.info(f"收到群消息，ID: {message.message.text.text}")
         _log.info(message.user_id)
-        if message.user_id == 2793415370:
-            # 当提问者的QQ号是2793415370时，调用XunfeiGPT插件回答他的问题
-            # t = await self._XunfeiGPT.ai_response(input=message.message.text.text, group_id=message.group_id) # 单轮ai聊天
-            t = await self._XunfeiGPT.ai_response_history(input=message.message.text.text, info= True, group_id=message.group_id)# 多轮ai聊天,可用参数：开发者模式：info=True,历史记录次数：history_num=5
-            _log.info(t)
         if message.message.text.text == "你好":
             # 通过http发送消息
             t = await message.add_text("你好,o").reply()
@@ -33,5 +28,5 @@ if __name__ == "__main__":
 
     # 2. 通过kwargs，设置需要监听的事件通道
     intents = ncatpy.Intents(group_event=True)
-    client = MyClient(intents=intents, plugins=["XunfeiGPT"])# 如果没有插件，则不需要添加plugins=["XunfeiGPT"]
+    client = MyClient(intents=intents)
     client.run()
