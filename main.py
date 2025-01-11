@@ -1,40 +1,37 @@
-# main.py
-import asyncio
+# encoding: utf-8
 
-from Ncatbot.websockNB import core
-from Ncatbot.message import GroupMessage,PrivateMessage
-bot_websocket, bot_api = core(http_port=3000, ws_port=3001)
-bot_client = bot_websocket.client
+import ncatpy
+from ncatpy import logging
+from ncatpy.message import GroupMessage,PrivateMessage
 
-@bot_client.group_message(['text','face'])
-# 处理群消息，可用监听的数据在这：https://napneko.github.io/develop/msg
-async def group_message_handler(message: GroupMessage):
-    print(message.message)
+_log = logging.get_logger()
 
-@bot_client.private_message(['text','face'])
-async def private_message_handler(message: PrivateMessage):
-    print(message)
-    print(message.message)
-    print(message.message.text)
-    print(message.message.reply)
-    if message.raw_message == '你好':
-        await message.add_text('hi').reply()
-"""
->>>terminal
-...
-[{'type': 'reply', 'data': {'id': '1704856505'}}, {'type': 'text', 'data': {'text': '你好'}}]
-['你好']
-['1704856505']
-"""
+class MyClient(ncatpy.Client):
+    async def on_group_message(self, message: GroupMessage):
+        _log.info(f"收到群消息，ID: {message.message.text.text}")
+        _log.info(message.user_id)
+        if message.user_id == 2793415370:
+            # 当提问者的QQ号是2793415370时，调用XunfeiGPT插件回答他的问题
+            # t = await self._XunfeiGPT.ai_response(input=message.message.text.text, group_id=message.group_id) # 单轮ai聊天
+            t = await self._XunfeiGPT.ai_response_history(input=message.message.text.text, info= True, group_id=message.group_id)# 多轮ai聊天,可用参数：开发者模式：info=True,历史记录次数：history_num=5
+            _log.info(t)
+        if message.message.text.text == "你好":
+            # 通过http发送消息
+            t = await message.add_text("你好,o").reply()
+            _log.info(t)
 
 
+    async def on_private_message(self, message: PrivateMessage):
+        _log.info(f"收到私聊消息，ID: {message.message.text.text}")
+        if message.message.text.text == "你好":
+            t = await self._api.send_msg(user_id=message.user_id, text="你好,o")
+            _log.info(t)
 
-@bot_client.request
-async def request_handler(message):
-    print(message)
+if __name__ == "__main__":
+    # 1. 通过预设置的类型，设置需要监听的事件通道
+    # intents = ncatpy.Intents.public() # 可以订阅public，包括了私聊和群聊
 
-@bot_client.notice
-async def notice_handler(message):
-    print(message)
-# 启动 WebSocket 客户端
-asyncio.run(bot_websocket.ws_run())
+    # 2. 通过kwargs，设置需要监听的事件通道
+    intents = ncatpy.Intents(group_event=True)
+    client = MyClient(intents=intents, plugins=["XunfeiGPT"])# 如果没有插件，则不需要添加plugins=["XunfeiGPT"]
+    client.run()
