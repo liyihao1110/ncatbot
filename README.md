@@ -1,6 +1,6 @@
 # NcatBot
 
-![logo](https://github.com/liyihao1110/NcatBot/blob/main/resource/logo.png?raw=true)
+![logo](https://github.com/liyihao1110/NcatBot/blob/main/resource/img.png?raw=true)
 
 ---
 
