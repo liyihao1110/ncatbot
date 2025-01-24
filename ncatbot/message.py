@@ -1,19 +1,18 @@
-# encoding: utf-8
 
 from .api import BotAPI
 
 class BaseMessage(BotAPI):
-    __slots__ = ("self_id",  "time", "post_type")
+    __slots__ = ("self_id", "time", "post_type")
 
     def __init__(self, message):
-        super().__init__()
+        super().__init__(message)
         self.self_id = message.get("self_id", None)
         self.time = message.get("time", None)
         self.post_type = message.get("post_type", None)
 
     def __repr__(self):
         return str({items: str(getattr(self, items)) for items in self.__slots__})
-    
+
     class _Sender:
         def __init__(self, message):
             self.user_id = message.get("user_id", None)
@@ -22,11 +21,12 @@ class BaseMessage(BotAPI):
 
         def __repr__(self):
             return str(self.__dict__)
-        
-    
+
 
 class GroupMessage(BaseMessage):
-    __slots__ = ("group_id", "user_id", "message_type", "sub_type", "raw_message", "font", "sender", "message_id", "message_seq", "real_id", "message", "message_format")
+    __slots__ = (
+    "group_id", "user_id", "message_type", "sub_type", "raw_message", "font", "sender", "message_id", "message_seq",
+    "real_id", "message", "message_format")
 
     def __init__(self, message):
         super().__init__(message)
@@ -46,14 +46,19 @@ class GroupMessage(BaseMessage):
     def __repr__(self):
         return str({items: str(getattr(self, items)) for items in self.__slots__})
 
-    async def reply(self, reply=False):
-        if reply:
-            self.add_reply(self.message_id)
-        return await self.send_group_msg(self.group_id, clear_message=True)
-
+    async def reply(self, **kwargs):
+        i_list = ['text', 'face', 'json', 'at', 'reply', 'music', 'dice', 'rps']
+        if "content" in kwargs:
+            return await self.send_group_msg(group_id=self.group_id, **kwargs)
+        elif any(i in kwargs for i in i_list):
+            return await self.post_group_msg(group_id=self.group_id, **kwargs)
+        else:
+            return await self.post_group_file(group_id=self.group_id, **kwargs)
 
 class PrivateMessage(BaseMessage):
-    __slots__ = ("message_id", "user_id", "message_seq", "real_id", "message_type", "sender", "raw_message", "font", "sub_type", "message", "message_format", "target_id")
+    __slots__ = (
+    "message_id", "user_id", "message_seq", "real_id", "message_type", "sender", "raw_message", "font", "sub_type",
+    "message", "message_format", "target_id")
 
     def __init__(self, message):
         super().__init__(message)
@@ -73,16 +78,13 @@ class PrivateMessage(BaseMessage):
     def __repr__(self):
         return str({items: str(getattr(self, items)) for items in self.__slots__})
 
-    async def reply(self, reply=False):
-        if reply:
-            self.add_reply(self.message_id)
-        return await self.send_private_msg(self.user_id, clear_message=True)
+    async def reply(self, **kwargs):
+        i_list = ['text', 'face', 'json', 'at', 'reply', 'music', 'dice', 'rps']
+        if "content" in kwargs:
+            return await self.send_private_msg(user_id=self.user_id, **kwargs)
+        elif any(i in kwargs for i in i_list):
+            return await self.post_private_msg(user_id=self.user_id, **kwargs)
+        else:
+            return await self.post_private_file(user_id=self.user_id, **kwargs)
 
 
-class NoticeMessage(BaseMessage):
-    def __repr__(self):
-        return str(self.__dict__)
-    
-class RequestMessage(BaseMessage):
-    def __repr__(self):
-        return str(self.__dict__)
