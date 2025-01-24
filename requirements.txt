@@ -1,5 +1,7 @@
 websockets~=13.1
-requests~=2.32.3
-aiohttp~=3.10.11
 PyYAML~=6.0.2
 httpx~=0.28.1
+psutil~=6.1.1
+openai~=1.59.9
+requests~=2.32.3
+tqdm~=4.67.1
