@@ -14,6 +14,7 @@ from .setting import SetConfig
 from .bot import Bot
 
 _set = SetConfig()
+base_path = os.getcwd()
 
 class BotClient:
     def __init__(self, use_ws=True):
@@ -64,29 +65,44 @@ class BotClient:
             asyncio.run(Websocket(self).ws_connect())
         elif not reload:
             if _set.nap_cat.startswith("https"):
-                # _set.nap_cat是一个下载网址，需要下载到本地，并且解压为NapcatFiles文件夹，并且添加下载进度条
-                print("[client] 正在下载Napcat客户端，请稍等...")
-                try:
-                    r = requests.get(_set.nap_cat, stream=True)
-                    total_size = int(r.headers.get('content-length', 0))
-                    progress_bar = tqdm(total=total_size, unit='iB', unit_scale=True)
-                    with open("NapcatFiles.zip", "wb") as f:
-                        for data in r.iter_content(chunk_size=1024):
-                            progress_bar.update(len(data))
-                            f.write(data)
-                except Exception as e:
-                    print("[client] 下载Napcat客户端失败，请检查网络连接或手动下载Napcat客户端。")
-                    print("[client] 错误信息：", e)
-                    return
-                try:
-                    with zipfile.ZipFile("NapcatFiles.zip", 'r') as zip_ref:
-                        zip_ref.extractall("NapcatFiles")
-                        print("[client] 解压Napcat客户端成功，请运行Napcat客户端。")
-                except Exception as e:
-                    print("[client] 解压Napcat客户端失败，请检查Napcat客户端是否正确。")
-                    print("[client] 错误信息：", e)
-                    return
-                _set.nap_cat = os.path.join(os.getcwd(),"NapCatFiles")
+                if not os.path.exists("NapcatFiles"):
+                    print("[client] 正在下载Napcat客户端，请稍等...")
+                    try:
+                        r = requests.get(_set.nap_cat, stream=True)
+                        total_size = int(r.headers.get('content-length', 0))
+                        progress_bar = tqdm(
+                            total=total_size,
+                            unit='iB',
+                            unit_scale=True,
+                            desc='Downloading NapcatFiles.zip',
+                            bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]',
+                            colour='green',
+                            dynamic_ncols=True,  # 自动调整进度条的宽度
+                            smoothing=0.3,  # 平滑进度条的更新
+                            mininterval=0.1,  # 最小更新间隔
+                            maxinterval=1.0  # 最大更新间隔
+                        )
+                        with open("NapcatFiles.zip", "wb") as f:
+                            for data in r.iter_content(chunk_size=1024):
+                                progress_bar.update(len(data))
+                                f.write(data)
+                        progress_bar.close()
+                    except Exception as e:
+                        print("[client] 下载Napcat客户端失败，请检查网络连接或手动下载Napcat客户端。")
+                        print("[client] 错误信息：", e)
+                        return
+                    try:
+                        with zipfile.ZipFile("NapcatFiles.zip", 'r') as zip_ref:
+                            zip_ref.extractall("NapcatFiles")
+                            print("[client] 解压Napcat客户端成功，请运行Napcat客户端。")
+                        os.remove("NapcatFiles.zip")
+                    except Exception as e:
+                        print("[client] 解压Napcat客户端失败，请检查Napcat客户端是否正确。")
+                        print("[client] 错误信息：", e)
+                        return
+                    _set.nap_cat = os.path.join(os.getcwd(),"NapCatFiles")
+                else:
+                    _set.nap_cat = os.path.join(os.getcwd(),"NapCatFiles")
 
             os.chdir(os.path.join(_set.nap_cat, "config"))
             http_enable = False if _set.http_url == "" else True
@@ -142,17 +158,6 @@ class BotClient:
                     f.write(content)
                     f.close()
                 os.system(f"{_set.bot_uin}_quickLogin.bat")
-            i = input("[client] 需要打开官方配置界面进一步配置吗？(y/n): ")
-            os.chdir(os.path.join(_set.nap_cat, "config"))
-            with open("webui.json", "r", encoding="utf-8") as f:
-                data = json.load(f)
-                port = data["port"]
-                token = data["token"]
-            if i == "y":
-                url = f"https://napcat.152710.xyz/web_login?back=http://127.0.0.1:{port}&token={token}"
-                os.system(f'start "" "{url}"')
-            elif i == "n":
-                print("[client] 配置完成，napcat客户端此时应该打开了，不要关闭客户端，将主函数内的reload的值改为True，再次运行即可")
-
-
-
+            os.chdir(base_path)
+            time.sleep(1)
+            asyncio.run(Websocket(self).ws_connect())
