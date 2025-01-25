@@ -31,15 +31,28 @@ class Websocket:
             print(f"[gateway] 如果没错，这是一个错误，请反馈给开发者\n"+str(msg))
 
     async def ws_connect(self):
-        async with websockets.connect(SetConfig().ws_url, extra_headers={"Authorization": f"Bearer {SetConfig().ws_token}"}) as ws:
-            try:
-                print("[gateway] websocket连接已建立")
-                while True:
-                    message = await ws.recv()
-                    await self.receive(message)
-                    await self.user.on_private_msg(message)
-            except Exception as e:
-                raise e
+        try:
+            async with websockets.connect(uri=SetConfig().ws_url,
+                                          extra_headers={"Authorization": SetConfig().ws_token}) as ws:
+                try:
+                    print("[gateway] websocket连接已建立")
+                    while True:
+                        message = await ws.recv()
+                        await self.receive(message)
+                        await self.user.on_private_msg(message)
+                except Exception as e:
+                    raise e
+        finally:
+            async with websockets.connect(uri=SetConfig().ws_url,
+                                          user_agent_header={"Authorization": SetConfig().ws_token}) as ws:
+                try:
+                    print("[gateway] websocket连接已建立")
+                    while True:
+                        message = await ws.recv()
+                        await self.receive(message)
+                        await self.user.on_private_msg(message)
+                except Exception as e:
+                    raise e
 
 
 
