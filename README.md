@@ -28,13 +28,13 @@ ws:
   protocol: ws
   ip: 127.0.0.1
   port: 3001
-  token: 选填
+  token: 选填，随意填写，建议填写内容
 
 http:
   protocol: http
   ip: 127.0.0.1
   port: 3000
-  token: 选填
+  token: 选填，随意填写，建议填写内容
 
 ai:
   base_url: 选填
@@ -74,13 +74,13 @@ from ncatbot.message import GroupMessage,PrivateMessage
 
 bot = BotClient()
 
-@bot.group_event
+@bot.group_event()
 async def on_group_message(msg:GroupMessage):
     print(msg)
     if msg.raw_message == "test":
         await msg.reply(text="test")
 
-@bot.private_event
+@bot.private_event()
 async def on_private_message(msg:PrivateMessage):
     print(msg)
     # 私聊同理
@@ -104,7 +104,7 @@ bot.run(reload=True)
 
 群聊和私聊所有的键值都可以通过这一方式访问：
 ```python
-@bot.group_event
+@bot.group_event()
 async def on_group_message(msg:GroupMessage):
     # 等价于print(msg["raw_message"])
     print(msg.raw_message)
@@ -118,23 +118,38 @@ from ncatbot.message import GroupMessage,PrivateMessage
 
 bot = BotClient()
 
-@bot.group_event
+@bot.group_event()
 async def on_group_message(msg:GroupMessage):
     print(msg)
 
-@bot.private_event
+@bot.private_event()
 async def on_private_message(msg:PrivateMessage):
     print(msg)
 
-@bot.notice_event
+@bot.notice_event()
 async def on_notice_message(msg):
     print(msg)
-@bot.request_event
+@bot.request_event()
 async def on_request_message(msg):
     print(msg)
     
 bot.run(reload=True)
 ```
+**各消息类型的注册**
+举个例子，例如，如果你想要监听群聊的文本消息，你可以这样注册：
+```python
+from ncatbot.client import BotClient
+from ncatbot.message import GroupMessage
+bot = BotClient()
+
+@bot.group_event(["text"])
+async def on_group_message(msg:GroupMessage):
+    print(msg)
+    
+bot.run(reload=True)
+```
+需要注意的是：<mark>只要消息内存在文本，这个消息就会被监听，而不是纯文本才会被监听</mark>
+
 ## 如何获取帮助
 
 ---
