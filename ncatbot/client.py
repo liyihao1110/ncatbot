@@ -26,13 +26,17 @@ class BotClient:
         self._notice_event_handler = None
         self._request_event_handler = None
 
-    def group_event(self, func):
-        self._group_event_handler = func
-        return func
+    def group_event(self, types=None):
+        def decorator(func):
+            self._group_event_handler = (func, types)
+            return func
+        return decorator
 
-    def private_event(self, func):
-        self._private_event_handler = func
-        return func
+    def private_event(self, types=None):
+        def decorator(func):
+            self._private_event_handler = (func, types)
+            return func
+        return decorator
 
     def notice_event(self, func):
         self._notice_event_handler = func
@@ -44,13 +48,17 @@ class BotClient:
 
     async def handle_group_event(self, msg: dict):
         if self._group_event_handler:
-            msg = GroupMessage(msg)
-            await self._group_event_handler(msg)
+            func, types = self._group_event_handler
+            if types is None or any(i['type'] in types for i in msg['message']):
+                msg = GroupMessage(msg)
+                await func(msg)
 
     async def handle_private_event(self, msg: dict):
         if self._private_event_handler:
-            msg = PrivateMessage(msg)
-            await self._private_event_handler(msg)
+            func, types = self._private_event_handler
+            if types is None or any(i['type'] in types for i in msg['message']):
+                msg = PrivateMessage(msg)
+                await func(msg)
 
     async def handle_notice_event(self, msg: dict):
         if self._notice_event_handler:
@@ -62,7 +70,8 @@ class BotClient:
 
     def run(self, reload=False):
         if reload:
-            asyncio.run(Websocket(self).ws_connect())
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(Websocket(self).ws_connect())
         elif not reload:
             if _set.nap_cat.startswith("https"):
                 if not os.path.exists("NapcatFiles"):
@@ -77,10 +86,10 @@ class BotClient:
                             desc='Downloading NapcatFiles.zip',
                             bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]',
                             colour='green',
-                            dynamic_ncols=True,  # 自动调整进度条的宽度
-                            smoothing=0.3,  # 平滑进度条的更新
-                            mininterval=0.1,  # 最小更新间隔
-                            maxinterval=1.0  # 最大更新间隔
+                            dynamic_ncols=True,
+                            smoothing=0.3,
+                            mininterval=0.1,
+                            maxinterval=1.0
                         )
                         with open("NapcatFiles.zip", "wb") as f:
                             for data in r.iter_content(chunk_size=1024):
@@ -159,5 +168,11 @@ class BotClient:
                     f.close()
                 os.system(f"{_set.bot_uin}_quickLogin.bat")
             os.chdir(base_path)
-            time.sleep(1)
-            asyncio.run(Websocket(self).ws_connect())
+            time.sleep(3)
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(Websocket(self).ws_connect())
+
+
+
+
+
