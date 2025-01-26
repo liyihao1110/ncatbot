@@ -127,7 +127,7 @@ class BotClient:
                             "enableCors": True,
                             "enableWebsocket": True,
                             "messagePostFormat": "array",
-                            "token": str(_set.http_token),
+                            "token": str(_set.http_token) if _set.http_token is not None else "",
                             "debug": False
                         }
                     ],
@@ -139,7 +139,7 @@ class BotClient:
                             "port": int(_set.ws_port),
                             "messagePostFormat": "array",
                             "reportSelfMessage": False,
-                            "token": str(_set.ws_token),
+                            "token": str(_set.ws_token) if _set.ws_token is not None else "",
                             "enableForcePushEvent": True,
                             "debug": False,
                             "heartInterval": 30000
