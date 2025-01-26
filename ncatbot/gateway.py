@@ -42,7 +42,10 @@ class Websocket:
                         await self.user.on_private_msg(message)
                 except Exception as e:
                     raise e
+        except Exception as e:
+            raise e
         finally:
+            print("[gateway] 切换连接方式...这是一个bug，如果你看见了这条输出内容，请提交issue")
             async with websockets.connect(uri=SetConfig().ws_url,
                                           user_agent_header={"Authorization": SetConfig().ws_token}) as ws:
                 try:
