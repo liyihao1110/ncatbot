@@ -45,9 +45,8 @@ class Websocket:
         except Exception as e:
             raise e
         finally:
-            print("[gateway] 切换连接方式...这是一个bug，如果你看见了这条输出内容，请提交issue")
-            async with websockets.connect(uri=SetConfig().ws_url,
-                                          user_agent_header={"Authorization": SetConfig().ws_token}) as ws:
+            print("[gateway] 切换连接方式...这是一个bug，如果你看见了这条输出内容，请不要添加token并提交issue")
+            async with websockets.connect(uri=SetConfig().ws_url) as ws:
                 try:
                     print("[gateway] websocket连接已建立")
                     while True:
