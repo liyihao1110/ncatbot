@@ -3,6 +3,9 @@
 ---
 ![img.png](img.png)
 
+<a href='https://gitee.com/li-yihao0328/nc_bot/stargazers'><img src='https://gitee.com/li-yihao0328/nc_bot/badge/star.svg?theme=dark' alt='star'></img></a>
+<a href='https://gitee.com/li-yihao0328/nc_bot/members'><img src='https://gitee.com/li-yihao0328/nc_bot/badge/fork.svg?theme=dark' alt='fork'></img></a>
+
 ncatbot是一个开源的基于NapCat的QQ个人号PYTHON库，使用python调用NTQQ。
 
 使用简单的代码，你就可以完成一个能够处理所有信息的QQ机器人。
@@ -10,6 +13,12 @@ ncatbot是一个开源的基于NapCat的QQ个人号PYTHON库，使用python调�
 该PYTHON项目的机器人包含了内置指令，运行即用；除此之外，项目内置了NapCat一键启动。
 
 希望这个项目能够帮助你扩展你的个人的QQ号、方便自己的生活。
+
+## 更新进度
+
+---
+[![木子/ncatbot](https://gitee.com/li-yihao0328/nc_bot/widgets/widget_card.svg?colors=ffffff,1e252b,323d47,455059,d7deea,99a0ae)](https://gitee.com/li-yihao0328/nc_bot)
+
 
 ## 安装
 
