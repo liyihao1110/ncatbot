@@ -148,6 +148,18 @@ async def on_group_message(msg:GroupMessage):
     
 bot.run(reload=True)
 ```
+当你需要监听所有消息类型时，你可以这样注册：
+```python
+from ncatbot.client import BotClient
+from ncatbot.message import GroupMessage
+bot = BotClient()
+
+@bot.group_event()
+async def on_group_message(msg:GroupMessage):
+    print(msg)
+    
+bot.run(reload=True)
+```
 需要注意的是：<mark>只要消息内存在文本，这个消息就会被监听，而不是纯文本才会被监听</mark>
 
 ## 如何获取帮助
