@@ -8,15 +8,15 @@ from .status import Status
 from typing import Union
 
 
-def convert(i):
+def convert(i, message_type):
     if i.startswith('http'):
-        return {'type': 'image', 'data': {'file': i}}
+        return {'type': message_type, 'data': {'file': i}}
     elif i.startswith('base64://'):
-        return {'type': 'image', 'data': {'file': i}}
+        return {'type': message_type, 'data': {'file': i}}
     elif os.path.exists(i):
-        return {'type': 'image', 'data': {'file': f'file:///{os.path.abspath(i)}'}}
+        return {'type': message_type, 'data': {'file': f'file:///{os.path.abspath(i)}'}}
     else:
-        return {'type': 'image', 'data': {'file': f'file:///{i}'}}
+        return {'type': message_type, 'data': {'file': f'file:///{i}'}}
 
 
 def parse_content(content):
@@ -34,7 +34,7 @@ def parse_content(content):
         elif at_id:  # @某人
             result.append({'type': 'at', 'data': {'qq': at_id}})
         elif image_path:  # 图片文件
-            result.append(convert(image_path))
+            result.append(convert(image_path, 'image'))
     return result
 
 class BotAPI:
@@ -1160,13 +1160,13 @@ class BotAPI:
         message: list = []
 
         if image:
-            message.append(convert(image))
+            message.append(convert(image, 'image'))
         elif record:
-            message.append(convert(record))
+            message.append(convert(record, 'record'))
         elif video:
-            message.append(convert(video))
+            message.append(convert(video, 'video'))
         elif file:
-            message.append(convert(file))
+            message.append(convert(file, 'file'))
         else:
             return {'code': 0, 'msg': '请至少选择一种文件'}
 
@@ -1191,13 +1191,13 @@ class BotAPI:
         message: list = []
 
         if image:
-            message.append(convert(image))
+            message.append(convert(image, 'image'))
         elif record:
-            message.append(convert(record))
+            message.append(convert(record, 'record'))
         elif video:
-            message.append(convert(video))
+            message.append(convert(video, 'video'))
         elif file:
-            message.append(convert(file))
+            message.append(convert(file, 'file'))
         else:
             return {'code': 0, 'msg': '请至少选择一种文件'}
 
