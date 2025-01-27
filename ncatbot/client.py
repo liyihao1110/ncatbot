@@ -13,6 +13,9 @@ from .api import BotAPI
 from .setting import SetConfig
 from .bot import Bot
 
+from .Logger import get_logger
+
+_LOG = get_logger("Client")
 _set = SetConfig()
 base_path = os.getcwd()
 
@@ -75,7 +78,7 @@ class BotClient:
         elif not reload:
             if _set.nap_cat.startswith("https"):
                 if not os.path.exists("NapcatFiles"):
-                    print("[client] 正在下载Napcat客户端，请稍等...")
+                    _LOG.info("正在下载Napcat客户端，请稍等...")
                     try:
                         r = requests.get(_set.nap_cat, stream=True)
                         total_size = int(r.headers.get('content-length', 0))
@@ -97,17 +100,17 @@ class BotClient:
                                 f.write(data)
                         progress_bar.close()
                     except Exception as e:
-                        print("[client] 下载Napcat客户端失败，请检查网络连接或手动下载Napcat客户端。")
-                        print("[client] 错误信息：", e)
+                        _LOG.error("下载Napcat客户端失败，请检查网络连接或手动下载Napcat客户端。")
+                        _LOG.error("错误信息：", e)
                         return
                     try:
                         with zipfile.ZipFile("NapcatFiles.zip", 'r') as zip_ref:
                             zip_ref.extractall("NapcatFiles")
-                            print("[client] 解压Napcat客户端成功，请运行Napcat客户端。")
+                            _LOG.info("解压Napcat客户端成功，请运行Napcat客户端。")
                         os.remove("NapcatFiles.zip")
                     except Exception as e:
-                        print("[client] 解压Napcat客户端失败，请检查Napcat客户端是否正确。")
-                        print("[client] 错误信息：", e)
+                        _LOG.error("解压Napcat客户端失败，请检查Napcat客户端是否正确。")
+                        _LOG.error("错误信息：", e)
                         return
                     _set.nap_cat = os.path.join(os.getcwd(),"NapCatFiles")
                 else:

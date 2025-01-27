@@ -2,11 +2,12 @@
 import os
 import yaml
 
+from .Universal_Data_Loader import UniversalLoader
+
 class SetConfig:
     def __init__(self):
         try:
-            with open(os.path.join(os.getcwd(), "config.yaml"), "r", encoding="utf-8") as f:
-                config = yaml.safe_load(f)
+            config = UniversalLoader("config/Napcat.yaml").load()
         except FileNotFoundError:
             raise ValueError("[setting] 配置文件不存在，请检查！")
         except yaml.YAMLError:
