@@ -6,9 +6,12 @@
 <p align="center">
     <a href='https://gitee.com/li-yihao0328/nc_bot/stargazers'><img src='https://gitee.com/li-yihao0328/nc_bot/badge/star.svg?theme=dark' alt='star'></img></a>
     <a href='https://gitee.com/li-yihao0328/nc_bot/members'><img src='https://gitee.com/li-yihao0328/nc_bot/badge/fork.svg?theme=dark' alt='fork'></img></a>
+</p>
+<p align="center">
 	<a href="https://gitee.com/li-yihao0328/nc_bot"><img src="https://img.shields.io/badge/ncatbot-v1.0.0-brightgreen.svg"></a>
 	<a href="https://gitee.com/y_project/RuoYi-Vue/blob/master/LICENSE"><img src="https://img.shields.io/github/license/mashape/apistatus.svg"></a>
     <a href="https://qm.qq.com/q/CHbzJ2LH4k"><img src="https://img.shields.io/badge/💬 NcatBot/ฅ^•ﻌ•^ฅ🎉-201487478-brightgreen.svg"></a>
+    <a href="https://qm.qq.com/q/S2zIli2qsu"><img src="https://img.shields.io/badge/木子机器人(可添加体验)-3786498591-brightgreen.svg"></a>
 </p>
 
 ncatbot是一个开源的基于NapCat的QQ个人号PYTHON库，使用python调用NTQQ。
