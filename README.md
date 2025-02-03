@@ -8,7 +8,7 @@
     <a href='https://gitee.com/li-yihao0328/nc_bot/members'><img src='https://gitee.com/li-yihao0328/nc_bot/badge/fork.svg?theme=dark' alt='fork'></img></a>
 </p>
 <p align="center">
-	<a href="https://gitee.com/li-yihao0328/nc_bot"><img src="https://img.shields.io/badge/ncatbot-v1.0.0-brightgreen.svg"></a>
+	<a href="https://gitee.com/li-yihao0328/nc_bot"><img src="https://img.shields.io/badge/ncatbot-v1.0.1-brightgreen.svg"></a>
 	<a href="https://gitee.com/y_project/RuoYi-Vue/blob/master/LICENSE"><img src="https://img.shields.io/github/license/mashape/apistatus.svg"></a>
     <a href="https://qm.qq.com/q/CHbzJ2LH4k"><img src="https://img.shields.io/badge/💬 NcatBot/ฅ^•ﻌ•^ฅ🎉-201487478-brightgreen.svg"></a>
     <a href="https://qm.qq.com/q/S2zIli2qsu"><img src="https://img.shields.io/badge/木子机器人(可添加体验)-3786498591-brightgreen.svg"></a>
@@ -18,7 +18,7 @@ ncatbot是一个开源的基于NapCat的QQ个人号PYTHON库，使用python调�
 
 使用简单的代码，你就可以完成一个能够处理所有信息的QQ机器人。
 
-该PYTHON项目的机器人包含了内置指令，运行即用；除此之外，项目内置了NapCat一键启动。
+项目内置了NapCat一键启动。
 
 希望这个项目能够帮助你扩展你的个人的QQ号、方便自己的生活。
 
@@ -41,33 +41,18 @@ git clone https://gitee.com/li-yihao0328/nc_bot.git
 在开始开发机器人之前，你需要先配置config.yaml文件，它可以帮助你自启动napcat和项目内部指令。
 这是一份配置文件示例，你可以根据你的实际情况进行修改：
 ```yaml
-ws:
-  protocol: ws
-  ip: 127.0.0.1
-  port: 3001
-  token: 选填，随意填写，建议填写内容
-
-http:
-  protocol: http
-  ip: 127.0.0.1
-  port: 3000
-  token: 选填，随意填写，建议填写内容
-
-ai:
-  base_url: 选填
-  api_key: 选填
-  model: 选填
-  personality: 选填
-
-qq:
-  bot: 机器人QQ账号，必填
-  user: 管理员账号，必填
-
-nap_cat: 你的NapCat.Shell文件夹的路径地址，当然如果你没有下载的话，可以填入NapCat.Shell文件的下载地址，他将会自行下载，不过github需要国外网络环境，所以填入网址运行，请提前准备网络环境，否则会下载安装失败。
+ws_uri: WEBSOCKET地址,例如:ws://127.0.0.1:3001
+hp_uri: HTTP地址,例如:http://127.0.0.1:3000
+np_uri: https://github.com/NapNeko/NapCatQQ/releases/download/v4.4.16/NapCat.Shell.zip
+bt_uin: 3476897254
+token: 密钥
 ```
 当你填写好了config.yaml之后，你就可以直接运行以下代码:
 ```python
 from ncatbot.client import BotClient
+from ncatbot.logger import get_log
+
+_log = get_log()
 bot = BotClient()
 
 bot.run(reload=False)
@@ -77,29 +62,32 @@ bot.run(reload=False)
 有了ncatbot，运行后你可以使用这些指令：
 ```python
 from ncatbot.client import BotClient
+from ncatbot.logger import get_log
+
+_log = get_log()
 bot = BotClient()
 
 bot.run(reload=True)# reload=True 表示你不需要运行启动NapCat
 ```
-你不需要编写任何代码，即可使用内置指令，不过你需要在config.yaml内填写管理员QQ账号，即`user`。
-运行后，你可以在QQ上向机器人发送“/帮助”来获取引导。
 
 如果你想要回复发给机器人的文本消息，只需要这样：
 ```python
 from ncatbot.client import BotClient
 from ncatbot.message import GroupMessage,PrivateMessage
+from ncatbot.logger import get_log
 
+_log = get_log()
 bot = BotClient()
 
 @bot.group_event()
 async def on_group_message(msg:GroupMessage):
-    print(msg)
+    _log.info(msg)
     if msg.raw_message == "test":
-        await msg.reply(text="test")
+        await bot.api.send_group_msg(group_id=msg.group_id,text="test")
 
 @bot.private_event()
 async def on_private_message(msg:PrivateMessage):
-    print(msg)
+    _log.info(msg)
     # 私聊同理
 
 bot.run(reload=True)
