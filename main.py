@@ -1,23 +1,29 @@
-
 from ncatbot.client import BotClient
 from ncatbot.message import GroupMessage,PrivateMessage
+from ncatbot.logger import get_log
 
+_log = get_log()
 bot = BotClient()
 
-@bot.group_event
+@bot.group_event()
 async def on_group_message(msg:GroupMessage):
-    print(msg)
+    _log.info(msg)
 
-@bot.private_event
+@bot.private_event()
 async def on_private_message(msg:PrivateMessage):
-    print(msg)
+    _log.info(msg)
+    if msg.raw_message == "test":
+        await bot.api.post_private_msg(msg.user_id, text="你好,",face=1, reply=msg.message_id)
+    elif msg.raw_message == "ping":
+        await bot.api.add_at(msg.user_id).add_face(1).add_text("你好").add_face(2).send_private_msg(msg.user_id,reply=msg.message_id)
 
 @bot.notice_event
 async def on_notice(msg):
-    print(msg)
+    _log.info(msg)
 
 @bot.request_event
 async def on_request(msg):
-    print(msg)
+    _log.info(msg)
 
-bot.run(reload=True)
+if __name__ == '__main__':
+    bot.run(reload=True)
