@@ -10,7 +10,6 @@ class BaseMessage:
         return str({items: str(getattr(self, items)) for items in self.__slots__})
 
     class _Sender:
-        __slots__ = ("user_id", "nickname", "card")
         def __init__(self, message):
             self.user_id = message.get("user_id", None)
             self.nickname = message.get("nickname", None)
