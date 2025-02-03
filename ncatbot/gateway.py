@@ -4,7 +4,7 @@ import json
 from .config import SetConfig
 from .logger import get_log
 
-_log = get_log()
+_log = get_log("ncatbot")
 _set = SetConfig()
 
 class Websocket:

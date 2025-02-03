@@ -13,7 +13,7 @@ from .api import BotAPI
 from .config import SetConfig
 from .logger import get_log
 
-_log = get_log()
+_log = get_log("ncatbot")
 _set = SetConfig()
 
 base_path = os.getcwd()

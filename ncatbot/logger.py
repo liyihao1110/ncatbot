@@ -196,6 +196,6 @@ def setup_logging():
 setup_logging()
 
 
-def get_log(name):
+def get_log(name=None):
     '''兼容方法'''
-    return logging.getLogger(name)
+    return logging.getLogger("ncatbot" if name is None else name)
