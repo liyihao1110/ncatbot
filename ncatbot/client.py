@@ -10,16 +10,17 @@ from tqdm import tqdm
 from .gateway import Websocket
 from .message import *
 from .api import BotAPI
-from .setting import SetConfig
-from .bot import Bot
+from .config import SetConfig
+from .logger import get_log
 
+_log = get_log()
 _set = SetConfig()
+
 base_path = os.getcwd()
 
 class BotClient:
     def __init__(self, use_ws=True):
-        self._api = BotAPI(use_ws)
-        self._bot = Bot()
+        self.api = BotAPI(use_ws)
 
         self._group_event_handler = None
         self._private_event_handler = None
@@ -73,11 +74,11 @@ class BotClient:
             loop = asyncio.get_event_loop()
             loop.run_until_complete(Websocket(self).ws_connect())
         elif not reload:
-            if _set.nap_cat.startswith("https"):
+            if _set.np_uri.startswith("https"):
                 if not os.path.exists("NapcatFiles"):
-                    print("[client] 正在下载Napcat客户端，请稍等...")
+                    _log.info("正在下载Napcat客户端，请稍等...")
                     try:
-                        r = requests.get(_set.nap_cat, stream=True)
+                        r = requests.get(_set.np_uri, stream=True)
                         total_size = int(r.headers.get('content-length', 0))
                         progress_bar = tqdm(
                             total=total_size,
@@ -97,25 +98,25 @@ class BotClient:
                                 f.write(data)
                         progress_bar.close()
                     except Exception as e:
-                        print("[client] 下载Napcat客户端失败，请检查网络连接或手动下载Napcat客户端。")
-                        print("[client] 错误信息：", e)
+                        _log.info("下载Napcat客户端失败，请检查网络连接或手动下载Napcat客户端。")
+                        _log.info("错误信息：", e)
                         return
                     try:
                         with zipfile.ZipFile("NapcatFiles.zip", 'r') as zip_ref:
                             zip_ref.extractall("NapcatFiles")
-                            print("[client] 解压Napcat客户端成功，请运行Napcat客户端。")
+                            _log.info("解压Napcat客户端成功，请运行Napcat客户端。")
                         os.remove("NapcatFiles.zip")
                     except Exception as e:
-                        print("[client] 解压Napcat客户端失败，请检查Napcat客户端是否正确。")
-                        print("[client] 错误信息：", e)
+                        _log.info("解压Napcat客户端失败，请检查Napcat客户端是否正确。")
+                        _log.info("错误信息：", e)
                         return
                     _set.nap_cat = os.path.join(os.getcwd(),"NapCatFiles")
                 else:
                     _set.nap_cat = os.path.join(os.getcwd(),"NapCatFiles")
 
             os.chdir(os.path.join(_set.nap_cat, "config"))
-            http_enable = False if _set.http_url == "" else True
-            ws_enable = False if _set.ws_url == "" else True
+            http_enable = False if _set.hp_uri == "" else True
+            ws_enable = False if _set.ws_uri == "" else True
             expected_data = {
                 "network": {
                     "httpServers": [
@@ -127,7 +128,7 @@ class BotClient:
                             "enableCors": True,
                             "enableWebsocket": True,
                             "messagePostFormat": "array",
-                            "token": str(_set.http_token) if _set.http_token is not None else "",
+                            "token": str(_set.token) if _set.token is not None else "",
                             "debug": False
                         }
                     ],
@@ -139,7 +140,7 @@ class BotClient:
                             "port": int(_set.ws_port),
                             "messagePostFormat": "array",
                             "reportSelfMessage": False,
-                            "token": str(_set.ws_token) if _set.ws_token is not None else "",
+                            "token": str(_set.token) if _set.token is not None else "",
                             "enableForcePushEvent": True,
                             "debug": False,
                             "heartInterval": 30000
@@ -171,8 +172,3 @@ class BotClient:
             time.sleep(3)
             loop = asyncio.get_event_loop()
             loop.run_until_complete(Websocket(self).ws_connect())
-
-
-
-
-
