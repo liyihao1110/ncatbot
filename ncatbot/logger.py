@@ -150,7 +150,7 @@ class ColoredFormatter(logging.Formatter):
 # 初始化日志配置
 def setup_logging():
     # 从环境变量中读取日志配置，如果环境变量不存在则使用默认值
-    log_level = os.getenv('LOG_LEVEL', 'DEBUG').upper()  # 确保日志级别为大写
+    log_level = os.getenv('LOG_LEVEL', 'INFO').upper()  # 确保日志级别为大写
     log_format = os.getenv('LOG_FORMAT', '[%(levelname)s] (%(filename)s:%(lineno)d) %(funcName)s : %(message)s')
     log_file_format = os.getenv('LOG_FILE_FORMAT', '(%(asctime)s) (%(filename)s:%(lineno)d) %(funcName)s \n %(message)s')
     log_file_path = os.getenv('LOG_FILE_PATH', './logs')
