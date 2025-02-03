@@ -199,28 +199,3 @@ setup_logging()
 def get_log(name):
     '''兼容方法'''
     return logging.getLogger(name)
-
-
-# 示例用法
-if __name__ == "__main__":
-    from time import sleep
-    from tqdm.contrib.logging import logging_redirect_tqdm
-    logger = logging.getLogger(__name__)
-    logger.debug("这是一个调试信息")
-    logger.info("这是一个普通信息")
-    logger.warning("这是一个警告信息")
-    logger.error("这是一个错误信息")
-    logger.critical("这是一个严重错误信息")
-    # 常见参数
-    # total：总进度数。
-    # desc：进度条描述。
-    # ncols：进度条宽度。
-    # unit：进度单位。
-    # leave：是否在完成后保留进度条。
-
-    with logging_redirect_tqdm():
-        with tqdm(range(0,100)) as pbar:
-            for i in pbar:
-                if i % 10 == 0:
-                    logger.info(f'now: {i}')
-                sleep(0.1)
