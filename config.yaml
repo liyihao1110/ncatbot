@@ -1,23 +1,5 @@
-ws:
-  protocol:
-  ip:
-  port:
-  token:
-
-http:
-  protocol:
-  ip:
-  port:
-  token:
-
-ai:
-  base_url:
-  api_key:
-  model:
-  personality:
-
-qq:
-  bot:
-  user:
-
-nap_cat:
+ws_uri: ws://127.0.0.1:3001
+hp_uri: http://127.0.0.1:3000
+np_uri: https://github.com/NapNeko/NapCatQQ/releases/download/v4.4.16/NapCat.Shell.zip
+bt_uin: 3476897254
+token: banana190
