@@ -1,12 +1,9 @@
-
 import os
-import re
 
 from .http import Route, WsRoute
 from .status import Status
 
 from typing import Union
-
 
 def convert(i, message_type):
     if i.startswith('http'):
@@ -18,27 +15,9 @@ def convert(i, message_type):
     else:
         return {'type': message_type, 'data': {'file': f'file:///{i}'}}
 
-
-def parse_content(content):
-    # 定义匹配规则
-    pattern = re.compile(r'([^>#@\[]+)|>#(\d+)|>@(\d+)|>\[([^\]]+)\]')
-    result = []
-
-    for match in pattern.finditer(content):
-        text, face_id, at_id, image_path = match.groups()
-
-        if text:  # 普通文本
-            result.append({'type': 'text', 'data': {'text': text}})
-        elif face_id:  # 表情
-            result.append({'type': 'face', 'data': {'id': face_id}})
-        elif at_id:  # @某人
-            result.append({'type': 'at', 'data': {'qq': at_id}})
-        elif image_path:  # 图片文件
-            result.append(convert(image_path, 'image'))
-    return result
-
 class BotAPI:
     def __init__(self, use_ws: bool):
+        self.__message = []
         self._http = WsRoute() if use_ws else Route()
 
     # TODO: 用户接口
@@ -1204,36 +1183,30 @@ class BotAPI:
         params = {'user_id': user_id, 'message': message}
         return await self._http.post('/send_private_msg', json=params)
 
-    async def send_group_msg(self,
-                             group_id: Union[int, str],
-                             content: str,
-                             reply: Union[int, str] = None):
+    async def send_group_msg(self, group_id: Union[int, str], reply: str = None):
         if reply:
-            message: list = parse_content(content)
-            message.insert(0, {'type': 'reply', 'data': {'id': reply}})
-            params = {'group_id': group_id, 'message': message}
-            return await self._http.post('/send_group_msg', json=params)
-        else:
-            message: list = parse_content(content)
-            params = {'group_id': group_id, 'message': message}
-            return await self._http.post('/send_group_msg', json=params)
+            self.__message.insert(0, {"type":"reply","data":{"id":reply}})
+        params = {"group_id": group_id, "message": self.__message}
+        return await self._http.post('/send_group_msg', params)
 
-    async def send_private_msg(self,
-                               user_id: Union[int, str],
-                               content: str,
-                               reply: Union[int, str] = None):
+    async def send_private_msg(self, user_id: Union[int, str], reply: str = None):
         if reply:
-            message: list = parse_content(content)
-            message.insert(0, {'type': 'reply', 'data': {'id': reply}})
-            params = {'user_id': user_id, 'message': message}
-            return await self._http.post('/send_private_msg', json=params)
-        else:
-            message: list = parse_content(content)
-            params = {'user_id': user_id, 'message': message}
-            return await self._http.post('/send_private_msg', json=params)
+            self.__message.insert(0, {"type":"reply","data":{"id":reply}})
+        params = {"user_id": user_id, "message": self.__message}
+        return await self._http.post('/send_private_msg', params)
 
+    def add_text(self, text):
+        self.__message.append({"type":"text","data":{"text":text}})
+        return self
 
+    def add_face(self, face_id):
+        self.__message.append({"type":"face","data":{"id":face_id}})
+        return self
 
+    def add_image(self, file):
+        self.__message.append(convert(file, 'image'))
+        return self
 
-
-
+    def add_at(self, user_id):
+        self.__message.append({"type":"at","data":{"qq":user_id}})
+        return self
