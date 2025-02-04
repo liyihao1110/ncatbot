@@ -13,7 +13,7 @@ class Websocket:
 
     async def receive(self, message):
         msg = json.loads(message)
-        if msg['post_type'] == 'message':
+        if msg['post_type'] == 'message' or msg['post_type'] == 'message_sent':
             if msg['message_type'] == 'group':
                 return await self.client.handle_group_event(msg)
             elif msg['message_type'] == 'private':
