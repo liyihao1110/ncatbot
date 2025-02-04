@@ -1,8 +1,8 @@
-## ncatbot
+# NcatBot
 
 ---
 ![img.png](assets/logo.png)
-<h4 align="center">基于NapCat的QQ机器人python快速开发框架</h4>
+<h4 align="center">基于 NapCat 的 QQ 机器人 Python 快速开发框架 (SDK)</h4>
 <p align="center">
     <a href='https://gitee.com/li-yihao0328/nc_bot/stargazers'><img src='https://gitee.com/li-yihao0328/nc_bot/badge/star.svg?theme=dark' alt='star'></img></a>
     <a href='https://gitee.com/li-yihao0328/nc_bot/members'><img src='https://gitee.com/li-yihao0328/nc_bot/badge/fork.svg?theme=dark' alt='fork'></img></a>
@@ -14,7 +14,7 @@
     <a href="https://qm.qq.com/q/S2zIli2qsu"><img src="https://img.shields.io/badge/木子机器人(可添加体验)-3786498591-brightgreen.svg"></a>
 </p>
 
-ncatbot 是一个开源的基于 **[NapCat](https://github.com/NapNeko/NapCatQQ)** 的 QQ 个人号 Python 库，使用 Python 调用 NTQQ。
+NcatBot 是一个开源的基于 **[NapCat](https://github.com/NapNeko/NapCatQQ)** 的 QQ 个人号 Python 库，使用 Python 调用 NTQQ。
 
 使用简单的代码，你就可以完成一个能够处理所有信息的 QQ 机器人。
 
@@ -31,7 +31,7 @@ ncatbot 是一个开源的基于 **[NapCat](https://github.com/NapNeko/NapCatQQ)
 ## 安装
 
 ---
-可以通过本命令安装 ncatbot：
+可以通过本命令安装 NcatBot：
 ```commandline
 git clone https://gitee.com/li-yihao0328/nc_bot.git
 ```
@@ -58,9 +58,9 @@ bot = BotClient()
 
 bot.run(reload=False)
 ```
-运行后，napcat 将会自启动，并且根据 config.yaml 内的配置对napcat进行配置。
+运行后，napcat 将会自启动，并且根据 config.yaml 内的配置对 napcat 进行配置。
 
-有了ncatbot，运行后你可以使用这些指令：
+有了 NcatBot，运行后你可以使用这些指令：
 ```python
 from ncatbot.client import BotClient
 from ncatbot.logger import get_log
@@ -93,20 +93,21 @@ async def on_private_message(msg:PrivateMessage):
 
 bot.run(reload=True)
 ```
-一些进阶应用可以在下面的开源机器人的源码和进阶应用中看到，或者你也可以阅览[文档](https://docs.ncatbot.xyz/)
+一些进阶应用可以在下面的开源机器人的源码和进阶应用中看到，或者你也可以阅览[文档](https://docs.ncatbot.xyz/).
 ## 试一试
 
 ---
 这是一个基于这一项目的开源小机器人，百闻不如一见，有兴趣可以[进群](https://qm.qq.com/q/L6XGXYqL86)尝试一下。
 ![img_1.png](assets/example.png)
+
 ## 进阶应用
 
 ---
 **特殊的字典使用方式**
 
-通过打印 ncatbot 的用户以及注册消息的参数，可以发现这些值都是字典。
+通过打印 NcatBot 的用户以及注册消息的参数，可以发现这些值都是字典。
 
-但实际上 ncatbot 精心构造了群聊和私聊的键值，使得字典的使用更加方便，不过notice和request事件的键值则需要使用字典的键值访问。
+但实际上 NcatBot 精心构造了群聊和私聊的键值，使得字典的使用更加方便，不过notice和request事件的键值则需要使用字典的键值访问。
 
 群聊和私聊所有的键值都可以通过这一方式访问：
 ```python
@@ -117,7 +118,7 @@ async def on_group_message(msg:GroupMessage):
 ```
 **各类型消息的注册**
 
-ncatbot 支持了 napcat 客户端所有的事件，包括群聊、私聊、通知、请求等。
+NcatBot 支持了 napcat 客户端所有的事件，包括群聊、私聊、通知、请求等。
 ```python
 from ncatbot.client import BotClient
 from ncatbot.message import GroupMessage, PrivateMessage
@@ -232,4 +233,4 @@ pip install -r requirements.txt
 ## 致谢
 
 ---
-感谢 [NapCat](https://github.com/NapNeko/NapCatQQ)
+感谢 [NapCat](https://github.com/NapNeko/NapCatQQ).
