@@ -118,6 +118,9 @@ class BotClient:
                     _set.nap_cat = os.path.join(os.getcwd(), "NapCatFiles")
                 else:
                     _set.nap_cat = os.path.join(os.getcwd(), "NapCatFiles")
+            else:
+                _log.info("Napcat客户端路径不存在，请检查配置文件。")
+                return
 
             os.chdir(os.path.join(_set.nap_cat, "config"))
             http_enable = False if _set.hp_uri == "" else True
