@@ -21,8 +21,19 @@ class BaseMessage:
 
 class GroupMessage(BaseMessage):
     __slots__ = (
-    "group_id", "user_id", "message_type", "sub_type", "raw_message", "font", "sender", "message_id", "message_seq",
-    "real_id", "message", "message_format")
+        "group_id",
+        "user_id",
+        "message_type",
+        "sub_type",
+        "raw_message",
+        "font",
+        "sender",
+        "message_id",
+        "message_seq",
+        "real_id",
+        "message",
+        "message_format",
+    )
 
     def __init__(self, message):
         super().__init__(message)
@@ -45,8 +56,19 @@ class GroupMessage(BaseMessage):
 
 class PrivateMessage(BaseMessage):
     __slots__ = (
-    "message_id", "user_id", "message_seq", "real_id", "message_type", "sender", "raw_message", "font", "sub_type",
-    "message", "message_format", "target_id")
+        "message_id",
+        "user_id",
+        "message_seq",
+        "real_id",
+        "message_type",
+        "sender",
+        "raw_message",
+        "font",
+        "sub_type",
+        "message",
+        "message_format",
+        "target_id",
+    )
 
     def __init__(self, message):
         super().__init__(message)
