@@ -1,7 +1,7 @@
 ## ncatbot
 
 ---
-![img.png](img.png)
+![img.png](assets/logo.png)
 <h4 align="center">基于NapCat的QQ机器人python快速开发框架</h4>
 <p align="center">
     <a href='https://gitee.com/li-yihao0328/nc_bot/stargazers'><img src='https://gitee.com/li-yihao0328/nc_bot/badge/star.svg?theme=dark' alt='star'></img></a>
@@ -98,7 +98,7 @@ bot.run(reload=True)
 
 ---
 这是一个基于这一项目的开源小机器人，百闻不如一见，有兴趣可以[进群](https://qm.qq.com/q/L6XGXYqL86)尝试一下。
-![img_1.png](example.png)
+![img_1.png](assets/example.png)
 ## 进阶应用
 
 ---
