@@ -4,3 +4,6 @@ httpx~=0.28.1
 psutil~=6.1.1
 tqdm~=4.67.1
 requests~=2.32.3
+Markdown~=3.7
+Pygments~=2.19.1
+pyppeteer~=2.0.0
