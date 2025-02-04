@@ -137,7 +137,7 @@ async def on_notice_message(msg):
 @bot.request_event()
 async def on_request_message(msg):
     print(msg)
-    
+
 bot.run(reload=True)
 ```
 **各消息类型的注册**
@@ -150,7 +150,7 @@ bot = BotClient()
 @bot.group_event(["text"])
 async def on_group_message(msg:GroupMessage):
     print(msg)
-    
+
 bot.run(reload=True)
 ```
 当你需要监听所有消息类型时，你可以这样注册：
@@ -162,7 +162,7 @@ bot = BotClient()
 @bot.group_event()
 async def on_group_message(msg:GroupMessage):
     print(msg)
-    
+
 bot.run(reload=True)
 ```
 需要注意的是：<mark>只要消息内存在文本，这个消息就会被监听，而不是纯文本才会被监听</mark>
@@ -177,6 +177,46 @@ bot.run(reload=True)
 作者：[木子](https://gitee.com/li-yihao0328)
 
 邮箱：yihaoli_2002@foxmail.com
+
+## 参与开发
+
+1. 拉取 git 仓库代码
+
+```
+git@github.com:liyihao1110/ncatbot.git
+```
+
+2. 安装依赖 (推荐使用 Anaconda 管理 Python 环境)
+
+```
+pip install -r requirements.txt
+```
+
+3. 安装 `pre-commit` 钩子(使用 conda 管理环境)
+
+- 安装 `pre-commit` 包
+  **以管理员身份运行终端**, 在 `base` 环境中执行:
+
+  ```
+  conda install pre-commit
+  ```
+
+-
+  **重启终端**, 打开项目环境, 切换到项目根目录, 执行:
+
+  ```
+  pre-commit install
+  ```
+
+  输出 `pre-commit installed at .git\hooks\pre-commit` 则执行成功.
+
+
+4. 进行开发
+
+开发完成在 `commit` 时 `pre-commit` 会自动检查代码规范并自动修复绝大部分错误. 如果无法修复则会报错, 需要手动修复. 无论自动或者手动, 修复错误后需要再次 `git add` 和 `git commit`.
+
+**第一次执行 commit 时请打开全局代理(TUN Mode && Global)或设置命令行代理以便拉去 github 上的文件.**
+
 ## 贡献者们
 
 ---
@@ -191,5 +231,3 @@ bot.run(reload=True)
 
 ---
 感谢 [NapCat](https://github.com/NapNeko/NapCatQQ)
-
-
