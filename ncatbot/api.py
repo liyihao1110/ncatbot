@@ -429,6 +429,18 @@ class BotAPI:
         else:
             return await self._http.post("/send_poke", {"user_id": user_id})
 
+    async def forward_friend_single_msg(
+        self, message_id: str, user_id: Union[int, str]
+    ):
+        """
+        :param message_id: 消息ID
+        :param user_id: 发送对象QQ号
+        :return: 转发好友消息
+        """
+        return await self._http.post(
+            "/forward_friend_single_msg", {"user_id": user_id, "message_id": message_id}
+        )
+
     # TODO: 群组接口
     async def set_group_kick(
         self,
@@ -822,6 +834,19 @@ class BotAPI:
         return await self._http.post(
             "/get_ai_record",
             {"group_id": group_id, "character": character, "text": text},
+        )
+
+    async def forward_group_single_msg(
+        self, message_id: str, group_id: Union[int, str]
+    ):
+        """
+        :param message_id: 消息ID
+        :param group_id: 群号
+        :return: 转发群聊消息
+        """
+        return await self._http.post(
+            "/forward_group_single_msg",
+            {"group_id": group_id, "message_id": message_id},
         )
 
     # TODO: 系统接口
