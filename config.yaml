@@ -1,10 +1,5 @@
-ws:
-  Protocol: ws
-  ip: 127.0.0.1
-  port: 3001
-
-http:
-  Protocol: http
-  ip: 127.0.0.1
-  port: 3000
-  sync: true
+ws_uri: ws://127.0.0.1:3001
+hp_uri: http://127.0.0.1:3000
+np_uri: https://github.com/NapNeko/NapCatQQ/releases/download/v4.4.16/NapCat.Shell.zip
+bt_uin: 123456 # 机器人 qq 号
+token: your token # token, 似乎不填也行
