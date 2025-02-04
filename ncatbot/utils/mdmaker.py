@@ -1,6 +1,5 @@
 import os
 import tempfile
-import winreg
 import platform
 import markdown
 
@@ -22,6 +21,7 @@ def get_chrome_path():
     system = platform.system()
 
     if system == "Windows":
+        import winreg
         registry_keys = [
             r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe",
             r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe",
