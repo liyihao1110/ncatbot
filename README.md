@@ -14,13 +14,13 @@
     <a href="https://qm.qq.com/q/S2zIli2qsu"><img src="https://img.shields.io/badge/木子机器人(可添加体验)-3786498591-brightgreen.svg"></a>
 </p>
 
-ncatbot是一个开源的基于NapCat的QQ个人号PYTHON库，使用python调用NTQQ。
+ncatbot 是一个开源的基于 **[NapCat](https://github.com/NapNeko/NapCatQQ)** 的 QQ 个人号 Python 库，使用 Python 调用 NTQQ。
 
-使用简单的代码，你就可以完成一个能够处理所有信息的QQ机器人。
+使用简单的代码，你就可以完成一个能够处理所有信息的 QQ 机器人。
 
-项目内置了NapCat一键启动。
+项目内置了 NapCat 一键启动。
 
-希望这个项目能够帮助你扩展你的个人的QQ号、方便自己的生活。
+希望这个项目能够帮助你扩展你的个人的 QQ 号、方便自己的生活。
 
 ## 更新进度
 
@@ -31,23 +31,24 @@ ncatbot是一个开源的基于NapCat的QQ个人号PYTHON库，使用python调�
 ## 安装
 
 ---
-可以通过本命令安装ncatbot：
+可以通过本命令安装 ncatbot：
 ```commandline
 git clone https://gitee.com/li-yihao0328/nc_bot.git
 ```
 ## 简单入门实例
 
 ---
-在开始开发机器人之前，你需要先配置config.yaml文件，它可以帮助你自启动napcat和项目内部指令。
+在开始开发机器人之前，你需要先配置 config.yaml 文件，它可以帮助你自启动 napcat 和项目内部指令。
 这是一份配置文件示例，你可以根据你的实际情况进行修改：
+
 ```yaml
 ws_uri: WEBSOCKET地址,例如:ws://127.0.0.1:3001
 hp_uri: HTTP地址,例如:http://127.0.0.1:3000
 np_uri: https://github.com/NapNeko/NapCatQQ/releases/download/v4.4.16/NapCat.Shell.zip
-bt_uin: 3476897254
-token: 密钥
+bt_uin: 123456 # 机器人 qq 号
+token: your token # token, 可以不填
 ```
-当你填写好了config.yaml之后，你就可以直接运行以下代码:
+当你填写好了 config.yaml 之后，你就可以直接运行以下代码:
 ```python
 from ncatbot.client import BotClient
 from ncatbot.logger import get_log
@@ -57,7 +58,7 @@ bot = BotClient()
 
 bot.run(reload=False)
 ```
-运行后，napcat将会自启动，并且根据config.yaml内的配置对napcat进行配置。
+运行后，napcat 将会自启动，并且根据 config.yaml 内的配置对napcat进行配置。
 
 有了ncatbot，运行后你可以使用这些指令：
 ```python
@@ -73,7 +74,7 @@ bot.run(reload=True)# reload=True 表示你不需要运行启动NapCat
 如果你想要回复发给机器人的文本消息，只需要这样：
 ```python
 from ncatbot.client import BotClient
-from ncatbot.message import GroupMessage,PrivateMessage
+from ncatbot.message import GroupMessage, PrivateMessage
 from ncatbot.logger import get_log
 
 _log = get_log()
@@ -83,7 +84,7 @@ bot = BotClient()
 async def on_group_message(msg:GroupMessage):
     _log.info(msg)
     if msg.raw_message == "test":
-        await bot.api.send_group_msg(group_id=msg.group_id,text="test")
+        await bot.api.post_group_msg(group_id=msg.group_id, text="test")
 
 @bot.private_event()
 async def on_private_message(msg:PrivateMessage):
@@ -103,9 +104,9 @@ bot.run(reload=True)
 ---
 **特殊的字典使用方式**
 
-通过打印ncatbot的用户以及注册消息的参数，可以发现这些值都是字典。
+通过打印 ncatbot 的用户以及注册消息的参数，可以发现这些值都是字典。
 
-但实际上ncatbot精心构造了群聊和私聊的键值，使得字典的使用更加方便，不过notice和request事件的键值则需要使用字典的键值访问。
+但实际上 ncatbot 精心构造了群聊和私聊的键值，使得字典的使用更加方便，不过notice和request事件的键值则需要使用字典的键值访问。
 
 群聊和私聊所有的键值都可以通过这一方式访问：
 ```python
@@ -116,10 +117,10 @@ async def on_group_message(msg:GroupMessage):
 ```
 **各类型消息的注册**
 
-ncatbot支持了napcat客户端所有的事件，包括群聊、私聊、通知、请求等。
+ncatbot 支持了 napcat 客户端所有的事件，包括群聊、私聊、通知、请求等。
 ```python
 from ncatbot.client import BotClient
-from ncatbot.message import GroupMessage,PrivateMessage
+from ncatbot.message import GroupMessage, PrivateMessage
 
 bot = BotClient()
 
@@ -170,7 +171,7 @@ bot.run(reload=True)
 ## 如何获取帮助
 
 ---
-欢迎[进群](https://qm.qq.com/q/L6XGXYqL86)和提issue
+欢迎[进群](https://qm.qq.com/q/L6XGXYqL86)和提 Issue.
 ## 联系作者
 
 ---
@@ -223,9 +224,10 @@ pip install -r requirements.txt
 [liyihao1110](https://github.com/liyihao1110);
 [gaojj2000](https://github.com/gaojj2000);
 [Isaaczhr](https://github.com/Isaaczhr);
-[Fish-LP](https://github.com/Fish-LP)
+[Fish-LP](https://github.com/Fish-LP);
+[huan-yp](https://github.com/huan-yp);
 
-如果你有好的idea，欢迎提issue和pr！
+如果你有好的 Idea, 欢迎提 Issue 和 PR!
 
 ## 致谢
 
