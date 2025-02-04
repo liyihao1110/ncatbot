@@ -2,6 +2,7 @@ import os
 
 from .http import Route, WsRoute
 from .status import Status
+from .utils.mdmaker import md_maker
 
 from typing import Union
 
@@ -14,6 +15,10 @@ def convert(i, message_type):
         return {'type': message_type, 'data': {'file': f'file:///{os.path.abspath(i)}'}}
     else:
         return {'type': message_type, 'data': {'file': f'file:///{i}'}}
+
+def read_file(file_path)->any:
+    with open(file_path, 'r', encoding='utf-8') as f:
+        return f.read()
 
 class BotAPI:
     def __init__(self, use_ws: bool):
@@ -1032,6 +1037,7 @@ class BotAPI:
                              text: str = None,
                              face: int = None,
                              json: str = None,
+                             markdown: str = None,
                              at: Union[int, str] = None,
                              reply: Union[int, str] = None,
                              music: Union[list, dict] = None,
@@ -1043,6 +1049,7 @@ class BotAPI:
         :param text: 文本
         :param face: 表情
         :param json: JSON
+        :param markdown: Markdown
         :param at: at
         :param reply: 回复
         :param music: 音乐
@@ -1057,6 +1064,8 @@ class BotAPI:
             message.append({'type': 'face', 'data': {'id': face}})
         if json:
             message.append({'type': 'json', 'data': {'data': json}})
+        if markdown:
+            message.append(convert(await md_maker(markdown), 'image'))
         if at:
             message.append({'type': 'at', 'data': {'qq': at}})
         if reply:
@@ -1081,6 +1090,7 @@ class BotAPI:
                                text: str = None,
                                face: int = None,
                                json: str = None,
+                               markdown: str = None,
                                reply: Union[int, str] = None,
                                music: Union[list, dict] = None,
                                dice:bool = False,
@@ -1091,6 +1101,7 @@ class BotAPI:
         :param text: 文本
         :param face: 表情
         :param json: JSON
+        :param markdown: Markdown
         :param reply: 回复
         :param music: 音乐
         :param dice: 骰子
@@ -1104,6 +1115,8 @@ class BotAPI:
             message.append({'type': 'face', 'data': {'id': face}})
         if json:
             message.append({'type': 'json', 'data': {'data': json}})
+        if markdown:
+            message.append(convert(await md_maker(markdown), 'image'))
         if reply:
             message.insert(0, {'type': 'reply', 'data': {'id': reply}})
         if music:
@@ -1127,6 +1140,7 @@ class BotAPI:
                               record: str = None,
                               video: str = None,
                               file: str = None,
+                              markdown: str = None,
                               ):
         """
         :param group_id: 群号
@@ -1134,6 +1148,7 @@ class BotAPI:
         :param record: 语音
         :param video: 视频
         :param file: 文件
+        :param markdown: Markdown
         :return: 发送群文件
         """
         message: list = []
@@ -1146,6 +1161,8 @@ class BotAPI:
             message.append(convert(video, 'video'))
         elif file:
             message.append(convert(file, 'file'))
+        elif markdown:
+            message.append(convert(await md_maker(read_file(markdown if os.path.isabs(markdown) else os.path.join(os.getcwd(), markdown))), 'image'))
         else:
             return {'code': 0, 'msg': '请至少选择一种文件'}
 
@@ -1158,6 +1175,7 @@ class BotAPI:
                               record: str = None,
                               video: str = None,
                               file: str = None,
+                              markdown: str = None,
                               ):
         """
         :param user_id: QQ号
@@ -1165,6 +1183,7 @@ class BotAPI:
         :param record: 语音
         :param video: 视频
         :param file: 文件
+        :param markdown: Markdown
         :return: 发送私聊文件
         """
         message: list = []
@@ -1177,6 +1196,8 @@ class BotAPI:
             message.append(convert(video, 'video'))
         elif file:
             message.append(convert(file, 'file'))
+        elif markdown:
+            message.append(convert(await md_maker(read_file(markdown if os.path.isabs(markdown) else os.path.join(os.getcwd(), markdown))), 'image'))
         else:
             return {'code': 0, 'msg': '请至少选择一种文件'}
 
