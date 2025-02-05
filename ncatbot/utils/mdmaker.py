@@ -2,6 +2,7 @@ import os
 import tempfile
 import platform
 import markdown
+from pathlib import Path
 
 from pygments.formatters import HtmlFormatter
 from pyppeteer import launch
@@ -54,6 +55,24 @@ def get_chrome_path():
         which_chromium = os.popen('which chromium').read().strip()
         if which_chromium and os.path.exists(which_chromium):
             return which_chromium
+    if system == "Darwin":  # macOS 系统
+        chrome_paths = [
+            Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
+            Path("/Applications/Chromium.app/Contents/MacOS/Chromium")
+        ]
+        for path in chrome_paths:
+            if path.exists():
+                return str(path)
+        
+        # 如果没有找到，则检查 pyppeteer 下载的 Chromium
+        local_chromium_path = Path.home() / "Library/Application Support/pyppeteer/local-chromium"
+        if local_chromium_path.exists():
+            chrome_folders = list(local_chromium_path.iterdir())
+            if chrome_folders:  # 确保有文件夹
+                chrome_folder = chrome_folders[0]  # 取第一个文件夹
+                chrome_executable = chrome_folder / "chrome-mac" / "Chromium.app" / "Contents" / "MacOS" / "Chromium"
+                if chrome_executable.exists():
+                    return str(chrome_executable)
 
     return None
 
@@ -92,13 +111,13 @@ def markdown_to_html(md_content, external_css_urls=None, custom_css=""):
 """
     return html
 
-async def html_to_png(html_content, output_png, chrome_executable):
+async def html_to_png(html_content, output_png, chrome_executable=None):
     """
     利用 pyppeteer 启动 Chrome，将 HTML 渲染后保存为 PNG 图片。
     
     :param html_content: HTML 内容字符串
     :param output_png: 输出 PNG 文件的路径
-    :param chrome_executable: Chrome 浏览器的可执行文件路径
+    :param chrome_executable: Chrome 浏览器的可执行文件路径（可选）
     """
     with tempfile.NamedTemporaryFile('w', delete=False, suffix='.html', encoding='utf-8') as f:
         html_file = f.name
@@ -106,11 +125,15 @@ async def html_to_png(html_content, output_png, chrome_executable):
 
     file_url = 'file:///' + html_file.replace('\\', '/')
 
-    browser = await launch({
-        'executablePath': chrome_executable,
+    # 启动浏览器，若未指定 chrome_executable，则使用 pyppeteer 默认的 Chromium
+    launch_options = {
         'headless': True,
         'args': ['--no-sandbox']
-    })
+    }
+    if chrome_executable:
+        launch_options['executablePath'] = chrome_executable
+    
+    browser = await launch(launch_options)
     page = await browser.newPage()
 
     await page.goto(file_url, {'waitUntil': 'networkidle0'})
@@ -119,8 +142,9 @@ async def html_to_png(html_content, output_png, chrome_executable):
     await page.setViewport({'width': 1280, 'height': content_height})
 
     await page.screenshot({'path': output_png, 'fullPage': False})
-    
+
     await browser.close()
+
     os.remove(html_file)
 
 
@@ -196,11 +220,10 @@ table {{
     html_content = markdown_to_html(md_content, external_css_urls=external_css, custom_css=custom_css)
     chrome_path = get_chrome_path()
     if chrome_path is None:
-        _log.error("未在注册表中找到 Chrome 浏览器路径，请确认已安装 Chrome")
-        raise Exception("未找到 Chrome 浏览器路径")
+        _log.info("未在注册表中找到 Chrome 浏览器路径，尝试自动安装Chromium")
+        # raise Exception("未找到 Chrome 浏览器路径")
     else:
         _log.debug(f"Chrome 路径：{chrome_path}")
-
     output_png = os.path.join(tempfile.gettempdir(), "markdown.png")
     await html_to_png(html_content, output_png, chrome_path)
     return output_png
