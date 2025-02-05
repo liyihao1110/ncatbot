@@ -119,7 +119,7 @@ class BotClient:
                 else:
                     _set.nap_cat = os.path.join(os.getcwd(), "NapCatFiles")
             else:
-                _log.info("Napcat客户端路径不存在，请检查配置文件。")
+                _log.info("Napcat客户端路径或下载地址不存在，请检查np_uri配置。")
                 return
 
             os.chdir(os.path.join(_set.nap_cat, "config"))
