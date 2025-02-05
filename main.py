@@ -9,6 +9,7 @@ bot = BotClient()
 
 @bot.group_event()
 async def on_group_message(msg: GroupMessage):
+    _log.info(msg)
     if msg.raw_message == "test1":
         # 使用 MessageChain 发送复合消息
         message = MessageChain(
@@ -23,6 +24,7 @@ async def on_group_message(msg: GroupMessage):
 
 @bot.private_event()
 async def on_private_message(msg: PrivateMessage):
+    _log.info(msg)
     if msg.raw_message == "test":
         await bot.api.post_private_msg(
             msg.user_id, text="你好,", face=1, reply=msg.message_id
