@@ -51,8 +51,13 @@ class Websocket:
                     _log.info("websocket连接已建立")
                     while True:
                         message = await ws.recv()
-                        await self.receive(message)
+                        try:
+                            await self.receive(message) # 捕获receive内部的异常，不影响程序持续运行
+                        except Exception as e:
+                            _log.error(f"处理消息时发生错误: {e}")
                 except Exception as e:
+                    _log.error(f"WebSocket 接收消息异常: {e}")
                     raise e
         except Exception as e:
+            _log.error(f"WebSocket 连接错误: {e}")
             raise e
