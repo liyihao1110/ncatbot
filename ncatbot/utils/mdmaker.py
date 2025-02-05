@@ -75,7 +75,7 @@ def markdown_to_html(md_content, external_css_urls=None, custom_css=""):
     return html
 
 
-async def html_to_png(html_content, output_png, chrome_executable):
+def html_to_png(html_content, output_png, chrome_executable):
     """
     利用 pyppeteer 启动 Chrome，将 HTML 渲染后保存为 PNG 图片。
 
@@ -94,30 +94,30 @@ async def html_to_png(html_content, output_png, chrome_executable):
     file_url = "file:///" + html_file.replace("\\", "/")
 
     # 启动浏览器（指定本地 Chrome 路径）
-    browser = await launch(
+    browser = launch(
         {
             "executablePath": chrome_executable,
             "headless": True,
             "args": ["--no-sandbox"],
         }
     )
-    page = await browser.newPage()
+    page = browser.newPage()
 
     # 打开 HTML 文件并等待网络空闲
-    await page.goto(file_url, {"waitUntil": "networkidle0"})
+    page.goto(file_url, {"waitUntil": "networkidle0"})
 
     # 动态计算页面内容高度，调整 viewport 高度，防止截图时有大量空白区域
-    content_height = await page.evaluate("document.documentElement.scrollHeight")
-    await page.setViewport({"width": 1280, "height": content_height})
+    content_height = page.evaluate("document.documentElement.scrollHeight")
+    page.setViewport({"width": 1280, "height": content_height})
 
     # 截图（fullPage 为 False，因为 viewport 已设置为内容高度）
-    await page.screenshot({"path": output_png, "fullPage": False})
+    page.screenshot({"path": output_png, "fullPage": False})
 
-    await browser.close()
+    browser.close()
     os.remove(html_file)
 
 
-async def md_maker(md_content):
+def md_maker(md_content):
     """
     将 Markdown 文本转换为 HTML，并生成 PNG 图片。
     :param md_content: Markdown 文本内容
@@ -197,5 +197,5 @@ table {{
         _log.debug(f"Chrome 路径：{chrome_path}")
 
     output_png = os.path.join(tempfile.gettempdir(), "markdown.png")
-    await html_to_png(html_content, output_png, chrome_path)
+    html_to_png(html_content, output_png, chrome_path)
     return output_png

@@ -81,13 +81,13 @@ _log = get_log()
 bot = BotClient()
 
 @bot.group_event()
-async def on_group_message(msg:GroupMessage):
+def on_group_message(msg:GroupMessage):
     _log.info(msg)
     if msg.raw_message == "test":
         await bot.api.post_group_msg(group_id=msg.group_id, text="test")
 
 @bot.private_event()
-async def on_private_message(msg:PrivateMessage):
+def on_private_message(msg:PrivateMessage):
     _log.info(msg)
     # 私聊同理
 
@@ -112,7 +112,7 @@ bot.run(reload=True)
 群聊和私聊所有的键值都可以通过这一方式访问：
 ```python
 @bot.group_event()
-async def on_group_message(msg:GroupMessage):
+def on_group_message(msg:GroupMessage):
     # 等价于print(msg["raw_message"])
     print(msg.raw_message)
 ```
@@ -126,18 +126,18 @@ from ncatbot.message import GroupMessage, PrivateMessage
 bot = BotClient()
 
 @bot.group_event()
-async def on_group_message(msg:GroupMessage):
+def on_group_message(msg:GroupMessage):
     print(msg)
 
 @bot.private_event()
-async def on_private_message(msg:PrivateMessage):
+def on_private_message(msg:PrivateMessage):
     print(msg)
 
 @bot.notice_event()
-async def on_notice_message(msg):
+def on_notice_message(msg):
     print(msg)
 @bot.request_event()
-async def on_request_message(msg):
+def on_request_message(msg):
     print(msg)
 
 bot.run(reload=True)
@@ -150,7 +150,7 @@ from ncatbot.message import GroupMessage
 bot = BotClient()
 
 @bot.group_event(["text"])
-async def on_group_message(msg:GroupMessage):
+def on_group_message(msg:GroupMessage):
     print(msg)
 
 bot.run(reload=True)
@@ -162,7 +162,7 @@ from ncatbot.message import GroupMessage
 bot = BotClient()
 
 @bot.group_event()
-async def on_group_message(msg:GroupMessage):
+def on_group_message(msg:GroupMessage):
     print(msg)
 
 bot.run(reload=True)

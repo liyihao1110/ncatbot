@@ -1,4 +1,3 @@
-import asyncio
 import json
 import os
 import time
@@ -50,32 +49,31 @@ class BotClient:
         self._request_event_handler = func
         return func
 
-    async def handle_group_event(self, msg: dict):
+    def handle_group_event(self, msg: dict):
         if self._group_event_handler:
             func, types = self._group_event_handler
             if types is None or any(i["type"] in types for i in msg["message"]):
                 msg = GroupMessage(msg)
-                await func(msg)
+                func(msg)
 
-    async def handle_private_event(self, msg: dict):
+    def handle_private_event(self, msg: dict):
         if self._private_event_handler:
             func, types = self._private_event_handler
             if types is None or any(i["type"] in types for i in msg["message"]):
                 msg = PrivateMessage(msg)
-                await func(msg)
+                func(msg)
 
-    async def handle_notice_event(self, msg: dict):
+    def handle_notice_event(self, msg: dict):
         if self._notice_event_handler:
-            await self._notice_event_handler(msg)
+            self._notice_event_handler(msg)
 
-    async def handle_request_event(self, msg: dict):
+    def handle_request_event(self, msg: dict):
         if self._request_event_handler:
-            await self._request_event_handler(msg)
+            self._request_event_handler(msg)
 
     def run(self, reload=False):
         if reload:
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(Websocket(self).ws_connect())
+            Websocket(self).ws_connect()
         elif not reload:
             if config.np_uri.startswith("https"):
                 if not os.path.exists("NapcatFiles"):
@@ -183,5 +181,4 @@ class BotClient:
                 os.system(f"{config.bot_uin}_quickLogin.bat")
             os.chdir(base_path)
             time.sleep(3)
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(Websocket(self).ws_connect())
+            Websocket(self).ws_connect()
