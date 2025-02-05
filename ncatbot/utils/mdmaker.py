@@ -128,7 +128,7 @@ async def html_to_png(html_content, output_png, chrome_executable=None):
     # 启动浏览器，若未指定 chrome_executable，则使用 pyppeteer 默认的 Chromium
     launch_options = {
         'headless': True,
-        'args': ['--no-sandbox']
+        'args': ['--no-sandbox', '--disable-cache']
     }
     if chrome_executable:
         launch_options['executablePath'] = chrome_executable
@@ -144,6 +144,7 @@ async def html_to_png(html_content, output_png, chrome_executable=None):
     await page.screenshot({'path': output_png, 'fullPage': False})
 
     await browser.close()
+    _log.info("chromium is killed.")
 
     os.remove(html_file)
 
@@ -223,7 +224,7 @@ table {{
         _log.info("未在注册表中找到 Chrome 浏览器路径，尝试自动安装Chromium")
         # raise Exception("未找到 Chrome 浏览器路径")
     else:
-        _log.debug(f"Chrome 路径：{chrome_path}")
+        _log.info(f"Chrome 路径：{chrome_path}")
     output_png = os.path.join(tempfile.gettempdir(), "markdown.png")
     await html_to_png(html_content, output_png, chrome_path)
     return output_png
