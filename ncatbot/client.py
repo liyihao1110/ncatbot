@@ -7,20 +7,20 @@ import zipfile
 import requests
 from tqdm import tqdm
 
-from .api import BotAPI
-from .config import SetConfig
-from .gateway import Websocket
-from .logger import get_log
-from .message import GroupMessage, PrivateMessage
+from ncatbot.api import BotAPI
+from ncatbot.config import config
+from ncatbot.gateway import Websocket
+from ncatbot.logger import get_log
+from ncatbot.message import GroupMessage, PrivateMessage
 
 _log = get_log("ncatbot")
-_set = SetConfig()
 
 base_path = os.getcwd()
 
 
 class BotClient:
-    def __init__(self, use_ws=True):
+    def __init__(self, use_ws=True, config_path=None):
+        config.update(config_path)
         self.api = BotAPI(use_ws)
 
         self._group_event_handler = None
@@ -77,11 +77,11 @@ class BotClient:
             loop = asyncio.get_event_loop()
             loop.run_until_complete(Websocket(self).ws_connect())
         elif not reload:
-            if _set.np_uri.startswith("https"):
+            if config.np_uri.startswith("https"):
                 if not os.path.exists("NapcatFiles"):
                     _log.info("正在下载Napcat客户端，请稍等...")
                     try:
-                        r = requests.get(_set.np_uri, stream=True)
+                        r = requests.get(config.np_uri, stream=True)
                         total_size = int(r.headers.get("content-length", 0))
                         progress_bar = tqdm(
                             total=total_size,
@@ -115,25 +115,27 @@ class BotClient:
                         _log.info("解压Napcat客户端失败，请检查Napcat客户端是否正确。")
                         _log.info("错误信息：", e)
                         return
-                    _set.nap_cat = os.path.join(os.getcwd(), "NapCatFiles")
+                    config.nap_cat = os.path.join(os.getcwd(), "NapCatFiles")
                 else:
-                    _set.nap_cat = os.path.join(os.getcwd(), "NapCatFiles")
+                    config.nap_cat = os.path.join(os.getcwd(), "NapCatFiles")
 
-            os.chdir(os.path.join(_set.nap_cat, "config"))
-            http_enable = False if _set.hp_uri == "" else True
-            ws_enable = False if _set.ws_uri == "" else True
+            os.chdir(os.path.join(config.nap_cat, "config"))
+            http_enable = False if config.hp_uri == "" else True
+            ws_enable = False if config.ws_uri == "" else True
             expected_data = {
                 "network": {
                     "httpServers": [
                         {
                             "name": "httpServer",
                             "enable": http_enable,
-                            "port": int(_set.http_port),
-                            "host": str(_set.http_ip),
+                            "port": int(config.http_port),
+                            "host": str(config.http_ip),
                             "enableCors": True,
                             "enableWebsocket": True,
                             "messagePostFormat": "array",
-                            "token": str(_set.token) if _set.token is not None else "",
+                            "token": (
+                                str(config.token) if config.token is not None else ""
+                            ),
                             "debug": False,
                         }
                     ],
@@ -141,11 +143,13 @@ class BotClient:
                         {
                             "name": "WsServer",
                             "enable": ws_enable,
-                            "host": str(_set.ws_ip),
-                            "port": int(_set.ws_port),
+                            "host": str(config.ws_ip),
+                            "port": int(config.ws_port),
                             "messagePostFormat": "array",
                             "reportSelfMessage": False,
-                            "token": str(_set.token) if _set.token is not None else "",
+                            "token": (
+                                str(config.token) if config.token is not None else ""
+                            ),
                             "enableForcePushEvent": True,
                             "debug": False,
                             "heartInterval": 30000,
@@ -157,26 +161,26 @@ class BotClient:
                 "parseMultMsg": False,
             }
             with open(
-                "onebot11_" + str(_set.bot_uin) + ".json", "w", encoding="utf-8"
+                "onebot11_" + str(config.bot_uin) + ".json", "w", encoding="utf-8"
             ) as f:
                 json.dump(expected_data, f, indent=4, ensure_ascii=False)
-            os.chdir(_set.nap_cat) and os.system(
-                f"copy quickLoginExample.bat {_set.bot_uin}_quickLogin.bat"
+            os.chdir(config.nap_cat) and os.system(
+                f"copy quickLoginExample.bat {config.bot_uin}_quickLogin.bat"
             )
             if os.system("ver") == 0:
                 # win11
-                content = f"@echo off\n./launcher.bat {_set.bot_uin}"
-                with open(f"{_set.bot_uin}_quickLogin.bat", "w") as f:
+                content = f"@echo off\n./launcher.bat {config.bot_uin}"
+                with open(f"{config.bot_uin}_quickLogin.bat", "w") as f:
                     f.write(content)
                     f.close()
-                os.system(f"{_set.bot_uin}_quickLogin.bat")
+                os.system(f"{config.bot_uin}_quickLogin.bat")
             else:
                 # win10
-                content = f"@echo off\n./launcher-win10.bat {_set.bot_uin}"
-                with open(f"{_set.bot_uin}_quickLogin.bat", "w") as f:
+                content = f"@echo off\n./launcher-win10.bat {config.bot_uin}"
+                with open(f"{config.bot_uin}_quickLogin.bat", "w") as f:
                     f.write(content)
                     f.close()
-                os.system(f"{_set.bot_uin}_quickLogin.bat")
+                os.system(f"{config.bot_uin}_quickLogin.bat")
             os.chdir(base_path)
             time.sleep(3)
             loop = asyncio.get_event_loop()

@@ -2,15 +2,14 @@ import json
 
 import websockets
 
-from .config import SetConfig
-from .logger import get_log
+from ncatbot.config import config
+from ncatbot.logger import get_log
 
 _log = get_log("ncatbot")
-_set = SetConfig()
 
 
 class Websocket:
-    def __init__(self, client):
+    def __init__(self, client, config=None):
         self.client = client
 
     async def receive(self, message):
@@ -37,13 +36,13 @@ class Websocket:
     async def ws_connect(self):
         try:
             async with websockets.connect(
-                uri=_set.ws_uri + "/event",
+                uri=config.ws_uri + "/event",
                 extra_headers=(
                     {
                         "Content-Type": "application/json",
-                        "Authorization": f"Bearer {_set.token}",
+                        "Authorization": f"Bearer {config.token}",
                     }
-                    if _set.token
+                    if config.token
                     else {"Content-Type": "application/json"}
                 ),
             ) as ws:
