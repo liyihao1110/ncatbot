@@ -27,6 +27,68 @@ class BotAPI:
         self.__message = []
         self._http = WsRoute() if use_ws else Route()
 
+    async def _construct_forward_message(self, messages):
+        def decode_summary(report):
+            def decode_single_message(message):
+                if message["type"] == "text":
+                    return message["data"]["text"]
+
+                if message["type"] == "image":
+                    if (
+                        "summary" in message["data"]
+                        and message["data"]["summary"] != ""
+                    ):
+                        return message["data"]["summary"]
+                    return "[图片]"
+
+                if message["type"] == "forward":
+                    return "[聊天记录]"
+
+            result = ""
+            for message in report["message"]:
+                result += decode_single_message(message)
+            return result
+
+        message_content, reports, news = [], [], []
+        for msg_id in messages:
+            report = await self.get_msg(msg_id)
+            report = report["data"]
+            reports.append(report)
+            node = {
+                "type": "node",
+                "data": {
+                    "nickname": report["sender"]["nickname"],
+                    "user_id": report["user_id"],
+                    "id": msg_id,
+                },
+            }
+            message_content.append(node)
+            news.append(
+                {"text": report["sender"]["nickname"] + ": " + decode_summary(report)}
+            )
+
+        if len(news) > 4:
+            news = news[:4]
+
+        if report["message_type"] == "gourp":
+            target = "群聊"
+        else:
+            participants = list(
+                set([record["sender"]["nickname"] for record in reports])
+            )
+            if len(participants) == 1:
+                target = participants[0]
+            else:
+                assert len(participants) == 2
+                target = participants[0] + "和" + participants[1]
+
+        return {
+            "messages": message_content,
+            "source": f"{target}的聊天记录",
+            "summary": f"查看{len(message_content)}条转发消息",
+            "news": news,
+        }
+
     # TODO: 用户接口
     async def set_qq_profile(self, nickname: str, personal_note: str, sex: str):
         """
@@ -441,6 +503,18 @@ class BotAPI:
             "/forward_friend_single_msg", {"user_id": user_id, "message_id": message_id}
         )
 
+    async def send_private_forward_msg(
+        self, user_id: Union[int, str], messages: list[str]
+    ):
+        """
+        :param user_id: 发送对象QQ号
+        :param messages: 消息列表
+        :return: 合并转发私聊消息
+        """
+        payload = await self._construct_forward_message(messages)
+        payload["user_id"] = user_id
+        return await self._http.post("/send_private_forward_msg", payload)
+
     # TODO: 群组接口
     async def set_group_kick(
         self,
@@ -848,6 +922,22 @@ class BotAPI:
             "/forward_group_single_msg",
             {"group_id": group_id, "message_id": message_id},
         )
+
+    async def send_group_forward_msg(
+        self, group_id: Union[int, str], messages: list[str]
+    ):
+        """
+        :param group_id: 群号
+        :param messages: 消息列表
+        :return: 合并转发的群聊消息
+        """
+        if len(messages) == 0:
+            return None
+
+        payload = await self._construct_forward_message(messages)
+        payload["group_id"] = group_id
+
+        return await self._http.post("/send_private_forward_msg", payload)
 
     # TODO: 系统接口
     async def get_client_key(self):
