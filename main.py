@@ -1,4 +1,5 @@
 from ncatbot.client import BotClient
+from ncatbot.element import At, MessageChain, Text
 from ncatbot.logger import get_log
 from ncatbot.message import GroupMessage, PrivateMessage
 
@@ -9,6 +10,16 @@ bot = BotClient()
 @bot.group_event()
 async def on_group_message(msg: GroupMessage):
     _log.info(msg)
+    if msg.raw_message == "test1":
+        # 使用 MessageChain 发送复合消息
+        message = MessageChain(
+            [
+                Text("你好！"),
+                At(msg.user_id),
+                Text("\n这是一个测试消息"),
+            ]
+        )
+        await bot.api.send_group_msg(group_id=msg.group_id, message=message)
 
 
 @bot.private_event()
