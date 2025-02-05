@@ -139,7 +139,7 @@ async def html_to_png(html_content, output_png, chrome_executable=None):
     await page.goto(file_url, {'waitUntil': 'networkidle0'})
 
     content_height = await page.evaluate('document.documentElement.scrollHeight')
-    await page.setViewport({'width': 1280, 'height': content_height})
+    await page.setViewport({'width': 1280, 'height': content_height}) # 如果觉得截取出来的图片过宽，修改width即可
 
     await page.screenshot({'path': output_png, 'fullPage': False})
 
