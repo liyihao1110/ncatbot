@@ -1,6 +1,22 @@
 import os
 from typing import Union
 
+from ncatbot.element import (
+    At,
+    CustomMusic,
+    Dice,
+    Face,
+    File,
+    Image,
+    Json,
+    MessageChain,
+    Music,
+    Record,
+    Reply,
+    Rps,
+    Text,
+    Video,
+)
 from ncatbot.http import Route, WsRoute
 from ncatbot.status import Status
 from ncatbot.utils.mdmaker import md_maker
@@ -1144,6 +1160,8 @@ class BotAPI:
         music: Union[list, dict] = None,
         dice: bool = False,
         rps: bool = False,
+        image: str = None,
+        rtf: MessageChain = None,
     ):
         """
         :param group_id: 群号
@@ -1156,33 +1174,45 @@ class BotAPI:
         :param music: 音乐
         :param dice: 骰子
         :param rps: 猜拳
+        :param image: 图片
+        :param rtf: 富文本(消息链)
         :return: 发送群消息
         """
         message: list = []
         if text:
-            message.append({"type": "text", "data": {"text": text}})
+            message.append(Text(text))
         if face:
-            message.append({"type": "face", "data": {"id": face}})
+            message.append(Face(face))
         if json:
-            message.append({"type": "json", "data": {"data": json}})
+            message.append(Json(json))
         if markdown:
             message.append(convert(await md_maker(markdown), "image"))
         if at:
-            message.append({"type": "at", "data": {"qq": at}})
+            message.append(At(at))
         if reply:
-            message.insert(0, {"type": "reply", "data": {"id": reply}})
+            message.insert(0, Reply(reply))
         if music:
             if isinstance(music, list):
-                message.append(
-                    {"type": "music", "data": {"type": music[0], "id": music[1]}}
-                )
+                message.append(Music(music[0], music[1]))
             elif isinstance(music, dict):
-                message.append({"type": "music", "data": music})
+                message.append(CustomMusic(**music))
         if dice:
-            message.append({"type": "dice"})
+            message.append(Dice())
         if rps:
-            message.append({"type": "rps"})
+            message.append(Rps())
+        if image:
+            message.append(Image(image))
+        if rtf:
+            # 检查是否包含基本元素(at/图片/文本/表情)
+            basic_types = {"at", "image", "text", "face"}  # 定义基本元素类型
+            basic_elems = [elem for elem in rtf.elements if elem["type"] in basic_types]
 
+            if basic_elems:  # 如果存在基本元素
+                # 只添加基本元素
+                message.extend(basic_elems)
+            else:
+                # 如果没有基本元素，才使用所有元素
+                message.extend(rtf.elements)
         if not message:
             return {"code": 0, "msg": "消息不能为空"}
         params = {"group_id": group_id, "message": message}
@@ -1199,6 +1229,8 @@ class BotAPI:
         music: Union[list, dict] = None,
         dice: bool = False,
         rps: bool = False,
+        image: str = None,
+        rtf: MessageChain = None,
     ):
         """
         :param user_id: QQ号
@@ -1210,31 +1242,43 @@ class BotAPI:
         :param music: 音乐
         :param dice: 骰子
         :param rps: 猜拳
+        :param image: 图片
+        :param rtf: 富文本(消息链)
         :return: 发送私聊消息
         """
         message: list = []
         if text:
-            message.append({"type": "text", "data": {"text": text}})
+            message.append(Text(text))
         if face:
-            message.append({"type": "face", "data": {"id": face}})
+            message.append(Face(face))
         if json:
-            message.append({"type": "json", "data": {"data": json}})
+            message.append(Json(json))
         if markdown:
             message.append(convert(await md_maker(markdown), "image"))
         if reply:
-            message.insert(0, {"type": "reply", "data": {"id": reply}})
+            message.insert(0, Reply(reply))
         if music:
             if isinstance(music, list):
-                message.append(
-                    {"type": "music", "data": {"type": music[0], "id": music[1]}}
-                )
+                message.append(Music(music[0], music[1]))
             elif isinstance(music, dict):
-                message.append({"type": "music", "data": music})
+                message.append(CustomMusic(**music))
         if dice:
-            message.append({"type": "dice"})
+            message.append(Dice())
         if rps:
-            message.append({"type": "rps"})
+            message.append(Rps())
+        if image:
+            message.append(Image(image))
+        if rtf:
+            # 检查是否包含基本元素(at/图片/文本/表情)
+            basic_types = {"at", "image", "text", "face"}  # 定义基本元素类型
+            basic_elems = [elem for elem in rtf.elements if elem["type"] in basic_types]
 
+            if basic_elems:  # 如果存在基本元素
+                # 只添加基本元素
+                message.extend(basic_elems)
+            else:
+                # 如果没有基本元素，才使用所有元素
+                message.extend(rtf.elements)
         if not message:
             return {"code": 0, "msg": "消息不能为空"}
         params = {"user_id": user_id, "message": message}
@@ -1261,13 +1305,13 @@ class BotAPI:
         message: list = []
 
         if image:
-            message.append(convert(image, "image"))
+            message.append(Image(image))
         elif record:
-            message.append(convert(record, "record"))
+            message.append(Record(record))
         elif video:
-            message.append(convert(video, "video"))
+            message.append(Video(video))
         elif file:
-            message.append(convert(file, "file"))
+            message.append(File(file))
         elif markdown:
             message.append(
                 convert(
@@ -1308,13 +1352,13 @@ class BotAPI:
         message: list = []
 
         if image:
-            message.append(convert(image, "image"))
+            message.append(Image(image))
         elif record:
-            message.append(convert(record, "record"))
+            message.append(Record(record))
         elif video:
-            message.append(convert(video, "video"))
+            message.append(Video(video))
         elif file:
-            message.append(convert(file, "file"))
+            message.append(File(file))
         elif markdown:
             message.append(
                 convert(
@@ -1334,32 +1378,73 @@ class BotAPI:
         params = {"user_id": user_id, "message": message}
         return await self._http.post("/send_private_msg", json=params)
 
-    async def send_group_msg(self, group_id: Union[int, str], reply: str = None):
-        if reply:
-            self.__message.insert(0, {"type": "reply", "data": {"id": reply}})
-        params = {"group_id": group_id, "message": self.__message}
-        self.__message = []
-        return await self._http.post("/send_group_msg", params)
+    async def send_message(
+        self,
+        target_type: str,
+        target_id: Union[int, str],
+        message: Union[MessageChain, str],
+        reply: str = None,
+    ):
+        """
+        统一的消息发送接口
 
-    async def send_private_msg(self, user_id: Union[int, str], reply: str = None):
+        :param target_type: 'group' 或 'private'
+        :param target_id: 群号或QQ号
+        :param message: 消息内容,支持字符串或MessageChain
+        :param reply: 回复消息ID
+        :return: 发送消息的结果
+        """
+        if isinstance(message, str):
+            message = MessageChain(message)
+        elif not isinstance(message, MessageChain):
+            raise TypeError("消息必须是字符串或MessageChain类型")
+
+        msg_elements = message.elements
         if reply:
-            self.__message.insert(0, {"type": "reply", "data": {"id": reply}})
-        params = {"user_id": user_id, "message": self.__message}
-        self.__message = []
-        return await self._http.post("/send_private_msg", params)
+            msg_elements.insert(0, Reply(reply))
+
+        params = {"message": msg_elements}
+
+        if target_type == "group":
+            params["group_id"] = target_id
+            return await self._http.post("/send_group_msg", params)
+        elif target_type == "private":
+            params["user_id"] = target_id
+            return await self._http.post("/send_private_msg", params)
+        else:
+            raise ValueError("target_type 必须是 'group' 或 'private'")
+
+    # 以下是一些便捷方法
+    async def send_group_msg(
+        self,
+        group_id: Union[int, str],
+        message: Union[MessageChain, str],
+        reply: str = None,
+    ):
+        """发送群消息的便捷方法"""
+        return await self.send_message("group", group_id, message, reply)
+
+    async def send_private_msg(
+        self,
+        user_id: Union[int, str],
+        message: Union[MessageChain, str],
+        reply: str = None,
+    ):
+        """发送私聊消息的便捷方法"""
+        return await self.send_message("private", user_id, message, reply)
 
     def add_text(self, text):
-        self.__message.append({"type": "text", "data": {"text": text}})
+        self.__message.append(Text(text))
         return self
 
     def add_face(self, face_id):
-        self.__message.append({"type": "face", "data": {"id": face_id}})
+        self.__message.append(Face(face_id))
         return self
 
     def add_image(self, file):
-        self.__message.append(convert(file, "image"))
+        self.__message.append(Image(file))
         return self
 
     def add_at(self, user_id):
-        self.__message.append({"type": "at", "data": {"qq": user_id}})
+        self.__message.append(At(user_id))
         return self
