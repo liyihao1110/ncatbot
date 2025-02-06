@@ -6,8 +6,8 @@ from pathlib import Path
 import markdown
 from pygments.formatters import HtmlFormatter
 from pyppeteer import launch
+from ncatbot.logger import get_log
 
-from ..logger import get_log
 
 _log = get_log("utils")
 
