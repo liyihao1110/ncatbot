@@ -38,7 +38,7 @@ class SetConfig:
                 self.http_ip = parts[0]
                 self.http_port = parts[1]
                 self.token = config["token"]
-                self.np_uri = config["np_uri"]
+                self.np_uri = config.get("np_uri")
                 self.bot_uin = config["bt_uin"]
             except KeyError as e:
                 raise KeyError(f"[setting] 缺少配置项，请检查！详情:{e}")

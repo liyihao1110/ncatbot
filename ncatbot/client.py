@@ -77,6 +77,8 @@ class BotClient:
             loop = asyncio.get_event_loop()
             loop.run_until_complete(Websocket(self).ws_connect())
         elif not reload:
+            if config.np_uri is None:
+                raise ValueError("[setting] 缺少配置项，请检查！详情:np_uri")
             if config.np_uri.startswith("https"):
                 if not os.path.exists("NapcatFiles"):
                     _log.info("正在下载Napcat客户端，请稍等...")
@@ -118,9 +120,6 @@ class BotClient:
                     config.nap_cat = os.path.join(os.getcwd(), "NapCatFiles")
                 else:
                     config.nap_cat = os.path.join(os.getcwd(), "NapCatFiles")
-            else:
-                _log.info("Napcat客户端路径或下载地址不存在，请检查np_uri配置。")
-                return
 
             os.chdir(os.path.join(config.nap_cat, "config"))
             http_enable = False if config.hp_uri == "" else True
