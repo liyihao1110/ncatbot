@@ -1378,60 +1378,19 @@ class BotAPI:
         params = {"user_id": user_id, "message": message}
         return await self._http.post("/send_private_msg", json=params)
 
-    async def send_message(
-        self,
-        target_type: str,
-        target_id: Union[int, str],
-        message: Union[MessageChain, str],
-        reply: str = None,
-    ):
-        """
-        统一的消息发送接口
-
-        :param target_type: 'group' 或 'private'
-        :param target_id: 群号或QQ号
-        :param message: 消息内容,支持字符串或MessageChain
-        :param reply: 回复消息ID
-        :return: 发送消息的结果
-        """
-        if isinstance(message, str):
-            message = MessageChain(message)
-        elif not isinstance(message, MessageChain):
-            raise TypeError("消息必须是字符串或MessageChain类型")
-
-        msg_elements = message.elements
+    async def send_group_msg(self, group_id: Union[int, str], reply: str = None):
         if reply:
-            msg_elements.insert(0, Reply(reply))
+            self.__message.insert(0, {"type": "reply", "data": {"id": reply}})
+        params = {"group_id": group_id, "message": self.__message}
+        self.__message = []
+        return await self._http.post("/send_group_msg", params)
 
-        params = {"message": msg_elements}
-
-        if target_type == "group":
-            params["group_id"] = target_id
-            return await self._http.post("/send_group_msg", params)
-        elif target_type == "private":
-            params["user_id"] = target_id
-            return await self._http.post("/send_private_msg", params)
-        else:
-            raise ValueError("target_type 必须是 'group' 或 'private'")
-
-    # 以下是一些便捷方法
-    async def send_group_msg(
-        self,
-        group_id: Union[int, str],
-        message: Union[MessageChain, str],
-        reply: str = None,
-    ):
-        """发送群消息的便捷方法"""
-        return await self.send_message("group", group_id, message, reply)
-
-    async def send_private_msg(
-        self,
-        user_id: Union[int, str],
-        message: Union[MessageChain, str],
-        reply: str = None,
-    ):
-        """发送私聊消息的便捷方法"""
-        return await self.send_message("private", user_id, message, reply)
+    async def send_private_msg(self, user_id: Union[int, str], reply: str = None):
+        if reply:
+            self.__message.insert(0, {"type": "reply", "data": {"id": reply}})
+        params = {"user_id": user_id, "message": self.__message}
+        self.__message = []
+        return await self._http.post("/send_private_msg", params)
 
     def add_text(self, text):
         self.__message.append(Text(text))
