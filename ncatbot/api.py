@@ -1,7 +1,7 @@
 import os
 from typing import Union
 
-from .element import (
+from ncatbot.element import (
     At,
     CustomMusic,
     Dice,
@@ -17,9 +17,9 @@ from .element import (
     Text,
     Video,
 )
-from .http import Route, WsRoute
-from .status import Status
-from .utils.mdmaker import md_maker
+from ncatbot.http import Route, WsRoute
+from ncatbot.status import Status
+from ncatbot.utils.mdmaker import md_maker
 
 
 def convert(i, message_type):
