@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "NcatBot"
+dynamic = ["version"]
+description = "NapCat Python SDK, 提供一站式开发部署方案"
+authors = [
+    {name = "木子", email = "yihaoli_2002@foxmail.com"},
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.10,<4.0"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+]
+urls = {Homepage = "https://github.com/liyihao1110/ncatbot"}
+
+dependencies = [
+    "websockets~=10.4",
+    "httpx~=0.28.1",
+    "psutil~=6.1.1",
+    "tqdm~=4.67.1",
+    "requests~=2.32.3",
+    "Markdown~=3.7",
+    "Pygments~=2.19.1",
+    "pyppeteer~=2.0.0",
+    "pyyaml~=6.0.2",
+]
+
+[tool.pdm]
+distribution = false
+version = { source = "file", path = "ncatbot/__version__.py" }
