@@ -8,7 +8,7 @@ from .status import Status
 from .utils.mdmaker import md_maker
 
 
-def file_to_data_uri(file_path):
+def trans_file(file_path):
     # 获取文件的 MIME 类型
     mime_type, _ = mimetypes.guess_type(file_path)
 
@@ -37,7 +37,7 @@ def convert(i, message_type):
     elif i.startswith("base64://"):
         return {"type": message_type, "data": {"file": i}}
     elif os.path.exists(i):
-        return {"type": message_type, "data": {"file": f"{file_to_data_uri(i)}"}}
+        return {"type": message_type, "data": {"file": f"{trans_file(i)}"}}
     else:
         return {"type": message_type, "data": {"file": f"{i}"}}
 
