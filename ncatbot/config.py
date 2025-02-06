@@ -5,7 +5,7 @@ import yaml
 
 class SetConfig:
     def __init__(self, config=None):
-        self._load_config(config)
+        pass
 
     def _load_config(self, path):
         def load_config(path):
