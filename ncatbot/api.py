@@ -6,13 +6,16 @@ from .element import (
     CustomMusic,
     Dice,
     Face,
+    File,
     Image,
     Json,
     MessageChain,
     Music,
+    Record,
     Reply,
     Rps,
     Text,
+    Video,
 )
 from .http import Route, WsRoute
 from .status import Status
@@ -1157,6 +1160,7 @@ class BotAPI:
         music: Union[list, dict] = None,
         dice: bool = False,
         rps: bool = False,
+        image: str = None,
         rtf: MessageChain = None,
     ):
         """
@@ -1170,6 +1174,7 @@ class BotAPI:
         :param music: 音乐
         :param dice: 骰子
         :param rps: 猜拳
+        :param image: 图片
         :param rtf: 富文本(消息链)
         :return: 发送群消息
         """
@@ -1195,22 +1200,18 @@ class BotAPI:
             message.append(Dice())
         if rps:
             message.append(Rps())
+        if image:
+            message.append(Image(image))
         if rtf:
             # 检查是否包含基本元素(at/图片/文本/表情)
-            has_basic = any(
-                isinstance(elem, (At, Image, Text, Face)) for elem in rtf.elements
-            )
+            basic_types = {"at", "image", "text", "face"}  # 定义基本元素类型
+            basic_elems = [elem for elem in rtf.elements if elem["type"] in basic_types]
 
-            if has_basic:
-                # 如果包含基本元素,只保留这四种元素
-                message.extend(
-                    [
-                        elem
-                        for elem in rtf.elements
-                        if isinstance(elem, (At, Image, Text, Face))
-                    ]
-                )
+            if basic_elems:  # 如果存在基本元素
+                # 只添加基本元素
+                message.extend(basic_elems)
             else:
+                # 如果没有基本元素，才使用所有元素
                 message.extend(rtf.elements)
         if not message:
             return {"code": 0, "msg": "消息不能为空"}
@@ -1228,6 +1229,7 @@ class BotAPI:
         music: Union[list, dict] = None,
         dice: bool = False,
         rps: bool = False,
+        image: str = None,
         rtf: MessageChain = None,
     ):
         """
@@ -1240,6 +1242,7 @@ class BotAPI:
         :param music: 音乐
         :param dice: 骰子
         :param rps: 猜拳
+        :param image: 图片
         :param rtf: 富文本(消息链)
         :return: 发送私聊消息
         """
@@ -1263,22 +1266,18 @@ class BotAPI:
             message.append(Dice())
         if rps:
             message.append(Rps())
+        if image:
+            message.append(Image(image))
         if rtf:
             # 检查是否包含基本元素(at/图片/文本/表情)
-            has_basic = any(
-                isinstance(elem, (At, Image, Text, Face)) for elem in rtf.elements
-            )
+            basic_types = {"at", "image", "text", "face"}  # 定义基本元素类型
+            basic_elems = [elem for elem in rtf.elements if elem["type"] in basic_types]
 
-            if has_basic:
-                # 如果包含基本元素,只保留这四种元素
-                message.extend(
-                    [
-                        elem
-                        for elem in rtf.elements
-                        if isinstance(elem, (At, Image, Text, Face))
-                    ]
-                )
+            if basic_elems:  # 如果存在基本元素
+                # 只添加基本元素
+                message.extend(basic_elems)
             else:
+                # 如果没有基本元素，才使用所有元素
                 message.extend(rtf.elements)
         if not message:
             return {"code": 0, "msg": "消息不能为空"}
@@ -1306,13 +1305,13 @@ class BotAPI:
         message: list = []
 
         if image:
-            message.append(convert(image, "image"))
+            message.append(Image(image))
         elif record:
-            message.append(convert(record, "record"))
+            message.append(Record(record))
         elif video:
-            message.append(convert(video, "video"))
+            message.append(Video(video))
         elif file:
-            message.append(convert(file, "file"))
+            message.append(File(file))
         elif markdown:
             message.append(
                 convert(
@@ -1353,13 +1352,13 @@ class BotAPI:
         message: list = []
 
         if image:
-            message.append(convert(image, "image"))
+            message.append(Image(image))
         elif record:
-            message.append(convert(record, "record"))
+            message.append(Record(record))
         elif video:
-            message.append(convert(video, "video"))
+            message.append(Video(video))
         elif file:
-            message.append(convert(file, "file"))
+            message.append(File(file))
         elif markdown:
             message.append(
                 convert(
@@ -1443,7 +1442,7 @@ class BotAPI:
         return self
 
     def add_image(self, file):
-        self.__message.append(convert(file, "image"))
+        self.__message.append(Image(file))
         return self
 
     def add_at(self, user_id):

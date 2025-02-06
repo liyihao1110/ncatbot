@@ -1,6 +1,19 @@
 import json
-from enum import Enum
+import os
 from typing import Union
+
+# from ncatbot.utils.mdmaker import md_maker
+
+
+def convert(i, message_type):
+    if i.startswith("http"):
+        return {"type": message_type, "data": {"file": i}}
+    elif i.startswith("base64://"):
+        return {"type": message_type, "data": {"file": i}}
+    elif os.path.exists(i):
+        return {"type": message_type, "data": {"file": f"file:///{os.path.abspath(i)}"}}
+    else:
+        return {"type": message_type, "data": {"file": f"file:///{i}"}}
 
 
 class MessageChain:
@@ -82,7 +95,10 @@ class Text(Element):
         self.text = text
 
     def to_dict(self) -> dict:
-        return {"type": "text", "data": {"text": self.text}}
+        if self.text:
+            return {"type": "text", "data": {"text": self.text}}
+        else:
+            return {"type": "text", "data": {"text": ""}}
 
 
 class At(Element):
@@ -109,7 +125,7 @@ class Image(Element):
         self.path = path
 
     def to_dict(self) -> dict:
-        return {"type": "image", "data": {"file": self.path}}
+        return convert(self.path, "image")
 
 
 class Face(Element):
@@ -122,20 +138,21 @@ class Face(Element):
         return {"type": "face", "data": {"id": self.id}}
 
 
-class PokeMethods(str, Enum):
-    ChuoYiChuo = "ChuoYiChuo"
-    BiXin = "BiXin"
-    DianDian = "DianDian"
+# TODO: 戳一戳
+# class PokeMethods(str, Enum):
+#     ChuoYiChuo = "ChuoYiChuo"
+#     BiXin = "BiXin"
+#     DianDian = "DianDian"
 
 
-class Poke(Element):
-    type = "poke"
+# class Poke(Element):
+#     type = "poke"
 
-    def __init__(self, method: Union[PokeMethods, str]):
-        self.method = method
+#     def __init__(self, method: Union[PokeMethods, str]):
+#         self.method = method
 
-    def to_dict(self) -> dict:
-        return {"type": "poke", "data": {"type": self.method}}
+#     def to_dict(self) -> dict:
+#         return {"type": "poke", "data": {"type": self.method}}
 
 
 class Reply(Element):
@@ -243,3 +260,24 @@ class CustomMusic(Element):
                 "singer": self.singer,
             },
         }
+
+
+# TODO: Markdown 图片
+# class Markdown(Element):
+#     type = "image"
+
+#     def __init__(self, markdown: str):
+#         self.markdown = markdown
+
+#     async def to_dict(self) -> dict:
+#         return convert(await md_maker(self.markdown), "image")
+
+
+class File(Element):
+    type = "file"
+
+    def __init__(self, file: str):
+        self.file = file
+
+    def to_dict(self) -> dict:
+        return convert(self.file, "file")
