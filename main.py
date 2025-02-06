@@ -1,4 +1,5 @@
 from ncatbot.client import BotClient
+from ncatbot.element import MessageChain
 from ncatbot.logger import get_log
 from ncatbot.message import GroupMessage, PrivateMessage
 
@@ -9,6 +10,28 @@ bot = BotClient()
 @bot.group_event()
 async def on_group_message(msg: GroupMessage):
     _log.info(msg)
+    if msg.raw_message == "test1":
+        # 使用 MessageChain 发送复合消息
+        message = MessageChain(
+            [
+                # Text("这是一个测试消息"),
+                # Text(""),  # 空消息测试
+                # Image("icon.png"),
+                # Music("163", "1959667345"),
+                # CustomMusic(
+                #     url="https://baidu.com",
+                #     audio="https://music.163.com",
+                #     title="song",
+                #     image="icon.png",
+                #     singer="123",
+                # )
+                # Rps(),
+                # Dice(),
+            ]
+        )
+        await bot.api.post_group_msg(group_id=msg.group_id, rtf=message)
+    elif msg.raw_message == "test2":
+        await bot.api.post_group_file(group_id=msg.group_id, image="icon.png")
 
 
 @bot.private_event()

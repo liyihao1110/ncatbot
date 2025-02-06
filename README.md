@@ -35,6 +35,17 @@ NcatBot 是一个开源的基于 **[NapCat](https://github.com/NapNeko/NapCatQQ)
 ```commandline
 git clone https://gitee.com/li-yihao0328/nc_bot.git
 ```
+
+开发者请使用以 Python pkg 的形式安装
+```
+pip install git+https://github.com/liyihao1110/ncatbot.git
+```
+
+安装后尝试检查是否安装成功
+```
+import ncatbot
+print(ncatbot.__version__)
+```
 ## 简单入门实例
 
 ---
@@ -222,11 +233,9 @@ pip install -r requirements.txt
 ## 贡献者们
 
 ---
-[liyihao1110](https://github.com/liyihao1110);
-[gaojj2000](https://github.com/gaojj2000);
-[Isaaczhr](https://github.com/Isaaczhr);
-[Fish-LP](https://github.com/Fish-LP);
-[huan-yp](https://github.com/huan-yp);
+<a href="https://github.com/liyihao1110/ncatbot/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=liyihao1110/ncatbot" />
+</a>
 
 如果你有好的 Idea, 欢迎提 Issue 和 PR!
 

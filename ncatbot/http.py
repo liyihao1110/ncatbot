@@ -4,9 +4,7 @@ import json as j
 import httpx
 import websockets
 
-from .config import SetConfig
-
-_set = SetConfig()
+from ncatbot.config import config
 
 
 class Route:
@@ -14,12 +12,12 @@ class Route:
         self.headers = (
             {
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {_set.token}",
+                "Authorization": f"Bearer {config.token}",
             }
-            if _set.token
+            if config.token
             else {"Content-Type": "application/json"}
         )
-        self.url = _set.hp_uri
+        self.url = config.hp_uri
 
     async def get(self, path, params=None):
         async with httpx.AsyncClient() as client:
@@ -43,13 +41,13 @@ class Route:
 
 class WsRoute:
     def __init__(self):
-        self.url = _set.ws_uri + "/api"
+        self.url = config.ws_uri + "/api"
         self.headers = (
             {
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {_set.token}",
+                "Authorization": f"Bearer {config.token}",
             }
-            if _set.token
+            if config.token
             else {"Content-Type": "application/json"}
         )
 
