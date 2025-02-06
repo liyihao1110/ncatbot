@@ -34,5 +34,6 @@ setup(
         "Markdown~=3.7",
         "Pygments~=2.19.1",
         "pyppeteer~=2.0.0",
+        "pyyaml~=6.0.2",
     ],
 )
