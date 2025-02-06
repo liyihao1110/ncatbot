@@ -70,7 +70,7 @@ class BotAPI:
         if len(news) > 4:
             news = news[:4]
 
-        if report["message_type"] == "gourp":
+        if report["message_type"] == "group":
             target = "群聊"
         else:
             participants = list(
@@ -1338,12 +1338,14 @@ class BotAPI:
         if reply:
             self.__message.insert(0, {"type": "reply", "data": {"id": reply}})
         params = {"group_id": group_id, "message": self.__message}
+        self.__message = []
         return await self._http.post("/send_group_msg", params)
 
     async def send_private_msg(self, user_id: Union[int, str], reply: str = None):
         if reply:
             self.__message.insert(0, {"type": "reply", "data": {"id": reply}})
         params = {"user_id": user_id, "message": self.__message}
+        self.__message = []
         return await self._http.post("/send_private_msg", params)
 
     def add_text(self, text):

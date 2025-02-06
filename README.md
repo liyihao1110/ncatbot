@@ -222,11 +222,9 @@ pip install -r requirements.txt
 ## 贡献者们
 
 ---
-[liyihao1110](https://github.com/liyihao1110);
-[gaojj2000](https://github.com/gaojj2000);
-[Isaaczhr](https://github.com/Isaaczhr);
-[Fish-LP](https://github.com/Fish-LP);
-[huan-yp](https://github.com/huan-yp);
+<a href="https://github.com/liyihao1110/ncatbot/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=liyihao1110/ncatbot" />
+</a>
 
 如果你有好的 Idea, 欢迎提 Issue 和 PR!
 

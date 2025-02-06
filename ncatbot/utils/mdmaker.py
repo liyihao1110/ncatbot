@@ -1,6 +1,7 @@
 import os
+import platform
 import tempfile
-import winreg
+from pathlib import Path
 
 import markdown
 from pygments.formatters import HtmlFormatter
@@ -18,22 +19,74 @@ def read_file(file_path) -> any:
 
 def get_chrome_path():
     """
-    通过注册表获取 Chrome 浏览器的可执行文件路径（仅适用于 Windows）。
-    尝试从 HKEY_LOCAL_MACHINE 和 HKEY_CURRENT_USER 中查找。
+    获取 Chrome 浏览器的可执行文件路径。
+    在 Windows 上通过注册表查找，在 Linux 上通过 which 命令查找。
     """
-    registry_keys = [
-        r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe",
-        r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe",
-    ]
-    for root in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
-        for sub_key in registry_keys:
-            try:
-                with winreg.OpenKey(root, sub_key) as key:
-                    path, _ = winreg.QueryValueEx(key, None)
-                    if os.path.exists(path):
-                        return path
-            except FileNotFoundError:
-                continue
+    system = platform.system()
+
+    if system == "Windows":
+        import winreg
+
+        registry_keys = [
+            r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe",
+            r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe",
+        ]
+        for root in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
+            for sub_key in registry_keys:
+                try:
+                    with winreg.OpenKey(root, sub_key) as key:
+                        path, _ = winreg.QueryValueEx(key, "")
+                        if os.path.exists(path):
+                            return path
+                except FileNotFoundError:
+                    continue
+    elif system == "Linux":
+        chrome_paths = [
+            "/usr/bin/google-chrome",
+            "/usr/bin/google-chrome-stable",
+            "/usr/bin/chromium-browser",
+            "/usr/bin/chromium",
+            "/snap/bin/chromium",
+            "/snap/bin/chromium-browser",
+        ]
+        for path in chrome_paths:
+            if os.path.exists(path):
+                return path
+        # 使用 which 命令查找
+        which_chrome = os.popen("which google-chrome").read().strip()
+        if which_chrome and os.path.exists(which_chrome):
+            return which_chrome
+        which_chromium = os.popen("which chromium").read().strip()
+        if which_chromium and os.path.exists(which_chromium):
+            return which_chromium
+    if system == "Darwin":  # macOS 系统
+        chrome_paths = [
+            Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
+            Path("/Applications/Chromium.app/Contents/MacOS/Chromium"),
+        ]
+        for path in chrome_paths:
+            if path.exists():
+                return str(path)
+
+        # 如果没有找到，则检查 pyppeteer 下载的 Chromium
+        local_chromium_path = (
+            Path.home() / "Library/Application Support/pyppeteer/local-chromium"
+        )
+        if local_chromium_path.exists():
+            chrome_folders = list(local_chromium_path.iterdir())
+            if chrome_folders:  # 确保有文件夹
+                chrome_folder = chrome_folders[0]  # 取第一个文件夹
+                chrome_executable = (
+                    chrome_folder
+                    / "chrome-mac"
+                    / "Chromium.app"
+                    / "Contents"
+                    / "MacOS"
+                    / "Chromium"
+                )
+                if chrome_executable.exists():
+                    return str(chrome_executable)
+
     return None
 
 
@@ -42,14 +95,11 @@ def markdown_to_html(md_content, external_css_urls=None, custom_css=""):
     将 Markdown 文本转换为 HTML，并导入外部 CSS 模板及自定义 CSS 样式。
 
     :param md_content: Markdown 文本内容
-    :param external_css_urls: 外部 CSS 链接列表，例如：[ "https://stackpath.bootstrapcdn.com/bootswatch/4.5.2/flatly/bootstrap.min.css" ]
+    :param external_css_urls: 外部 CSS 链接列表
     :param custom_css: 自定义 CSS 样式，将嵌入在 <style> 标签中
     :return: 完整 HTML 字符串
     """
-    # 使用 extra 和 codehilite 扩展支持额外语法和代码块高亮
     html_body = markdown.markdown(md_content, extensions=["extra", "codehilite"])
-
-    # 生成外部 CSS 的 link 标签
     css_links = ""
     if external_css_urls:
         for url in external_css_urls:
@@ -75,45 +125,41 @@ def markdown_to_html(md_content, external_css_urls=None, custom_css=""):
     return html
 
 
-async def html_to_png(html_content, output_png, chrome_executable):
+async def html_to_png(html_content, output_png, chrome_executable=None):
     """
     利用 pyppeteer 启动 Chrome，将 HTML 渲染后保存为 PNG 图片。
 
     :param html_content: HTML 内容字符串
     :param output_png: 输出 PNG 文件的路径
-    :param chrome_executable: Chrome 浏览器的可执行文件路径
+    :param chrome_executable: Chrome 浏览器的可执行文件路径（可选）
     """
-    # 将 HTML 内容写入临时文件
     with tempfile.NamedTemporaryFile(
         "w", delete=False, suffix=".html", encoding="utf-8"
     ) as f:
         html_file = f.name
         f.write(html_content)
 
-    # 构造 file:// URL（兼容 Windows 路径格式）
     file_url = "file:///" + html_file.replace("\\", "/")
 
-    # 启动浏览器（指定本地 Chrome 路径）
-    browser = await launch(
-        {
-            "executablePath": chrome_executable,
-            "headless": True,
-            "args": ["--no-sandbox"],
-        }
-    )
+    # 启动浏览器，若未指定 chrome_executable，则使用 pyppeteer 默认的 Chromium
+    launch_options = {"headless": True, "args": ["--no-sandbox"]}
+    if chrome_executable:
+        launch_options["executablePath"] = chrome_executable
+
+    browser = await launch(launch_options)
     page = await browser.newPage()
 
-    # 打开 HTML 文件并等待网络空闲
     await page.goto(file_url, {"waitUntil": "networkidle0"})
 
-    # 动态计算页面内容高度，调整 viewport 高度，防止截图时有大量空白区域
     content_height = await page.evaluate("document.documentElement.scrollHeight")
-    await page.setViewport({"width": 1280, "height": content_height})
+    await page.setViewport(
+        {"width": 1280, "height": content_height}
+    )  # 如果觉得截取出来的图片过宽，修改width即可
 
-    # 截图（fullPage 为 False，因为 viewport 已设置为内容高度）
     await page.screenshot({"path": output_png, "fullPage": False})
 
     await browser.close()
+
     os.remove(html_file)
 
 
@@ -191,11 +237,10 @@ table {{
     )
     chrome_path = get_chrome_path()
     if chrome_path is None:
-        _log.error("未在注册表中找到 Chrome 浏览器路径，请确认已安装 Chrome。")
-        raise Exception("未找到 Chrome 浏览器路径")
+        _log.info("未在注册表中找到 Chrome 浏览器路径，尝试自动安装Chromium")
+        # raise Exception("未找到 Chrome 浏览器路径")
     else:
         _log.debug(f"Chrome 路径：{chrome_path}")
-
     output_png = os.path.join(tempfile.gettempdir(), "markdown.png")
     await html_to_png(html_content, output_png, chrome_path)
     return output_png
