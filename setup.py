@@ -1,8 +1,18 @@
+import os
+
 from setuptools import find_packages, setup
+
+init_path = os.path.join(os.path.dirname(__file__), "ncatbot/__init__.py")
+
+with open(init_path, "r") as f:
+    exec(f.read())
+
+version = __version__
+
 
 setup(
     name="NcatBot",
-    version="1.0.2",
+    version=version,
     author="木子",
     author_email="yihaoli_2002@foxmail.com",
     description="NapCat Python SDK, 提供一站式开发部署方案",
