@@ -39,7 +39,7 @@ def convert(i, message_type):
     elif os.path.exists(i):
         return {"type": message_type, "data": {"file": f"{trans_file(i)}"}}
     else:
-        return {"type": message_type, "data": {"file": f"{i}"}}
+        return {"type": message_type, "data": {"file": f"file:///{i}"}}
 
 
 def read_file(file_path) -> any:
