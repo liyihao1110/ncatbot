@@ -16,6 +16,8 @@ repos:
       - id: check-shebang-scripts-are-executable
       - id: detect-private-key
       - id: debug-statements
+      - id: mixed-line-ending
+        args: ['--fix=lf']
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.9.4
     hooks:
@@ -25,6 +27,7 @@ repos:
     rev: 6.0.0
     hooks:
       - id: isort
+        args: ["--profile", "black"]
   - repo: https://github.com/psf/black
     rev: 25.1.0
     hooks:

@@ -24,7 +24,7 @@ setup(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
     ],
-    python_requires=">=3.12",
+    python_requires=">=3.10",
     install_requires=[
         "websockets~=10.4",
         "httpx~=0.28.1",
@@ -34,5 +34,6 @@ setup(
         "Markdown~=3.7",
         "Pygments~=2.19.1",
         "pyppeteer~=2.0.0",
+        "pyyaml~=6.0.2",
     ],
 )

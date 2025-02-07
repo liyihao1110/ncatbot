@@ -76,11 +76,16 @@ class BotClient:
         if self._request_event_handler:
             await self._request_event_handler(msg)
 
+    async def run_async(self):
+        websocket_server = Websocket(self)
+        await websocket_server.ws_connect()
+
     def run(self, reload=False):
         if reload:
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(Websocket(self).ws_connect())
+            asyncio.run(self.run_async())
         elif not reload:
+            if config.np_uri is None:
+                raise ValueError("[setting] 缺少配置项，请检查！详情:np_uri")
             if config.np_uri.startswith("https"):
                 if not os.path.exists("NapcatFiles"):
                     _log.info("正在下载Napcat客户端，请稍等...")
@@ -122,9 +127,6 @@ class BotClient:
                     config.nap_cat = os.path.join(os.getcwd(), "NapCatFiles")
                 else:
                     config.nap_cat = os.path.join(os.getcwd(), "NapCatFiles")
-            else:
-                _log.info("Napcat客户端路径或下载地址不存在，请检查np_uri配置。")
-                return
 
             os.chdir(os.path.join(config.nap_cat, "config"))
             http_enable = False if config.hp_uri == "" else True
@@ -190,5 +192,4 @@ class BotClient:
                 os.system(f"{config.bot_uin}_quickLogin.bat")
             os.chdir(base_path)
             time.sleep(3)
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(Websocket(self).ws_connect())
+            asyncio.run(self.run_async())
