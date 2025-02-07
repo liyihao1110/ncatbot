@@ -73,7 +73,7 @@ class BotClient:
             await self._request_event_handler(msg)
             
     async def run_async(self):
-        websocket_server = WebSocketServer(self)
+        websocket_server = Websocket(self)
         await websocket_server.ws_connect()
 
     def run(self, reload=False):
