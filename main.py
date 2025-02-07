@@ -1,5 +1,5 @@
 from ncatbot.client import BotClient
-from ncatbot.element import MessageChain
+from ncatbot.element import MessageChain, Text
 from ncatbot.logger import get_log
 from ncatbot.message import GroupMessage, PrivateMessage
 
@@ -12,10 +12,10 @@ async def on_group_message(msg: GroupMessage):
     _log.info(msg)
     if msg.raw_message == "test1":
         # 使用 MessageChain 发送复合消息
+        # 请从element中导入元素
         message = MessageChain(
             [
-                # Text("这是一个测试消息"),
-                # Text(""),  # 空消息测试
+                Text("这是一个测试消息"),
                 # Image("icon.png"),
                 # Music("163", "1959667345"),
                 # CustomMusic(
@@ -42,9 +42,8 @@ async def on_private_message(msg: PrivateMessage):
             msg.user_id, text="你好,", face=1, reply=msg.message_id
         )
     elif msg.raw_message == "ping":
-        await bot.api.add_at(msg.user_id).add_face(1).add_text("你好").add_face(
-            2
-        ).send_private_msg(msg.user_id, reply=msg.message_id)
+        # await bot.api.add_text("你好").send_private_msg(msg.user_id) v1.0.4已废除
+        await bot.api.post_private_msg(msg.user_id, text="pong")
     elif msg.raw_message == "md":
         await bot.api.post_private_file(user_id=msg.user_id, markdown="README.md")
         # await bot.api.post_private_msg(msg.user_id, markdown="## 你好")
