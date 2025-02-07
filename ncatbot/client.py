@@ -71,11 +71,14 @@ class BotClient:
     async def handle_request_event(self, msg: dict):
         if self._request_event_handler:
             await self._request_event_handler(msg)
+            
+    async def run_async(self):
+        websocket_server = WebSocketServer(self)
+        await websocket_server.ws_connect()
 
     def run(self, reload=False):
         if reload:
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(Websocket(self).ws_connect())
+            asyncio.run(self.run_async())
         elif not reload:
             if config.np_uri is None:
                 raise ValueError("[setting] 缺少配置项，请检查！详情:np_uri")
@@ -185,5 +188,4 @@ class BotClient:
                 os.system(f"{config.bot_uin}_quickLogin.bat")
             os.chdir(base_path)
             time.sleep(3)
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(Websocket(self).ws_connect())
+            asyncio.run(self.run_async())
