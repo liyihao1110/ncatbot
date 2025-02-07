@@ -1,6 +1,6 @@
 import json
-
 import websockets
+import asyncio
 
 from ncatbot.config import config
 from ncatbot.logger import get_log
@@ -16,15 +16,15 @@ class Websocket:
         msg = json.loads(message)
         if msg["post_type"] == "message" or msg["post_type"] == "message_sent":
             if msg["message_type"] == "group":
-                return await self.client.handle_group_event(msg)
+                asyncio.create_task(self.client.handle_group_event(msg))
             elif msg["message_type"] == "private":
-                return await self.client.handle_private_event(msg)
+                asyncio.create_task(self.client.handle_private_event(msg))
             else:
                 _log.error("这个报错说明message_type不属于group,private\n" + str(msg))
         elif msg["post_type"] == "notice":
-            return await self.client.handle_notice_event(msg)
+            asyncio.create_task(self.client.handle_notice_event(msg))
         elif msg["post_type"] == "request":
-            return await self.client.handle_request_event(msg)
+            asyncio.create_task(self.client.handle_request_event(msg))
         elif msg["post_type"] == "meta_event":
             if msg["meta_event_type"] == "lifecycle":
                 _log.info(f"机器人 {msg.get('self_id')} 成功启动")
