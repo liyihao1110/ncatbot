@@ -19,10 +19,14 @@ base_path = os.getcwd()
 
 
 class BotClient:
-    def __init__(self, use_ws=True, config_path=None):
-        config.update(config_path)
-        self.api = BotAPI(use_ws)
+    def __init__(self, use_ws=True):
+        if not config._updated:
+            _log.warning("没有主动设置配置项, 配置项将使用默认值")
+            time.sleep(0.8)
+        _log.info(config)
+        time.sleep(1.6)
 
+        self.api = BotAPI(use_ws)
         self._group_event_handler = None
         self._private_event_handler = None
         self._notice_event_handler = None
