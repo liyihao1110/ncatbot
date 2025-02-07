@@ -1,5 +1,5 @@
 from ncatbot.client import BotClient
-from ncatbot.element import MessageChain, Text
+from ncatbot.element import MessageChain
 from ncatbot.logger import get_log
 from ncatbot.message import GroupMessage, PrivateMessage
 
@@ -15,8 +15,12 @@ async def on_group_message(msg: GroupMessage):
         # 请从element中导入元素
         message = MessageChain(
             [
-                Text("这是一个测试消息"),
+                # "1",
+                # Text("2"),
+                # [Text("3"), Rps()],
+                # {"type": "dice"},
                 # Image("icon.png"),
+                # At(msg.user_id)
                 # Music("163", "1959667345"),
                 # CustomMusic(
                 #     url="https://baidu.com",

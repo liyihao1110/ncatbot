@@ -17,24 +17,37 @@ def convert(i, message_type):
 
 
 class MessageChain:
+    """消息链"""
+
     def __init__(self, chain=None):
         self.chain = []
         if chain is None:
             return
 
         if isinstance(chain, str):
-            try:
-                # 尝试解析JSON字符串，保持列表顺序
-                parsed_chain = json.loads(chain)
-                if isinstance(parsed_chain, list):
-                    self.chain = parsed_chain
-                else:
-                    self.chain = [Text(chain)]
-            except json.JSONDecodeError:
-                self.chain = [Text(chain)]
+            self.chain = [Text(chain)]
         elif isinstance(chain, list):
-            # 直接使用传入的列表，保持原有顺序
-            self.chain = list(chain)  # 创建新列表以避免引用问题
+            # 处理列表输入
+            for item in chain:
+                if isinstance(item, dict):
+                    self.chain.append(item)
+                elif isinstance(item, Element):
+                    self.chain.append(item)
+                elif isinstance(item, list):
+                    # 处理嵌套列表
+                    for sub_item in item:
+                        if isinstance(sub_item, dict):
+                            self.chain.append(sub_item)
+                        elif isinstance(sub_item, Element):
+                            self.chain.append(sub_item)
+                        else:
+                            self.chain.append(Text(str(sub_item)))
+                else:
+                    self.chain.append(Text(str(item)))
+        elif isinstance(chain, Element):
+            self.chain = [chain]
+        else:
+            self.chain = [Text(str(chain))]
 
     def __str__(self):
         """确保字符串表示时保持顺序"""
@@ -89,6 +102,8 @@ class Element:
 
 
 class Text(Element):
+    """文本消息元素"""
+
     type = "text"
 
     def __init__(self, text: str):
@@ -102,6 +117,8 @@ class Text(Element):
 
 
 class At(Element):
+    """@消息元素"""
+
     type = "at"
 
     def __init__(self, qq: Union[int, str]):
@@ -112,6 +129,8 @@ class At(Element):
 
 
 class AtAll(Element):
+    """@全体消息元素"""
+
     type = "at"
 
     def as_dict(self):
@@ -119,6 +138,8 @@ class AtAll(Element):
 
 
 class Image(Element):
+    """图片消息元素"""
+
     type = "image"
 
     def __init__(self, path: str):
@@ -129,6 +150,8 @@ class Image(Element):
 
 
 class Face(Element):
+    """表情消息元素"""
+
     type = "face"
 
     def __init__(self, face_id: int):
@@ -136,23 +159,6 @@ class Face(Element):
 
     def to_dict(self) -> dict:
         return {"type": "face", "data": {"id": self.id}}
-
-
-# TODO: 戳一戳
-# class PokeMethods(str, Enum):
-#     ChuoYiChuo = "ChuoYiChuo"
-#     BiXin = "BiXin"
-#     DianDian = "DianDian"
-
-
-# class Poke(Element):
-#     type = "poke"
-
-#     def __init__(self, method: Union[PokeMethods, str]):
-#         self.method = method
-
-#     def to_dict(self) -> dict:
-#         return {"type": "poke", "data": {"type": self.method}}
 
 
 class Reply(Element):
@@ -262,8 +268,10 @@ class CustomMusic(Element):
         }
 
 
-# TODO: Markdown 图片
+# TODO
 # class Markdown(Element):
+#     """Markdown消息元素"""
+
 #     type = "image"
 
 #     def __init__(self, markdown: str):
@@ -274,6 +282,8 @@ class CustomMusic(Element):
 
 
 class File(Element):
+    """文件消息元素"""
+
     type = "file"
 
     def __init__(self, file: str):
