@@ -1377,33 +1377,3 @@ class BotAPI:
 
         params = {"user_id": user_id, "message": message}
         return await self._http.post("/send_private_msg", json=params)
-
-    async def send_group_msg(self, group_id: Union[int, str], reply: str = None):
-        if reply:
-            self.__message.insert(0, {"type": "reply", "data": {"id": reply}})
-        params = {"group_id": group_id, "message": self.__message}
-        self.__message = []
-        return await self._http.post("/send_group_msg", params)
-
-    async def send_private_msg(self, user_id: Union[int, str], reply: str = None):
-        if reply:
-            self.__message.insert(0, {"type": "reply", "data": {"id": reply}})
-        params = {"user_id": user_id, "message": self.__message}
-        self.__message = []
-        return await self._http.post("/send_private_msg", params)
-
-    def add_text(self, text):
-        self.__message.append(Text(text))
-        return self
-
-    def add_face(self, face_id):
-        self.__message.append(Face(face_id))
-        return self
-
-    def add_image(self, file):
-        self.__message.append(Image(file))
-        return self
-
-    def add_at(self, user_id):
-        self.__message.append(At(user_id))
-        return self
