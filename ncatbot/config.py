@@ -58,20 +58,27 @@ class SetConfig:
             self.token = config["token"]
             self.np_uri = config["np_uri"]
             self.bot_uin = config["bt_uin"]
+            self.standerize_uri()
         except KeyError as e:
             raise KeyError(f"[setting] 缺少配置项，请检查！详情:{e}")
 
+    def standerize_uri(self):
+        if not (self.ws_uri.startswith("ws://") or self.ws_uri.startswith("wss://")):
+            self.ws_uri = "ws://" + self.ws_uri
+        if not (
+            self.hp_uri.startswith("http://") or self.hp_uri.startswith("https://")
+        ):
+            self.hp_uri = "http://" + self.hp_uri
+
     def set_ws_uri(self, ws_uri: str):
-        if not ws_uri.startswith("ws://") and not ws_uri.startswith("wss://"):
-            ws_uri = "ws://" + ws_uri
         self._updated = True
         self.ws_uri = ws_uri
+        self.standerize_uri()
 
     def set_hp_uri(self, http_uri: str):
-        if not http_uri.startswith("http://") and not http_uri.startswith("https://"):
-            http_uri = "http://" + http_uri
         self._updated = True
         self.hp_uri = http_uri
+        self.standerize_uri()
 
     def set_bot_uin(self, uin: str):
         self._updated = True
