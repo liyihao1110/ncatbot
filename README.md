@@ -3,10 +3,13 @@
 ---
 ![img.png](assets/logo.png)
 <h4 align="center">基于 NapCat 的 QQ 机器人 Python 快速开发框架 (SDK)</h4>
-[![GitHub Stars](https://img.shields.io/github/stars/liyihao1110/ncatbot.svg?style=flat-square&color=blue)](https://github.com/liyihao1110/ncatbot/stargazers)
-[![GitHub Forks](https://img.shields.io/github/forks/liyihao1110/ncatbot.svg?style=flat-square&color=green)](https://github.com/liyihao1110/ncatbot/network/members)
 <p align="center">
-	<a href="https://gitee.com/li-yihao0328/nc_bot"><img src="https://img.shields.io/badge/ncatbot-v1.0.1-brightgreen.svg"></a>
+    <a href="https://github.com/liyihao1110/ncatbot/stargazers"><img src="https://img.shields.io/github/stars/liyihao1110/ncatbot.svg?style=flat-square&color=blue" width="10%", height="10%"></a>
+    <a href="https://github.com/liyihao1110/ncatbot/network/members"><img src="https://img.shields.io/github/forks/liyihao1110/ncatbot.svg?style=flat-square&color=green" width="10%", height="10%"></a>
+
+</p>
+<p align="center">
+	<a href="https://pypi.org/project/ncatbot/"><img src="https://img.shields.io/pypi/v/ncatbot"></a>
 	<a href="https://gitee.com/y_project/RuoYi-Vue/blob/master/LICENSE"><img src="https://img.shields.io/github/license/mashape/apistatus.svg"></a>
     <a href="https://qm.qq.com/q/CHbzJ2LH4k"><img src="https://img.shields.io/badge/💬 NcatBot/ฅ^•ﻌ•^ฅ🎉-201487478-brightgreen.svg"></a>
     <a href="https://qm.qq.com/q/S2zIli2qsu"><img src="https://img.shields.io/badge/木子机器人(可添加体验)-3786498591-brightgreen.svg"></a>
@@ -37,6 +40,7 @@ NcatBot 同时提供针对非开发者用户的一键部署方案, 详情请前�
   3. 搜索本项目的 [Issue 列表](https://github.com/liyihao1110/ncatbot/issues).
 
 - 如果以上方法都无法解决你的问题, 那么:
+
   也可以[进群](https://qm.qq.com/q/L6XGXYqL86)提问.
 
 ## 联系我们
