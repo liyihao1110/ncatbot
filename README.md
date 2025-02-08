@@ -1,13 +1,8 @@
 # NcatBot
 
 ---
-![img.png](assets/logo.png)
-<h4 align="center">基于 NapCat 的 QQ 机器人 Python 快速开发框架 (SDK)</h4>
-<p align="center">
-    <a href="https://github.com/liyihao1110/ncatbot/stargazers"><img src="https://img.shields.io/github/stars/liyihao1110/ncatbot.svg?style=flat-square&color=blue" width="10%", height="10%"></a>
-    <a href="https://github.com/liyihao1110/ncatbot/network/members"><img src="https://img.shields.io/github/forks/liyihao1110/ncatbot.svg?style=flat-square&color=green" width="10%", height="10%"></a>
-
-</p>
+![img.png](https://socialify.git.ci/liyihao1110/NcatBot/image?description=1&forks=1&issues=1&language=1&logo=https%3A%2F%2Fa.imgckr.com%2F2024%2F12%2F29%2FJO1OJ.png&name=1&owner=1&pulls=1&stargazers=1&theme=Auto)
+<h2 align="center">基于 NapCat 的 QQ 机器人 Python 快速开发框架 (SDK)</h2>
 <p align="center">
 	<a href="https://pypi.org/project/ncatbot/"><img src="https://img.shields.io/pypi/v/ncatbot"></a>
 	<a href="https://gitee.com/y_project/RuoYi-Vue/blob/master/LICENSE"><img src="https://img.shields.io/github/license/mashape/apistatus.svg"></a>
