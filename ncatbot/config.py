@@ -62,10 +62,14 @@ class SetConfig:
             raise KeyError(f"[setting] 缺少配置项，请检查！详情:{e}")
 
     def set_ws_uri(self, ws_uri: str):
+        if not ws_uri.startswith("ws://") and not ws_uri.startswith("wss://"):
+            ws_uri = "ws://" + ws_uri
         self._updated = True
         self.ws_uri = ws_uri
 
     def set_hp_uri(self, http_uri: str):
+        if not http_uri.startswith("http://") and not http_uri.startswith("https://"):
+            http_uri = "http://" + http_uri
         self._updated = True
         self.hp_uri = http_uri
 
