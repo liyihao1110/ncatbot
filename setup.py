@@ -11,7 +11,7 @@ version = __version__
 
 
 setup(
-    name="NcatBot",
+    name="ncatbot",
     version=version,
     author="木子",
     author_email="yihaoli_2002@foxmail.com",
