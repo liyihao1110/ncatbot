@@ -7,6 +7,36 @@ import websockets
 from ncatbot.config import config
 
 
+async def check_websocket(uri):
+    """
+    检查指定的 WebSocket uri 是否可用。
+
+    :return: 如果可用返回 True，否则返回 False
+    """
+    headers = (
+        {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {config.token}",
+        }
+        if config.token
+        else {"Content-Type": "application/json"}
+    )
+    try:
+        # 尝试连接 WebSocket 服务器
+        async with websockets.connect(f"{uri}", extra_headers=headers):
+            print(f"WebSocket {uri} 可用.")
+            return True
+    # except websockets.ConnectionError:
+    #     print(f"无法连接到 WebSocket {uri}.")
+    #     return False
+    # except websockets.ConnectionClosed:
+    #     print(f"WebSocket {uri} 上已关闭.")
+    #     return False
+    except Exception as e:
+        print(f"检查 WebSocket 端口时发生错误: {e}")
+        return False
+
+
 class Route:
     def __init__(self):
         self.headers = (

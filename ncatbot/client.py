@@ -12,9 +12,10 @@ from tqdm import tqdm
 from ncatbot.api import BotAPI
 from ncatbot.config import config
 from ncatbot.gateway import Websocket
+from ncatbot.http import check_websocket
 from ncatbot.logger import get_log
 from ncatbot.message import GroupMessage, PrivateMessage
-from ncatbot.utils.literals import NAPCAT_DIR
+from ncatbot.utils.literals import INSTALL_CHECK_PATH, NAPCAT_DIR
 
 _log = get_log("ncatbot")
 
@@ -82,55 +83,53 @@ class BotClient:
         await websocket_server.ws_connect()
 
     def run(self, reload=False):
-        if reload:
-            asyncio.run(self.run_async())
-        elif not reload:
-            base_path = os.getcwd()
+        def download_napcat():
             if config.np_uri is None:
                 raise ValueError("[setting] 缺少配置项，请检查！详情:np_uri")
-            if config.np_uri.startswith("https"):
-                if not os.path.exists(NAPCAT_DIR):
-                    _log.info("正在下载 napcat 客户端, 请稍等...")
-                    try:
-                        r = requests.get(config.np_uri, stream=True)
-                        total_size = int(r.headers.get("content-length", 0))
-                        progress_bar = tqdm(
-                            total=total_size,
-                            unit="iB",
-                            unit_scale=True,
-                            desc=f"Downloading {NAPCAT_DIR}.zip",
-                            bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]",
-                            colour="green",
-                            dynamic_ncols=True,
-                            smoothing=0.3,
-                            mininterval=0.1,
-                            maxinterval=1.0,
-                        )
-                        with open(f"{NAPCAT_DIR}.zip", "wb") as f:
-                            for data in r.iter_content(chunk_size=1024):
-                                progress_bar.update(len(data))
-                                f.write(data)
-                        progress_bar.close()
-                    except Exception as e:
-                        _log.info(
-                            "下载 napcat 客户端失败, 请检查网络连接或手动下载 napcat 客户端。"
-                        )
-                        _log.info("错误信息:", e)
-                        return
-                    try:
-                        with zipfile.ZipFile(f"{NAPCAT_DIR}.zip", "r") as zip_ref:
-                            zip_ref.extractall(NAPCAT_DIR)
-                            _log.info("解压 napcat 客户端成功, 请运行 napcat 客户端。")
-                        os.remove("NapcatFiles.zip")
-                    except Exception as e:
-                        _log.info(
-                            "解压 napcat 客户端失败, 请检查 napcat 客户端是否正确。"
-                        )
-                        _log.info("错误信息: ", e)
-                        return
-                else:
-                    pass
 
+            if config.np_uri.startswith("https"):
+                _log.info("正在下载 napcat 客户端, 请稍等...")
+                try:
+                    r = requests.get(config.np_uri, stream=True)
+                    total_size = int(r.headers.get("content-length", 0))
+                    progress_bar = tqdm(
+                        total=total_size,
+                        unit="iB",
+                        unit_scale=True,
+                        desc=f"Downloading {NAPCAT_DIR}.zip",
+                        bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]",
+                        colour="green",
+                        dynamic_ncols=True,
+                        smoothing=0.3,
+                        mininterval=0.1,
+                        maxinterval=1.0,
+                    )
+                    with open(f"{NAPCAT_DIR}.zip", "wb") as f:
+                        for data in r.iter_content(chunk_size=1024):
+                            progress_bar.update(len(data))
+                            f.write(data)
+                    progress_bar.close()
+                except Exception as e:
+                    _log.info(
+                        "下载 napcat 客户端失败, 请检查网络连接或手动下载 napcat 客户端。"
+                    )
+                    _log.info("错误信息:", e)
+                    return
+                try:
+                    with zipfile.ZipFile(f"{NAPCAT_DIR}.zip", "r") as zip_ref:
+                        zip_ref.extractall(NAPCAT_DIR)
+                        _log.info("解压 napcat 客户端成功, 请运行 napcat 客户端.")
+                    os.remove(f"{NAPCAT_DIR}.zip")
+                except Exception as e:
+                    _log.info("解压 napcat 客户端失败, 请检查 napcat 客户端是否正确.")
+                    _log.info("错误信息: ", e)
+                    return
+            else:
+                _log.error("不要乱改默认配置谢谢喵~")
+                exit(0)
+            os.chdir(base_path)
+
+        def config_account():
             os.chdir(os.path.join(NAPCAT_DIR, "config"))
             http_enable = False if config.hp_uri == "" else True
             ws_enable = False if config.ws_uri == "" else True
@@ -194,5 +193,31 @@ class BotClient:
                     f.close()
                 os.system(f"{config.bt_uin}_quickLogin.bat")
             os.chdir(base_path)
-            time.sleep(3)
+
+        if reload:
+            asyncio.run(self.run_async())
+        elif not reload:
+            base_path = os.getcwd()
+
+            # 下载 napcat 客户端
+            if not os.path.exists(os.path.join(NAPCAT_DIR, INSTALL_CHECK_PATH)):
+                _log.info("未找到 napcat 安装记录, 正在下载 napcat 客户端, 请稍等...")
+                download_napcat()
+                with open(os.path.join(NAPCAT_DIR, INSTALL_CHECK_PATH), "w") as f:
+                    f.write("installed")
+
+            # 配置账号信息
+            config_account()
+            MAX_TIME_EXPIRE = time.time() + 60
+
+            while (asyncio.run(check_websocket(config.ws_uri))) is False:
+                _log.info("正在连接 napcat websocket 服务器...")
+                time.sleep(2)
+                if time.time() > MAX_TIME_EXPIRE:
+                    _log.info("连接 napcat websocket 服务器超时, 请检查以下内容")
+                    _log.info("1. 检查 QQ 号是否正确填写")
+                    _log.info("2. 检查网络是否正常")
+                    exit(0)
+
+            _log.info("连接 napcat websocket 服务器成功!")
             asyncio.run(self.run_async())
