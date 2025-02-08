@@ -19,23 +19,8 @@ from ncatbot.element import (
 )
 from ncatbot.http import Route, WsRoute
 from ncatbot.status import Status
+from ncatbot.utils.io import convert_uploadable_object, read_file
 from ncatbot.utils.mdmaker import md_maker
-
-
-def convert(i, message_type):
-    if i.startswith("http"):
-        return {"type": message_type, "data": {"file": i}}
-    elif i.startswith("base64://"):
-        return {"type": message_type, "data": {"file": i}}
-    elif os.path.exists(i):
-        return {"type": message_type, "data": {"file": f"file:///{os.path.abspath(i)}"}}
-    else:
-        return {"type": message_type, "data": {"file": f"file:///{i}"}}
-
-
-def read_file(file_path) -> any:
-    with open(file_path, "r", encoding="utf-8") as f:
-        return f.read()
 
 
 class BotAPI:
@@ -1186,7 +1171,7 @@ class BotAPI:
         if json:
             message.append(Json(json))
         if markdown:
-            message.append(convert(await md_maker(markdown), "image"))
+            message.append(convert_uploadable_object(await md_maker(markdown), "image"))
         if at:
             message.append(At(at))
         if reply:
@@ -1267,7 +1252,7 @@ class BotAPI:
         if json:
             message.append(Json(json))
         if markdown:
-            message.append(convert(await md_maker(markdown), "image"))
+            message.append(convert_uploadable_object(await md_maker(markdown), "image"))
         if reply:
             message.insert(0, Reply(reply))
         if music:
@@ -1327,7 +1312,7 @@ class BotAPI:
             message.append(File(file))
         elif markdown:
             message.append(
-                convert(
+                convert_uploadable_object(
                     await md_maker(
                         read_file(
                             markdown
@@ -1374,7 +1359,7 @@ class BotAPI:
             message.append(File(file))
         elif markdown:
             message.append(
-                convert(
+                convert_uploadable_object(
                     await md_maker(
                         read_file(
                             markdown

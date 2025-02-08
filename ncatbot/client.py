@@ -15,8 +15,6 @@ from ncatbot.message import GroupMessage, PrivateMessage
 
 _log = get_log("ncatbot")
 
-base_path = os.getcwd()
-
 
 class BotClient:
     def __init__(self, use_ws=True):
@@ -84,6 +82,7 @@ class BotClient:
         if reload:
             asyncio.run(self.run_async())
         elif not reload:
+            base_path = os.getcwd()
             if config.np_uri is None:
                 raise ValueError("[setting] 缺少配置项，请检查！详情:np_uri")
             if config.np_uri.startswith("https"):

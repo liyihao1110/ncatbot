@@ -1,19 +1,9 @@
 import json
-import os
 from typing import Union
 
+from ncatbot.utils.io import convert_uploadable_object
+
 # from ncatbot.utils.mdmaker import md_maker
-
-
-def convert(i, message_type):
-    if i.startswith("http"):
-        return {"type": message_type, "data": {"file": i}}
-    elif i.startswith("base64://"):
-        return {"type": message_type, "data": {"file": i}}
-    elif os.path.exists(i):
-        return {"type": message_type, "data": {"file": f"file:///{os.path.abspath(i)}"}}
-    else:
-        return {"type": message_type, "data": {"file": f"file:///{i}"}}
 
 
 class MessageChain:
@@ -146,7 +136,7 @@ class Image(Element):
         self.path = path
 
     def to_dict(self) -> dict:
-        return convert(self.path, "image")
+        return convert_uploadable_object(self.path, "image")
 
 
 class Face(Element):
@@ -290,4 +280,4 @@ class File(Element):
         self.file = file
 
     def to_dict(self) -> dict:
-        return convert(self.file, "file")
+        return convert_uploadable_object(self.file, "file")
