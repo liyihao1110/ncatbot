@@ -33,6 +33,15 @@ class BotClient:
         self._private_event_handler = None
         self._notice_event_handler = None
         self._request_event_handler = None
+        self.plugins = []
+
+    def load_plugin(self, plugin):
+        try:
+            plugin.init_plugin(self)
+            self.plugins.append(plugin)
+            _log.info(f"插件 {plugin.name} 加载成功")
+        except Exception as e:
+            _log.error(f"加载插件 {plugin.name} 失败: {e}")
 
     def group_event(self, types=None):
         def decorator(func):
@@ -63,18 +72,24 @@ class BotClient:
         return func
 
     async def handle_group_event(self, msg: dict):
+        group_msg = GroupMessage(msg)
+        for plugin in self.plugins:
+            await plugin.handle_group_message(group_msg)
         if self._group_event_handler:
-            func, types = self._group_event_handler
-            if types is None or any(i["type"] in types for i in msg["message"]):
-                msg = GroupMessage(msg)
-                await func(msg)
+            for func, types in self._group_event_handler:
+                if types is None or any(i["type"] in types for i in msg["message"]):
+                    msg = GroupMessage(msg)
+                    await func(msg)
 
     async def handle_private_event(self, msg: dict):
+        private_msg = PrivateMessage(msg)
+        for plugin in self.plugins:
+            await plugin.handle_private_message(private_msg)
         if self._private_event_handler:
-            func, types = self._private_event_handler
-            if types is None or any(i["type"] in types for i in msg["message"]):
-                msg = PrivateMessage(msg)
-                await func(msg)
+            for func, types in self._private_event_handler:
+                if types is None or any(i["type"] in types for i in msg["message"]):
+                    msg = PrivateMessage(msg)
+                    await func(msg)
 
     async def handle_notice_event(self, msg: dict):
         if self._notice_event_handler:
