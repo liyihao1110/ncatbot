@@ -183,3 +183,4 @@ System Volume Information/IndexerVolumeGuid
 .vscode/
 plugins/
 logs/
+plugin.py
