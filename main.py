@@ -6,7 +6,7 @@ from ncatbot.message import GroupMessage, PrivateMessage
 _log = get_log()
 
 config.set_bot_uin("123456")  # 设置 bot qq 号
-config.set_ws_uri("ws://156.238.233.103:3001")  # 设置 napcat websocket server 地址
+config.set_ws_uri("ws://localhost:3001")  # 设置 napcat websocket server 地址
 
 bot = BotClient()
 
@@ -24,4 +24,4 @@ async def on_private_message(msg: PrivateMessage):
 
 
 if __name__ == "__main__":
-    bot.run(reload=True)
+    bot.run(reload=False)
