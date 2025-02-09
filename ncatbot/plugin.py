@@ -50,6 +50,20 @@ class Plugin:
                     await handler(msg)
             except Exception as e:
                 self.log.error(f"处理私聊消息失败: {e}")
+
+    async def handle_notice_message(self, msg: dict):
+        for handler in self._notice_handlers:
+            try:
+                await handler(msg)
+            except Exception as e:
+                self.log.error(f"处理通知消息失败: {e}")
+
+    async def handle_request_message(self, msg: dict):
+        for handler in self._request_handlers:
+            try:
+                await handler(msg)
+            except Exception as e:
+                self.log.error(f"处理请求消息失败: {e}")
                 
     def init_plugin(self, bot) -> None:
         """插件初始化方法,由插件实现"""

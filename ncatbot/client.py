@@ -93,13 +93,13 @@ class BotClient:
 
     async def handle_notice_event(self, msg: dict):
         for plugin in self._plugins:
-            await plugin.handle_notice_event(msg)
+            await plugin.handle_notice_message(msg)
         if self._notice_event_handler:
             await self._notice_event_handler(msg)
 
     async def handle_request_event(self, msg: dict):
         for plugin in self._plugins:
-            await plugin.handle_request_event(msg)
+            await plugin.handle_request_message(msg)
         if self._request_event_handler:
             await self._request_event_handler(msg)
 
