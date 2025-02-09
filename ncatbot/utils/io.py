@@ -20,10 +20,8 @@ def convert_uploadable_object(i, message_type):
                     image_data = response.content
                     i = f"base64://{base64.b64encode(image_data).decode('utf-8')}"
             except httpx.HTTPError as e:
-                print(f"HTTP错误: {e}")  # 添加调试信息
                 return {"type": "text", "data": {"text": f"URL请求失败: {e}"}}
             except Exception as e:
-                print(f"转换错误: {e}")  # 添加调试信息
                 return {"type": "text", "data": {"text": f"图片转换失败: {e}"}}
         return {"type": message_type, "data": {"file": i}}
     elif i.startswith("base64://"):
