@@ -33,75 +33,81 @@ class BotClient:
         self._private_event_handler = None
         self._notice_event_handler = None
         self._request_event_handler = None
-        self._plugins = []
-
-    def load_plugin(self, plugin):
-        try:
-            plugin.init_plugin(self)
-            self._plugins.append(plugin)
-            _log.info(f"插件 {plugin.name} 加载成功")
-        except Exception as e:
-            _log.error(f"加载插件 {plugin.name} 失败: {e}")
 
     def group_event(self, types=None):
         def decorator(func):
-            if self._group_event_handler is None:
-                self._group_event_handler = []
-            self._group_event_handler.append((func, types))
+            self._group_event_handler = (func, types)
+            return func
+
+        return decorator
+
+    def private_event(self, types=None):
+        def decorator(func):
+            self._private_event_handler = (func, types)
+            return func
+
+        return decorator
+
+    def notice_event(self, func):
+        self._notice_event_handler = func
+        return func
+
+    def request_event(self, func):
+        self._request_event_handler = func
+        return func
+
+    def __init__(self, use_ws=True):
+        if not config._updated:
+            _log.warning("没有主动设置配置项, 配置项将使用默认值")
+            time.sleep(0.8)
+        _log.info(config)
+        time.sleep(1.6)
+
+        self.api = BotAPI(use_ws)
+        self._group_event_handlers = []
+        self._private_event_handlers = []
+        self._notice_event_handlers = []
+        self._request_event_handlers = []
+
+    async def handle_group_event(self, msg: dict):
+        for handler, types in self._group_event_handlers:
+            if types is None or any(i["type"] in types for i in msg["message"]):
+                msg = GroupMessage(msg)
+                await handler(msg)
+
+    async def handle_private_event(self, msg: dict):
+        for handler, types in self._private_event_handlers:
+            if types is None or any(i["type"] in types for i in msg["message"]):
+                msg = PrivateMessage(msg)
+                await handler(msg)
+
+    async def handle_notice_event(self, msg: dict):
+        for handler in self._notice_event_handlers:
+            await handler(msg)
+
+    async def handle_request_event(self, msg: dict):
+        for handler in self._request_event_handlers:
+            await handler(msg)
+
+    def group_event(self, types=None):
+        def decorator(func):
+            self._group_event_handlers.append((func, types))
             return func
         return decorator
 
     def private_event(self, types=None):
         def decorator(func):
-            if self._private_event_handler is None:
-                self._private_event_handler = []
-            self._private_event_handler.append((func, types))
+            self._private_event_handlers.append((func, types))
             return func
         return decorator
 
     def notice_event(self, func):
-        if self._notice_event_handler is None:
-            self._notice_event_handler = []
-        self._notice_event_handler.append(func)
+        self._notice_event_handlers.append(func)
         return func
 
     def request_event(self, func):
-        if self._request_event_handler is None:
-            self._request_event_handler = []
-        self._request_event_handler.append(func)
+        self._request_event_handlers.append(func)
         return func
-
-    async def handle_group_event(self, msg: dict):
-        group_msg = GroupMessage(msg)
-        for plugin in self._plugins:
-            await plugin.handle_group_message(group_msg)
-        if self._group_event_handler:
-            for func, types in self._group_event_handler:
-                if types is None or any(i["type"] in types for i in msg["message"]):
-                    msg = GroupMessage(msg)
-                    await func(msg)
-
-    async def handle_private_event(self, msg: dict):
-        private_msg = PrivateMessage(msg)
-        for plugin in self._plugins:
-            await plugin.handle_private_message(private_msg)
-        if self._private_event_handler:
-            for func, types in self._private_event_handler:
-                if types is None or any(i["type"] in types for i in msg["message"]):
-                    msg = PrivateMessage(msg)
-                    await func(msg)
-
-    async def handle_notice_event(self, msg: dict):
-        for plugin in self._plugins:
-            await plugin.handle_notice_message(msg)
-        if self._notice_event_handler:
-            await self._notice_event_handler(msg)
-
-    async def handle_request_event(self, msg: dict):
-        for plugin in self._plugins:
-            await plugin.handle_request_message(msg)
-        if self._request_event_handler:
-            await self._request_event_handler(msg)
 
     async def run_async(self):
         websocket_server = Websocket(self)
