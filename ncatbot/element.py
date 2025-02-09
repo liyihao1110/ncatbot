@@ -54,6 +54,12 @@ class MessageChain:
             return MessageChain(self.chain + other.chain)
         return MessageChain(self.chain + [other])
 
+    def __iadd__(self, other):
+        if isinstance(other, MessageChain):
+            self.chain += other.chain
+        else:
+            self.chain += MessageChain([other])
+
     def display(self) -> str:
         """获取消息链的字符串表示"""
         result = []
