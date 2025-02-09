@@ -33,12 +33,12 @@ class BotClient:
         self._private_event_handler = None
         self._notice_event_handler = None
         self._request_event_handler = None
-        self.plugins = []
+        self._plugins = []
 
     def load_plugin(self, plugin):
         try:
             plugin.init_plugin(self)
-            self.plugins.append(plugin)
+            self._plugins.append(plugin)
             _log.info(f"插件 {plugin.name} 加载成功")
         except Exception as e:
             _log.error(f"加载插件 {plugin.name} 失败: {e}")
@@ -73,7 +73,7 @@ class BotClient:
 
     async def handle_group_event(self, msg: dict):
         group_msg = GroupMessage(msg)
-        for plugin in self.plugins:
+        for plugin in self._plugins:
             await plugin.handle_group_message(group_msg)
         if self._group_event_handler:
             for func, types in self._group_event_handler:
@@ -83,7 +83,7 @@ class BotClient:
 
     async def handle_private_event(self, msg: dict):
         private_msg = PrivateMessage(msg)
-        for plugin in self.plugins:
+        for plugin in self._plugins:
             await plugin.handle_private_message(private_msg)
         if self._private_event_handler:
             for func, types in self._private_event_handler:
@@ -92,10 +92,14 @@ class BotClient:
                     await func(msg)
 
     async def handle_notice_event(self, msg: dict):
+        for plugin in self._plugins:
+            await plugin.handle_notice_event(msg)
         if self._notice_event_handler:
             await self._notice_event_handler(msg)
 
     async def handle_request_event(self, msg: dict):
+        for plugin in self._plugins:
+            await plugin.handle_request_event(msg)
         if self._request_event_handler:
             await self._request_event_handler(msg)
 
