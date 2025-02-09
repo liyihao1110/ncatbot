@@ -36,24 +36,30 @@ class BotClient:
 
     def group_event(self, types=None):
         def decorator(func):
-            self._group_event_handler = (func, types)
+            if self._group_event_handler is None:
+                self._group_event_handler = []
+            self._group_event_handler.append((func, types))
             return func
-
         return decorator
 
     def private_event(self, types=None):
         def decorator(func):
-            self._private_event_handler = (func, types)
+            if self._private_event_handler is None:
+                self._private_event_handler = []
+            self._private_event_handler.append((func, types))
             return func
-
         return decorator
 
     def notice_event(self, func):
-        self._notice_event_handler = func
+        if self._notice_event_handler is None:
+            self._notice_event_handler = []
+        self._notice_event_handler.append(func)
         return func
 
     def request_event(self, func):
-        self._request_event_handler = func
+        if self._request_event_handler is None:
+            self._request_event_handler = []
+        self._request_event_handler.append(func)
         return func
 
     async def handle_group_event(self, msg: dict):
