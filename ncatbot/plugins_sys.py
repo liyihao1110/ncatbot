@@ -277,7 +277,7 @@ class EventBus:
         await self._process_event(event)
         return event.results
 
-    async def publish_async(self, event: Event) -> None:
+    async def publish_async(self, event: Event, return_results: bool = False) -> None:
         """
         异步发布事件,后台处理
         :param event: 要发布的事件对象
@@ -285,6 +285,8 @@ class EventBus:
         await self._queues[event.type].put(event)
         if self._queues[event.type].qsize() == 1:  # 避免重复创建任务
             self._processing_tasks[event.type] = asyncio.create_task(self._process_queue(event.type))
+        if return_results:
+            return event.results
 
     async def _process_queue(self, event_type: str):
         """
@@ -303,7 +305,7 @@ class BasePlugin:
     @todo 考虑使用插件id
     
     没有非常严格的限制，请开发者注意
-    事件注册为防止冲突格式为f"{self.name}-{event_type}"
+    事件_发布_为防止冲突格式为f"{self.name}.{event_type}"
     """
     name: str = field(default_factory=str)
     version: str = field(default_factory=str)
@@ -368,6 +370,21 @@ class BasePlugin:
         except Exception as e:
             PluginSystemError(f"保存数据时出错（{self.name}）: {str(e)}")
 
+    def publish_sync(self, event: Event) -> List[Any]:
+        """
+        同步发布事件,等待事件处理完成
+        :param event: 要发布的事件对象
+        :return: 事件处理结果列表
+        """
+        return self.event_bus.publish_sync(event)
+
+    async def publish_async(self, event: Event) -> None:
+        """
+        异步发布事件,后台处理
+        :param event: 要发布的事件对象
+        """
+        return self.event_bus.publish_async(event)
+
     def register_handler(self, event_type: str, handler: Callable, priority: int = 0):
         """
         [用户接口]注册事件处理器到事件总线
@@ -375,7 +392,7 @@ class BasePlugin:
         :param handler: 事件处理器
         :param priority: 事件处理器优先级
         """
-        event_type = f"{self.name}-{event_type}"
+        event_type = event_type
         self.event_bus.subscribe(event_type, handler, priority)
         self._event_handlers[event_type].append(handler)
 
@@ -434,6 +451,7 @@ class PluginLoader:
         初始化插件加载器
         """
         self.plugins: Dict[str, BasePlugin] = {}
+        self.event_bus = EventBus()
         self._dependency_graph: Dict[str, Set[str]] = {}
         self._version_constraints: Dict[str, Dict[str, str]] = {}
 
@@ -500,9 +518,7 @@ class PluginLoader:
                     queue.append(neighbor)
 
         # 检测是否存在循环依赖
-        print(self._dependency_graph)
         for plugin_name, dependency in self._dependency_graph.items():
-            print(set(self._dependency_graph.keys()) , set(dependency))
             if not dependency.issubset(self._dependency_graph.keys()):
                 raise PluginDependencyError(plugin_name, dependency)
             
@@ -524,11 +540,10 @@ class PluginLoader:
         load_order = self._resolve_load_order()
         
         # 实例化所有插件
-        event_bus = EventBus()
         temp_plugins = {}
         for name in load_order:
             plugin_cls = next(p for p in valid_plugins if p.name == name)
-            temp_plugins[name] = plugin_cls(event_bus)
+            temp_plugins[name] = plugin_cls(self.event_bus)
         
         # 验证依赖版本
         self.plugins = temp_plugins
@@ -546,7 +561,6 @@ class PluginLoader:
                 plugins.append(getattr(plugin,plugin_class_name))
         # print(dir(models['a_plugins']))
         # print(models['a_plugins'].__all__)
-        print(plugins)
         await self.from_class_load_plugins(plugins)
 
     async def unload_plugin(self, plugin_name: str):

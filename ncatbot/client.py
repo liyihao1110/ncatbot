@@ -17,11 +17,12 @@ from ncatbot.logger import get_log
 from ncatbot.message import GroupMessage, PrivateMessage
 from ncatbot.utils.literals import INSTALL_CHECK_PATH, NAPCAT_DIR
 
+from ncatbot.plugins_sys import PluginLoader, Event
 _log = get_log("ncatbot")
 
 
 class BotClient:
-    def __init__(self, use_ws=True):
+    def __init__(self, use_ws=True, plugins_path="plugins"):
         if not config._updated:
             _log.warning("没有主动设置配置项, 配置项将使用默认值")
             time.sleep(0.8)
@@ -33,6 +34,8 @@ class BotClient:
         self._private_event_handler = None
         self._notice_event_handler = None
         self._request_event_handler = None
+        self.plugins_path = plugins_path
+        self.plugin_sys = PluginLoader()
 
     def group_event(self, types=None):
         def decorator(func):
@@ -62,6 +65,7 @@ class BotClient:
             if types is None or any(i["type"] in types for i in msg["message"]):
                 msg = GroupMessage(msg)
                 await func(msg)
+                self.plugin_sys.event_bus.publish_async(Event("ncatbot.group", msg))
 
     async def handle_private_event(self, msg: dict):
         if self._private_event_handler:
@@ -69,6 +73,7 @@ class BotClient:
             if types is None or any(i["type"] in types for i in msg["message"]):
                 msg = PrivateMessage(msg)
                 await func(msg)
+                self.plugin_sys.event_bus.publish_async(Event("ncatbot.private", msg))
 
     async def handle_notice_event(self, msg: dict):
         if self._notice_event_handler:
@@ -80,6 +85,7 @@ class BotClient:
 
     async def run_async(self):
         websocket_server = Websocket(self)
+        await self.plugin_sys.load_plugin(self.plugins_path)
         await websocket_server.ws_connect()
 
     def run(self, reload=False):

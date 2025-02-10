@@ -10,9 +10,8 @@ class Test(BasePlugin):
     version = "1.0.0"
     
     async def on_load(self):
-        print('load ok')
         # 注册一个事件处理器
-        self.register_handler("test.event", self.handle_test)
+        self.register_handler("ncatbot\.group|ncatbot\.private", self.handle_test)
     
     async def handle_test(self, event: Event):
-        print(f"处理测试事件: {event.data}")
+        print(f"处理事件: {event.data}")
