@@ -12,6 +12,8 @@ import asyncio
 import importlib
 import inspect
 import re
+import os
+import sys
 from packaging.version import Version
 from packaging.specifiers import SpecifierSet
 from packaging.version import parse as parse_version
@@ -19,11 +21,19 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Pattern, Set, Tuple, Type, Sequence
-from types import MappingProxyType
+from types import MappingProxyType, ModuleType
 from weakref import WeakMethod, ref, ReferenceType
-from .UniversalDataIO import UniversalLoader
+from universal_data_io import UniversalLoader
 
-# ------------------- 系统异常 -------------------
+# region ----------------- 配置常量 -----------------
+PLUGINS_DIR = "plugins"             # 插件目录
+PERSISTENT_DIR = "data"             # 插件私有数据目录
+EVENT_QUEUE_MAX_SIZE = 1000         # 事件队列最大长度
+META_CONFIG_PATH = './config.yaml'  # 元事件，所有插件一份(只读)
+# @Todo ALLOW_RAW_FILE_ACCESS = False       # 是否允许直接文件访问
+# endregion
+
+# region ------------------- 异常 -------------------
 # 没用上就是懒的检查
 
 class PluginSystemError(Exception):
@@ -122,14 +132,8 @@ class PluginVersionError(PluginSystemError):
         self.required_version = required_version
         self.actual_version = actual_version
         super().__init__(f"插件 '{required_plugin_name}' 版本不满足要求'{plugin_name}'需要 '{required_plugin_name}' 的版本: {required_version},实际版本: {actual_version.public}")
-
-# ----------------- 系统配置常量 -----------------
-PLUGINS_DIR = "plugins"             # 插件目录
-PERSISTENT_DIR = "data"             # 插件私有数据目录
-EVENT_QUEUE_MAX_SIZE = 1000         # 事件队列最大长度
-META_CONFIG_PATH = './config.yaml'  # 元事件，所有插件一份(只读)
-# @Todo ALLOW_RAW_FILE_ACCESS = False       # 是否允许直接文件访问
-# ----------------- 增强事件对象 -----------------
+# endregion
+# region ----------------- 事件对象 -----------------
 @dataclass
 class Event:
     """
@@ -152,8 +156,8 @@ class Event:
         向事件结果列表中添加处理结果
         """
         self.results.append(result)
-
-# ----------------- 完整事件总线实现 -----------------
+# endregion
+# region ----------------- 事件总线 -----------------
 class EventBus:
     """
     事件总线,用于管理和分发事件
@@ -290,17 +294,20 @@ class EventBus:
             event = await self._queues[event_type].get()
             await self._process_event(event)
             self._queues[event_type].task_done()
-
-# ----------------- 完整插件基类实现 -----------------
+# endregion
+# region ----------------- 插件基类 -----------------
 class BasePlugin:
     """
     插件基类，所有插件应继承此类
+    目前使用插件名称区分插件
+    @todo 考虑使用插件id
     
     没有非常严格的限制，请开发者注意
+    事件注册为防止冲突格式为f"{self.name}-{event_type}"
     """
     name: str = field(default_factory=str)
     version: str = field(default_factory=str)
-    dependencies: Dict[str, str] = field(default_factory=dict) # 插件: 版本需求
+    dependencies: Dict[str, str] = {} # 插件名: 版本需求
     meta_data: Dict[str, Any] # 只读字典(非强制)
     data: Dict[str, Any] = field(default_factory=dict) # 插件系统维护: 每个插件独立
     lock = asyncio.Lock() # 资源保护: 使用 with self.lock: 来确保对共享资源的访问是线程安全的
@@ -363,23 +370,30 @@ class BasePlugin:
 
     def register_handler(self, event_type: str, handler: Callable, priority: int = 0):
         """
-        注册事件处理器到事件总线
+        [用户接口]注册事件处理器到事件总线
         :param event_type: 事件类型
         :param handler: 事件处理器
         :param priority: 事件处理器优先级
         """
+        event_type = f"{self.name}-{event_type}"
         self.event_bus.subscribe(event_type, handler, priority)
         self._event_handlers[event_type].append(handler)
 
     async def on_load(self):
         """
-        插件加载时调用的生命周期方法
+        [用户接口]插件加载时调用的生命周期方法
         """
         pass
 
     async def on_unload(self):
         """
-        插件卸载时调用的生命周期方法
+        [用户接口]插件卸载时调用的生命周期方法
+        """
+        pass
+
+    async def _close_(self):
+        """
+        注销插件自动调用
         """
         self._save_persistent_data()
         self._unregister_handlers()
@@ -409,8 +423,8 @@ class BasePlugin:
                     if h != weak_ref
                 ]
         self._event_handlers.clear()
-
-# ----------------- 完整插件加载器实现 -----------------
+# endregion
+# region ----------------- 插件加载器 -----------------
 class PluginLoader:
     """
     插件加载器,用于加载、卸载和管理插件
@@ -500,7 +514,7 @@ class PluginLoader:
         # 返回最终的加载顺序
         return load_order
 
-    async def load_plugins(self, plugins: List[Type[BasePlugin]]):
+    async def from_class_load_plugins(self, plugins: List[Type[BasePlugin]]):
         """
         加载插件
         :param plugins: 插件类列表
@@ -524,6 +538,17 @@ class PluginLoader:
         for name in load_order:
             await self.plugins[name].on_load()
 
+    async def load_plugin(self, plugins_path: str):
+        models: Dict = self._load_modules_from_directory(plugins_path)
+        plugins = []
+        for plugin in models.values():
+            for plugin_class_name in plugin.__all__:
+                plugins.append(getattr(plugin,plugin_class_name))
+        # print(dir(models['a_plugins']))
+        # print(models['a_plugins'].__all__)
+        print(plugins)
+        await self.from_class_load_plugins(plugins)
+
     async def unload_plugin(self, plugin_name: str):
         """
         卸载插件
@@ -532,7 +557,7 @@ class PluginLoader:
         if plugin_name not in self.plugins:
             return
 
-        await self.plugins[plugin_name].on_unload()
+        await self.plugins[plugin_name]._close_()
         del self.plugins[plugin_name]
 
     async def reload_plugin(self, plugin_name: str):
@@ -545,7 +570,7 @@ class PluginLoader:
             pass
 
         old = self.plugins[plugin_name]
-        await old.on_unload()
+        await old._close_()
         
         module = importlib.import_module(old.__class__.__module__)
         importlib.reload(module)
@@ -555,88 +580,140 @@ class PluginLoader:
         await new_plugin.on_load()
         self.plugins[plugin_name] = new_plugin
 
-
-
-
-
-
-
-
-
-
-# ----------------- 使用示例 -----------------
-class HiPlugin(BasePlugin):
-    """
-    测试插件
-    """
-    name = "Hi"
-    version = "1.0.0.dev"
-    # dependencies = {"Network": ">=2.0.0"}
-
-    async def on_load(self):
-        pass
-
-    def handle_log(self, event: Event):
-        pass
-
-class LoggerPlugin(BasePlugin):
-    """
-    日志插件,用于记录日志事件
-    """
-    name = "Logger"
-    version = "2.0.0"
-    dependencies = {"Hi": ">=1.0.0"}
-
-    async def on_load(self):
+    def _load_modules_from_directory(self, directory_path: str) -> Dict[str, ModuleType]:
         """
-        加载时注册日志事件处理器
+        从指定文件夹动态加载模块，返回模块名到模块的字典。
+        不修改 `sys.path`，仅在必要时临时添加路径。
         """
-        self.register_handler("re:^log\.", self.handle_log, priority=10)
+        # 存储模块的字典
+        modules = {}
 
-    def handle_log(self, event: Event):
-        """
-        处理日志事件,将日志数据保存到私有存储中
-        """
-        self.data.setdefault('logs', []).append(event.data)
-        print(f"[日志] {event.type}: {event.data}")
+        # 避免重复添加目录到 sys.path
+        original_sys_path = sys.path.copy()
 
-class NetworkPlugin(BasePlugin):
-    """
-    网络插件,用于处理网络请求事件
-    """
-    name = "Network"
-    dependencies = {"Logger": ">=2.0.0"}
+        try:
+            # 临时插入目录到 sys.path，用于加载模块
+            directory_path = os.path.abspath(directory_path)
+            sys.path.append(directory_path)
 
-    async def on_load(self):
-        """
-        加载时注册网络请求事件处理器
-        """
-        self.register_handler("network.request", self.handle_request)
+            # 遍历文件夹中的所有文件
+            for filename in os.listdir(directory_path):
+                # 忽略非文件夹
+                if os.path.isdir(filename):
+                    continue
 
-    async def handle_request(self, event: Event):
-        """
-        处理网络请求事件,返回模拟的响应结果
-        """
-        event.add_result({"status": 200})
-        print(f"[网络] 处理请求: {event.data}")
+                # 异常捕获，防止导入失败导致程序崩溃
+                try:
+                    # 动态导入模块
+                    module = importlib.import_module(filename)
+                    modules[filename] = module
+                except ImportError as e:
+                    print(f"导入模块 {filename} 时出错: {e}")
+                    continue
 
-# ----------------- 测试用例 -----------------
+        finally:
+            # 恢复原 sys.path，移除临时路径
+            sys.path = original_sys_path
+
+        # 返回所有加载成功的模块字典
+        return modules
+
+# endregion
+
+
+
+
+
+
+
+# region ----------------- 使用示例 -----------------
+
+# class HiPlugin(BasePlugin):
+#     """
+#     测试插件
+#     """
+#     name = "Hi"
+#     version = "1.0.0.dev"
+#     # dependencies = {"Network": ">=2.0.0"}
+
+#     async def on_load(self):
+#         pass
+
+#     def handle_log(self, event: Event):
+#         pass
+
+# class LoggerPlugin(BasePlugin):
+#     """
+#     日志插件,用于记录日志事件
+#     """
+#     name = "Logger"
+#     version = "2.0.0"
+#     dependencies = {"Hi": ">=1.0.0"}
+
+#     async def on_load(self):
+#         """
+#         加载时注册日志事件处理器
+#         """
+#         self.register_handler("re:^log\.", self.handle_log, priority=10)
+
+#     def handle_log(self, event: Event):
+#         """
+#         处理日志事件,将日志数据保存到私有存储中
+#         """
+#         self.data.setdefault('logs', []).append(event.data)
+#         print(f"[日志] {event.type}: {event.data}")
+
+# class NetworkPlugin(BasePlugin):
+#     """
+#     网络插件,用于处理网络请求事件
+#     """
+#     name = "Network"
+#     dependencies = {"Logger": ">=2.0.0"}
+
+#     async def on_load(self):
+#         """
+#         加载时注册网络请求事件处理器
+#         """
+#         self.register_handler("network.request", self.handle_request)
+
+#     async def handle_request(self, event: Event):
+#         """
+#         处理网络请求事件,返回模拟的响应结果
+#         """
+#         event.add_result({"status": 200})
+#         print(f"[网络] 处理请求: {event.data}")
+
+# # ----------------- 测试用例 -----------------
+# async def old_main():
+#     """
+#     测试用例,加载插件并发布事件
+#     """
+#     loader = PluginLoader()
+#     await loader.from_class_load_plugins([LoggerPlugin, NetworkPlugin, HiPlugin])
+    
+#     # 发布事件
+#     event = Event("log.system", {"message": "系统已启动"})
+#     await loader.plugins["Logger"].event_bus.publish_async(event)
+    
+#     network_event = Event("network.request", {"url": "/api/data"})
+#     results = await loader.plugins["Network"].event_bus.publish_sync(network_event)
+#     print("同步结果:", results)
+    
+#     await loader.unload_plugin("Network")
+# endregion
+
+
+
+
+
 async def main():
-    """
-    测试用例,加载插件并发布事件
-    """
+    # os.chdir("..")
+    print(os.getcwd())
     loader = PluginLoader()
-    await loader.load_plugins([LoggerPlugin, NetworkPlugin, HiPlugin])
-    
+    await loader.load_plugin('plugins')
     # 发布事件
-    event = Event("log.system", {"message": "系统已启动"})
-    await loader.plugins["Logger"].event_bus.publish_async(event)
-    
-    network_event = Event("network.request", {"url": "/api/data"})
-    results = await loader.plugins["Network"].event_bus.publish_sync(network_event)
-    print("同步结果:", results)
-    
-    await loader.unload_plugin("Network")
+    event = Event("test.event", {"message": "系统已启动"})
+    print('插件列表: ',loader.plugins)
 
 if __name__ == "__main__":
     asyncio.run(main())
