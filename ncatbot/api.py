@@ -18,9 +18,21 @@ from ncatbot.element import (
     Video,
 )
 from ncatbot.http import Route, WsRoute
+from ncatbot.logger import get_log
 from ncatbot.status import Status
 from ncatbot.utils.io import convert_uploadable_object, read_file
+from ncatbot.utils.literals import REQUEST_SUCCESS
 from ncatbot.utils.mdmaker import md_maker
+
+_log = get_log()
+
+
+def check_and_log(result):
+    if result["status"] == REQUEST_SUCCESS:
+        _log.debug(result)
+    else:
+        _log.warning(result)
+    return result
 
 
 class BotAPI:
@@ -1214,7 +1226,7 @@ class BotAPI:
         if not message:
             return {"code": 0, "msg": "消息不能为空"}
         params = {"group_id": group_id, "message": message}
-        return await self._http.post("/send_group_msg", json=params)
+        return check_and_log(await self._http.post("/send_group_msg", json=params))
 
     async def post_private_msg(
         self,
@@ -1280,7 +1292,7 @@ class BotAPI:
         if not message:
             return {"code": 0, "msg": "消息不能为空"}
         params = {"user_id": user_id, "message": message}
-        return await self._http.post("/send_private_msg", json=params)
+        return check_and_log(await self._http.post("/send_private_msg", json=params))
 
     async def post_group_file(
         self,
@@ -1327,7 +1339,7 @@ class BotAPI:
             return {"code": 0, "msg": "请至少选择一种文件"}
 
         params = {"group_id": group_id, "message": message}
-        return await self._http.post("/send_group_msg", json=params)
+        return check_and_log(await self._http.post("/send_group_msg", json=params))
 
     async def post_private_file(
         self,
@@ -1374,4 +1386,4 @@ class BotAPI:
             return {"code": 0, "msg": "请至少选择一种文件"}
 
         params = {"user_id": user_id, "message": message}
-        return await self._http.post("/send_private_msg", json=params)
+        return check_and_log(await self._http.post("/send_private_msg", json=params))

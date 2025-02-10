@@ -58,7 +58,8 @@ class MessageChain:
         if isinstance(other, MessageChain):
             self.chain += other.chain
         else:
-            self.chain += MessageChain([other])
+            self.chain += MessageChain([other]).chain
+        return self
 
     def display(self) -> str:
         """获取消息链的字符串表示"""
