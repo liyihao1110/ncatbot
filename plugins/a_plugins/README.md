@@ -4,10 +4,11 @@
 
 ⚠️ **特别提醒**:
 
-1. 系统当前未处理 Ctrl+C 中断，这意味着插件的 `_close_` 方法不会自动执行
+1. 系统当前未处理 Ctrl+C 中断，这意味着插件的 `on_unload`方法不会自动执行，数据也不会自动保存
 2. 插件的工作路径会被重定向到 `./data/{plugin_name}/`
 3. 需要手动安装 `packaging` 依赖: `pip install packaging`
-4. 文档由ai创建
+4. 此文档由ai创建，仅用于参考
+5. 目前处于测试阶段，接口和运行机制可能进行完全不兼容的修改
 
 ## 1. 快速开始
 
@@ -71,11 +72,11 @@ class MyPlugin(BasePlugin):
     async def on_load(self):
         """插件加载时调用"""
         pass
-      
+  
     async def on_unload(self):
         """插件卸载时调用"""
         pass
-      
+  
     async def _close_(self):
         """插件关闭时自动调用(需正确退出)"""
         pass
@@ -88,7 +89,7 @@ class MyPlugin(BasePlugin):
     def __init__(self, event_bus):
         super().__init__(event_bus)
         self.data["counter"] = 0  # 会自动保存到 data/{plugin_name}/Plugin.json
-      
+  
     async def on_load(self):
         print(f"计数器: {self.data['counter']}")
 ```
@@ -101,10 +102,10 @@ class MyPlugin(BasePlugin):
         # 支持正则匹配,re:前缀
         self.register_handler("re:test\.", self.handle_test)
         self.register_handler("exact.match", self.handle_exact)
-      
+  
     async def handle_test(self, event: Event):
         print(f"正则匹配处理器: {event.data}")
-      
+  
     async def handle_exact(self, event: Event):
         print(f"精确匹配处理器: {event.data}")
 ```
@@ -115,9 +116,10 @@ class MyPlugin(BasePlugin):
 
 ```
 my_plugin/
-├── __init__.py      # 导出插件类
-├── main.py          # 主逻辑
+├── __init__.py      # 定义运行时的插件类
+├── main.py          # 工具函数
 ├── utils.py         # 工具函数
+├── LICENSE          # 开源协议
 └── README.md        # 文档
 ```
 
@@ -149,7 +151,7 @@ class MyPlugin(BasePlugin):
     async def on_load(self):
         # meta_data 是只读的全局配置
         api_key = self.meta_data.get("api_key")
-      
+  
         # data 是插件私有的可写存储
         self.data["count"] = self.data.get("count", 0) + 1
 ```
