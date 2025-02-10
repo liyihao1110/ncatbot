@@ -3,6 +3,7 @@ from pathlib import Path
 # 动态添加项目根目录到 sys.path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]  # 上移两级目录（plugins → NcatBot）
 sys.path.append(str(PROJECT_ROOT))
+'''如果安装了ncatbot包请删除1-6行'''
 from ncatbot.plugins_sys import BasePlugin, Event
 
 class Test(BasePlugin):
