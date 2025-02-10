@@ -16,5 +16,8 @@ class Test(BasePlugin):
         print('工作路径 :',os.getcwd())
         self.register_handler("ncatbot\.group|ncatbot\.private", self.handle_test)
     
+    async def on_unload(self):
+        print('Test插件卸载')
+    
     async def handle_test(self, event: Event):
         print(f"处理事件: {event.data}")

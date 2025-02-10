@@ -585,6 +585,7 @@ class PluginLoader:
             return
 
         await self.plugins[plugin_name]._close_()
+        await self.plugins[plugin_name].on_unload()
         del self.plugins[plugin_name]
 
     async def reload_plugin(self, plugin_name: str):
@@ -738,9 +739,9 @@ async def main():
     print(os.getcwd())
     loader = PluginLoader()
     await loader.load_plugin('plugins')
-    # 发布事件
-    event = Event("test.event", {"message": "系统已启动"})
-    print('插件列表: ',loader.plugins)
+    print('插件列表: ',list(loader.plugins.keys()))
+    for plugin_name in list(loader.plugins.keys()).copy():
+        await loader.unload_plugin(plugin_name)
 
 if __name__ == "__main__":
     asyncio.run(main())
