@@ -5,8 +5,9 @@ from ncatbot.message import GroupMessage, PrivateMessage
 
 _log = get_log()
 
-config.set_bot_uin("123456")  # 设置 bot qq 号
-config.set_ws_uri("ws://localhost:3001")  # 设置 napcat websocket server 地址
+config.set_bot_uin("1550507358")  # 设置 bot qq 号
+config.set_ws_uri("ws://62.234.222.17:3001")  # 设置 napcat websocket server 地址
+config.set_token("2006")
 
 bot = BotClient()
 

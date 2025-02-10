@@ -246,7 +246,7 @@ class UniversalLoader:
         elif self.file_type == 'yaml':
             if not YAML_AVAILABLE:
                 raise ModuleNotInstalledError("请安装 PyYAML 模块以支持 YAML 文件（pip install PyYAML）")
-            with open(self.file_path, 'r') as f:
+            with open(self.file_path, 'r', encoding="utf-8") as f:
                 return yaml.safe_load(f) or {}  # 处理空文件情况
         
         elif self.file_type == 'ini':

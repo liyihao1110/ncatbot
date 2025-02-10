@@ -24,12 +24,13 @@ from typing import Any, Callable, Dict, List, Optional, Pattern, Set, Tuple, Typ
 from types import MappingProxyType, ModuleType
 from weakref import WeakMethod, ref, ReferenceType
 from .universal_data_io import UniversalLoader
+from ncatbot.api import BotAPI
 
 # region ----------------- 配置常量 -----------------
 PLUGINS_DIR = "plugins"             # 插件目录
 PERSISTENT_DIR = "data"             # 插件私有数据目录
 EVENT_QUEUE_MAX_SIZE = 1000         # 事件队列最大长度
-META_CONFIG_PATH = './config.yaml'  # 元事件，所有插件一份(只读)
+# META_CONFIG_PATH = './config.yaml'  # 元事件，所有插件一份(只读)
 # @Todo ALLOW_RAW_FILE_ACCESS = False       # 是否允许直接文件访问
 # endregion
 
@@ -325,19 +326,22 @@ class BasePlugin:
         if not self.dependencies:
             self.dependencies = {}
 
-    def __init__(self, event_bus: EventBus, **kwargs):
+    def __init__(self, event_bus: EventBus, api: BotAPI, **kwargs):
         """
         初始化插件,绑定事件总线
         """
+        
+        self.api = api
         self.work_path = Path(os.path.abspath(PERSISTENT_DIR)) / self.name
         try:
-            self.work_path.mkdir()
+            self.work_path.mkdir(parents=True, exist_ok=True)
             self.fist_load = True
         except FileExistsError:
             self.fist_load = False
         self.data = self._load_persistent_data()
         self.event_bus = event_bus
-        self.meta_data: Dict[str, Any] = MappingProxyType(UniversalLoader(META_CONFIG_PATH).load().data) # 只读字典
+        self.meta_data = "暂无"
+        # self.meta_data: Dict[str, Any] = MappingProxyType(UniversalLoader(META_CONFIG_PATH).load().data) # 只读字典
         self._event_handlers: Dict[str, List[Callable]] = defaultdict(list)
         if kwargs:
             for key, var in kwargs:
@@ -543,7 +547,7 @@ class PluginLoader:
         # 返回最终的加载顺序
         return load_order
 
-    async def from_class_load_plugins(self, plugins: List[Type[BasePlugin]]):
+    async def from_class_load_plugins(self, plugins: List[Type[BasePlugin]], api: BotAPI):
         """
         加载插件
         :param plugins: 插件类列表
@@ -556,7 +560,7 @@ class PluginLoader:
         temp_plugins = {}
         for name in load_order:
             plugin_cls = next(p for p in valid_plugins if p.name == name)
-            temp_plugins[name] = plugin_cls(self.event_bus)
+            temp_plugins[name] = plugin_cls(self.event_bus, api)
         
         # 验证依赖版本
         self.plugins = temp_plugins
@@ -566,7 +570,7 @@ class PluginLoader:
         for name in load_order:
             await self.plugins[name].on_load()
 
-    async def load_plugin(self, plugins_path: str):
+    async def load_plugin(self, plugins_path: str, api: BotAPI):
         models: Dict = self._load_modules_from_directory(plugins_path)
         plugins = []
         for plugin in models.values():
@@ -574,7 +578,7 @@ class PluginLoader:
                 plugins.append(getattr(plugin,plugin_class_name))
         # print(dir(models['a_plugins']))
         # print(models['a_plugins'].__all__)
-        await self.from_class_load_plugins(plugins)
+        await self.from_class_load_plugins(plugins, api)
 
     async def unload_plugin(self, plugin_name: str):
         """
