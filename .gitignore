@@ -181,3 +181,6 @@ test
 .Spotlight-V100
 System Volume Information/IndexerVolumeGuid
 .vscode/
+plugins/
+logs/
+plugin.py
