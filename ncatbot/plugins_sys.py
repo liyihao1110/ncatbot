@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Pattern, Set, Tuple, Type, Sequence
 from types import MappingProxyType, ModuleType
 from weakref import WeakMethod, ref, ReferenceType
-from .universal_data_io import UniversalLoader
+from universal_data_io import UniversalLoader
 
 # region ----------------- 配置常量 -----------------
 PLUGINS_DIR = "plugins"             # 插件目录
@@ -329,20 +329,26 @@ class BasePlugin:
         """
         初始化插件,绑定事件总线
         """
-        self.event_bus = event_bus
+        self.work_path = Path(os.path.abspath(PERSISTENT_DIR)) / self.name
+        try:
+            self.work_path.mkdir()
+            self.fist_load = True
+        except FileExistsError:
+            self.fist_load = False
         self.data = self._load_persistent_data()
+        self.event_bus = event_bus
         self.meta_data: Dict[str, Any] = MappingProxyType(UniversalLoader(META_CONFIG_PATH).load().data) # 只读字典
         self._event_handlers: Dict[str, List[Callable]] = defaultdict(list)
         if kwargs:
             for key, var in kwargs:
                 setattr(self, key, var)
+        os.chdir(self.work_path)
 
     def _load_persistent_data(self) -> Dict:
         """
         加载插件的私有数据
         """
-        data_dir = Path(PERSISTENT_DIR)
-        data_dir.mkdir(parents=True, exist_ok=True)
+        data_dir = self.work_path
         file_path = data_dir / f"{self.name.title()}.json"
         
         if not file_path.exists():
@@ -360,7 +366,7 @@ class BasePlugin:
         """
         data_dir = Path(PERSISTENT_DIR)
         data_dir.mkdir(parents=True, exist_ok=True)
-        file_path = data_dir / f"{self.name.lower()}.yaml"
+        file_path = data_dir / f"{self.name.title()}.yaml"
         
         try:
             with UniversalLoader(file_path) as f:
@@ -384,6 +390,13 @@ class BasePlugin:
         :param event: 要发布的事件对象
         """
         return self.event_bus.publish_async(event)
+
+    def register(self, event_type: str):
+        def decorator(func):
+            def wrapper(*args, **kwargs):
+                self.register_handler(event_type, func)
+            return wrapper
+        return decorator
 
     def register_handler(self, event_type: str, handler: Callable, priority: int = 0):
         """

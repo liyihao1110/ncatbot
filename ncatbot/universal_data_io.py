@@ -24,6 +24,7 @@ import warnings
 import xml.etree.ElementTree as ET
 from configparser import ConfigParser
 from typing import List, Dict, Any, Optional
+from pathlib import Path
 import pickle
 
 # ---------------------
@@ -97,7 +98,7 @@ class ModuleNotInstalledError(UniversalLoaderError):
 # ---------------------
 
 class UniversalLoader:
-    def __init__(self, file_path: str, file_type: Optional[str] = None) -> None:
+    def __init__(self, file_path: Optional[Path|str] , file_type: Optional[str] = None) -> None:
         """
         初始化通用加载器
         :param file_path: 文件路径
@@ -110,7 +111,7 @@ class UniversalLoader:
         self._async_lock = asyncio.Lock()
 
     def _detect_file_type(self) -> str:
-        """通过文件扩展名检测文件类型"""
+        """通过文件路径检测文件类型"""
         file_type_map = {
             'json': 'json',
             'toml': 'toml',
@@ -122,11 +123,14 @@ class UniversalLoader:
             'pickle': 'pickle'
         }
         # 提取文件扩展名并转换为小写
-        ext = self.file_path.lower().rsplit('.', 1)[-1] if '.' in self.file_path else ''
-        file_type = file_type_map.get(ext, None)
-        if not file_type:
-            raise FileTypeUnknownError(f"无法识别的文件格式：{self.file_path}")
-        return file_type
+        if isinstance(self.file_path, str):
+            ext = self.file_path.lower().rsplit('.', 1)[-1] if '.' in self.file_path else ''
+            file_type = file_type_map.get(ext, None)
+            if not file_type:
+                raise FileTypeUnknownError(f"无法识别的文件格式：{self.file_path}")
+            return file_type
+        else:
+            return self.file_path.suffix[1:]
 
     # ---------------------
     # region文件存在性检查方法

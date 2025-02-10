@@ -5,13 +5,15 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]  # 上移两级目录（plugi
 sys.path.append(str(PROJECT_ROOT))
 '''如果安装了ncatbot包请删除1-6行'''
 from ncatbot.plugins_sys import BasePlugin, Event
-
+import os
 class Test(BasePlugin):
     name = "Test"
     version = "1.0.0"
     
     async def on_load(self):
         # 注册一个事件处理器
+        print('元数据   :',self.meta_data)
+        print('工作路径 :',os.getcwd())
         self.register_handler("ncatbot\.group|ncatbot\.private", self.handle_test)
     
     async def handle_test(self, event: Event):
