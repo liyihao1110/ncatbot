@@ -23,14 +23,13 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Pattern, Set, Tuple, Type, Sequence
 from types import MappingProxyType, ModuleType
 from weakref import WeakMethod, ref, ReferenceType
-from .universal_data_io import UniversalLoader
+from universal_data_io import UniversalLoader
 
 # region ----------------- 配置常量 -----------------
 PLUGINS_DIR = "plugins"             # 插件目录
 PERSISTENT_DIR = "data"             # 插件私有数据目录
 EVENT_QUEUE_MAX_SIZE = 1000         # 事件队列最大长度
 META_CONFIG_PATH = './config.yaml'  # 元事件，所有插件一份(只读)
-# @Todo ALLOW_RAW_FILE_ACCESS = False       # 是否允许直接文件访问
 # endregion
 
 # region ------------------- 异常 -------------------
@@ -297,6 +296,30 @@ class EventBus:
             await self._process_event(event)
             self._queues[event_type].task_done()
 # endregion
+# region ----------------- 注册兼容 -----------------
+class CompatibleEnrollment:
+    @staticmethod
+    def group_event(func):      # ncatbot.group_event
+        def wrapper(self, *args, **kwargs):
+            self.register_handler('ncatbot.group_event',func)
+        return wrapper
+    @staticmethod
+    def private_event(func):    # ncatbot.private_event
+        def wrapper(self, *args, **kwargs):
+            self.register_handler('ncatbot.private_event',func)
+        return wrapper
+    @staticmethod
+    def notice_event(func):     # ncatbot.notice_event
+        def wrapper(self, *args, **kwargs):
+            self.register_handler('ncatbot.notice_event',func)
+        return wrapper
+    @staticmethod
+    def request_event(func):
+        def wrapper(self, *args, **kwargs):
+            self.register_handler('ncatbot.request_event',func)
+        return wrapper
+
+# endregin
 # region ----------------- 插件基类 -----------------
 class BasePlugin:
     """
@@ -329,6 +352,7 @@ class BasePlugin:
         """
         初始化插件,绑定事件总线
         """
+        bot = CompatibleEnrollment()
         self.work_path = Path(os.path.abspath(PERSISTENT_DIR)) / self.name
         try:
             self.work_path.mkdir()

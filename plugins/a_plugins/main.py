@@ -5,8 +5,11 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]  # 上移两级目录（plugi
 sys.path.append(str(PROJECT_ROOT))
 '''如果安装了ncatbot包请删除1-6行'''
 '''这个文件夹是一个插件仓库示例'''
-from ncatbot.plugins_sys import BasePlugin, Event
+from ncatbot.plugins_sys import BasePlugin, Event, CompatibleEnrollment
 import os
+
+bot = CompatibleEnrollment() # 最不自由的一集
+
 class Test(BasePlugin):
     name = "Test"
     version = "1.0.0"
