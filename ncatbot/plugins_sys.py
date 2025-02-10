@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Pattern, Set, Tuple, Type, Sequence
 from types import MappingProxyType, ModuleType
 from weakref import WeakMethod, ref, ReferenceType
-from universal_data_io import UniversalLoader
+from .universal_data_io import UniversalLoader
 
 # region ----------------- 配置常量 -----------------
 PLUGINS_DIR = "plugins"             # 插件目录
