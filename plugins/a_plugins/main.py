@@ -21,7 +21,7 @@ class Test(BasePlugin):
         print("装饰器来源:", CompatibleEnrollment.__module__)
         print("元数据   :", self.meta_data)
         print("工作路径 :", os.getcwd())
-        self.register_handler(r"ncatbot\.*", self.handle_test)
+        self.register_handler(r"re:ncatbot\.*", self.handle_test)
 
     async def on_unload(self):
         print("Test插件卸载")

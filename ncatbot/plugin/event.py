@@ -13,8 +13,7 @@ from typing import (
 )
 from weakref import ReferenceType, WeakMethod, ref
 
-EVENT_QUEUE_MAX_SIZE = 1000  # 事件队列最大长度
-PLUGINS_DIR = "plugins"  # 插件目录
+from ncatbot.plugin.config import EVENT_QUEUE_MAX_SIZE
 
 
 # endregion
@@ -162,7 +161,7 @@ class EventBus:
 
     async def publish_sync(self, event: Event) -> List[Any]:
         """
-        同步发布事件,等待事件处理完成
+        发布同步事件,等待事件返回
         :param event: 要发布的事件对象
         :return: 事件处理结果列表
         """
@@ -170,9 +169,9 @@ class EventBus:
         await self._process_event(event)
         return event.results
 
-    async def publish_async(self, event: Event, return_results: bool = False) -> None:
+    async def publish_async(self, event: Event) -> None:
         """
-        异步发布事件,后台处理
+        发布异步事件,不等待事件返回
         :param event: 要发布的事件对象
         """
         await self._queues[event.type].put(event)
@@ -180,8 +179,6 @@ class EventBus:
             self._processing_tasks[event.type] = asyncio.create_task(
                 self._process_queue(event.type)
             )
-        if return_results:
-            return event.results
 
     async def _process_queue(self, event_type: str):
         """
