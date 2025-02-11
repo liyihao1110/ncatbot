@@ -180,7 +180,7 @@ def setup_logging():
     )
 
     # 创建日志对象
-    logger = logging.getLogger()
+    logger = logging.getLogger("ncatbot")
     logger.setLevel(console_log_level)  # 设置全局最低日志等级
 
     # 创建控制台处理器并设置格式化器和日志等级
@@ -202,6 +202,7 @@ def setup_logging():
     # 将处理器添加到日志对象
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
+    logger.setLevel(min([handler.level for handler in logger.handlers]))
 
 
 # 初始化日志配置
@@ -219,7 +220,7 @@ if __name__ == "__main__":
 
     from tqdm.contrib.logging import logging_redirect_tqdm
 
-    logger = get_log(__name__)
+    logger = get_log()
     logger.debug("这是一个调试信息")
     logger.info("这是一个普通信息")
     logger.warning("这是一个警告信息")

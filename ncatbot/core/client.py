@@ -18,7 +18,7 @@ from ncatbot.utils.config import config
 from ncatbot.utils.literals import INSTALL_CHECK_PATH, NAPCAT_DIR
 from ncatbot.utils.logger import get_log
 
-_log = get_log("ncatbot")
+_log = get_log()
 
 
 class BotClient:
@@ -38,18 +38,18 @@ class BotClient:
         self.plugin_sys = PluginLoader()
 
     async def handle_group_event(self, msg: dict):
+        msg = GroupMessage(msg)
         _log.debug(msg)
         for handler, types in self._group_event_handlers:
             if types is None or any(i["type"] in types for i in msg["message"]):
-                msg = GroupMessage(msg)
                 await handler(msg)
         await self.plugin_sys.event_bus.publish_async(Event("ncatbot.group", msg))
 
     async def handle_private_event(self, msg: dict):
+        msg = PrivateMessage(msg)
         _log.debug(msg)
         for handler, types in self._private_event_handlers:
             if types is None or any(i["type"] in types for i in msg["message"]):
-                msg = PrivateMessage(msg)
                 await handler(msg)
         await self.plugin_sys.event_bus.publish_async(Event("ncatbot.private", msg))
 

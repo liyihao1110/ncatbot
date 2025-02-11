@@ -169,6 +169,7 @@ class PluginLoader:
 
     def load_compatible_data(self):
         """加载兼容注册事件"""
+        _log.debug("加载兼容注册事件")
         compatible = CompatibleEnrollment.events
         for event_type, funcs in compatible.items():
             for func in funcs:
