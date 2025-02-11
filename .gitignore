@@ -183,4 +183,5 @@ System Volume Information/IndexerVolumeGuid
 .vscode/
 plugins/
 logs/
+napcat/
 plugin.py
