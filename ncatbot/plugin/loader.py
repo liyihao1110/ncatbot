@@ -23,7 +23,7 @@ from typing import (
 from packaging.specifiers import SpecifierSet
 from packaging.version import parse as parse_version
 
-from ncatbot.api import BotAPI
+from ncatbot.core.api import BotAPI
 from ncatbot.plugin.base_plugin import BasePlugin
 from ncatbot.plugin.custom_err import (
     PluginCircularDependencyError,

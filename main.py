@@ -1,7 +1,7 @@
-from ncatbot.client import BotClient
-from ncatbot.config import config
-from ncatbot.logger import get_log
-from ncatbot.message import GroupMessage, PrivateMessage
+from ncatbot.core.client import BotClient
+from ncatbot.core.message import GroupMessage, PrivateMessage
+from ncatbot.utils.config import config
+from ncatbot.utils.logger import get_log
 
 _log = get_log()
 

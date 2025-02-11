@@ -9,14 +9,14 @@ import zipfile
 import requests
 from tqdm import tqdm
 
-from ncatbot.api import BotAPI
-from ncatbot.config import config
-from ncatbot.gateway import Websocket
-from ncatbot.http import check_websocket
-from ncatbot.logger import get_log
-from ncatbot.message import GroupMessage, PrivateMessage
+from ncatbot.conn.gateway import Websocket
+from ncatbot.conn.http import check_websocket
+from ncatbot.core.api import BotAPI
+from ncatbot.core.message import GroupMessage, PrivateMessage
 from ncatbot.plugin.loader import Event, PluginLoader
+from ncatbot.utils.config import config
 from ncatbot.utils.literals import INSTALL_CHECK_PATH, NAPCAT_DIR
+from ncatbot.utils.logger import get_log
 
 _log = get_log("ncatbot")
 

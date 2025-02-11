@@ -211,10 +211,13 @@ def get_log(name=None):
     """兼容方法"""
     return logging.getLogger("ncatbot" if name is None else name)
 
+
 # 示例用法
 if __name__ == "__main__":
     from time import sleep
+
     from tqdm.contrib.logging import logging_redirect_tqdm
+
     logger = get_log(__name__)
     logger.debug("这是一个调试信息")
     logger.info("这是一个普通信息")
@@ -229,8 +232,8 @@ if __name__ == "__main__":
     # leave：是否在完成后保留进度条。
 
     with logging_redirect_tqdm():
-        with tqdm(range(0,100)) as pbar:
+        with tqdm(range(0, 100)) as pbar:
             for i in pbar:
                 if i % 10 == 0:
-                    logger.info(f'now: {i}')
+                    logger.info(f"now: {i}")
                 sleep(0.1)

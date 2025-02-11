@@ -4,7 +4,7 @@ import json as j
 import httpx
 import websockets
 
-from ncatbot.config import config
+from ncatbot.utils.config import config
 
 
 async def check_websocket(uri):

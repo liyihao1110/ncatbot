@@ -13,7 +13,7 @@ from typing import (
 )
 from weakref import WeakMethod, ref
 
-from ncatbot.api import BotAPI
+from ncatbot.core.api import BotAPI
 from ncatbot.plugin.custom_err import PluginSystemError
 from ncatbot.plugin.event import Event, EventBus
 from ncatbot.utils.io import UniversalLoader
