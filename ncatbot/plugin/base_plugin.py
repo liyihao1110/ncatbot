@@ -18,8 +18,7 @@ from ncatbot.plugin.custom_err import PluginSystemError
 from ncatbot.plugin.event import Event, EventBus
 from ncatbot.utils.io import UniversalLoader
 
-META_CONFIG_PATH = None  # 元事件，所有插件一份(只读)
-PERSISTENT_DIR = "data"  # 插件私有数据目录
+from ncatbot.plugin.config import META_CONFIG_PATH, PERSISTENT_DIR
 
 
 # region ----------------- 插件基类 -----------------
@@ -100,9 +99,9 @@ class BasePlugin:
         except Exception as e:
             PluginSystemError(f"保存数据时出错（{self.name}）: {str(e)}")
 
-    def publish_sync(self, event: Event) -> List[Any]:
+    async def publish_sync(self, event: Event) -> List[Any]:
         """
-        同步发布事件,等待事件处理完成
+        发布事件,等待事件处理完成
         :param event: 要发布的事件对象
         :return: 事件处理结果列表
         """
@@ -110,20 +109,10 @@ class BasePlugin:
 
     async def publish_async(self, event: Event) -> None:
         """
-        异步发布事件,后台处理
+        发布事件,不等待事件处理完成
         :param event: 要发布的事件对象
         """
         return self.event_bus.publish_async(event)
-
-    @classmethod
-    def register(self, event_type: str):
-        def decorator(func):
-            def wrapper(*args, **kwargs):
-                self.register_handler(event_type, func)
-
-            return wrapper
-
-        return decorator
 
     def register_handler(self, event_type: str, handler: Callable, priority: int = 0):
         """
