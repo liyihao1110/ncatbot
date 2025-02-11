@@ -14,11 +14,16 @@ class Test(BasePlugin):
     name = "Test"
     version = "1.0.0"
     
+    @bot.group_event()
+    async def a(self, msg):
+        print('事件数据: ',msg)
+    
     async def on_load(self):
         # 注册一个事件处理器
+        print(bot.events)
         print('元数据   :',self.meta_data)
         print('工作路径 :',os.getcwd())
-        self.register_handler("ncatbot\.group|ncatbot\.private", self.handle_test)
+        self.register_handler("ncatbot\.*", self.handle_test)
     
     async def on_unload(self):
         print('Test插件卸载')

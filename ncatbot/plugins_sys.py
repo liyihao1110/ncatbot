@@ -23,7 +23,10 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Pattern, Set, Tuple, Type, Sequence
 from types import MappingProxyType, ModuleType
 from weakref import WeakMethod, ref, ReferenceType
-from universal_data_io import UniversalLoader
+try:
+    from ncatbot.universal_data_io import UniversalLoader
+except ModuleNotFoundError: # 方便开发时测试
+    from universal_data_io import UniversalLoader
 
 # region ----------------- 配置常量 -----------------
 PLUGINS_DIR = "plugins"             # 插件目录
@@ -133,16 +136,16 @@ class PluginVersionError(PluginSystemError):
         super().__init__(f"插件 '{required_plugin_name}' 版本不满足要求'{plugin_name}'需要 '{required_plugin_name}' 的版本: {required_version},实际版本: {actual_version.public}")
 # endregion
 # region ----------------- 事件对象 -----------------
-@dataclass
 class Event:
     """
     事件对象,用于在事件总线上传递事件数据
     """
-    type: str
-    data: Dict[str, Any] = field(default_factory=dict)
     _stopped: bool = False
     results: List[Any] = field(default_factory=list)
     source: Optional[str] = None
+    def __init__(self, type: str, data: Any):
+        self.type = type
+        self.data = data
 
     def stop_propagation(self):
         """
@@ -298,28 +301,49 @@ class EventBus:
 # endregion
 # region ----------------- 注册兼容 -----------------
 class CompatibleEnrollment:
-    @staticmethod
-    def group_event(func):      # ncatbot.group_event
-        def wrapper(self, *args, **kwargs):
-            self.register_handler('ncatbot.group_event',func)
-        return wrapper
-    @staticmethod
-    def private_event(func):    # ncatbot.private_event
-        def wrapper(self, *args, **kwargs):
-            self.register_handler('ncatbot.private_event',func)
-        return wrapper
-    @staticmethod
-    def notice_event(func):     # ncatbot.notice_event
-        def wrapper(self, *args, **kwargs):
-            self.register_handler('ncatbot.notice_event',func)
-        return wrapper
-    @staticmethod
-    def request_event(func):
-        def wrapper(self, *args, **kwargs):
-            self.register_handler('ncatbot.request_event',func)
-        return wrapper
+    events = {
+        'group_event':[],
+        'private_event':[],
+        'notice_event':[],
+        'request_event':[]
+    }
+    def group_event(self,types=None):
+        def decorator(func):  # ncatbot.group_event
+            self.events[r'ncatbot\.group_event'].append(func)
+            def wrapper(instance, event: Event):
+                # 在这里过滤types
+                return func(instance, event.data)
+            return wrapper
+        return decorator
 
+    def private_event(self,types=None):
+        def decorator(func):  # ncatbot.private_event
+            self.events[r'ncatbot\.private_event'].append(func)
+            def wrapper(instance, event: Event):
+                # 在这里过滤types
+                return func(instance, event.data)
+            return wrapper
+        return decorator
+
+    def notice_event(self,types=None):
+        def decorator(func):  # ncatbot.notice_event
+            self.events[r'ncatbot\.notice_event'].append(func)
+            def wrapper(instance, event: Event):
+                # 在这里过滤types
+                return func(instance, event.data)
+            return wrapper
+        return decorator
+
+    def request_event(self,types=None):
+        def decorator(func):  # ncatbot.request_event
+            self.events[r'ncatbot\.request_event'].append(func)
+            def wrapper(instance, event: Event):
+                # 在这里过滤types
+                return func(instance, event.data)
+            return wrapper
+        return decorator
 # endregin
+
 # region ----------------- 插件基类 -----------------
 class BasePlugin:
     """
@@ -415,6 +439,7 @@ class BasePlugin:
         """
         return self.event_bus.publish_async(event)
 
+    @classmethod
     def register(self, event_type: str):
         def decorator(func):
             def wrapper(*args, **kwargs):
@@ -423,7 +448,7 @@ class BasePlugin:
         return decorator
 
     def register_handler(self, event_type: str, handler: Callable, priority: int = 0):
-        """
+        """ 
         [用户接口]注册事件处理器到事件总线
         :param event_type: 事件类型
         :param handler: 事件处理器
@@ -487,6 +512,7 @@ class PluginLoader:
         """
         初始化插件加载器
         """
+        self.compatible = CompatibleEnrollment().events
         self.plugins: Dict[str, BasePlugin] = {}
         self.event_bus = EventBus()
         self._dependency_graph: Dict[str, Set[str]] = {}
@@ -599,6 +625,10 @@ class PluginLoader:
         # print(dir(models['a_plugins']))
         # print(models['a_plugins'].__all__)
         await self.from_class_load_plugins(plugins)
+
+    async def load_compatible_data(self):
+        for event_type, funcs in self.compatible.items():
+            self.event_bus.subscribe(event_type, funcs)
 
     async def unload_plugin(self, plugin_name: str):
         """
@@ -764,8 +794,9 @@ async def main():
     loader = PluginLoader()
     await loader.load_plugin('plugins')
     print('插件列表: ',list(loader.plugins.keys()))
-    for plugin_name in list(loader.plugins.keys()).copy():
-        await loader.unload_plugin(plugin_name)
+    await loader.event_bus.publish_sync(Event('ncatbot.group_event',{'test','hi'}))
+    # for plugin_name in list(loader.plugins.keys()).copy():
+    #     await loader.unload_plugin(plugin_name)
 
 if __name__ == "__main__":
     asyncio.run(main())
