@@ -13,8 +13,7 @@ from typing import (
 )
 from weakref import ReferenceType, WeakMethod, ref
 
-EVENT_QUEUE_MAX_SIZE = 1000  # 事件队列最大长度
-PLUGINS_DIR = "plugins"  # 插件目录
+from ncatbot.plugin.config import *
 
 
 # endregion

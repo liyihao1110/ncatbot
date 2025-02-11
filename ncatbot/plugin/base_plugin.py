@@ -18,9 +18,7 @@ from ncatbot.plugin.custom_err import PluginSystemError
 from ncatbot.plugin.event import Event, EventBus
 from ncatbot.utils.io import UniversalLoader
 
-META_CONFIG_PATH = None  # 元事件，所有插件一份(只读)
-PERSISTENT_DIR = "data"  # 插件私有数据目录
-
+from ncatbot.plugin.config import *
 
 # region ----------------- 插件基类 -----------------
 class BasePlugin:
