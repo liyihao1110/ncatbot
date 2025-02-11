@@ -1,4 +1,3 @@
-
 """
 具有事件处理能力的插件系统
 
@@ -8,57 +7,83 @@ Raises:
     PluginVersionError：当插件版本不符合所需版本时引发。
     PluginCircularDependencyError：当插件之间存在循环依赖关系时引发。
 """
+
 import asyncio
 import importlib
 import inspect
-import re
 import os
+import re
 import sys
-from packaging.version import Version
-from packaging.specifiers import SpecifierSet
-from packaging.version import parse as parse_version
 from collections import defaultdict, deque
-from dataclasses import dataclass, field
+from dataclasses import field
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Pattern, Set, Tuple, Type, Sequence
 from types import MappingProxyType, ModuleType
-from weakref import WeakMethod, ref, ReferenceType
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Pattern,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+)
+from weakref import ReferenceType, WeakMethod, ref
+
+from packaging.specifiers import SpecifierSet
+from packaging.version import Version
+from packaging.version import parse as parse_version
+
 from ncatbot.api import BotAPI
+
 try:
     from ncatbot.universal_data_io import UniversalLoader
-except ModuleNotFoundError: # 方便开发时测试
+except ModuleNotFoundError:  # 方便开发时测试
     from universal_data_io import UniversalLoader
 
 # region ----------------- 配置常量 -----------------
-PLUGINS_DIR = "plugins"             # 插件目录
-PERSISTENT_DIR = "data"             # 插件私有数据目录
-EVENT_QUEUE_MAX_SIZE = 1000         # 事件队列最大长度
-META_CONFIG_PATH = None             # 元事件，所有插件一份(只读)
+PLUGINS_DIR = "plugins"  # 插件目录
+PERSISTENT_DIR = "data"  # 插件私有数据目录
+EVENT_QUEUE_MAX_SIZE = 1000  # 事件队列最大长度
+META_CONFIG_PATH = None  # 元事件，所有插件一份(只读)
 # endregion
 
 # region ------------------- 异常 -------------------
 # 没用上就是懒的检查
 
+
 class PluginSystemError(Exception):
     """插件系统的基础异常类,所有插件相关的异常都应继承自此类"""
+
     pass
+
 
 class PluginCircularDependencyError(PluginSystemError):
     """当插件之间存在循环依赖时抛出此异常"""
-    def __init__(self, dependency_chain : Sequence[str]):
+
+    def __init__(self, dependency_chain: Sequence[str]):
         self.dependency_chain = dependency_chain
-        super().__init__(f"检测到插件循环依赖: {' -> '.join(dependency_chain)}->... 请检查插件之间的依赖关系")
+        super().__init__(
+            f"检测到插件循环依赖: {' -> '.join(dependency_chain)}->... 请检查插件之间的依赖关系"
+        )
+
 
 class PluginNotFoundError(PluginSystemError):
     """当尝试加载或使用一个不存在的插件时抛出此异常"""
-    def __init__(self, plugin_name : str):
+
+    def __init__(self, plugin_name: str):
         self.plugin_name = plugin_name
-        super().__init__(f"插件 '{plugin_name}' 未找到 请检查插件名称是否正确,以及插件是否已正确安装")
+        super().__init__(
+            f"插件 '{plugin_name}' 未找到 请检查插件名称是否正确,以及插件是否已正确安装"
+        )
 
 
 class PluginLoadError(PluginSystemError):
     """当插件加载过程中出现错误时抛出此异常"""
-    def __init__(self, plugin_name : str, reason):
+
+    def __init__(self, plugin_name: str, reason):
         self.plugin_name = plugin_name
         self.reason = reason
         super().__init__(f"无法加载插件 '{plugin_name}' : {reason}")
@@ -66,7 +91,8 @@ class PluginLoadError(PluginSystemError):
 
 class PluginInitializationError(PluginSystemError):
     """当插件初始化失败时抛出此异常"""
-    def __init__(self, plugin_name : str, reason):
+
+    def __init__(self, plugin_name: str, reason):
         self.plugin_name = plugin_name
         self.reason = reason
         super().__init__(f"插件 '{plugin_name}' 初始化失败: {reason}")
@@ -74,15 +100,19 @@ class PluginInitializationError(PluginSystemError):
 
 class PluginDependencyError(PluginSystemError):
     """当插件依赖未满足时抛出此异常"""
-    def __init__(self, plugin_name : str, missing_dependency):
+
+    def __init__(self, plugin_name: str, missing_dependency):
         self.plugin_name = plugin_name
         self.missing_dependency = missing_dependency
-        super().__init__(f"插件 '{plugin_name}' 缺少必要的依赖项: {'|'.join(missing_dependency)}")
+        super().__init__(
+            f"插件 '{plugin_name}' 缺少必要的依赖项: {'|'.join(missing_dependency)}"
+        )
 
 
 class PluginConfigurationError(PluginSystemError):
     """当插件配置不正确时抛出此异常"""
-    def __init__(self, plugin_name : str, reason):
+
+    def __init__(self, plugin_name: str, reason):
         self.plugin_name = plugin_name
         self.reason = reason
         super().__init__(f"插件 '{plugin_name}' 配置错误: {reason}")
@@ -90,7 +120,8 @@ class PluginConfigurationError(PluginSystemError):
 
 class PluginExecutionError(PluginSystemError):
     """当插件执行过程中出现错误时抛出此异常"""
-    def __init__(self, plugin_name : str, reason):
+
+    def __init__(self, plugin_name: str, reason):
         self.plugin_name = plugin_name
         self.reason = reason
         super().__init__(f"插件 '{plugin_name}' 执行失败: {reason}")
@@ -98,7 +129,8 @@ class PluginExecutionError(PluginSystemError):
 
 class PluginCompatibilityError(PluginSystemError):
     """当插件与当前系统或环境不兼容时抛出此异常"""
-    def __init__(self, plugin_name : str, reason):
+
+    def __init__(self, plugin_name: str, reason):
         self.plugin_name = plugin_name
         self.reason = reason
         super().__init__(f"插件 '{plugin_name}' 与当前环境不兼容: {reason}")
@@ -106,14 +138,16 @@ class PluginCompatibilityError(PluginSystemError):
 
 class PluginAlreadyLoadedError(PluginSystemError):
     """当尝试重复加载同一个插件时抛出此异常"""
-    def __init__(self, plugin_name : str):
+
+    def __init__(self, plugin_name: str):
         self.plugin_name = plugin_name
         super().__init__(f"插件 '{plugin_name}' 已经被加载,无法重复加载")
 
 
 class PluginUnloadError(PluginSystemError):
     """当插件卸载过程中出现错误时抛出此异常"""
-    def __init__(self, plugin_name : str, reason):
+
+    def __init__(self, plugin_name: str, reason):
         self.plugin_name = plugin_name
         self.reason = reason
         super().__init__(f"无法卸载插件 '{plugin_name}': {reason}")
@@ -121,7 +155,8 @@ class PluginUnloadError(PluginSystemError):
 
 class PluginSecurityError(PluginSystemError):
     """当插件存在安全问题时抛出此异常"""
-    def __init__(self, plugin_name : str, reason):
+
+    def __init__(self, plugin_name: str, reason):
         self.plugin_name = plugin_name
         self.reason = reason
         super().__init__(f"插件 '{plugin_name}' 存在安全问题: {reason}")
@@ -129,18 +164,30 @@ class PluginSecurityError(PluginSystemError):
 
 class PluginVersionError(PluginSystemError):
     """当插件版本不满足要求时抛出此异常"""
-    def __init__(self, plugin_name : str, required_plugin_name : str, required_version : str, actual_version : Version):
+
+    def __init__(
+        self,
+        plugin_name: str,
+        required_plugin_name: str,
+        required_version: str,
+        actual_version: Version,
+    ):
         self.plugin_name = plugin_name
         self.required_plugin_name = required_plugin_name
         self.required_version = required_version
         self.actual_version = actual_version
-        super().__init__(f"插件 '{required_plugin_name}' 版本不满足要求'{plugin_name}'需要 '{required_plugin_name}' 的版本: {required_version},实际版本: {actual_version.public}")
+        super().__init__(
+            f"插件 '{required_plugin_name}' 版本不满足要求'{plugin_name}'需要 '{required_plugin_name}' 的版本: {required_version},实际版本: {actual_version.public}"
+        )
+
+
 # endregion
 # region ----------------- 事件对象 -----------------
 class Event:
     """
     事件对象,用于在事件总线上传递事件数据
     """
+
     def __init__(self, type: str, data: Any):
         self.type = type
         self.data = data
@@ -159,12 +206,15 @@ class Event:
         向事件结果列表中添加处理结果
         """
         self.results.append(result)
+
+
 # endregion
 # region ----------------- 事件总线 -----------------
 class EventBus:
     """
     事件总线,用于管理和分发事件
     """
+
     def __init__(self):
         """
         初始化事件总线,设置事件处理器存储结构和事件队列
@@ -173,7 +223,9 @@ class EventBus:
         self._regex_handlers: List[Tuple[Pattern, int, Callable]] = []
         self._execution_order: Dict[str, List[Callable]] = defaultdict(list)
         self.exception_handlers: List[Callable] = []
-        self._queues: Dict[str, asyncio.Queue] = defaultdict(lambda: asyncio.Queue(maxsize=EVENT_QUEUE_MAX_SIZE))
+        self._queues: Dict[str, asyncio.Queue] = defaultdict(
+            lambda: asyncio.Queue(maxsize=EVENT_QUEUE_MAX_SIZE)
+        )
         self._processing_tasks: Dict[str, asyncio.Task] = {}
 
     def _get_plugin_name(self, handler: Callable) -> str:
@@ -185,12 +237,14 @@ class EventBus:
                 return handler.__self__.name
             if isinstance(handler, (ref, WeakMethod, ReferenceType)):
                 obj = handler()
-                return getattr(obj, 'name', '') if obj else ''
-            if hasattr(handler, '__self__') and isinstance(handler.__self__, BasePlugin):
+                return getattr(obj, "name", "") if obj else ""
+            if hasattr(handler, "__self__") and isinstance(
+                handler.__self__, BasePlugin
+            ):
                 return handler.__self__.name
-            return getattr(handler, '_plugin_name', '')
+            return getattr(handler, "_plugin_name", "")
         except Exception:
-            return ''
+            return ""
 
     def subscribe(self, event_type: str, handler: Callable, priority: int = 0):
         """
@@ -212,7 +266,7 @@ class EventBus:
             self._regex_handlers.append((pattern, priority, handler_ref))
         else:
             self._exact_handlers[event_type].append((priority, handler_ref))
-        
+
         self._rebuild_execution_order(event_type)
 
     def _rebuild_execution_order(self, event_type: str):
@@ -222,7 +276,7 @@ class EventBus:
         # 精确匹配处理
         exact_entries = sorted(
             self._exact_handlers[event_type],
-            key=lambda x: (-x[0], self._get_plugin_name(x[1]).lower())
+            key=lambda x: (-x[0], self._get_plugin_name(x[1]).lower()),
         )
         exact_handlers = [h for _, h in exact_entries]
 
@@ -230,7 +284,9 @@ class EventBus:
         regex_handlers = []
         for pattern, priority, handler in self._regex_handlers:
             if pattern.search(event_type):
-                regex_handlers.append((-priority, self._get_plugin_name(handler).lower(), handler))
+                regex_handlers.append(
+                    (-priority, self._get_plugin_name(handler).lower(), handler)
+                )
 
         regex_handlers.sort(key=lambda x: (x[0], x[1]))
         regex_handlers = [h for _, _, h in regex_handlers]
@@ -287,7 +343,9 @@ class EventBus:
         """
         await self._queues[event.type].put(event)
         if self._queues[event.type].qsize() == 1:  # 避免重复创建任务
-            self._processing_tasks[event.type] = asyncio.create_task(self._process_queue(event.type))
+            self._processing_tasks[event.type] = asyncio.create_task(
+                self._process_queue(event.type)
+            )
         if return_results:
             return event.results
 
@@ -299,59 +357,76 @@ class EventBus:
             event = await self._queues[event_type].get()
             await self._process_event(event)
             self._queues[event_type].task_done()
+
+
 # endregion
 # region ----------------- 注册兼容 -----------------
 class CompatibleEnrollment:
     events = {
-        'ncatbot.group_event':[],
-        'ncatbot.private_event':[],
-        'ncatbot.notice_event':[],
-        'ncatbot.request_event':[]
+        "ncatbot.group_event": [],
+        "ncatbot.private_event": [],
+        "ncatbot.notice_event": [],
+        "ncatbot.request_event": [],
     }
 
     def __init__(self):
-        raise ValueError('不需要实例化')
+        raise ValueError("不需要实例化")
 
     @classmethod
-    def group_event(cls,types=None):
+    def group_event(cls, types=None):
         def decorator(func):  # ncatbot.group_event
-            cls.events[r'ncatbot.group_event'].append(func)
+            cls.events[r"ncatbot.group_event"].append(func)
+
             def wrapper(instance, event: Event):
                 # 在这里过滤types
                 return func(instance, event.data)
+
             return wrapper
+
         return decorator
 
     @classmethod
-    def private_event(cls,types=None):
+    def private_event(cls, types=None):
         def decorator(func):  # ncatbot.private_event
-            cls.events[r'ncatbot.private_event'].append(func)
+            cls.events[r"ncatbot.private_event"].append(func)
+
             def wrapper(instance, event: Event):
                 # 在这里过滤types
                 return func(instance, event.data)
+
             return wrapper
+
         return decorator
 
     @classmethod
-    def notice_event(cls,types=None):
+    def notice_event(cls, types=None):
         def decorator(func):  # ncatbot.notice_event
-            cls.events[r'ncatbot.notice_event'].append(func)
+            cls.events[r"ncatbot.notice_event"].append(func)
+
             def wrapper(instance, event: Event):
                 # 在这里过滤types
                 return func(instance, event.data)
+
             return wrapper
+
         return decorator
 
     @classmethod
-    def request_event(cls,types=None):
+    def request_event(cls, types=None):
         def decorator(func):  # ncatbot.request_event
-            cls.events[r'ncatbot.request_event'].append(func)
+            cls.events[r"ncatbot.request_event"].append(func)
+
             def wrapper(instance, event: Event):
                 # 在这里过滤types
                 return func(instance, event.data)
+
             return wrapper
+
         return decorator
+
+
 # endregin
+
 
 # region ----------------- 插件基类 -----------------
 class BasePlugin:
@@ -359,38 +434,26 @@ class BasePlugin:
     插件基类，所有插件应继承此类
     目前使用插件名称区分插件
     @todo 考虑使用插件id
-    
+
     没有非常严格的限制，请开发者注意
     事件_发布_为防止冲突格式为f"{self.name}.{event_type}"
     """
+
     name: str = field(default_factory=str)
     version: str = field(default_factory=str)
-    dependencies: Dict[str, str] = {} # 插件名: 版本需求
-    meta_data: Dict[str, Any] # 只读字典(非强制)
-    data: Dict[str, Any] = field(default_factory=dict) # 插件系统维护: 每个插件独立
-    lock = asyncio.Lock() # 资源保护: 使用 with self.lock: 来确保对共享资源的访问是线程安全的
-
-    def __init__(self, event_bus: EventBus, **kwargs):
-        """
-        初始化插件,绑定事件总线
-        """
-        # 额外的检查或设置
-        if not self.name:
-            raise ValueError("插件名称不能为空")
-        if not self.version:
-            raise ValueError("版本信息不能为空")
-        if not self.data:
-            self.data = dict()
-        if not self.dependencies:
-            self.dependencies = {}
+    dependencies: Dict[str, str] = {}  # 插件名: 版本需求
+    meta_data: Dict[str, Any]  # 只读字典(非强制)
+    data: Dict[str, Any] = field(default_factory=dict)  # 插件系统维护: 每个插件独立
+    lock = (
+        asyncio.Lock()
+    )  # 资源保护: 使用 with self.lock: 来确保对共享资源的访问是线程安全的
 
     def __init__(self, event_bus: EventBus, api: BotAPI, **kwargs):
         """
         初始化插件,绑定事件总线
         """
-        
+
         self.api = api
-        bot = CompatibleEnrollment()
         self.work_path = Path(os.path.abspath(PERSISTENT_DIR)) / self.name
         try:
             self.work_path.mkdir(parents=True, exist_ok=True)
@@ -400,7 +463,9 @@ class BasePlugin:
         self.data = self._load_persistent_data()
         self.event_bus = event_bus
         if META_CONFIG_PATH:
-            self.meta_data: Dict[str, Any] = MappingProxyType(UniversalLoader(META_CONFIG_PATH).load().data) # 只读字典
+            self.meta_data: Dict[str, Any] = MappingProxyType(
+                UniversalLoader(META_CONFIG_PATH).load().data
+            )  # 只读字典
         else:
             self.meta_data: Dict = MappingProxyType({})
         self._event_handlers: Dict[str, List[Callable]] = defaultdict(list)
@@ -415,7 +480,7 @@ class BasePlugin:
         """
         data_dir = self.work_path
         file_path = data_dir / f"{self.name.title()}.json"
-        
+
         if not file_path.exists():
             return {}
 
@@ -432,10 +497,10 @@ class BasePlugin:
         data_dir = Path(PERSISTENT_DIR)
         data_dir.mkdir(parents=True, exist_ok=True)
         file_path = data_dir / f"{self.name.title()}.yaml"
-        
+
         try:
             with UniversalLoader(file_path) as f:
-                f:UniversalLoader
+                f: UniversalLoader
                 f.data = self.data
                 f.save()
         except Exception as e:
@@ -461,11 +526,13 @@ class BasePlugin:
         def decorator(func):
             def wrapper(*args, **kwargs):
                 self.register_handler(event_type, func)
+
             return wrapper
+
         return decorator
 
     def register_handler(self, event_type: str, handler: Callable, priority: int = 0):
-        """ 
+        """
         [用户接口]注册事件处理器到事件总线
         :param event_type: 事件类型
         :param handler: 事件处理器
@@ -507,24 +574,29 @@ class BasePlugin:
                     weak_ref = ref(handler)
                 else:
                     weak_ref = handler
-                
+
                 # 从事件总线移除
                 self.event_bus._exact_handlers[event_type] = [
-                    (p, h) for (p, h) in self.event_bus._exact_handlers[event_type]
+                    (p, h)
+                    for (p, h) in self.event_bus._exact_handlers[event_type]
                     if h != weak_ref
                 ]
                 # 更新正则处理器
                 self.event_bus._regex_handlers = [
-                    (p, pri, h) for (p, pri, h) in self.event_bus._regex_handlers
+                    (p, pri, h)
+                    for (p, pri, h) in self.event_bus._regex_handlers
                     if h != weak_ref
                 ]
         self._event_handlers.clear()
+
+
 # endregion
 # region ----------------- 插件加载器 -----------------
 class PluginLoader:
     """
     插件加载器,用于加载、卸载和管理插件
     """
+
     def __init__(self):
         """
         初始化插件加载器
@@ -538,7 +610,9 @@ class PluginLoader:
         """
         验证插件类是否符合规范
         """
-        return all(hasattr(plugin_cls, attr) for attr in ('name', 'version', 'dependencies'))
+        return all(
+            hasattr(plugin_cls, attr) for attr in ("name", "version", "dependencies")
+        )
 
     def _build_dependency_graph(self, plugins: List[Type[BasePlugin]]):
         """
@@ -546,7 +620,7 @@ class PluginLoader:
         """
         self._dependency_graph.clear()
         self._version_constraints.clear()
-        
+
         for plugin in plugins:
             self._dependency_graph[plugin.name] = set(plugin.dependencies.keys())
             self._version_constraints[plugin.name] = plugin.dependencies.copy()
@@ -562,12 +636,14 @@ class PluginLoader:
                 # 检查依赖项是否存在于已安装的插件中
                 if dep_name not in self.plugins:
                     raise PluginDependencyError(plugin_name, dep_name)
-                
+
                 # 获取已安装依赖项的版本
                 installed_ver = parse_version(self.plugins[dep_name].version)
                 # 检查已安装版本是否满足版本约束
                 if not SpecifierSet(constraint).contains(installed_ver):
-                    raise PluginVersionError(dep_name, plugin_name, constraint, installed_ver)
+                    raise PluginVersionError(
+                        dep_name, plugin_name, constraint, installed_ver
+                    )
 
     def _resolve_load_order(self) -> List[str]:
         """
@@ -600,7 +676,7 @@ class PluginLoader:
         for plugin_name, dependency in self._dependency_graph.items():
             if not dependency.issubset(self._dependency_graph.keys()):
                 raise PluginDependencyError(plugin_name, dependency)
-            
+
         if len(load_order) != len(self._dependency_graph):
             missing = set(self._dependency_graph.keys()) - set(load_order)
             # 抛出异常,提示循环依赖的插件
@@ -609,7 +685,9 @@ class PluginLoader:
         # 返回最终的加载顺序
         return load_order
 
-    async def from_class_load_plugins(self, plugins: List[Type[BasePlugin]], api: BotAPI):
+    async def from_class_load_plugins(
+        self, plugins: List[Type[BasePlugin]], api: BotAPI
+    ):
         """
         加载插件
         :param plugins: 插件类列表
@@ -617,17 +695,17 @@ class PluginLoader:
         valid_plugins = [p for p in plugins if self._validate_plugin(p)]
         self._build_dependency_graph(valid_plugins)
         load_order = self._resolve_load_order()
-        
+
         # 实例化所有插件
         temp_plugins = {}
         for name in load_order:
             plugin_cls = next(p for p in valid_plugins if p.name == name)
             temp_plugins[name] = plugin_cls(self.event_bus, api)
-        
+
         # 验证依赖版本
         self.plugins = temp_plugins
         self._validate_dependencies()
-        
+
         # 初始化插件
         for name in load_order:
             await self.plugins[name].on_load()
@@ -637,14 +715,14 @@ class PluginLoader:
         plugins = []
         for plugin in models.values():
             for plugin_class_name in plugin.__all__:
-                plugins.append(getattr(plugin,plugin_class_name))
+                plugins.append(getattr(plugin, plugin_class_name))
         # print(dir(models['a_plugins']))
         # print(models['a_plugins'].__all__)
         await self.from_class_load_plugins(plugins, api)
-        await self.load_compatible_data()
+        self.load_compatible_data()
 
     def load_compatible_data(self):
-        '''加载兼容注册事件'''
+        """加载兼容注册事件"""
         compatible = CompatibleEnrollment.events
         for event_type, funcs in compatible.items():
             for func in funcs:
@@ -673,16 +751,18 @@ class PluginLoader:
 
         old = self.plugins[plugin_name]
         await old._close_()
-        
+
         module = importlib.import_module(old.__class__.__module__)
         importlib.reload(module)
-        
+
         new_cls = getattr(module, old.__class__.name)
         new_plugin = new_cls(old.event_bus)
         await new_plugin.on_load()
         self.plugins[plugin_name] = new_plugin
 
-    def _load_modules_from_directory(self, directory_path: str) -> Dict[str, ModuleType]:
+    def _load_modules_from_directory(
+        self, directory_path: str
+    ) -> Dict[str, ModuleType]:
         """
         从指定文件夹动态加载模块，返回模块名到模块的字典。
         不修改 `sys.path`，仅在必要时临时添加路径。
@@ -720,9 +800,7 @@ class PluginLoader:
         # 返回所有加载成功的模块字典
         return modules
 
+
 # endregion
 
-__all__ = [
-    'PluginLoader',
-    'Event'
-]
+__all__ = ["PluginLoader", "Event"]

@@ -38,12 +38,12 @@ from ncatbot.plugins_sys import BasePlugin, Event
 class MyPlugin(BasePlugin):
     name = "MyPlugin"
     version = "1.0.0"
-  
+
     async def on_load(self):
         print(f"元数据: {self.meta_data}")
         print(f"工作路径: {os.getcwd()}")  # 会指向 ./data/MyPlugin/
         self.register_handler("my_event", self.handle_event)
-  
+
     async def handle_event(self, event: Event):
         print(f"收到事件: {event.data}")
 ```
@@ -59,7 +59,7 @@ class Event:
     data: Dict[str, Any]       # 事件数据
     results: List[Any]         # 处理结果
     _stopped: bool = False     # 是否停止传播
-  
+
     def stop_propagation(self):
         """停止事件继续传播"""
         self._stopped = True
@@ -72,11 +72,11 @@ class MyPlugin(BasePlugin):
     async def on_load(self):
         """插件加载时调用"""
         pass
-  
+
     async def on_unload(self):
         """插件卸载时调用"""
         pass
-  
+
     async def _close_(self):
         """插件关闭时自动调用(需正确退出)"""
         pass
@@ -89,7 +89,7 @@ class MyPlugin(BasePlugin):
     def __init__(self, event_bus):
         super().__init__(event_bus)
         self.data["counter"] = 0  # 会自动保存到 data/{plugin_name}/Plugin.json
-  
+
     async def on_load(self):
         print(f"计数器: {self.data['counter']}")
 ```
@@ -102,10 +102,10 @@ class MyPlugin(BasePlugin):
         # 支持正则匹配,re:前缀
         self.register_handler("re:test\.", self.handle_test)
         self.register_handler("exact.match", self.handle_exact)
-  
+
     async def handle_test(self, event: Event):
         print(f"正则匹配处理器: {event.data}")
-  
+
     async def handle_exact(self, event: Event):
         print(f"精确匹配处理器: {event.data}")
 ```
@@ -151,7 +151,7 @@ class MyPlugin(BasePlugin):
     async def on_load(self):
         # meta_data 是只读的全局配置
         api_key = self.meta_data.get("api_key")
-  
+
         # data 是插件私有的可写存储
         self.data["count"] = self.data.get("count", 0) + 1
 ```
