@@ -714,3 +714,8 @@ class PluginLoader:
         return modules
 
 # endregion
+
+__all__ = [
+    'PluginLoader',
+    'Event'
+]
