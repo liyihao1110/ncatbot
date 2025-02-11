@@ -98,30 +98,20 @@ class BasePlugin:
         except Exception as e:
             PluginSystemError(f"保存数据时出错（{self.name}）: {str(e)}")
 
-    def publish_sync(self, event: Event) -> List[Any]:
+    async def publish_sync(self, event: Event) -> List[Any]:
         """
-        同步发布事件,等待事件处理完成
+        发布事件,等待事件处理完成
         :param event: 要发布的事件对象
         :return: 事件处理结果列表
         """
-        return self.event_bus.publish_sync(event)
+        return await self.event_bus.publish_sync(event)
 
     async def publish_async(self, event: Event) -> None:
         """
-        异步发布事件,后台处理
+        发布事件,不等待事件处理完成
         :param event: 要发布的事件对象
         """
-        return self.event_bus.publish_async(event)
-
-    @classmethod
-    def register(self, event_type: str):
-        def decorator(func):
-            def wrapper(*args, **kwargs):
-                self.register_handler(event_type, func)
-
-            return wrapper
-
-        return decorator
+        await self.event_bus.publish_async(event)
 
     def register_handler(self, event_type: str, handler: Callable, priority: int = 0):
         """

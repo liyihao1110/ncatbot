@@ -27,7 +27,7 @@ class Test(BasePlugin):
         print("Test插件卸载")
 
     async def handle_test(self, event: Event):
-        print(f"处理事件: {event.data}")
+        print(f"事件数据: {event.data}")
 
 
 @bot.group_event()

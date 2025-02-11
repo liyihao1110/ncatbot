@@ -169,7 +169,7 @@ class EventBus:
         await self._process_event(event)
         return event.results
 
-    async def publish_async(self, event: Event, return_results: bool = False) -> None:
+    async def publish_async(self, event: Event) -> None:
         """
         异步发布事件,后台处理
         :param event: 要发布的事件对象
@@ -179,8 +179,6 @@ class EventBus:
             self._processing_tasks[event.type] = asyncio.create_task(
                 self._process_queue(event.type)
             )
-        if return_results:
-            return event.results
 
     async def _process_queue(self, event_type: str):
         """
