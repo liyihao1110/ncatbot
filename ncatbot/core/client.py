@@ -17,10 +17,17 @@ from ncatbot.core.api import BotAPI
 from ncatbot.core.message import GroupMessage, PrivateMessage
 from ncatbot.plugin.loader import Event, PluginLoader
 from ncatbot.utils.config import config
-from ncatbot.utils.literals import INSTALL_CHECK_PATH, NAPCAT_DIR
+from ncatbot.utils.literals import (
+    INSTALL_CHECK_PATH,
+    NAPCAT_DIR,
+    OFFICIAL_GROUP_MESSAGE_EVENT,
+    OFFICIAL_NOTICE_EVENT,
+    OFFICIAL_PRIVATE_MESSAGE_EVENT,
+    OFFICIAL_REQUEST_EVENT,
+)
 from ncatbot.utils.logger import get_log
 
-_log = get_log("ncatbot")
+_log = get_log()
 
 
 class BotClient:
@@ -40,28 +47,38 @@ class BotClient:
         self.plugin_sys = PluginLoader()
 
     async def handle_group_event(self, msg: dict):
+        msg = GroupMessage(msg)
+        _log.debug(msg)
         for handler, types in self._group_event_handlers:
             if types is None or any(i["type"] in types for i in msg["message"]):
-                msg = GroupMessage(msg)
                 await handler(msg)
-        await self.plugin_sys.event_bus.publish_async(Event("ncatbot.group", msg))
+        await self.plugin_sys.event_bus.publish_async(
+            Event(OFFICIAL_GROUP_MESSAGE_EVENT, msg)
+        )
 
     async def handle_private_event(self, msg: dict):
+        msg = PrivateMessage(msg)
+        _log.debug(msg)
         for handler, types in self._private_event_handlers:
             if types is None or any(i["type"] in types for i in msg["message"]):
-                msg = PrivateMessage(msg)
                 await handler(msg)
-        await self.plugin_sys.event_bus.publish_async(Event("ncatbot.private", msg))
+        await self.plugin_sys.event_bus.publish_async(
+            Event(OFFICIAL_PRIVATE_MESSAGE_EVENT, msg)
+        )
 
     async def handle_notice_event(self, msg: dict):
+        _log.debug(msg)
         for handler in self._notice_event_handlers:
             await handler(msg)
-        await self.plugin_sys.event_bus.publish_async(Event("ncatbot.notice", msg))
+        await self.plugin_sys.event_bus.publish_async(Event(OFFICIAL_NOTICE_EVENT, msg))
 
     async def handle_request_event(self, msg: dict):
+        _log.debug(msg)
         for handler in self._request_event_handlers:
             await handler(msg)
-        await self.plugin_sys.event_bus.publish_async(Event("ncatbot.event", msg))
+        await self.plugin_sys.event_bus.publish_async(
+            Event(OFFICIAL_REQUEST_EVENT, msg)
+        )
 
     def group_event(self, types=None):
         def decorator(func):
@@ -87,7 +104,7 @@ class BotClient:
 
     async def run_async(self):
         websocket_server = Websocket(self)
-        await self.plugin_sys.load_plugin(self.plugins_path, self.api)
+        await self.plugin_sys.load_plugin(self.api)
         await websocket_server.ws_connect()
 
     def run(self, reload=False):
