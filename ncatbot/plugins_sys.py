@@ -630,15 +630,12 @@ class PluginLoader:
         for plugin in models.values():
             for plugin_class_name in plugin.__all__:
                 plugins.append(getattr(plugin,plugin_class_name))
-        # print(dir(models['a_plugins']))
-        # print(models['a_plugins'].__all__)
         await self.from_class_load_plugins(plugins)
-        # self.load_compatible_data()
+        self.load_compatible_data()
 
     def load_compatible_data(self):
         '''加载兼容注册事件'''
         compatible = CompatibleEnrollment.events
-        print(compatible)
         for event_type, funcs in compatible.items():
             for func in funcs:
                 self.event_bus.subscribe(event_type, func)

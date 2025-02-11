@@ -15,7 +15,6 @@ bot = BotClient()
 loader = PluginLoader()
 
 
-
 @bot.group_event()
 async def on_group_message(msg: GroupMessage):
     _log.info(msg)
@@ -30,7 +29,6 @@ async def on_private_message(msg: PrivateMessage):
 
 async def main():
     await loader.load_plugin('plugins')
-    loader.load_compatible_data()
     _log.info('插件列表: ', *list(loader.plugins.keys()), sep='\n')
 
     # 发布事件
