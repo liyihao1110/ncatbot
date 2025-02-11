@@ -8,6 +8,7 @@ Raises:
     PluginCircularDependencyError：当插件之间存在循环依赖关系时引发。
 """
 
+import functools
 import importlib
 import os
 import sys
@@ -147,7 +148,6 @@ class PluginLoader:
         for name in load_order:
             plugin_cls = next(p for p in valid_plugins if p.name == name)
             temp_plugins[name] = plugin_cls(self.event_bus, api)
-
         # 验证依赖版本
         self.plugins = temp_plugins
         self._validate_dependencies()
@@ -162,19 +162,24 @@ class PluginLoader:
         for plugin in models.values():
             for plugin_class_name in plugin.__all__:
                 plugins.append(getattr(plugin, plugin_class_name))
-        # print(dir(models['a_plugins']))
-        # print(models['a_plugins'].__all__)
         await self.from_class_load_plugins(plugins, api)
-        self.load_compatible_data()
+        self.load_compatible_data(self.plugins.values())
 
-    def load_compatible_data(self):
+    def load_compatible_data(self, plugins):
+        def find_instance(func):
+            plugin_name = func.__qualname__.split(".")[0]
+            for plugin in plugins:
+                if plugin.__class__.__name__ == plugin_name:
+                    return plugin
+
         """加载兼容注册事件"""
         _log.debug("加载兼容注册事件")
         compatible = CompatibleEnrollment.events
         for event_type, funcs in compatible.items():
             for func in funcs:
-                _log.debug(f"为 {func} 订阅事件 {event_type}")
-                self.event_bus.subscribe(event_type, func)
+                instance = find_instance(func)
+                _log.debug(f"为 {instance.__class__.__name__} 订阅事件 {event_type}")
+                self.event_bus.subscribe(event_type, functools.partial(func, instance))
 
     async def unload_plugin(self, plugin_name: str):
         """
@@ -238,7 +243,7 @@ class PluginLoader:
                     module = importlib.import_module(filename)
                     modules[filename] = module
                 except ImportError as e:
-                    print(f"导入模块 {filename} 时出错: {e}")
+                    _log.error(f"导入模块 {filename} 时出错: {e}")
                     continue
 
         finally:

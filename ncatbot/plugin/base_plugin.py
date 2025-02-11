@@ -14,11 +14,10 @@ from typing import (
 from weakref import WeakMethod, ref
 
 from ncatbot.core.api import BotAPI
+from ncatbot.plugin.config import META_CONFIG_PATH, PERSISTENT_DIR
 from ncatbot.plugin.custom_err import PluginSystemError
 from ncatbot.plugin.event import Event, EventBus
 from ncatbot.utils.io import UniversalLoader
-
-from ncatbot.plugin.config import META_CONFIG_PATH, PERSISTENT_DIR
 
 
 # region ----------------- 插件基类 -----------------
@@ -45,7 +44,6 @@ class BasePlugin:
         """
         初始化插件,绑定事件总线
         """
-
         self.api = api
         self.work_path = Path(os.path.abspath(PERSISTENT_DIR)) / self.name
         try:

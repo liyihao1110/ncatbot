@@ -24,14 +24,8 @@ async def check_websocket(uri):
     try:
         # 尝试连接 WebSocket 服务器
         async with websockets.connect(f"{uri}", extra_headers=headers):
-            print(f"WebSocket {uri} 可用.")
+            (f"WebSocket {uri} 可用.")
             return True
-    # except websockets.ConnectionError:
-    #     print(f"无法连接到 WebSocket {uri}.")
-    #     return False
-    # except websockets.ConnectionClosed:
-    #     print(f"WebSocket {uri} 上已关闭.")
-    #     return False
     except Exception as e:
         print(f"检查 WebSocket 端口时发生错误: {e}")
         return False

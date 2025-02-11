@@ -14,6 +14,15 @@ from typing import (
 from weakref import ReferenceType, WeakMethod, ref
 
 from ncatbot.plugin.config import EVENT_QUEUE_MAX_SIZE
+from ncatbot.utils.literals import (
+    OFFICIAL_GROUP_MESSAGE_EVENT,
+    OFFICIAL_NOTICE_EVENT,
+    OFFICIAL_PRIVATE_MESSAGE_EVENT,
+    OFFICIAL_REQUEST_EVENT,
+)
+from ncatbot.utils.logger import get_log
+
+_log = get_log()
 
 
 # endregion
@@ -145,10 +154,27 @@ class EventBus:
 
             try:
                 if inspect.iscoroutinefunction(handler):
-                    await handler(event)
+                    if event.type in (
+                        OFFICIAL_GROUP_MESSAGE_EVENT,
+                        OFFICIAL_PRIVATE_MESSAGE_EVENT,
+                        OFFICIAL_NOTICE_EVENT,
+                        OFFICIAL_REQUEST_EVENT,
+                    ):
+                        await handler(event.data)
+                    else:
+                        await handler(event)
                 else:
-                    handler(event)
+                    if event.type in (
+                        OFFICIAL_GROUP_MESSAGE_EVENT,
+                        OFFICIAL_PRIVATE_MESSAGE_EVENT,
+                        OFFICIAL_NOTICE_EVENT,
+                        OFFICIAL_REQUEST_EVENT,
+                    ):
+                        handler(event.data)
+                    else:
+                        handler(event)
             except Exception as e:
+                _log.error(e)
                 event.add_result({"error": str(e)})
                 for eh in self.exception_handlers:
                     try:
@@ -165,6 +191,7 @@ class EventBus:
         :param event: 要发布的事件对象
         :return: 事件处理结果列表
         """
+        _log.debug(f"发布同步事件: {event.type}")
         await self._queues[event.type].put(event)
         await self._process_event(event)
         return event.results
@@ -174,6 +201,7 @@ class EventBus:
         发布异步事件,不等待事件返回
         :param event: 要发布的事件对象
         """
+        _log.debug(f"发布异步事件: {event.type}")
         await self._queues[event.type].put(event)
         if self._queues[event.type].qsize() == 1:  # 避免重复创建任务
             self._processing_tasks[event.type] = asyncio.create_task(
@@ -194,10 +222,10 @@ class EventBus:
 # region ----------------- 注册兼容 -----------------
 class CompatibleEnrollment:
     events = {
-        "ncatbot.group_event": [],
-        "ncatbot.private_event": [],
-        "ncatbot.notice_event": [],
-        "ncatbot.request_event": [],
+        OFFICIAL_PRIVATE_MESSAGE_EVENT: [],
+        OFFICIAL_GROUP_MESSAGE_EVENT: [],
+        OFFICIAL_REQUEST_EVENT: [],
+        OFFICIAL_NOTICE_EVENT: [],
     }
 
     def __init__(self):
@@ -205,8 +233,8 @@ class CompatibleEnrollment:
 
     @classmethod
     def group_event(cls, types=None):
-        def decorator(func):  # ncatbot.group_event
-            cls.events[r"ncatbot.group_event"].append(func)
+        def decorator(func):  # ncatbot.private_event
+            cls.events[OFFICIAL_GROUP_MESSAGE_EVENT].append(func)
 
             def wrapper(instance, event: Event):
                 # 在这里过滤types
@@ -219,7 +247,7 @@ class CompatibleEnrollment:
     @classmethod
     def private_event(cls, types=None):
         def decorator(func):  # ncatbot.private_event
-            cls.events[r"ncatbot.private_event"].append(func)
+            cls.events[OFFICIAL_PRIVATE_MESSAGE_EVENT].append(func)
 
             def wrapper(instance, event: Event):
                 # 在这里过滤types
@@ -232,7 +260,7 @@ class CompatibleEnrollment:
     @classmethod
     def notice_event(cls, types=None):
         def decorator(func):  # ncatbot.notice_event
-            cls.events[r"ncatbot.notice_event"].append(func)
+            cls.events[OFFICIAL_NOTICE_EVENT].append(func)
 
             def wrapper(instance, event: Event):
                 # 在这里过滤types
@@ -245,7 +273,7 @@ class CompatibleEnrollment:
     @classmethod
     def request_event(cls, types=None):
         def decorator(func):  # ncatbot.request_event
-            cls.events[r"ncatbot.request_event"].append(func)
+            cls.events[OFFICIAL_REQUEST_EVENT].append(func)
 
             def wrapper(instance, event: Event):
                 # 在这里过滤types
