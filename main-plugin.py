@@ -1,10 +1,11 @@
+import asyncio
+
 from ncatbot.client import BotClient
 from ncatbot.config import config
 from ncatbot.logger import get_log
 from ncatbot.message import GroupMessage, PrivateMessage
-
-from ncatbot.plugins_sys import PluginLoader, Event
-import os, asyncio
+from ncatbot.plugin.event import Event
+from ncatbot.plugin.loader import PluginLoader
 
 _log = get_log()
 
@@ -18,18 +19,18 @@ loader = PluginLoader()
 @bot.group_event()
 async def on_group_message(msg: GroupMessage):
     _log.info(msg)
-    await loader.event_bus.publish_sync(Event('ncatbot.group_event', msg))
+    await loader.event_bus.publish_sync(Event("ncatbot.group_event", msg))
 
 
 @bot.private_event()
 async def on_private_message(msg: PrivateMessage):
     _log.info(msg)
-    await loader.event_bus.publish_sync(Event('ncatbot.private_message', msg))
+    await loader.event_bus.publish_sync(Event("ncatbot.private_message", msg))
 
 
 async def main():
-    await loader.load_plugin('plugins')
-    _log.info('插件列表: ', *list(loader.plugins.keys()), sep='\n')
+    await loader.load_plugin("plugins")
+    _log.info("插件列表: ", *list(loader.plugins.keys()), sep="\n")
 
     # 发布事件
     # await loader.event_bus.publish_sync(Event('ncatbot.group_event',{'test','hi'}))
@@ -39,6 +40,7 @@ async def main():
     #     await loader.unload_plugin(plugin_name)
 
     bot.run(reload=True)
+
 
 if __name__ == "__main__":
     asyncio.run(main())

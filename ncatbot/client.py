@@ -15,7 +15,7 @@ from ncatbot.gateway import Websocket
 from ncatbot.http import check_websocket
 from ncatbot.logger import get_log
 from ncatbot.message import GroupMessage, PrivateMessage
-from ncatbot.plugins_sys import Event, PluginLoader
+from ncatbot.plugin.loader import Event, PluginLoader
 from ncatbot.utils.literals import INSTALL_CHECK_PATH, NAPCAT_DIR
 
 _log = get_log("ncatbot")
