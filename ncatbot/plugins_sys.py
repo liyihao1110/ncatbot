@@ -641,7 +641,8 @@ class PluginLoader:
         compatible = CompatibleEnrollment.events
         print(compatible)
         for event_type, funcs in compatible.items():
-            self.event_bus.subscribe(event_type, funcs)
+            for func in funcs:
+                self.event_bus.subscribe(event_type, func)
 
     async def unload_plugin(self, plugin_name: str):
         """
