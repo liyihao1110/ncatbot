@@ -85,7 +85,7 @@ class BotClient:
 
     async def run_async(self):
         websocket_server = Websocket(self)
-        await self.plugin_sys.load_plugin(self.plugins_path, self.api)
+        await self.plugin_sys.load_plugin(self.api)
         await websocket_server.ws_connect()
 
     def run(self, reload=False):

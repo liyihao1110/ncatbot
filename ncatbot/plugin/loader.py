@@ -25,13 +25,14 @@ from packaging.version import parse as parse_version
 
 from ncatbot.core.api import BotAPI
 from ncatbot.plugin.base_plugin import BasePlugin
+from ncatbot.plugin.config import PLUGINS_DIR
 from ncatbot.plugin.custom_err import (
     PluginCircularDependencyError,
     PluginDependencyError,
     PluginVersionError,
 )
 from ncatbot.plugin.event import CompatibleEnrollment, Event, EventBus
-from ncatbot.plugin.config import PLUGINS_DIR
+
 
 # region ----------------- 插件加载器 -----------------
 class PluginLoader:
@@ -152,8 +153,8 @@ class PluginLoader:
         for name in load_order:
             await self.plugins[name].on_load()
 
-    async def load_plugin(self, plugins_path: str, api: BotAPI):
-        models: Dict = self._load_modules_from_directory(plugins_path = PLUGINS_DIR)
+    async def load_plugin(self, api: BotAPI):
+        models: Dict = self._load_modules_from_directory(directory_path=PLUGINS_DIR)
         plugins = []
         for plugin in models.values():
             for plugin_class_name in plugin.__all__:
