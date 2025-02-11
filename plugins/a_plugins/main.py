@@ -20,6 +20,7 @@ class Test(BasePlugin):
     
     async def on_load(self):
         # 注册一个事件处理器
+        print('装饰器id:',id(bot))
         print('元数据   :',self.meta_data)
         print('工作路径 :',os.getcwd())
         self.register_handler(r"ncatbot\.*", self.handle_test)

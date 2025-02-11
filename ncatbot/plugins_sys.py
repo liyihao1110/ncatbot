@@ -309,13 +309,12 @@ class CompatibleEnrollment:
     }
 
     def __init__(self):
-        ValueError('不需要实例化')
+        raise ValueError('不需要实例化')
 
     @classmethod
     def group_event(cls,types=None):
         def decorator(func):  # ncatbot.group_event
             cls.events[r'ncatbot.group_event'].append(func)
-            print(cls.events)
             def wrapper(instance, event: Event):
                 # 在这里过滤types
                 return func(instance, event.data)
@@ -385,7 +384,6 @@ class BasePlugin:
         """
         初始化插件,绑定事件总线
         """
-        bot = CompatibleEnrollment()
         self.work_path = Path(os.path.abspath(PERSISTENT_DIR)) / self.name
         try:
             self.work_path.mkdir()
@@ -636,9 +634,9 @@ class PluginLoader:
         # print(dir(models['a_plugins']))
         # print(models['a_plugins'].__all__)
         await self.from_class_load_plugins(plugins)
-        await self.load_compatible_data()
+        # self.load_compatible_data()
 
-    async def load_compatible_data(self):
+    def load_compatible_data(self):
         '''加载兼容注册事件'''
         compatible = CompatibleEnrollment.events
         print(compatible)
@@ -806,8 +804,10 @@ class PluginLoader:
 async def main():
     # os.chdir("..")
     print(os.getcwd())
+    print(id(CompatibleEnrollment))
     loader = PluginLoader()
     await loader.load_plugin('plugins')
+    loader.load_compatible_data()
     print('插件列表: ',list(loader.plugins.keys()))
     await loader.event_bus.publish_sync(Event('ncatbot.group_event',{'test','hi'}))
     # for plugin_name in list(loader.plugins.keys()).copy():
