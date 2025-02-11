@@ -150,7 +150,9 @@ class ColoredFormatter(logging.Formatter):
     def format(self, record):
         # 获取日志级别并添加颜色
         levelname = record.levelname
-        record.levelname = LOG_LEVEL_TO_COLOR[levelname] + levelname + Color.RESET
+        colored_level = LOG_LEVEL_TO_COLOR[levelname] + levelname + Color.RESET
+        # 替换 record.levelname 为带颜色的版本
+        record.colored_levelname = colored_level
         return super().format(record)
 
 
@@ -176,11 +178,11 @@ def setup_logging():
     # 日志格式配置
     log_format = os.getenv(
         "LOG_FORMAT",
-        "[%(levelname)s] (%(filename)s:%(lineno)d) %(funcName)s : %(message)s"
+        "[%(colored_levelname)s] (%(filename)s:%(lineno)d) %(funcName)s : %(message)s"
     )
     file_format = os.getenv(
         "LOG_FILE_FORMAT",
-        "(%(asctime)s) (%(filename)s:%(lineno)d) %(funcName)s \n %(message)s"
+        "[%(levelname)s] (%(asctime)s) (%(filename)s:%(lineno)d) %(funcName)s %(message)s"
     )
 
     # 文件路径配置
