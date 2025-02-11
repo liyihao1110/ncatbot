@@ -32,14 +32,6 @@ from ncatbot.plugin.custom_err import (
 )
 from ncatbot.plugin.event import CompatibleEnrollment, Event, EventBus
 
-# region ----------------- 配置常量 -----------------
-
-
-# endregion
-
-# region ------------------- 异常 -------------------
-# 没用上就是懒的检查
-
 
 # region ----------------- 插件加载器 -----------------
 class PluginLoader:
