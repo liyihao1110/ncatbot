@@ -32,6 +32,9 @@ from ncatbot.plugin.custom_err import (
     PluginVersionError,
 )
 from ncatbot.plugin.event import CompatibleEnrollment, Event, EventBus
+from ncatbot.utils.logger import get_log
+
+_log = get_log()
 
 
 # region ----------------- 插件加载器 -----------------
@@ -169,6 +172,7 @@ class PluginLoader:
         compatible = CompatibleEnrollment.events
         for event_type, funcs in compatible.items():
             for func in funcs:
+                _log.debug(f"为 {func} 订阅事件 {event_type}")
                 self.event_bus.subscribe(event_type, func)
 
     async def unload_plugin(self, plugin_name: str):

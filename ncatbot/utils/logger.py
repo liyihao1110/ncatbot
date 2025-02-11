@@ -157,7 +157,8 @@ class ColoredFormatter(logging.Formatter):
 def setup_logging():
     # 从环境变量中读取日志配置，如果环境变量不存在则使用默认值
     console_log_level = os.getenv("LOG_LEVEL", "INFO").upper()
-    file_log_level = os.getenv("FILE_LOG_LEVEL", "DEBUG").upper()
+    file_log_level = logging.DEBUG
+    # file_log_level = os.getenv("FILE_LOG_LEVEL", "DEBUG").upper()
     log_format = os.getenv(
         "LOG_FORMAT",
         "[%(levelname)s] (%(filename)s:%(lineno)d) %(funcName)s : %(message)s",

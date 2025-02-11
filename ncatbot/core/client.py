@@ -38,6 +38,7 @@ class BotClient:
         self.plugin_sys = PluginLoader()
 
     async def handle_group_event(self, msg: dict):
+        _log.debug(msg)
         for handler, types in self._group_event_handlers:
             if types is None or any(i["type"] in types for i in msg["message"]):
                 msg = GroupMessage(msg)
@@ -45,6 +46,7 @@ class BotClient:
         await self.plugin_sys.event_bus.publish_async(Event("ncatbot.group", msg))
 
     async def handle_private_event(self, msg: dict):
+        _log.debug(msg)
         for handler, types in self._private_event_handlers:
             if types is None or any(i["type"] in types for i in msg["message"]):
                 msg = PrivateMessage(msg)
@@ -52,11 +54,13 @@ class BotClient:
         await self.plugin_sys.event_bus.publish_async(Event("ncatbot.private", msg))
 
     async def handle_notice_event(self, msg: dict):
+        _log.debug(msg)
         for handler in self._notice_event_handlers:
             await handler(msg)
         await self.plugin_sys.event_bus.publish_async(Event("ncatbot.notice", msg))
 
     async def handle_request_event(self, msg: dict):
+        _log.debug(msg)
         for handler in self._request_event_handlers:
             await handler(msg)
         await self.plugin_sys.event_bus.publish_async(Event("ncatbot.event", msg))
