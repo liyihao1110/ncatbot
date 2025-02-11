@@ -23,15 +23,17 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Pattern, Set, Tuple, Type, Sequence
 from types import MappingProxyType, ModuleType
 from weakref import WeakMethod, ref, ReferenceType
-from .universal_data_io import UniversalLoader
 from ncatbot.api import BotAPI
+try:
+    from ncatbot.universal_data_io import UniversalLoader
+except ModuleNotFoundError: # 方便开发时测试
+    from universal_data_io import UniversalLoader
 
 # region ----------------- 配置常量 -----------------
 PLUGINS_DIR = "plugins"             # 插件目录
 PERSISTENT_DIR = "data"             # 插件私有数据目录
 EVENT_QUEUE_MAX_SIZE = 1000         # 事件队列最大长度
-# META_CONFIG_PATH = './config.yaml'  # 元事件，所有插件一份(只读)
-# @Todo ALLOW_RAW_FILE_ACCESS = False       # 是否允许直接文件访问
+META_CONFIG_PATH = None             # 元事件，所有插件一份(只读)
 # endregion
 
 # region ------------------- 异常 -------------------
@@ -135,16 +137,16 @@ class PluginVersionError(PluginSystemError):
         super().__init__(f"插件 '{required_plugin_name}' 版本不满足要求'{plugin_name}'需要 '{required_plugin_name}' 的版本: {required_version},实际版本: {actual_version.public}")
 # endregion
 # region ----------------- 事件对象 -----------------
-@dataclass
 class Event:
     """
     事件对象,用于在事件总线上传递事件数据
     """
-    type: str
-    data: Dict[str, Any] = field(default_factory=dict)
     _stopped: bool = False
     results: List[Any] = field(default_factory=list)
     source: Optional[str] = None
+    def __init__(self, type: str, data: Any):
+        self.type = type
+        self.data = data
 
     def stop_propagation(self):
         """
@@ -298,6 +300,60 @@ class EventBus:
             await self._process_event(event)
             self._queues[event_type].task_done()
 # endregion
+# region ----------------- 注册兼容 -----------------
+class CompatibleEnrollment:
+    events = {
+        'ncatbot.group_event':[],
+        'ncatbot.private_event':[],
+        'ncatbot.notice_event':[],
+        'ncatbot.request_event':[]
+    }
+
+    def __init__(self):
+        ValueError('不需要实例化')
+
+    @classmethod
+    def group_event(cls,types=None):
+        def decorator(func):  # ncatbot.group_event
+            cls.events[r'ncatbot.group_event'].append(func)
+            print(cls.events)
+            def wrapper(instance, event: Event):
+                # 在这里过滤types
+                return func(instance, event.data)
+            return wrapper
+        return decorator
+
+    @classmethod
+    def private_event(cls,types=None):
+        def decorator(func):  # ncatbot.private_event
+            cls.events[r'ncatbot.private_event'].append(func)
+            def wrapper(instance, event: Event):
+                # 在这里过滤types
+                return func(instance, event.data)
+            return wrapper
+        return decorator
+
+    @classmethod
+    def notice_event(cls,types=None):
+        def decorator(func):  # ncatbot.notice_event
+            cls.events[r'ncatbot.notice_event'].append(func)
+            def wrapper(instance, event: Event):
+                # 在这里过滤types
+                return func(instance, event.data)
+            return wrapper
+        return decorator
+
+    @classmethod
+    def request_event(cls,types=None):
+        def decorator(func):  # ncatbot.request_event
+            cls.events[r'ncatbot.request_event'].append(func)
+            def wrapper(instance, event: Event):
+                # 在这里过滤types
+                return func(instance, event.data)
+            return wrapper
+        return decorator
+# endregin
+
 # region ----------------- 插件基类 -----------------
 class BasePlugin:
     """
@@ -332,6 +388,7 @@ class BasePlugin:
         """
         
         self.api = api
+        bot = CompatibleEnrollment()
         self.work_path = Path(os.path.abspath(PERSISTENT_DIR)) / self.name
         try:
             self.work_path.mkdir(parents=True, exist_ok=True)
@@ -340,8 +397,10 @@ class BasePlugin:
             self.fist_load = False
         self.data = self._load_persistent_data()
         self.event_bus = event_bus
-        self.meta_data = "暂无"
-        # self.meta_data: Dict[str, Any] = MappingProxyType(UniversalLoader(META_CONFIG_PATH).load().data) # 只读字典
+        if META_CONFIG_PATH:
+            self.meta_data: Dict[str, Any] = MappingProxyType(UniversalLoader(META_CONFIG_PATH).load().data) # 只读字典
+        else:
+            self.meta_data: Dict = MappingProxyType({})
         self._event_handlers: Dict[str, List[Callable]] = defaultdict(list)
         if kwargs:
             for key, var in kwargs:
@@ -395,6 +454,7 @@ class BasePlugin:
         """
         return self.event_bus.publish_async(event)
 
+    @classmethod
     def register(self, event_type: str):
         def decorator(func):
             def wrapper(*args, **kwargs):
@@ -403,7 +463,7 @@ class BasePlugin:
         return decorator
 
     def register_handler(self, event_type: str, handler: Callable, priority: int = 0):
-        """
+        """ 
         [用户接口]注册事件处理器到事件总线
         :param event_type: 事件类型
         :param handler: 事件处理器
@@ -579,6 +639,14 @@ class PluginLoader:
         # print(dir(models['a_plugins']))
         # print(models['a_plugins'].__all__)
         await self.from_class_load_plugins(plugins, api)
+        await self.load_compatible_data()
+
+    async def load_compatible_data(self):
+        '''加载兼容注册事件'''
+        compatible = CompatibleEnrollment.events
+        print(compatible)
+        for event_type, funcs in compatible.items():
+            self.event_bus.subscribe(event_type, funcs)
 
     async def unload_plugin(self, plugin_name: str):
         """
@@ -744,8 +812,9 @@ async def main():
     loader = PluginLoader()
     await loader.load_plugin('plugins')
     print('插件列表: ',list(loader.plugins.keys()))
-    for plugin_name in list(loader.plugins.keys()).copy():
-        await loader.unload_plugin(plugin_name)
+    await loader.event_bus.publish_sync(Event('ncatbot.group_event',{'test','hi'}))
+    # for plugin_name in list(loader.plugins.keys()).copy():
+    #     await loader.unload_plugin(plugin_name)
 
 if __name__ == "__main__":
     asyncio.run(main())
