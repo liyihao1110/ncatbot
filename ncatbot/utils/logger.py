@@ -1,5 +1,6 @@
 import logging
 import os
+import warnings
 from datetime import datetime
 from logging.handlers import TimedRotatingFileHandler
 
@@ -134,7 +135,7 @@ class tqdm(tqdm_original):
         super().__init__(*args, **kwargs)
 
 
-# 定义日志级别到颜色的映射
+# 日志级别颜色映射
 LOG_LEVEL_TO_COLOR = {
     "DEBUG": Color.CYAN,
     "INFO": Color.GREEN,
@@ -149,56 +150,78 @@ class ColoredFormatter(logging.Formatter):
     def format(self, record):
         # 获取日志级别并添加颜色
         levelname = record.levelname
-        record.levelname = LOG_LEVEL_TO_COLOR[levelname] + levelname + Color.RESET
+        colored_level = LOG_LEVEL_TO_COLOR[levelname] + levelname + Color.RESET
+        # 替换 record.levelname 为带颜色的版本
+        record.colored_levelname = colored_level
         return super().format(record)
 
 
-# 初始化日志配置
+def _get_valid_log_level(level_name, default):
+    """验证并获取有效的日志级别"""
+    level = getattr(logging, level_name.upper(), None)
+    if not isinstance(level, int):
+        warnings.warn(f"Invalid log level: {level_name}, using {default} instead.")
+        return getattr(logging, default)
+    return level
+
+
 def setup_logging():
-    # 从环境变量中读取日志配置，如果环境变量不存在则使用默认值
-    console_log_level = os.getenv("LOG_LEVEL", "INFO").upper()
-    file_log_level = os.getenv("FILE_LOG_LEVEL", "DEBUG").upper()
+    """设置日志"""
+    # 环境变量读取
+    console_level = os.getenv("LOG_LEVEL", "INFO")
+    file_level = os.getenv("FILE_LOG_LEVEL", "DEBUG")
+    
+    # 验证并转换日志级别
+    console_log_level = _get_valid_log_level(console_level, "INFO")
+    file_log_level = _get_valid_log_level(file_level, "DEBUG")
+
+    # 日志格式配置
     log_format = os.getenv(
         "LOG_FORMAT",
-        "[%(levelname)s] (%(filename)s:%(lineno)d) %(funcName)s : %(message)s",
+        "[%(colored_levelname)s] (%(filename)s:%(lineno)d) %(funcName)s : %(message)s"
     )
-    log_file_format = os.getenv(
+    file_format = os.getenv(
         "LOG_FILE_FORMAT",
-        "(%(asctime)s) (%(filename)s:%(lineno)d) %(funcName)s \n %(message)s",
-    )
-    log_file_path = os.getenv("LOG_FILE_PATH", "./logs")
-    log_file_name = os.getenv("LOG_FILE_NAME", "bot_%Y%m%d.log")
-    backup_count = int(os.getenv("BACKUP_COUNT", 7))
-
-    # 创建日志文件夹
-    os.makedirs(log_file_path, exist_ok=True)
-
-    # 生成日志文件的完整路径
-    log_file_full_path = os.path.join(
-        log_file_path, datetime.now().strftime(log_file_name)
+        "[%(levelname)s] (%(asctime)s) (%(filename)s:%(lineno)d) %(funcName)s %(message)s"
     )
 
-    # 创建日志对象
+    # 文件路径配置
+    log_dir = os.getenv("LOG_FILE_PATH", "./logs")
+    file_name = os.getenv("LOG_FILE_NAME", "bot_%Y%m%d.log")
+    
+    # 备份数量验证
+    try:
+        backup_count = int(os.getenv("BACKUP_COUNT", "7"))
+    except ValueError:
+        backup_count = 7
+        warnings.warn("Invalid BACKUP_COUNT value, using default 7")
+
+    # 创建日志目录
+    os.makedirs(log_dir, exist_ok=True)
+    file_path = os.path.join(log_dir, datetime.now().strftime(file_name))
+
+    # 配置根日志器
     logger = logging.getLogger()
-    logger.setLevel(console_log_level)  # 设置全局最低日志等级
+    logger.setLevel(logging.DEBUG)  # 全局最低级别设为DEBUG
 
-    # 创建控制台处理器并设置格式化器和日志等级
+    # 控制台处理器
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(console_log_level)  # 设置控制台日志等级
+    console_handler.setLevel(console_log_level)
     console_handler.setFormatter(ColoredFormatter(log_format))
 
-    # 创建文件处理器并设置格式化器和日志等级
+    # 文件处理器
     file_handler = TimedRotatingFileHandler(
-        filename=log_file_full_path,
+        filename=file_path,
         when="midnight",
         interval=1,
         backupCount=backup_count,
-        encoding="utf-8",
+        encoding="utf-8"
     )
-    file_handler.setLevel(file_log_level)  # 设置文件日志等级
-    file_handler.setFormatter(logging.Formatter(log_file_format))
+    file_handler.setLevel(file_log_level)
+    file_handler.setFormatter(logging.Formatter(file_format))
 
-    # 将处理器添加到日志对象
+    # 初始化并添加处理器
+    logger.handlers = []
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
 
@@ -207,9 +230,10 @@ def setup_logging():
 setup_logging()
 
 
-def get_log(name=None):
-    """兼容方法"""
-    return logging.getLogger("ncatbot" if name is None else name)
+def get_log(name='ncatbot'):
+    """获取日志记录器"""
+    return logging.getLogger(name)
+
 
 
 # 示例用法
