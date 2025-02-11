@@ -35,7 +35,6 @@ class BotClient:
         self._notice_event_handler = None
         self._request_event_handler = None
         self.plugins_path = plugins_path
-        self.plugin_sys = PluginLoader()
 
     def group_event(self, types=None):
         def decorator(func):

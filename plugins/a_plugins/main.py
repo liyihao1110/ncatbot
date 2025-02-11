@@ -1,9 +1,3 @@
-import sys
-from pathlib import Path
-# 动态添加项目根目录到 sys.path
-PROJECT_ROOT = Path(__file__).resolve().parents[2]  # 上移两级目录（plugins → NcatBot）
-sys.path.append(str(PROJECT_ROOT))
-'''如果安装了ncatbot包请删除1-6行'''
 '''这个文件夹是一个插件仓库示例'''
 from ncatbot.plugins_sys import BasePlugin, Event, CompatibleEnrollment
 import os
@@ -15,11 +9,13 @@ class Test(BasePlugin):
     version = "1.0.0"
     
     @bot.group_event()
-    async def a(self, msg):
+    async def a(msg):
         print('事件数据1: ',msg)
     
     async def on_load(self):
         # 注册一个事件处理器
+        print('装饰器id:',id(bot))
+        print('装饰器来源:',CompatibleEnrollment.__module__)
         print('元数据   :',self.meta_data)
         print('工作路径 :',os.getcwd())
         self.register_handler(r"ncatbot\.*", self.handle_test)

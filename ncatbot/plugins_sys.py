@@ -141,12 +141,12 @@ class Event:
     """
     事件对象,用于在事件总线上传递事件数据
     """
-    _stopped: bool = False
-    results: List[Any] = field(default_factory=list)
-    source: Optional[str] = None
     def __init__(self, type: str, data: Any):
         self.type = type
         self.data = data
+        self._stopped: bool = False
+        self.results: List[Any] = list()
+        self.source: Optional[str] = None
 
     def stop_propagation(self):
         """
@@ -310,13 +310,12 @@ class CompatibleEnrollment:
     }
 
     def __init__(self):
-        ValueError('不需要实例化')
+        raise ValueError('不需要实例化')
 
     @classmethod
     def group_event(cls,types=None):
         def decorator(func):  # ncatbot.group_event
             cls.events[r'ncatbot.group_event'].append(func)
-            print(cls.events)
             def wrapper(instance, event: Event):
                 # 在这里过滤types
                 return func(instance, event.data)
@@ -371,7 +370,10 @@ class BasePlugin:
     data: Dict[str, Any] = field(default_factory=dict) # 插件系统维护: 每个插件独立
     lock = asyncio.Lock() # 资源保护: 使用 with self.lock: 来确保对共享资源的访问是线程安全的
 
-    def __post_init__(self):
+    def __init__(self, event_bus: EventBus, **kwargs):
+        """
+        初始化插件,绑定事件总线
+        """
         # 额外的检查或设置
         if not self.name:
             raise ValueError("插件名称不能为空")
@@ -641,12 +643,12 @@ class PluginLoader:
         await self.from_class_load_plugins(plugins, api)
         await self.load_compatible_data()
 
-    async def load_compatible_data(self):
+    def load_compatible_data(self):
         '''加载兼容注册事件'''
         compatible = CompatibleEnrollment.events
-        print(compatible)
         for event_type, funcs in compatible.items():
-            self.event_bus.subscribe(event_type, funcs)
+            for func in funcs:
+                self.event_bus.subscribe(event_type, func)
 
     async def unload_plugin(self, plugin_name: str):
         """
@@ -720,101 +722,7 @@ class PluginLoader:
 
 # endregion
 
-
-
-
-
-
-
-# region ----------------- 使用示例 -----------------
-
-# class HiPlugin(BasePlugin):
-#     """
-#     测试插件
-#     """
-#     name = "Hi"
-#     version = "1.0.0.dev"
-#     # dependencies = {"Network": ">=2.0.0"}
-
-#     async def on_load(self):
-#         pass
-
-#     def handle_log(self, event: Event):
-#         pass
-
-# class LoggerPlugin(BasePlugin):
-#     """
-#     日志插件,用于记录日志事件
-#     """
-#     name = "Logger"
-#     version = "2.0.0"
-#     dependencies = {"Hi": ">=1.0.0"}
-
-#     async def on_load(self):
-#         """
-#         加载时注册日志事件处理器
-#         """
-#         self.register_handler("re:^log\.", self.handle_log, priority=10)
-
-#     def handle_log(self, event: Event):
-#         """
-#         处理日志事件,将日志数据保存到私有存储中
-#         """
-#         self.data.setdefault('logs', []).append(event.data)
-#         print(f"[日志] {event.type}: {event.data}")
-
-# class NetworkPlugin(BasePlugin):
-#     """
-#     网络插件,用于处理网络请求事件
-#     """
-#     name = "Network"
-#     dependencies = {"Logger": ">=2.0.0"}
-
-#     async def on_load(self):
-#         """
-#         加载时注册网络请求事件处理器
-#         """
-#         self.register_handler("network.request", self.handle_request)
-
-#     async def handle_request(self, event: Event):
-#         """
-#         处理网络请求事件,返回模拟的响应结果
-#         """
-#         event.add_result({"status": 200})
-#         print(f"[网络] 处理请求: {event.data}")
-
-# # ----------------- 测试用例 -----------------
-# async def old_main():
-#     """
-#     测试用例,加载插件并发布事件
-#     """
-#     loader = PluginLoader()
-#     await loader.from_class_load_plugins([LoggerPlugin, NetworkPlugin, HiPlugin])
-    
-#     # 发布事件
-#     event = Event("log.system", {"message": "系统已启动"})
-#     await loader.plugins["Logger"].event_bus.publish_async(event)
-    
-#     network_event = Event("network.request", {"url": "/api/data"})
-#     results = await loader.plugins["Network"].event_bus.publish_sync(network_event)
-#     print("同步结果:", results)
-    
-#     await loader.unload_plugin("Network")
-# endregion
-
-
-
-
-
-async def main():
-    # os.chdir("..")
-    print(os.getcwd())
-    loader = PluginLoader()
-    await loader.load_plugin('plugins')
-    print('插件列表: ',list(loader.plugins.keys()))
-    await loader.event_bus.publish_sync(Event('ncatbot.group_event',{'test','hi'}))
-    # for plugin_name in list(loader.plugins.keys()).copy():
-    #     await loader.unload_plugin(plugin_name)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+__all__ = [
+    'PluginLoader',
+    'Event'
+]
