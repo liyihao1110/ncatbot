@@ -8,7 +8,7 @@ sys.path.append(str(PROJECT_ROOT))
 from ncatbot.plugins_sys import BasePlugin, Event, CompatibleEnrollment
 import os
 
-bot = CompatibleEnrollment() # 最不自由的一集
+bot = CompatibleEnrollment # 最不自由的一集
 
 class Test(BasePlugin):
     name = "Test"
@@ -16,17 +16,20 @@ class Test(BasePlugin):
     
     @bot.group_event()
     async def a(self, msg):
-        print('事件数据: ',msg)
+        print('事件数据1: ',msg)
     
     async def on_load(self):
         # 注册一个事件处理器
-        print(bot.events)
         print('元数据   :',self.meta_data)
         print('工作路径 :',os.getcwd())
-        self.register_handler("ncatbot\.*", self.handle_test)
+        self.register_handler(r"ncatbot\.*", self.handle_test)
     
     async def on_unload(self):
         print('Test插件卸载')
     
     async def handle_test(self, event: Event):
         print(f"处理事件: {event.data}")
+
+@bot.group_event()
+async def a(msg):
+    print('事件数据2: ',msg)

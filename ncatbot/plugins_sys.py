@@ -32,7 +32,7 @@ except ModuleNotFoundError: # 方便开发时测试
 PLUGINS_DIR = "plugins"             # 插件目录
 PERSISTENT_DIR = "data"             # 插件私有数据目录
 EVENT_QUEUE_MAX_SIZE = 1000         # 事件队列最大长度
-META_CONFIG_PATH = './config.yaml'  # 元事件，所有插件一份(只读)
+META_CONFIG_PATH = None             # 元事件，所有插件一份(只读)
 # endregion
 
 # region ------------------- 异常 -------------------
@@ -302,41 +302,50 @@ class EventBus:
 # region ----------------- 注册兼容 -----------------
 class CompatibleEnrollment:
     events = {
-        'group_event':[],
-        'private_event':[],
-        'notice_event':[],
-        'request_event':[]
+        'ncatbot.group_event':[],
+        'ncatbot.private_event':[],
+        'ncatbot.notice_event':[],
+        'ncatbot.request_event':[]
     }
-    def group_event(self,types=None):
+
+    def __init__(self):
+        ValueError('不需要实例化')
+
+    @classmethod
+    def group_event(cls,types=None):
         def decorator(func):  # ncatbot.group_event
-            self.events[r'ncatbot\.group_event'].append(func)
+            cls.events[r'ncatbot.group_event'].append(func)
+            print(cls.events)
             def wrapper(instance, event: Event):
                 # 在这里过滤types
                 return func(instance, event.data)
             return wrapper
         return decorator
 
-    def private_event(self,types=None):
+    @classmethod
+    def private_event(cls,types=None):
         def decorator(func):  # ncatbot.private_event
-            self.events[r'ncatbot\.private_event'].append(func)
+            cls.events[r'ncatbot.private_event'].append(func)
             def wrapper(instance, event: Event):
                 # 在这里过滤types
                 return func(instance, event.data)
             return wrapper
         return decorator
 
-    def notice_event(self,types=None):
+    @classmethod
+    def notice_event(cls,types=None):
         def decorator(func):  # ncatbot.notice_event
-            self.events[r'ncatbot\.notice_event'].append(func)
+            cls.events[r'ncatbot.notice_event'].append(func)
             def wrapper(instance, event: Event):
                 # 在这里过滤types
                 return func(instance, event.data)
             return wrapper
         return decorator
 
-    def request_event(self,types=None):
+    @classmethod
+    def request_event(cls,types=None):
         def decorator(func):  # ncatbot.request_event
-            self.events[r'ncatbot\.request_event'].append(func)
+            cls.events[r'ncatbot.request_event'].append(func)
             def wrapper(instance, event: Event):
                 # 在这里过滤types
                 return func(instance, event.data)
@@ -385,7 +394,10 @@ class BasePlugin:
             self.fist_load = False
         self.data = self._load_persistent_data()
         self.event_bus = event_bus
-        self.meta_data: Dict[str, Any] = MappingProxyType(UniversalLoader(META_CONFIG_PATH).load().data) # 只读字典
+        if META_CONFIG_PATH:
+            self.meta_data: Dict[str, Any] = MappingProxyType(UniversalLoader(META_CONFIG_PATH).load().data) # 只读字典
+        else:
+            self.meta_data: Dict = MappingProxyType({})
         self._event_handlers: Dict[str, List[Callable]] = defaultdict(list)
         if kwargs:
             for key, var in kwargs:
@@ -512,7 +524,6 @@ class PluginLoader:
         """
         初始化插件加载器
         """
-        self.compatible = CompatibleEnrollment().events
         self.plugins: Dict[str, BasePlugin] = {}
         self.event_bus = EventBus()
         self._dependency_graph: Dict[str, Set[str]] = {}
@@ -625,9 +636,13 @@ class PluginLoader:
         # print(dir(models['a_plugins']))
         # print(models['a_plugins'].__all__)
         await self.from_class_load_plugins(plugins)
+        await self.load_compatible_data()
 
     async def load_compatible_data(self):
-        for event_type, funcs in self.compatible.items():
+        '''加载兼容注册事件'''
+        compatible = CompatibleEnrollment.events
+        print(compatible)
+        for event_type, funcs in compatible.items():
             self.event_bus.subscribe(event_type, funcs)
 
     async def unload_plugin(self, plugin_name: str):
