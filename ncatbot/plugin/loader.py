@@ -31,7 +31,7 @@ from ncatbot.plugin.custom_err import (
     PluginVersionError,
 )
 from ncatbot.plugin.event import CompatibleEnrollment, Event, EventBus
-
+from ncatbot.plugin.config import PLUGINS_DIR
 
 # region ----------------- 插件加载器 -----------------
 class PluginLoader:
@@ -153,7 +153,7 @@ class PluginLoader:
             await self.plugins[name].on_load()
 
     async def load_plugin(self, plugins_path: str, api: BotAPI):
-        models: Dict = self._load_modules_from_directory(plugins_path)
+        models: Dict = self._load_modules_from_directory(plugins_path = PLUGINS_DIR)
         plugins = []
         for plugin in models.values():
             for plugin_class_name in plugin.__all__:
