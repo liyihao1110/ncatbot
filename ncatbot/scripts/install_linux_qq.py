@@ -21,7 +21,7 @@ def install(package_installer: str, filename: str):
     if package_installer == "dpkg":
         try:
             subprocess.run(
-                ["sudo", "apt-get", "install", "-f", "-y", "-qq", filename],
+                ["sudo", "apt-get", "install", "-f", "-y", "-qq", f"./{filename}"],
                 check=True,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
@@ -52,7 +52,7 @@ def install(package_installer: str, filename: str):
     elif package_installer == "rpm":
         try:
             subprocess.run(
-                ["sudo", "dnf", "localinstall", "-y", filename],
+                ["sudo", "dnf", "localinstall", "-y", f"./{filename}"],
                 check=True,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
@@ -162,7 +162,6 @@ def install_linux_qq(package_manager: str, package_installer: str, type: str):
         None
     """
     arch = platform.machine()
-    _log.info(f"当前操作系统为: Linux")
     if arch == "x86_64":
         system_arch = "amd64"
     elif arch == "aarch64":
@@ -256,15 +255,23 @@ def install_linux_qq(package_manager: str, package_installer: str, type: str):
             # 下载 linuxqq 客户端
             filename = download_linuxqq(download_url)
             install(package_installer, filename)
-            _log.info("Linux QQ 安装成功")
+            try:
+                os.remove(filename)
+            except Exception as e:
+                _log.error(f"删除 Linux QQ 安装包失败, 请检查错误: {e}")
+            _log.info(f"Linux QQ {linux_version} 安装成功")
             return None
 
     else:
-        _log.info(f"Linux QQ 未安装, 开始安装Linux QQ {linux_version}")
+        _log.info("开始安装Linux QQ 3.2.15-31363")
         base_url = f"https://dldir1.qq.com/qqfile/qq/QQNT/a5519e17/linuxqq_3.2.15-31363"
         download_url = arch_to_url(base_url, system_arch, package_installer)
         # 下载 linuxqq 客户端
         filename = download_linuxqq(download_url)
         install(package_installer, filename)
-        _log.info("Linux QQ 安装成功")
+        try:
+            os.remove(filename)
+        except Exception as e:
+            _log.error(f"删除 Linux QQ 安装包失败, 请检查错误: {e}")
+        _log.info(f"Linux QQ 3.2.15-31363 安装成功")
         return None

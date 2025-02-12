@@ -290,6 +290,8 @@ class BotClient:
                         f.close()
                     os.system(f"{config.bt_uin}_quickLogin.bat")
             elif system == "Linux":
+                _log.info("当前操作系统为: Linux")
+                _log.info("正在启动 QQ ...")
                 if check_linux_permissions("root") != "root":
                     _log.error("请使用 root 权限运行 ncatbot")
                     exit(0)
