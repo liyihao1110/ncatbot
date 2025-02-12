@@ -157,6 +157,9 @@ class PluginLoader:
             await self.plugins[name].on_load()
 
     async def load_plugin(self, api: BotAPI):
+        if not os.path.exists(PLUGINS_DIR):
+            _log.info("插件目录不存在, 跳过插件加载")
+            return
         models: Dict = self._load_modules_from_directory(directory_path=PLUGINS_DIR)
         plugins = []
         for plugin in models.values():
