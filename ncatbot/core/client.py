@@ -26,6 +26,9 @@ from ncatbot.utils.literals import (
     OFFICIAL_REQUEST_EVENT,
 )
 from ncatbot.utils.logger import get_log
+from ncatbot.scripts.check_linux_permissions import check_linux_permissions
+from ncatbot.scripts.install_linux_qq import install_linux_qq
+from ncatbot.scripts.modify_linux_qq import modify_linux_qq
 
 _log = get_log()
 
@@ -158,10 +161,12 @@ class BotClient:
                 )
                 exit(0)
 
-        def download_napcat():
+        def download_napcat(type: str):
             """
             下载 napcat 客户端
+            type: str, 可选值为 "install" 或 "update"
             """
+            # 下载 napcat 客户端
             try:
                 github_proxy_url = get_proxy_url()
                 version = get_version(github_proxy_url)
@@ -203,6 +208,9 @@ class BotClient:
                 _log.error("错误信息: ", e)
                 return
             os.chdir(base_path)
+
+            if platform.system() == "Linux":
+                install_linux_qq(*check_linux_permissions("all"), type)
 
         def config_account():
             """
@@ -273,26 +281,31 @@ class BotClient:
                         # Windows 11
                         _log.info("当前操作系统为: Windows 11")
                         content = f"@echo off\n./launcher.bat {config.bt_uin}"
-                        with open(f"{config.bt_uin}_quickLogin.bat", "w") as f:
-                            f.write(content)
-                            f.close()
-                        os.system(f"{config.bt_uin}_quickLogin.bat")
                     else:
                         # Windows 10
                         _log.info("当前操作系统为: Windows 10")
                         content = f"@echo off\n./launcher-win10.bat {config.bt_uin}"
-                        with open(f"{config.bt_uin}_quickLogin.bat", "w") as f:
-                            f.write(content)
-                            f.close()
-                        os.system(f"{config.bt_uin}_quickLogin.bat")
-            # TODO: 支持Linux系统自动启动
-            # 以下为测试使用
+                    with open(f"{config.bt_uin}_quickLogin.bat", "w") as f:
+                        f.write(content)
+                        f.close()
+                    os.system(f"{config.bt_uin}_quickLogin.bat")
+            elif system == "Linux":
+                if check_linux_permissions("root") != "root":
+                    _log.error("请使用 root 权限运行 ncatbot")
+                    exit(0)
+                # 修补QQ
+                if not modify_linux_qq():
+                    _log.error("安装失败")
+                    exit(0)
+                # 启动 !
+                os.system(
+                    f"screen -dmS napcat bash -c 'xvfb-run -a qq --no-sandbox -q {config.bt_uin}'"
+                )
             else:
                 _log.info(f"当前操作系统为: {system}")
-                _log.info("当前操作系统暂不支持")
+                _log.error("不支持的系统, 请检查错误")
                 exit(0)
             os.chdir(base_path)
-
         if reload:
             asyncio.run(self.run_async())
         elif not reload:
@@ -301,7 +314,7 @@ class BotClient:
             # 检查是否存在安装记录
             if not os.path.exists(os.path.join(NAPCAT_DIR, INSTALL_CHECK_PATH)):
                 _log.info("未找到 napcat 安装记录, 正在下载 napcat 客户端, 请稍等...")
-                download_napcat()
+                download_napcat("install")
                 with open(
                     os.path.join(NAPCAT_DIR, INSTALL_CHECK_PATH), "w", encoding="utf-8"
                 ) as f:
@@ -316,7 +329,7 @@ class BotClient:
                 latest_version = get_version(get_proxy_url())
                 if version != latest_version:
                     _log.info("检测到新版本, 正在下载 napcat 客户端, 请稍等...")
-                    download_napcat()
+                    download_napcat("update")
                 else:
                     _log.info("当前 napcat 版本为最新版本, 无需更新")
 
