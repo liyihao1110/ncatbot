@@ -5,6 +5,8 @@ import time
 import urllib
 import urllib.parse
 import zipfile
+import site
+from ncatbot.scripts.check_version import check_version
 
 import requests
 from tqdm import tqdm
@@ -218,6 +220,9 @@ class BotClient:
             os.chdir(base_path)
 
         if reload:
+            version_ok = check_version()
+            if not version_ok:
+                exit(0)
             try:
                 asyncio.run(self.run_async())
             except KeyboardInterrupt:
@@ -247,6 +252,9 @@ class BotClient:
                     exit(0)
 
             _log.info("连接 napcat websocket 服务器成功!")
+            version_ok = check_version()
+            if not version_ok:
+                exit(0)
             try:
                 asyncio.run(self.run_async())
             except KeyboardInterrupt:
