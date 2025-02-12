@@ -11,7 +11,7 @@ class SetConfig:
         self.bt_uin = "123456"
         self.hp_uri = "localhost:3000"
         self.ws_uri = "localhost:3001"
-        self.np_uri = "https://github.com/NapNeko/NapCatQQ/releases/download/v4.4.16/NapCat.Shell.zip"
+        self.np_uri = "https://ghfast.top/https://github.com/NapNeko/NapCatQQ/releases/download/v4.5.20/NapCat.Shell.zip"
         self.token = ""
 
     def __str__(self):
