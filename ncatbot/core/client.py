@@ -5,8 +5,6 @@ import time
 import urllib
 import urllib.parse
 import zipfile
-import site
-from ncatbot.scripts.check_version import check_version
 
 import requests
 from tqdm import tqdm
@@ -16,6 +14,7 @@ from ncatbot.conn.http import check_websocket
 from ncatbot.core.api import BotAPI
 from ncatbot.core.message import GroupMessage, PrivateMessage
 from ncatbot.plugin.loader import Event, PluginLoader
+from ncatbot.utils.check_version import check_version
 from ncatbot.utils.config import config
 from ncatbot.utils.literals import (
     INSTALL_CHECK_PATH,
