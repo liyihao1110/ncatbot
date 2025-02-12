@@ -218,7 +218,11 @@ class BotClient:
             os.chdir(base_path)
 
         if reload:
-            asyncio.run(self.run_async())
+            try:
+                asyncio.run(self.run_async())
+            except KeyboardInterrupt:
+                _log.info("正常退出")
+                exit(0)
         elif not reload:
             base_path = os.getcwd()
 
@@ -243,4 +247,8 @@ class BotClient:
                     exit(0)
 
             _log.info("连接 napcat websocket 服务器成功!")
-            asyncio.run(self.run_async())
+            try:
+                asyncio.run(self.run_async())
+            except KeyboardInterrupt:
+                _log.info("正常退出")
+                exit(0)
