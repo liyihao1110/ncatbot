@@ -170,6 +170,7 @@ def install_linux_qq(package_manager: str, package_installer: str, type: str):
         _log.error("无法识别的系统架构, 请检查错误")
         exit(0)
     if type == "install":
+        _log.info("正在安装依赖...")
         if package_manager == "apt-get":
             # 更新包列表
             try:
@@ -263,11 +264,12 @@ def install_linux_qq(package_manager: str, package_installer: str, type: str):
             return None
 
     else:
-        _log.info("开始安装Linux QQ 3.2.15-31363")
+        _log.info("开始下载Linux QQ 3.2.15-31363")
         base_url = f"https://dldir1.qq.com/qqfile/qq/QQNT/a5519e17/linuxqq_3.2.15-31363"
         download_url = arch_to_url(base_url, system_arch, package_installer)
         # 下载 linuxqq 客户端
         filename = download_linuxqq(download_url)
+        _log.info("正在安装Linux QQ...")
         install(package_installer, filename)
         try:
             os.remove(filename)
