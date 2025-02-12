@@ -1,12 +1,13 @@
-from ncatbot.client import BotClient
-from ncatbot.config import config
-from ncatbot.logger import get_log
-from ncatbot.message import GroupMessage, PrivateMessage
+from ncatbot.core.client import BotClient
+from ncatbot.core.message import GroupMessage, PrivateMessage
+from ncatbot.utils.config import config
+from ncatbot.utils.logger import get_log
 
 _log = get_log()
 
 config.set_bot_uin("123456")  # 设置 bot qq 号
 config.set_ws_uri("ws://localhost:3001")  # 设置 napcat websocket server 地址
+config.set_token("")
 
 bot = BotClient()
 
