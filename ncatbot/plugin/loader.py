@@ -164,6 +164,7 @@ class PluginLoader:
                 plugins.append(getattr(plugin, plugin_class_name))
         await self.from_class_load_plugins(plugins, api)
         self.load_compatible_data(self.plugins.values())
+        return self.plugins.values()
 
     def load_compatible_data(self, plugins):
         def find_instance(func):
@@ -213,6 +214,33 @@ class PluginLoader:
         await new_plugin.on_load()
         self.plugins[plugin_name] = new_plugin
 
+    def get_plugin_info(self, plugin_path):
+
+        original_sys_path = sys.path.copy()
+        try:
+            # 临时插入目录到 sys.path，用于加载模块
+            directory_path = os.path.abspath(plugin_path)
+            sys.path.append(os.path.dirname(directory_path))
+            filename = plugin_path.split("/")[-1]
+            try:
+                # 动态导入模块
+                module = importlib.import_module(filename)
+                if len(module.__all__) != 1:
+                    raise ValueError("Plugin __init__.py wrong format")
+                for plugin_class_name in module.__all__:
+                    plugin_class = getattr(module, plugin_class_name)
+                    if not self._validate_plugin(plugin_class):
+                        raise TypeError("Plugin Class is invalid")
+                    name, version = plugin_class.name, plugin_class.version
+                    break
+            except BaseException as e:
+                _log.error(f"查找模块 {filename} 时出错: {e}")
+
+        finally:
+            sys.path = original_sys_path
+
+        return name, version
+
     def _load_modules_from_directory(
         self, directory_path: str
     ) -> Dict[str, ModuleType]:
@@ -234,9 +262,8 @@ class PluginLoader:
             # 遍历文件夹中的所有文件
             for filename in os.listdir(directory_path):
                 # 忽略非文件夹
-                if os.path.isdir(filename):
+                if not os.path.isdir(os.path.join(directory_path, filename)):
                     continue
-
                 # 异常捕获，防止导入失败导致程序崩溃
                 try:
                     # 动态导入模块
