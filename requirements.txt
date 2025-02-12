@@ -25,3 +25,4 @@ typing-extensions==4.12.2
 urllib3==1.26.20
 websockets==10.4
 zipp==3.21.0
+packaging==24.0

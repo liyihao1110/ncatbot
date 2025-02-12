@@ -7,7 +7,7 @@ import markdown
 from pygments.formatters import HtmlFormatter
 from pyppeteer import launch
 
-from ncatbot.logger import get_log
+from ncatbot.utils.logger import get_log
 
 _log = get_log("utils")
 

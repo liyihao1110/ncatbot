@@ -1,6 +1,6 @@
 import yaml
 
-from ncatbot.logger import get_log
+from ncatbot.utils.logger import get_log
 
 _log = get_log()
 

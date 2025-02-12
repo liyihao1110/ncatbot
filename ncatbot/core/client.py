@@ -9,54 +9,27 @@ import zipfile
 import requests
 from tqdm import tqdm
 
-from ncatbot.api import BotAPI
-from ncatbot.config import config
-from ncatbot.gateway import Websocket
-from ncatbot.http import check_websocket
-from ncatbot.logger import get_log
-from ncatbot.message import GroupMessage, PrivateMessage
-from ncatbot.utils.literals import INSTALL_CHECK_PATH, NAPCAT_DIR
+from ncatbot.conn.gateway import Websocket
+from ncatbot.conn.http import check_websocket
+from ncatbot.core.api import BotAPI
+from ncatbot.core.message import GroupMessage, PrivateMessage
+from ncatbot.plugin.loader import Event, PluginLoader
+from ncatbot.utils.config import config
+from ncatbot.utils.literals import (
+    INSTALL_CHECK_PATH,
+    NAPCAT_DIR,
+    OFFICIAL_GROUP_MESSAGE_EVENT,
+    OFFICIAL_NOTICE_EVENT,
+    OFFICIAL_PRIVATE_MESSAGE_EVENT,
+    OFFICIAL_REQUEST_EVENT,
+)
+from ncatbot.utils.logger import get_log
 
-_log = get_log("ncatbot")
+_log = get_log()
 
 
 class BotClient:
-    def __init__(self, use_ws=True):
-        if not config._updated:
-            _log.warning("没有主动设置配置项, 配置项将使用默认值")
-            time.sleep(0.8)
-        _log.info(config)
-        time.sleep(1.6)
-
-        self.api = BotAPI(use_ws)
-        self._group_event_handler = None
-        self._private_event_handler = None
-        self._notice_event_handler = None
-        self._request_event_handler = None
-
-    def group_event(self, types=None):
-        def decorator(func):
-            self._group_event_handler = (func, types)
-            return func
-
-        return decorator
-
-    def private_event(self, types=None):
-        def decorator(func):
-            self._private_event_handler = (func, types)
-            return func
-
-        return decorator
-
-    def notice_event(self, func):
-        self._notice_event_handler = func
-        return func
-
-    def request_event(self, func):
-        self._request_event_handler = func
-        return func
-
-    def __init__(self, use_ws=True):
+    def __init__(self, use_ws=True, plugins_path="plugins"):
         if not config._updated:
             _log.warning("没有主动设置配置项, 配置项将使用默认值")
             time.sleep(0.8)
@@ -68,37 +41,55 @@ class BotClient:
         self._private_event_handlers = []
         self._notice_event_handlers = []
         self._request_event_handlers = []
+        self.plugins_path = plugins_path
+        self.plugin_sys = PluginLoader()
 
     async def handle_group_event(self, msg: dict):
+        msg = GroupMessage(msg)
+        _log.debug(msg)
         for handler, types in self._group_event_handlers:
             if types is None or any(i["type"] in types for i in msg["message"]):
-                msg = GroupMessage(msg)
                 await handler(msg)
+        await self.plugin_sys.event_bus.publish_async(
+            Event(OFFICIAL_GROUP_MESSAGE_EVENT, msg)
+        )
 
     async def handle_private_event(self, msg: dict):
+        msg = PrivateMessage(msg)
+        _log.debug(msg)
         for handler, types in self._private_event_handlers:
             if types is None or any(i["type"] in types for i in msg["message"]):
-                msg = PrivateMessage(msg)
                 await handler(msg)
+        await self.plugin_sys.event_bus.publish_async(
+            Event(OFFICIAL_PRIVATE_MESSAGE_EVENT, msg)
+        )
 
     async def handle_notice_event(self, msg: dict):
+        _log.debug(msg)
         for handler in self._notice_event_handlers:
             await handler(msg)
+        await self.plugin_sys.event_bus.publish_async(Event(OFFICIAL_NOTICE_EVENT, msg))
 
     async def handle_request_event(self, msg: dict):
+        _log.debug(msg)
         for handler in self._request_event_handlers:
             await handler(msg)
+        await self.plugin_sys.event_bus.publish_async(
+            Event(OFFICIAL_REQUEST_EVENT, msg)
+        )
 
     def group_event(self, types=None):
         def decorator(func):
             self._group_event_handlers.append((func, types))
             return func
+
         return decorator
 
     def private_event(self, types=None):
         def decorator(func):
             self._private_event_handlers.append((func, types))
             return func
+
         return decorator
 
     def notice_event(self, func):
@@ -111,6 +102,7 @@ class BotClient:
 
     async def run_async(self):
         websocket_server = Websocket(self)
+        await self.plugin_sys.load_plugin(self.api)
         await websocket_server.ws_connect()
 
     def run(self, reload=False):

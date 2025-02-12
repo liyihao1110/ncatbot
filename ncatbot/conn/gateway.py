@@ -1,9 +1,10 @@
-import json
-import websockets
 import asyncio
+import json
 
-from ncatbot.config import config
-from ncatbot.logger import get_log
+import websockets
+
+from ncatbot.utils.config import config
+from ncatbot.utils.logger import get_log
 
 _log = get_log("ncatbot")
 
