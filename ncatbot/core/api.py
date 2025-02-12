@@ -1210,7 +1210,7 @@ class BotAPI:
             if reply_elem:
                 message.insert(0, reply_elem)
 
-            # 检查是否包含基本元素(at/图片/文本/表情)
+            # 检查是否包含基本元素(at/图片/文本/表情/猜拳/骰子)
             basic_types = {"at", "image", "text", "face", "dice", "rps"}
             basic_elems = [elem for elem in rtf.elements if elem["type"] in basic_types]
 
@@ -1278,16 +1278,33 @@ class BotAPI:
         if image:
             message.append(Image(image))
         if rtf:
-            # 检查是否包含基本元素(at/图片/文本/表情)
-            basic_types = {"at", "image", "text", "face"}  # 定义基本元素类型
+            # 首先检查是否有 reply，只取第一个
+            reply_elem = None
+            for elem in rtf.elements:
+                if elem["type"] == "reply":
+                    reply_elem = Reply(elem["data"]["id"])
+                    break
+
+            # 如果有 reply，插入到消息开头
+            if reply_elem:
+                message.insert(0, reply_elem)
+
+            # 检查是否包含基本元素(图片/文本/表情/猜拳/骰子)
+            basic_types = {"image", "text", "face", "dice", "rps"}
             basic_elems = [elem for elem in rtf.elements if elem["type"] in basic_types]
 
             if basic_elems:  # 如果存在基本元素
                 # 只添加基本元素
                 message.extend(basic_elems)
             else:
-                # 如果没有基本元素，才使用所有元素
-                message.extend(rtf.elements)
+                # 如果没有基本元素，才使用所有非reply/at元素
+                message.extend(
+                    [
+                        elem
+                        for elem in rtf.elements
+                        if elem["type"] != "reply" or elem["type"] != "at"
+                    ]
+                )
         if not message:
             return {"code": 0, "msg": "消息不能为空"}
         params = {"user_id": user_id, "message": message}
