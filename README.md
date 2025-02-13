@@ -1,7 +1,7 @@
 # NcatBot
 
 ---
-![img.png](https://socialify.git.ci/liyihao1110/NcatBot/image?description=1&forks=1&issues=1&language=1&logo=https%3A%2F%2Fa.imgckr.com%2F2024%2F12%2F29%2FJO1OJ.png&name=1&owner=1&pulls=1&stargazers=1&theme=Auto)
+![img.png](https://socialify.git.ci/liyihao1110/NcatBot/image?description=1&forks=1&issues=1&language=1&logo=https%3A%2F%2Fdocs.ncatbot.xyz%2Fimages%2Flogo.png&name=1&owner=1&pulls=1&stargazers=1&theme=Auto)
 <h2 align="center">基于 NapCat 的 QQ 机器人 Python 快速开发框架 (SDK)</h2>
 <p align="center">
 	<a href="https://pypi.org/project/ncatbot/"><img src="https://img.shields.io/pypi/v/ncatbot"></a>
