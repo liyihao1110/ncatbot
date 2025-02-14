@@ -130,7 +130,7 @@ def compare_versions(current_version: str, target_version: str) -> bool:
         target_version (str): 目标版本号
 
     Returns:
-        bool: 如果当前版本号小于目标版本号, 返回 True, 否则返回 False
+        bool: 如果当前版本号大于目标版本号, 返回 True, 否则返回 False
     """
     # 将版本号字符串分割成列表
     main_parts1, build_part1 = current_version.split("-")
@@ -141,14 +141,14 @@ def compare_versions(current_version: str, target_version: str) -> bool:
     # 逐个比较版本号的各个部分
     for i in range(max(len(version_parts1), len(version_parts2))):
         if i >= len(version_parts2):
-            return False
+            return True
         if i >= len(version_parts1):
-            return True
-        if version_parts1[i] < version_parts2[i]:
-            return True
-        elif version_parts1[i] > version_parts2[i]:
             return False
-    return int(build_part1) < int(build_part2)
+        if version_parts1[i] < version_parts2[i]:
+            return False
+        elif version_parts1[i] > version_parts2[i]:
+            return True
+    return int(build_part1) > int(build_part2)
 
 
 def install_linux_qq(package_manager: str, package_installer: str, type: str):

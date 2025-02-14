@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import platform
+import subprocess
 import sys
 import time
 import urllib
@@ -30,6 +31,7 @@ from ncatbot.utils.logger import get_log
 from ncatbot.scripts.check_linux_permissions import check_linux_permissions
 from ncatbot.scripts.install_linux_qq import install_linux_qq
 from ncatbot.scripts.modify_linux_qq import modify_linux_qq
+import threading
 
 _log = get_log()
 
@@ -217,7 +219,19 @@ class BotClient:
             """
             配置账号信息
             """
-            os.chdir(os.path.join(NAPCAT_DIR, "config"))
+            http_enable = False if config.hp_uri == "" else True
+            ws_enable = False if config.ws_uri == "" else True
+            """
+            配置账号信息
+            """
+                        # 根据系统类型设置配置文件夹路径
+            if platform.system() == "Linux":
+                config_path = "/opt/QQ/resources/app/app_launcher/napcat/config"
+                if not os.path.exists(config_path):
+                    os.makedirs(config_path)
+                os.chdir(config_path)
+            else:
+                os.chdir(os.path.join(NAPCAT_DIR, "config"))
             http_enable = False if config.hp_uri == "" else True
             ws_enable = False if config.ws_uri == "" else True
             expected_data = {
@@ -268,42 +282,68 @@ class BotClient:
             # 获取操作系统
             system = platform.system()
             if system == "Windows":
-                release = platform.release()
-                # 对于Windows 10和Windows 11，版本号分别是10和10.0
-                if release == "10":
-                    # 使用sys.getwindowsversion()获取更详细的版本信息
-                    win_version = sys.getwindowsversion()
-                    # Windows 11的主版本号是10，次版本号是0，构建号至少为22000
-                    if (
-                        win_version.major == 10
-                        and win_version.minor == 0
-                        and win_version.build >= 22000
-                    ):
-                        # Windows 11
-                        _log.info("当前操作系统为: Windows 11")
-                        content = f"@echo off\n./launcher.bat {config.bt_uin}"
-                    else:
-                        # Windows 10
-                        _log.info("当前操作系统为: Windows 10")
-                        content = f"@echo off\n./launcher-win10.bat {config.bt_uin}"
-                    with open(f"{config.bt_uin}_quickLogin.bat", "w") as f:
-                        f.write(content)
-                        f.close()
-                    os.system(f"{config.bt_uin}_quickLogin.bat")
+                # 检查是否为 Windows Server
+                is_server = 'Server' in platform.win32_ver()[0]
+                if is_server:
+                    _log.info("当前操作系统为: Windows Server")
+                    launcher = "launcher-win10.bat"
+                else:
+                    release = platform.release()
+                    if release == "10":
+                        # 使用sys.getwindowsversion()获取更详细的版本信息
+                        win_version = sys.getwindowsversion()
+                        # Windows 11的主版本号是10，次版本号是0，构建号至少为22000
+                        if (
+                            win_version.major == 10
+                            and win_version.minor == 0
+                            and win_version.build >= 22000
+                        ):
+                            # Windows 11
+                            _log.info("当前操作系统为: Windows 11")
+                            launcher = "launcher.bat"
+                        else:
+                            # Windows 10
+                            _log.info("当前操作系统为: Windows 10")
+                            launcher = "launcher-win10.bat"
+                    
+                try:
+                    # 修正路径处理，去掉多余的napcat层级
+                    napcat_dir = os.path.dirname(os.path.abspath(NAPCAT_DIR))  # 获取父目录的绝对路径
+                    launcher_path = os.path.join(napcat_dir, launcher)
+                    
+                    # 检查文件是否存在
+                    if not os.path.exists(launcher_path):
+                        _log.error(f"找不到启动文件: {launcher_path}")
+                        exit(1)
+                        
+                    _log.info(f"正在启动QQ，启动器路径: {launcher_path}")
+                    # 使用subprocess直接启动launcher，不捕获输出
+                    subprocess.Popen(
+                        f'"{launcher_path}" {config.bt_uin}',
+                        shell=True,
+                        cwd=napcat_dir,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL
+                    )
+                    
+                except Exception as e:
+                    _log.error(f"启动QQ失败: {e}")
+                    exit(1)
+
             elif system == "Linux":
                 _log.info("当前操作系统为: Linux")
                 _log.info("正在启动 QQ ...")
                 if check_linux_permissions("root") != "root":
                     _log.error("请使用 root 权限运行 ncatbot")
                     exit(0)
-                # 修补QQ
-                if not modify_linux_qq():
-                    _log.error("安装失败")
-                    exit(0)
-                # 启动 !
-                os.system(
-                    f"screen -dmS napcat bash -c 'xvfb-run -a qq --no-sandbox -q {config.bt_uin}'"
+                    
+                # 直接启动QQ，不再修补
+                subprocess.Popen(
+                    ["xvfb-run", "-a", "qq", "--no-sandbox", "-q", str(config.bt_uin)],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL
                 )
+
             else:
                 _log.info(f"当前操作系统为: {system}")
                 _log.error("不支持的系统, 请检查错误")
@@ -321,30 +361,61 @@ class BotClient:
         elif not reload:
             base_path = os.getcwd()
 
-            # 检查是否存在安装记录
-            if not os.path.exists(os.path.join(NAPCAT_DIR, INSTALL_CHECK_PATH)):
-                _log.info("未找到 napcat 安装记录, 正在下载 napcat 客户端, 请稍等...")
-                download_napcat("install")
-                with open(
-                    os.path.join(NAPCAT_DIR, INSTALL_CHECK_PATH), "w", encoding="utf-8"
-                ) as f:
-                    f.write("installed")
-            else:
-                _log.info("找到 napcat 安装记录, 正在检测版本...")
-                with open(
-                    os.path.join(NAPCAT_DIR, "package.json"), "r", encoding="utf-8"
-                ) as f:
-                    version = json.load(f)["version"]
-                _log.info(f"当前 napcat 版本为 {version}")
-                latest_version = get_version(get_proxy_url())
-                if version != latest_version:
-                    _log.info("检测到新版本, 正在下载 napcat 客户端, 请稍等...")
-                    download_napcat("update")
+            # 根据系统类型判断是否需要检查napcat安装记录
+            if platform.system() != "Linux":
+                # 检查是否存在安装记录
+                if not os.path.exists(os.path.join(NAPCAT_DIR, INSTALL_CHECK_PATH)):
+                    _log.info("未找到 napcat 安装记录, 正在下载 napcat 客户端, 请稍等...")
+                    download_napcat("install")
+                    with open(
+                        os.path.join(NAPCAT_DIR, INSTALL_CHECK_PATH), "w", encoding="utf-8"
+                    ) as f:
+                        f.write("installed")
                 else:
-                    _log.info("当前 napcat 版本为最新版本, 无需更新")
+                    _log.info("找到 napcat 安装记录, 正在检测版本...")
+                    with open(
+                        os.path.join(NAPCAT_DIR, "package.json"), "r", encoding="utf-8"
+                    ) as f:
+                        version = json.load(f)["version"]
+                    _log.info(f"当前 napcat 版本为 {version}")
+                    latest_version = get_version(get_proxy_url())
+                    if version != latest_version:
+                        _log.info("检测到新版本, 正在下载 napcat 客户端, 请稍等...")
+                        download_napcat("update")
+                    else:
+                        _log.info("当前 napcat 版本为最新版本, 无需更新")
 
-            # 配置账号信息
+            # 配置账号信息并启动QQ
             config_account()
+            
+            # 读取并显示WebUI信息
+            if platform.system() == "Linux":
+                webui_config_path = "/opt/QQ/resources/app/app_launcher/napcat/config/webui.json"
+            else:
+                webui_config_path = os.path.join(NAPCAT_DIR, "config/webui.json")
+                
+            webui_url = "无法读取WebUI配置"
+            token = ""  # 默认token值
+            try:
+                with open(webui_config_path, 'r') as f:
+                    webui_config = json.load(f)
+                    # 替换0.0.0.0为127.0.0.1
+                    host = "127.0.0.1" if webui_config.get("host") == "0.0.0.0" else webui_config.get("host")
+                    port = webui_config.get("port", 6099)
+                    token = webui_config.get("token", "")
+                    webui_url = f"http://{host}:{port}/webui?token={token}"
+            except:
+                pass
+            
+            # 添加提示和等待
+            _log.info("NapCatQQ 客户端已启动，如果是第一次启动，请至 WebUI 完成 QQ 登录和其他设置；否则请继续操作")
+            _log.info(f"WebUI 地址: {webui_url}，token: {token}（如需要）")
+            if token == 'napcat' or token == '':
+                _log.warning("检测到当前 token 为默认初始 token ，如暴露在公网，请登录后立刻在 WebUI 中修改 token")
+            _log.info("登录完成后请勿修改 NapCat 网络配置，按回车键继续")
+            input("")
+            _log.info("正在连接 WebSocket 服务器...\n")
+            
             MAX_TIME_EXPIRE = time.time() + 60
 
             while (asyncio.run(check_websocket(config.ws_uri))) is False:
@@ -359,7 +430,8 @@ class BotClient:
             _log.info("连接 napcat websocket 服务器成功!")
             version_ok = check_version()
             if not version_ok:
-                exit(0)
+                # exit(0)
+                pass
             try:
                 asyncio.run(self.run_async())
             except KeyboardInterrupt:
