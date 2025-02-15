@@ -1,12 +1,12 @@
+import atexit
 import os
 import platform
 import subprocess
 import sys
-import atexit
 
-from ncatbot.utils.logger import get_log
-from ncatbot.utils.literals import NAPCAT_DIR
 from ncatbot.scripts.check_linux_permissions import check_linux_permissions
+from ncatbot.utils.literals import NAPCAT_DIR
+from ncatbot.utils.logger import get_log
 
 _log = get_log()
 
@@ -36,7 +36,7 @@ def get_launcher_name():
 def start_qq(config_data, system_type: str = "Windows"):
     """
     启动QQ客户端
-    
+
     Args:
         config_data: 配置数据, 包含QQ号码
         system_type: 操作系统类型, 可选值为 "Windows" 或 "Linux"
@@ -47,7 +47,7 @@ def start_qq(config_data, system_type: str = "Windows"):
     if system_type == "Windows":
         # Windows启动逻辑
         launcher = get_launcher_name()
-        napcat_dir = os.path.dirname(os.path.abspath(NAPCAT_DIR))
+        napcat_dir = os.path.abspath(NAPCAT_DIR)
         launcher_path = os.path.join(napcat_dir, launcher)
 
         if not os.path.exists(launcher_path):

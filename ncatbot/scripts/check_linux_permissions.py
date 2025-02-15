@@ -1,4 +1,5 @@
 import subprocess
+
 from ncatbot.utils.logger import get_log
 
 _log = get_log()

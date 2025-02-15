@@ -9,6 +9,7 @@ import urllib.parse
 from ncatbot.conn.gateway import Websocket
 from ncatbot.conn.http import check_websocket
 from ncatbot.core.api import BotAPI
+from ncatbot.core.launcher import start_qq
 from ncatbot.core.message import GroupMessage, PrivateMessage
 from ncatbot.plugin.loader import Event, PluginLoader
 from ncatbot.utils.check_version import check_version
@@ -24,7 +25,6 @@ from ncatbot.utils.literals import (
 )
 from ncatbot.utils.logger import get_log
 from ncatbot.utils.napcat_helper import download_napcat, download_napcat_linux
-from ncatbot.core.launcher import start_qq
 
 _log = get_log()
 
@@ -126,6 +126,10 @@ class BotClient:
         else:
             napcat_dir = NAPCAT_DIR
 
+        if platform.system() == "Darwin":
+            _log.error("暂不支持 MacOS 系统")
+            exit(1)
+
         if not os.path.exists(napcat_dir):
             if not download_napcat("install", base_path):
                 exit(1)
@@ -213,7 +217,7 @@ class BotClient:
                 "/opt/QQ/resources/app/app_launcher/napcat/config/webui.json"
             )
         else:
-            webui_config_path = os.path.join(NAPCAT_DIR, "config/webui.json")
+            webui_config_path = os.path.join(os.getcwd(), "config", "webui.json")
 
         webui_url = "无法读取WebUI配置"
         token = ""  # 默认token值
@@ -228,8 +232,8 @@ class BotClient:
                 port = webui_config.get("port", 6099)
                 token = webui_config.get("token", "")
                 webui_url = f"http://{host}:{port}/webui?token={token}"
-        except:
-            pass
+        except FileNotFoundError:
+            _log.error("无法读取WebUI配置")
 
         _log.info(
             "NapCatQQ 客户端已启动，如果是第一次启动，请至 WebUI 完成 QQ 登录和其他设置；否则请继续操作"
@@ -239,8 +243,7 @@ class BotClient:
             _log.warning(
                 "检测到当前 token 为默认初始 token ，如暴露在公网，请登录后立刻在 WebUI 中修改 token"
             )
-        _log.info("登录完成后请勿修改 NapCat 网络配置，按回车键继续")
-        input("")
+        _log.info("登录完成后请勿修改 NapCat 网络配置")
         _log.info("确认登录成功后，按回车键继续")
         input("")
         _log.info("正在连接 WebSocket 服务器...\n")
@@ -258,7 +261,7 @@ class BotClient:
 
         _log.info("连接 napcat websocket 服务器成功!")
         version_ok = check_version()
-        
+
         if not version_ok:
             exit(0)
         try:

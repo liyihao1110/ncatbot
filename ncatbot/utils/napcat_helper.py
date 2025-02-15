@@ -1,15 +1,16 @@
 import os
-import sys
-import subprocess
 import platform
+import subprocess
+import sys
 import zipfile
+
 import requests
 from tqdm import tqdm
 
-from ncatbot.utils.logger import get_log
-from ncatbot.utils.literals import NAPCAT_DIR
-from ncatbot.utils.github_helper import get_proxy_url, get_version
 from ncatbot.scripts.check_linux_permissions import check_linux_permissions
+from ncatbot.utils.github_helper import get_proxy_url, get_version
+from ncatbot.utils.literals import NAPCAT_DIR
+from ncatbot.utils.logger import get_log
 
 _log = get_log()
 

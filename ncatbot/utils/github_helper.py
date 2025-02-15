@@ -1,7 +1,9 @@
 import requests
+
 from ncatbot.utils.logger import get_log
 
 _log = get_log()
+
 
 def get_proxy_url():
     """获取 github 代理 URL"""
@@ -30,6 +32,7 @@ def get_proxy_url():
             continue
     _log.info("无法连接到任何 GitHub 代理, 将直接连接 GitHub")
     return ""
+
 
 def get_version(github_proxy_url: str):
     """从GitHub获取 napcat 版本号"""
