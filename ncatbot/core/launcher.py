@@ -74,7 +74,7 @@ def start_qq(config_data, system_type: str = "Windows"):
 
         try:
             result = subprocess.run(
-                ["pgrep", "xvfb"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                ["pgrep", "xvfb"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
             if result.stdout.decode().strip() != "":
                 _log.info("QQ 已启动")
