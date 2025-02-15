@@ -13,6 +13,7 @@ from ncatbot.core.message import GroupMessage, PrivateMessage
 from ncatbot.plugin.loader import Event, PluginLoader
 from ncatbot.utils.check_version import check_version
 from ncatbot.utils.config import config
+from ncatbot.utils.github_helper import get_proxy_url, get_version
 from ncatbot.utils.literals import (
     INSTALL_CHECK_PATH,
     NAPCAT_DIR,
@@ -22,10 +23,11 @@ from ncatbot.utils.literals import (
     OFFICIAL_REQUEST_EVENT,
 )
 from ncatbot.utils.logger import get_log
-from ncatbot.utils.napcat_helper import download_napcat
+from ncatbot.utils.napcat_helper import download_napcat, download_napcat_linux
 from ncatbot.core.launcher import start_qq
 
 _log = get_log()
+
 
 class BotClient:
     def __init__(self, use_ws=True, plugins_path="plugins"):
@@ -117,21 +119,35 @@ class BotClient:
             return
 
         base_path = os.getcwd()
-        
+
         # 检查和安装napcat
         if platform.system() == "Linux":
             napcat_dir = "/opt/QQ/resources/app/app_launcher/napcat"
         else:
             napcat_dir = NAPCAT_DIR
-        print(napcat_dir)
+
         if not os.path.exists(napcat_dir):
             if not download_napcat("install", base_path):
                 exit(1)
-            with open(os.path.join(napcat_dir, INSTALL_CHECK_PATH), "w", encoding="utf-8") as f:
+            with open(
+                os.path.join(napcat_dir, INSTALL_CHECK_PATH), "w", encoding="utf-8"
+            ) as f:
                 f.write("installed")
         else:
-            # 检查版本更新...
-            pass
+            # 检查 napcat 版本更新
+            with open(
+                os.path.join(NAPCAT_DIR, "package.json"), "r", encoding="utf-8"
+            ) as f:
+                version = json.load(f)["version"]
+            _log.info(f"当前 napcat 版本: {version}")
+            _log.info("正在检查更新...")
+            github_version = get_version(get_proxy_url())
+            if version != github_version:
+                _log.info(f"发现新版本: {github_version}")
+                if not download_napcat_linux("update"):
+                    _log.info(f"跳过 napcat {version} 更新")
+            else:
+                _log.info("当前 napcat 已是最新版本")
 
         # 启动QQ并等待连接
         if not start_qq(config, platform.system()):
@@ -193,30 +209,42 @@ class BotClient:
             f"copy quickLoginExample.bat {config.bt_uin}_quickLogin.bat"
         )
         if platform.system() == "Linux":
-            webui_config_path = "/opt/QQ/resources/app/app_launcher/napcat/config/webui.json"
+            webui_config_path = (
+                "/opt/QQ/resources/app/app_launcher/napcat/config/webui.json"
+            )
         else:
             webui_config_path = os.path.join(NAPCAT_DIR, "config/webui.json")
-            
+
         webui_url = "无法读取WebUI配置"
         token = ""  # 默认token值
         try:
-            with open(webui_config_path, 'r') as f:
+            with open(webui_config_path, "r") as f:
                 webui_config = json.load(f)
-                host = "127.0.0.1" if webui_config.get("host") == "0.0.0.0" else webui_config.get("host")
+                host = (
+                    "127.0.0.1"
+                    if webui_config.get("host") == "0.0.0.0"
+                    else webui_config.get("host")
+                )
                 port = webui_config.get("port", 6099)
                 token = webui_config.get("token", "")
                 webui_url = f"http://{host}:{port}/webui?token={token}"
         except:
             pass
-        
-        _log.info("NapCatQQ 客户端已启动，如果是第一次启动，请至 WebUI 完成 QQ 登录和其他设置；否则请继续操作")
-        _log.info(f"WebUI 地址: {webui_url}，token: {token}（如需要）")
-        if token == 'napcat' or token == '':
-            _log.warning("检测到当前 token 为默认初始 token ，如暴露在公网，请登录后立刻在 WebUI 中修改 token")
+
+        _log.info(
+            "NapCatQQ 客户端已启动，如果是第一次启动，请至 WebUI 完成 QQ 登录和其他设置；否则请继续操作"
+        )
+        _log.info(f"WebUI 地址: {webui_url}, token: {token}（如需要）")
+        if token == "napcat" or token == "":
+            _log.warning(
+                "检测到当前 token 为默认初始 token ，如暴露在公网，请登录后立刻在 WebUI 中修改 token"
+            )
         _log.info("登录完成后请勿修改 NapCat 网络配置，按回车键继续")
         input("")
+        _log.info("登录成功后，按回车键二次确认")
+        input("")
         _log.info("正在连接 WebSocket 服务器...\n")
-        
+
         MAX_TIME_EXPIRE = time.time() + 60
 
         while (asyncio.run(check_websocket(config.ws_uri))) is False:
