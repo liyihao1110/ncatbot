@@ -136,7 +136,7 @@ class BotClient:
         else:
             # 检查 napcat 版本更新
             with open(
-                os.path.join(NAPCAT_DIR, "package.json"), "r", encoding="utf-8"
+                os.path.join(napcat_dir, "package.json"), "r", encoding="utf-8"
             ) as f:
                 version = json.load(f)["version"]
             _log.info(f"当前 napcat 版本: {version}")
