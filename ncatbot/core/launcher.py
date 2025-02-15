@@ -2,6 +2,7 @@ import os
 import platform
 import subprocess
 import sys
+import atexit
 
 from ncatbot.utils.logger import get_log
 from ncatbot.utils.literals import NAPCAT_DIR
@@ -92,6 +93,8 @@ def start_qq(config_data, system_type: str = "Windows"):
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                 )
+                # 添加一个简单的清理函数
+                atexit.register(lambda: subprocess.run(["pkill", "xvfb"], check=False))
         except Exception as e:
             # 如果发生异常，则可能pgrep命令没有正确执行
             _log.error(f"pgrep 命令执行失败, 无法判断 QQ 是否启动, 请检查错误: {e}")

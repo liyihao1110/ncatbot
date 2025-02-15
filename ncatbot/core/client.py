@@ -258,6 +258,7 @@ class BotClient:
 
         _log.info("连接 napcat websocket 服务器成功!")
         version_ok = check_version()
+        
         if not version_ok:
             exit(0)
         try:
