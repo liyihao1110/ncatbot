@@ -241,7 +241,7 @@ class BotClient:
             )
         _log.info("登录完成后请勿修改 NapCat 网络配置，按回车键继续")
         input("")
-        _log.info("登录成功后，按回车键二次确认")
+        _log.info("确认登录成功后，按回车键继续")
         input("")
         _log.info("正在连接 WebSocket 服务器...\n")
 
