@@ -28,7 +28,7 @@ def download_napcat(type: str, base_path: str):
     if platform.system() == "Windows":
         return download_napcat_windows(type, base_path)
     elif platform.system() == "Linux":
-        return download_napcat_linux()
+        return download_napcat_linux(type)
     return False
 
 
