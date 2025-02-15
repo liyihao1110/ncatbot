@@ -79,6 +79,7 @@ def start_qq(config_data, system_type: str = "Windows"):
             )
             if result.stdout.decode().strip() != "":
                 _log.info("QQ 已启动")
+                atexit.register(lambda: subprocess.run(["pkill", "qq"], check=False))
                 return True
             else:
                 subprocess.Popen(
@@ -95,6 +96,7 @@ def start_qq(config_data, system_type: str = "Windows"):
                 )
                 # 添加一个简单的清理函数
                 atexit.register(lambda: subprocess.run(["pkill", "xvfb"], check=False))
+                atexit.register(lambda: subprocess.run(["pkill", "qq"], check=False))
         except Exception as e:
             # 如果发生异常，则可能pgrep命令没有正确执行
             _log.error(f"pgrep 命令执行失败, 无法判断 QQ 是否启动, 请检查错误: {e}")
