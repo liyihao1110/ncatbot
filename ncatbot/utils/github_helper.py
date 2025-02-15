@@ -37,7 +37,7 @@ def get_version(github_proxy_url: str):
     version_response = requests.get(version_url)
     if version_response.status_code == 200:
         version = version_response.json()["version"]
-        _log.info(f"获取版本信息成功, 版本号: {version}")
+        _log.info(f"获取最新版本信息成功, 版本号: {version}")
         return version
-    _log.info(f"获取版本信息失败, http 状态码: {version_response.status_code}")
+    _log.info(f"获取最新版本信息失败, http 状态码: {version_response.status_code}")
     return None
