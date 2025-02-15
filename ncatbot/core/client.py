@@ -119,15 +119,19 @@ class BotClient:
         base_path = os.getcwd()
         
         # 检查和安装napcat
-        if platform.system() != "Linux":
-            if not os.path.exists(os.path.join(NAPCAT_DIR, INSTALL_CHECK_PATH)):
-                if not download_napcat("install", base_path):
-                    exit(1)
-                with open(os.path.join(NAPCAT_DIR, INSTALL_CHECK_PATH), "w", encoding="utf-8") as f:
-                    f.write("installed")
-            else:
-                # 检查版本更新...
-                pass
+        if platform.system() == "Linux":
+            napcat_dir = "/opt/QQ/resources/app/app_launcher/napcat"
+        else:
+            napcat_dir = NAPCAT_DIR
+        print(napcat_dir)
+        if not os.path.exists(napcat_dir):
+            if not download_napcat("install", base_path):
+                exit(1)
+            with open(os.path.join(napcat_dir, INSTALL_CHECK_PATH), "w", encoding="utf-8") as f:
+                f.write("installed")
+        else:
+            # 检查版本更新...
+            pass
 
         # 启动QQ并等待连接
         if not start_qq(config, platform.system()):

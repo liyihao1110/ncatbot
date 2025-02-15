@@ -58,14 +58,14 @@ def download_napcat_linux():
     try:
         _log.info("正在下载一键安装脚本...")
         install_script_url = "https://nclatest.znin.net/NapNeko/NapCat-Installer/main/script/install.sh"
-        subprocess.Popen(
+        process = subprocess.Popen(
             f"sudo bash -c 'curl -sSL {install_script_url} | sudo bash'",
             shell=True,
             stdin=sys.stdin,
             stdout=sys.stdout,
             stderr=sys.stderr
         )
-        subprocess.call(["bash", "-c", "wait"])
+        process.wait()
         _log.info("napcat 客户端安装完成。")
         return True
     except Exception as e:
