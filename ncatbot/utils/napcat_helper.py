@@ -47,6 +47,10 @@ def download_napcat_windows(type: str, base_path: str):
         _log.info("未找到 napcat ，是否要自动安装？")
         if input("输入 Y 继续安装或 N 退出: ").strip().lower() not in ["y", "yes"]:
             return False
+    elif type == "update":
+        _log.info("是否要更新 napcat 客户端？")
+        if input("输入 Y 继续安装或 N 跳过更新: ").strip().lower() not in ["y", "yes"]:
+            return False
 
     try:
         github_proxy_url = get_proxy_url()
@@ -114,7 +118,7 @@ def download_napcat_linux(type: str):
             return False
     elif type == "update":
         _log.info("是否要更新 napcat 客户端？")
-        if input("输入 Y 继续安装或 N 退出: ").strip().lower() not in ["y", "yes"]:
+        if input("输入 Y 继续安装或 N 跳过更新: ").strip().lower() not in ["y", "yes"]:
             return False
 
     if check_linux_permissions("root") != "root":
