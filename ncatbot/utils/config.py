@@ -11,7 +11,6 @@ class SetConfig:
         self.bt_uin = "123456"
         self.hp_uri = "localhost:3000"
         self.ws_uri = "localhost:3001"
-        self.np_uri = "https://ghfast.top/https://github.com/NapNeko/NapCatQQ/releases/download/v4.5.20/NapCat.Shell.zip"
         self.token = ""
 
     def __str__(self):
@@ -20,7 +19,6 @@ class SetConfig:
             f"BOT QQ 号: {self.bt_uin}\n"
             f"HTTP URI: {self.hp_uri}\n"
             f"WebSocket URI: {self.ws_uri}\n"
-            f"NapCat Download URI: {self.np_uri}\n"
             f"Token: {self.token}"
         )
 
@@ -56,7 +54,6 @@ class SetConfig:
             self.http_ip = parts[0]
             self.http_port = parts[1]
             self.token = config["token"]
-            self.np_uri = config["np_uri"]
             self.bot_uin = config["bt_uin"]
             self.standerize_uri()
         except KeyError as e:
