@@ -11,7 +11,7 @@ description = "NapCat Python SDK, 提供一站式开发部署方案"
 authors = ["木子 <yihaoli_2002@foxmail.com>"]
 license = "MIT"
 readme = "README.md"
-仓库 = "https://github.com/liyihao1110/ncatbot"
+repository = "https://github.com/liyihao1110/ncatbot"
 
 [tool.poetry.dependencies]
 python = "^3.10"
