@@ -8,7 +8,6 @@
 	<a href="https://gitee.com/y_project/RuoYi-Vue/blob/master/LICENSE"><img src="https://img.shields.io/github/license/mashape/apistatus.svg"></a>
     <a href="https://qm.qq.com/q/CHbzJ2LH4k"><img src="https://img.shields.io/badge/官方群聊-201487478-brightgreen.svg"></a>
     <a href="https://qm.qq.com/q/S2zIli2qsu"><img src="https://img.shields.io/badge/基于ncatbot开发的小机器人-3786498591-brightgreen.svg"></a>
-    <a href="https://pd.qq.com/s/gkpfebfim"><img src="https://img.shields.io/badge/官方频道-pd46469618-brightgreen.svg"></a>
 </p>
 
 NcatBot 是 **[NapCat](https://github.com/NapNeko/NapCatQQ)** 的 Python SDK, 它提供了一套方便易用的 Python 接口用于开发基于 NapCat 的项目——也就是 QQ 机器人.
