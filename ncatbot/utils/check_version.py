@@ -17,12 +17,9 @@ def get_local_package_version(package_name):
     :return: 本地版本（字符串）或 None（如果包未安装）
     """
     try:
-        # 获取当前环境的pip路径
-        pip_path = os.path.join(os.path.dirname(sys.executable), "pip")
-
-        # 通过 subprocess 调用当前虚拟环境中的 pip show 命令来获取包的版本
+        # 改用 python -m pip
         result = subprocess.run(
-            [pip_path, "show", package_name],
+            [sys.executable, "-m", "pip", "show", package_name],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
