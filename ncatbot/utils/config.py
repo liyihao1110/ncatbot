@@ -9,15 +9,13 @@ class SetConfig:
     def __init__(self):
         self._updated = False
         self.bt_uin = "123456"
-        self.hp_uri = "localhost:3000"
         self.ws_uri = "localhost:3001"
         self.token = ""
 
     def __str__(self):
         return (
-            f"Configuration:\n"
+            f"\n--Configuration--\n"
             f"BOT QQ 号: {self.bt_uin}\n"
-            f"HTTP URI: {self.hp_uri}\n"
             f"WebSocket URI: {self.ws_uri}\n"
             f"Token: {self.token}"
         )
@@ -44,15 +42,6 @@ class SetConfig:
             parts = location.split(":")
             self.ws_ip = parts[0]
             self.ws_port = parts[1]
-            self.hp_uri = config["hp_uri"]
-            location = (
-                self.hp_uri.replace("http://", "")
-                if self.hp_uri.startswith("http://")
-                else self.hp_uri.replace("https://", "")
-            )
-            parts = location.split(":")
-            self.http_ip = parts[0]
-            self.http_port = parts[1]
             self.token = config["token"]
             self.bot_uin = config["bt_uin"]
             self.standerize_uri()
@@ -62,19 +51,10 @@ class SetConfig:
     def standerize_uri(self):
         if not (self.ws_uri.startswith("ws://") or self.ws_uri.startswith("wss://")):
             self.ws_uri = "ws://" + self.ws_uri
-        if not (
-            self.hp_uri.startswith("http://") or self.hp_uri.startswith("https://")
-        ):
-            self.hp_uri = "http://" + self.hp_uri
 
     def set_ws_uri(self, ws_uri: str):
         self._updated = True
         self.ws_uri = ws_uri
-        self.standerize_uri()
-
-    def set_hp_uri(self, http_uri: str):
-        self._updated = True
-        self.hp_uri = http_uri
         self.standerize_uri()
 
     def set_bot_uin(self, uin: str):
