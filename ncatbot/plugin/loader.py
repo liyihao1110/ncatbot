@@ -8,6 +8,9 @@ Raises:
     PluginCircularDependencyError：当插件之间存在循环依赖关系时引发。
 """
 
+import signal
+import atexit
+import asyncio
 import functools
 import importlib
 import os
@@ -35,6 +38,7 @@ from ncatbot.plugin.custom_err import (
 from ncatbot.plugin.event import CompatibleEnrollment, Event, EventBus
 from ncatbot.utils.logger import get_log
 
+
 _log = get_log()
 
 
@@ -52,6 +56,10 @@ class PluginLoader:
         self.event_bus = EventBus()
         self._dependency_graph: Dict[str, Set[str]] = {}
         self._version_constraints: Dict[str, Dict[str, str]] = {}
+        signal.signal(signal.SIGTERM, self._unload_all)
+        signal.signal(signal.SIGINT, self._unload_all)
+        atexit.register(self._unload_all)
+
 
     def _validate_plugin(self, plugin_cls: Type[BasePlugin]) -> bool:
         """
@@ -283,6 +291,15 @@ class PluginLoader:
         # 返回所有加载成功的模块字典
         return modules
 
+    def _unload_all(self):
+        loop = asyncio.new_event_loop()
+        try:
+            asyncio.set_event_loop(loop)  # 设置为当前事件循环
+            for plugin in tuple(self.plugins.keys()):
+                loop.run_until_complete(self.unload_plugin(plugin))
+        finally:
+            loop.close()  # 关闭事件循环
+        return
 
 # endregion
 
