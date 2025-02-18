@@ -35,6 +35,6 @@ setup(
         "Pygments~=2.19.1",
         "pyppeteer~=2.0.0",
         "pyyaml~=6.0.2",
-        "packing~=24.2.0",
+        "packaging~=24.2.0",
     ],
 )
