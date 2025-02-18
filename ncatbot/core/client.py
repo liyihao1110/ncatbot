@@ -24,7 +24,7 @@ from ncatbot.utils.literals import (
     OFFICIAL_REQUEST_EVENT,
 )
 from ncatbot.utils.logger import get_log
-from ncatbot.utils.napcat_helper import download_napcat, download_napcat_linux
+from ncatbot.utils.napcat_helper import download_napcat
 
 _log = get_log()
 
@@ -106,11 +106,24 @@ class BotClient:
         await self.plugin_sys.load_plugin(self.api)
         await websocket_server.ws_connect()
 
-    def run(self, reload=False):
-        if reload:
+    def run(self, reload=False, debug=False):
+        """
+        启动 Bot 客户端
+
+        Args:
+            reload: 是否同时启动 NapCat , 默认为 False
+            debug: 是否开启调试模式, 默认为 False, 用户不应该修改此参数
+
+        Returns:
+            None
+        """
+        if not debug:
+            # 检查版本和安装方式
             version_ok = check_version()
             if not version_ok:
                 exit(0)
+
+        if reload:
             try:
                 asyncio.run(self.run_async())
             except KeyboardInterrupt:
@@ -148,7 +161,7 @@ class BotClient:
             github_version = get_version(get_proxy_url())
             if version != github_version:
                 _log.info(f"发现新版本: {github_version}")
-                if not download_napcat_linux("update"):
+                if not download_napcat("update"):
                     _log.info(f"跳过 napcat {version} 更新")
             else:
                 _log.info("当前 napcat 已是最新版本")
@@ -260,10 +273,7 @@ class BotClient:
                 exit(0)
 
         _log.info("连接 napcat websocket 服务器成功!")
-        version_ok = check_version()
 
-        if not version_ok:
-            exit(0)
         try:
             asyncio.run(self.run_async())
         except KeyboardInterrupt:
