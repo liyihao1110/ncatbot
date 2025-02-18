@@ -1,6 +1,6 @@
 import os
 
-from setuptools import find_packages, setup
+from setuptools import __version__, find_packages, setup
 
 init_path = os.path.join(os.path.dirname(__file__), "ncatbot/__init__.py")
 
@@ -35,5 +35,6 @@ setup(
         "Pygments~=2.19.1",
         "pyppeteer~=2.0.0",
         "pyyaml~=6.0.2",
+        "packing~=24.2.0",
     ],
 )
