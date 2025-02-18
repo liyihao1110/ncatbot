@@ -11,12 +11,11 @@ Raises:
 import signal
 import atexit
 import asyncio
-import functools
 import importlib
 import os
 import sys
 from collections import defaultdict, deque
-from types import ModuleType
+from types import ModuleType, MethodType
 from typing import (
     Dict,
     List,
@@ -35,7 +34,8 @@ from ncatbot.plugin.custom_err import (
     PluginDependencyError,
     PluginVersionError,
 )
-from ncatbot.plugin.event import CompatibleEnrollment, Event, EventBus
+from ncatbot.plugin.compatible import CompatibleEnrollment
+from ncatbot.plugin.event import Event, EventBus
 from ncatbot.utils.logger import get_log
 
 
@@ -177,21 +177,21 @@ class PluginLoader:
         self.load_compatible_data(self.plugins.values())
         return self.plugins.values()
 
-    def load_compatible_data(self, plugins):
-        def find_instance(func):
-            plugin_name = func.__qualname__.split(".")[0]
-            for plugin in plugins:
-                if plugin.__class__.__name__ == plugin_name:
-                    return plugin
-
-        """加载兼容注册事件"""
-        _log.debug("加载兼容注册事件")
+    def load_compatible_data(self):
+        """
+        加载兼容注册事件
+        """
         compatible = CompatibleEnrollment.events
-        for event_type, funcs in compatible.items():
-            for func in funcs:
-                instance = find_instance(func)
-                _log.debug(f"为 {instance.__class__.__name__} 订阅事件 {event_type}")
-                self.event_bus.subscribe(event_type, functools.partial(func, instance))
+        for event_type, packs in compatible.items():
+            for func, priority, in_class in packs:
+                if in_class:
+                    for plugin_name, plugin in self.plugins.items():
+                        if plugin.__class__.__qualname__ == func.__qualname__.split('.')[0]:
+                            func = MethodType(func, plugin)
+                            self.event_bus.subscribe(event_type, func, priority)
+                            break
+                else:
+                    self.event_bus.subscribe(event_type, func, priority)
 
     async def unload_plugin(self, plugin_name: str):
         """
