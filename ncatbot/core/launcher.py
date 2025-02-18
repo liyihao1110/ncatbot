@@ -30,6 +30,10 @@ def get_launcher_name():
         _log.info("当前操作系统为: Windows 10")
         return "launcher-win10.bat"
 
+    if platform.release() == "11":
+        _log.info("当前操作系统为: Windows 11")
+        return "launcher.bat"
+
     return "launcher-win10.bat"
 
 
