@@ -161,7 +161,7 @@ class BotClient:
             github_version = get_version(get_proxy_url())
             if version != github_version:
                 _log.info(f"发现新版本: {github_version}")
-                if not download_napcat("update"):
+                if not download_napcat("update", base_path):
                     _log.info(f"跳过 napcat {version} 更新")
             else:
                 _log.info("当前 napcat 已是最新版本")
