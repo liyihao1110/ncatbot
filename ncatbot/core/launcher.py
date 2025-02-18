@@ -2,7 +2,6 @@ import atexit
 import os
 import platform
 import subprocess
-import sys
 
 from ncatbot.scripts.check_linux_permissions import check_linux_permissions
 from ncatbot.utils.literals import NAPCAT_DIR
@@ -13,20 +12,28 @@ _log = get_log()
 
 def get_launcher_name():
     """获取对应系统的launcher名称"""
-    is_server = "Server" in platform.win32_ver()[0]
+    is_server = "Server" in platform.release()
     if is_server:
-        _log.info("当前操作系统为: Windows Server")
-        return "launcher-win10.bat"
+        version = platform.release()
+        if "2016" in version:
+            _log.info("当前操作系统为: Windows Server 2016")
+            return "launcher-win10.bat"
+        elif "2019" in version:
+            _log.info("当前操作系统为: Windows Server 2019")
+            return "launcher-win10.bat"
+        elif "2022" in version:
+            _log.info("当前操作系统为: Windows Server 2022")
+            return "launcher-win10.bat"
+        elif "2025" in version:
+            _log.info("当前操作系统为：Windows Server 2025")
+            return "launcher.bat"
+        else:
+            _log.error(
+                f"不支持的的 Windows Server 版本: {version}，将按照 Windows 10 内核启动"
+            )
+            return "launcher-win10.bat"
 
     if platform.release() == "10":
-        win_version = sys.getwindowsversion()
-        if (
-            win_version.major == 10
-            and win_version.minor == 0
-            and win_version.build >= 22000
-        ):
-            _log.info("当前操作系统为: Windows 11")
-            return "launcher.bat"
         _log.info("当前操作系统为: Windows 10")
         return "launcher-win10.bat"
 
