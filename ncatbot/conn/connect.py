@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # \ncatbot\conn\connect.py
-# author: yihao_2002@foxmail.com
+# author: yihaoli_2002@foxmail.com
 # updated: 2025/2/19
 """
 websocket连接模块
