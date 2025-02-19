@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+# \ncatbot\conn\api.py
+# author: yihao_2002@foxmail.com
+# updated: 2025/2/19
+"""
+API模块
+"""
+
 import os
 from typing import Union
 
