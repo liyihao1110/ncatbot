@@ -17,12 +17,14 @@ def get_local_package_version(package_name):
     :return: 本地版本（字符串）或 None（如果包未安装）
     """
     try:
-        # 改用 python -m pip
+        # 改用 python -m pip，并添加encoding参数
         result = subprocess.run(
             [sys.executable, "-m", "pip", "show", package_name],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            encoding="utf-8",
+            check=True
         )
         # 如果命令成功执行，结果包含包的版本信息
         for line in result.stdout.splitlines():
