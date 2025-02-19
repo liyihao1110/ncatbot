@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+# \ncatbot\conn\wsroute.py
+# author: yihao_2002@foxmail.com
+# updated: 2025/2/19
+"""
+路由模块
+"""
+
 import datetime
 import json as j
 
