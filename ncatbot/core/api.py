@@ -1,7 +1,7 @@
 import os
 from typing import Union
 
-from ncatbot.conn.http import Route, WsRoute
+from ncatbot.conn.wsroute import Route
 from ncatbot.core.message import (
     At,
     CustomMusic,
@@ -25,7 +25,6 @@ from ncatbot.utils.mdmaker import md_maker
 
 _log = get_log()
 
-
 def check_and_log(result):
     if result["status"] == REQUEST_SUCCESS:
         _log.debug(result)
@@ -35,11 +34,14 @@ def check_and_log(result):
 
 
 class BotAPI:
-    def __init__(self, use_ws: bool):
-        self.__message = []
-        self._http = WsRoute() if use_ws else Route()
+    def __init__(self):
+        self._http = Route()
 
     async def _construct_forward_message(self, messages):
+        """
+        :param messages: 消息列表
+        :return: 转发消息
+        """
         def decode_summary(report):
             def decode_single_message(message):
                 if message["type"] == "text":

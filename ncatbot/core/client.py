@@ -6,8 +6,8 @@ import time
 import urllib
 import urllib.parse
 
-from ncatbot.conn.gateway import Websocket
-from ncatbot.conn.http import check_websocket
+from ncatbot.conn.connect import Websocket
+from ncatbot.conn.wsroute import check_websocket
 from ncatbot.core.api import BotAPI
 from ncatbot.core.launcher import start_qq
 from ncatbot.core.message import GroupMessage, PrivateMessage
@@ -30,14 +30,14 @@ _log = get_log()
 
 
 class BotClient:
-    def __init__(self, use_ws=True, plugins_path="plugins"):
+    def __init__(self, plugins_path="plugins"):
         if not config._updated:
             _log.warning("没有主动设置配置项, 配置项将使用默认值")
             time.sleep(0.8)
         _log.info(config)
         time.sleep(1.6)
 
-        self.api = BotAPI(use_ws)
+        self.api = BotAPI()
         self._group_event_handlers = []
         self._private_event_handlers = []
         self._notice_event_handlers = []
@@ -104,7 +104,7 @@ class BotClient:
     async def run_async(self):
         websocket_server = Websocket(self)
         await self.plugin_sys.load_plugin(self.api)
-        await websocket_server.ws_connect()
+        await websocket_server.on_connect()
 
     def run(self, reload=False, debug=False):
         """
@@ -171,7 +171,6 @@ class BotClient:
             exit(1)
 
         # WebUI配置和连接等待逻辑...
-        http_enable = False if config.hp_uri == "" else True
         ws_enable = False if config.ws_uri == "" else True
         if platform.system() == "Linux":
             config_path = "/opt/QQ/resources/app/app_launcher/napcat/config"
@@ -182,21 +181,6 @@ class BotClient:
             os.chdir(os.path.join(NAPCAT_DIR, "config"))
         expected_data = {
             "network": {
-                "httpServers": [
-                    {
-                        "name": "httpServer",
-                        "enable": http_enable,
-                        "port": int(urllib.parse.urlparse(config.hp_uri).port),
-                        "host": str(urllib.parse.urlparse(config.hp_uri).hostname),
-                        "enableCors": True,
-                        "enableWebsocket": True,
-                        "messagePostFormat": "array",
-                        "token": (
-                            str(config.token) if config.token is not None else ""
-                        ),
-                        "debug": False,
-                    }
-                ],
                 "websocketServers": [
                     {
                         "name": "WsServer",
