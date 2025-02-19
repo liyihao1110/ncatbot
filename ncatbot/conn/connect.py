@@ -53,5 +53,5 @@ class Websocket:
                 except Exception as e:
                     await self.on_error(e)
                     break
-                await self.on_close()
+            await self.on_close()
 
