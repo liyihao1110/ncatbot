@@ -17,14 +17,13 @@ def get_local_package_version(package_name):
     :return: 本地版本（字符串）或 None（如果包未安装）
     """
     try:
-        # 改用pip list的方式获取包的版本
+        # 指定 encoding 参数为 'utf-8'
         result = subprocess.run(
-            [sys.executable, "-m", "pip", package_name],
+            [sys.executable, "-m", "pip", "list"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
         )
-        # 如果命令成功执行，结果包含包的版本信息
         for line in result.stdout.splitlines():
             if line.startswith("ncatbot"):
                 parts = line.split()  # 使用 split() 方法分割字符串，去除多余空格
