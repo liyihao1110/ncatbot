@@ -1,13 +1,19 @@
+# -------------------------
+# @Author       : Fish-LP fish.zh@outlook.com
+# @Date         : 2025-02-21 18:23:06
+# @LastEditors  : Fish-LP fish.zh@outlook.com
+# @LastEditTime : 2025-02-21 19:44:14
+# @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
+# @message: 喵喵喵?
+# @Copyright (c) 2025 by Fish-LP, MIT License 
+# -------------------------
 import inspect
 from functools import wraps
-from ncatbot.plugin.event import Event
-from ncatbot.utils.literals import (
-    OFFICIAL_GROUP_MESSAGE_EVENT,
-    OFFICIAL_NOTICE_EVENT,
-    OFFICIAL_PRIVATE_MESSAGE_EVENT,
-    OFFICIAL_REQUEST_EVENT,
-)
-
+from ncatbot.plugin_sys.event import Event
+from ncatbot.plugin_sys.config import OFFICIAL_PRIVATE_MESSAGE_EVENT
+from ncatbot.plugin_sys.config import OFFICIAL_GROUP_MESSAGE_EVENT
+from ncatbot.plugin_sys.config import OFFICIAL_REQUEST_EVENT
+from ncatbot.plugin_sys.config import OFFICIAL_NOTICE_EVENT
 
 class CompatibleEnrollment:
     events = {
@@ -23,7 +29,7 @@ class CompatibleEnrollment:
     @staticmethod
     def event_decorator(event_type):
         """装饰器工厂，生成特定事件类型的装饰器"""
-        def decorator_generator(types = None, row_event = False):
+        def decorator_generator(types = 'all', row_event = False):
             def decorator(func):
                 signature = inspect.signature(func)
                 in_class = len(signature.parameters) > 1
