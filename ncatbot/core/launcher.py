@@ -44,16 +44,14 @@ def get_launcher_name():
     return "launcher-win10.bat"
 
 
-def start_qq(config_data, system_type: str = "Windows"):
+def start_napcat(config_data, system_type: str = "Windows"):
     """
-    启动QQ客户端
+    启动 napcat 客户端, 启动不了就退出
 
     Args:
         config_data: 配置数据, 包含QQ号码
         system_type: 操作系统类型, 可选值为 "Windows" 或 "Linux"
 
-    Returns:
-        启动成功返回True, 否则返回False
     """
     if system_type == "Windows":
         # Windows启动逻辑
@@ -63,7 +61,7 @@ def start_qq(config_data, system_type: str = "Windows"):
 
         if not os.path.exists(launcher_path):
             _log.error(f"找不到启动文件: {launcher_path}")
-            return False
+            exit(1)
 
         _log.info(f"正在启动QQ，启动器路径: {launcher_path}")
         subprocess.Popen(
@@ -78,11 +76,11 @@ def start_qq(config_data, system_type: str = "Windows"):
         napcat_path = "/opt/QQ/resources/app/app_launcher/napcat"
         if not os.path.exists(napcat_path):
             _log.error("未找到 napcat")
-            return False
+            exit(1)
 
         if check_linux_permissions("root") != "root":
             _log.error("请使用 root 权限运行 ncatbot")
-            return False
+            exit(1)
 
         try:
             result = subprocess.run(
@@ -91,7 +89,7 @@ def start_qq(config_data, system_type: str = "Windows"):
             if result.stdout.decode().strip() != "":
                 _log.info("QQ 已启动")
                 atexit.register(lambda: subprocess.run(["pkill", "qq"], check=False))
-                return True
+                return
             else:
                 subprocess.Popen(
                     [
@@ -113,4 +111,4 @@ def start_qq(config_data, system_type: str = "Windows"):
             _log.error(f"pgrep 命令执行失败, 无法判断 QQ 是否启动, 请检查错误: {e}")
             exit(1)
 
-    return True
+    return
