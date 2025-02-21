@@ -151,8 +151,7 @@ class EventBus:
             if inspect.iscoroutinefunction(handler):
                 await handler(event)
             else:
-                # 将同步函数包装为异步任务
-                await asyncio.get_running_loop().run_in_executor(None, handler, event)
+                asyncio.create_task(handler(event))
 
             # 收集结果
             results.extend(event._results)

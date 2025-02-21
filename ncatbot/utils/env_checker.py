@@ -136,10 +136,6 @@ def check_version():
         return False
 
 
-if __name__ == "__main__":
-    check_version()
-
-
 def check_linux_permissions(range: str = "all"):
     """检查Linux的root权限和包管理器
 

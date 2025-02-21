@@ -43,7 +43,7 @@ class SetConfig:
             self.ws_ip = parts[0]
             self.ws_port = parts[1]
             self.token = config["token"]
-            self.bot_uin = config["bt_uin"]
+            self.bt_uin = config["bt_uin"]
             self.standerize_uri()
         except KeyError as e:
             raise KeyError(f"[setting] 缺少配置项，请检查！详情:{e}")

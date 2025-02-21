@@ -11,6 +11,7 @@ import asyncio
 from pathlib import Path
 from typing import Any, Awaitable, Callable, Dict, List
 
+from ncatbot.core.api import BotAPI
 from ncatbot.plugin.custom_err import PluginLoadError
 from ncatbot.plugin.event import Event, EventBus
 from ncatbot.utils.io import (
@@ -27,16 +28,17 @@ class BasePlugin:
 
     name: str
     version: str
-    dependencies: dict
+    dependencies: dict = {}
     meta_data: dict
 
-    def __init__(self, event_bus: EventBus, **kwd):
+    def __init__(self, event_bus: EventBus, api: BotAPI, **kwd):
         if not self.name:
             raise ValueError("缺失插件名称")
         if not self.version:
             raise ValueError("缺失插件版本号")
         if not self.dependencies:
             self.dependencies = {}
+        self.api = api
         self.event_bus = event_bus
         self.work_path = Path(PERSISTENT_DIR) / self.name
         self.work_path.mkdir(parents=True, exist_ok=True)
