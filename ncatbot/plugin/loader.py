@@ -5,35 +5,36 @@
 # @LastEditTime : 2025-02-21 19:46:22
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @message: 喵喵喵?
-# @Copyright (c) 2025 by Fish-LP, MIT License 
+# @Copyright (c) 2025 by Fish-LP, MIT License
 # -------------------------
-import importlib
 import asyncio
+import atexit
+import importlib
 import os
+import signal
 import sys
 from collections import defaultdict, deque
-from types import ModuleType, MethodType
+from types import MethodType, ModuleType
 from typing import Dict, List, Set, Type
 
 from packaging.specifiers import SpecifierSet
 from packaging.version import parse as parse_version
+
+from ncatbot.plugin.base_plugin import BasePlugin
+from ncatbot.plugin.compatible import CompatibleEnrollment
+from ncatbot.plugin.event import EventBus
+from ncatbot.utils.io import UniversalLoader
+from ncatbot.utils.literals import META_CONFIG_PATH, PLUGINS_DIR
+from ncatbot.utils.logger import get_log
 
 from .custom_err import (
     PluginCircularDependencyError,
     PluginDependencyError,
     PluginVersionError,
 )
-from ncatbot.plugin_sys.base_plugin import BasePlugin
-from ncatbot.plugin_sys.event import EventBus
-from ncatbot.plugin_sys.compatible import CompatibleEnrollment
-from ncatbot.plugin_sys.config import PLUGINS_DIR, META_CONFIG_PATH
-from ncatbot.utils.logger import get_log
-from ncatbot.utils.UniversalDataIO import UniversalLoader
 
-import signal
-import atexit
+LOG = get_log("PluginLoader")
 
-LOG = get_log('PluginLoader')
 
 class PluginLoader:
     """
@@ -131,7 +132,9 @@ class PluginLoader:
         temp_plugins = {}
         for name in load_order:
             plugin_cls = next(p for p in valid_plugins if p.name == name)
-            temp_plugins[name] = plugin_cls(self.event_bus, meta_data = self.meta_data.copy(), **kwargs)
+            temp_plugins[name] = plugin_cls(
+                self.event_bus, meta_data=self.meta_data.copy(), **kwargs
+            )
 
         self.plugins = temp_plugins
         self._validate_dependencies()
@@ -162,7 +165,10 @@ class PluginLoader:
             for func, priority, in_class in packs:
                 if in_class:
                     for plugin_name, plugin in self.plugins.items():
-                        if plugin.__class__.__qualname__ == func.__qualname__.split('.')[0]:
+                        if (
+                            plugin.__class__.__qualname__
+                            == func.__qualname__.split(".")[0]
+                        ):
                             func = MethodType(func, plugin)
                             self.event_bus.subscribe(event_type, func, priority)
                             break

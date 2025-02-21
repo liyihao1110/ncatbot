@@ -5,18 +5,20 @@
 # @LastEditTime : 2025-02-21 19:44:50
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @message: 喵喵喵?
-# @Copyright (c) 2025 by Fish-LP, MIT License 
+# @Copyright (c) 2025 by Fish-LP, MIT License
 # -------------------------
-from typing import List, Any, Callable, Tuple
+import asyncio
 import inspect
 import re
-import asyncio
 import uuid
+from typing import Any, Callable, List
+
 
 class Event:
     """
     事件类，用于封装事件的类型和数据
     """
+
     def __init__(self, type: str, data: Any):
         """
         初始化事件
@@ -45,16 +47,16 @@ class Event:
             result: Any - 处理器返回的结果
         """
         self._results.append(result)
-    
+
     def __repr__(self):
         return f'Event(type="{self.type}",data={self.data})'
 
-import asyncio
 
 class EventBus:
     """
     事件总线类，用于管理和分发事件
     """
+
     def __init__(self):
         """
         初始化事件总线
@@ -62,7 +64,9 @@ class EventBus:
         self._exact_handlers = {}
         self._regex_handlers = []
 
-    def subscribe(self, event_type: str, handler: Callable[[Event], Any], priority: int = 0) -> str:
+    def subscribe(
+        self, event_type: str, handler: Callable[[Event], Any], priority: int = 0
+    ) -> str:
         """
         订阅事件处理器，并返回处理器的唯一 ID
 
@@ -76,11 +80,13 @@ class EventBus:
         """
         handler_id = str(uuid.uuid4())
         pattern = None
-        if event_type.startswith('re:'):
+        if event_type.startswith("re:"):
             pattern = re.compile(event_type[3:])
             self._regex_handlers.append((pattern, priority, handler, handler_id))
         else:
-            self._exact_handlers.setdefault(event_type, []).append((pattern, priority, handler, handler_id))
+            self._exact_handlers.setdefault(event_type, []).append(
+                (pattern, priority, handler, handler_id)
+            )
         return handler_id
 
     def unsubscribe(self, handler_id: str) -> bool:
@@ -96,13 +102,17 @@ class EventBus:
         # 取消精确匹配处理器
         for event_type in list(self._exact_handlers.keys()):
             self._exact_handlers[event_type] = [
-                (patt, pr, h, hid) for (patt, pr, h, hid) in self._exact_handlers[event_type] if hid != handler_id
+                (patt, pr, h, hid)
+                for (patt, pr, h, hid) in self._exact_handlers[event_type]
+                if hid != handler_id
             ]
             if not self._exact_handlers[event_type]:
                 del self._exact_handlers[event_type]
         # 取消正则匹配处理器
         self._regex_handlers = [
-            (patt, pr, h, hid) for (patt, pr, h, hid) in self._regex_handlers if hid != handler_id
+            (patt, pr, h, hid)
+            for (patt, pr, h, hid) in self._regex_handlers
+            if hid != handler_id
         ]
         return True
 
@@ -119,17 +129,19 @@ class EventBus:
         handlers = []
         if event.type in self._exact_handlers:
             # 处理精确匹配处理器
-            for (pattern, priority, handler, handler_id) in self._exact_handlers[event.type]:
+            for pattern, priority, handler, handler_id in self._exact_handlers[
+                event.type
+            ]:
                 handlers.append((handler, priority, handler_id))
         else:
             # 处理正则匹配处理器
-            for (pattern, priority, handler, handler_id) in self._regex_handlers:
+            for pattern, priority, handler, handler_id in self._regex_handlers:
                 if pattern and pattern.match(event.type):
                     handlers.append((handler, priority, handler_id))
-        
+
         # 按优先级排序
         sorted_handlers = sorted(handlers, key=lambda x: (-x[1], x[0].__name__))
-        
+
         results = []
         # 按优先级顺序调用处理器
         for handler, priority, handler_id in sorted_handlers:
@@ -141,10 +153,10 @@ class EventBus:
             else:
                 # 将同步函数包装为异步任务
                 await asyncio.get_running_loop().run_in_executor(None, handler, event)
-            
+
             # 收集结果
             results.extend(event._results)
-        
+
         return results
 
     def publish_sync(self, event: Event) -> List[Any]:

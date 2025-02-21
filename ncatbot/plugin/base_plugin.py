@@ -5,30 +5,38 @@
 # @LastEditTime : 2025-02-21 19:44:02
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @message: 喵喵喵?
-# @Copyright (c) 2025 by Fish-LP, MIT License 
+# @Copyright (c) 2025 by Fish-LP, MIT License
 # -------------------------
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any, Dict, List, Callable, Awaitable
 import asyncio
-from ncatbot.plugin_sys.event import EventBus, Event
-from ncatbot.plugin_sys.custom_err import PluginLoadError
-from ncatbot.utils.UniversalDataIO import UniversalLoader
-from ncatbot.utils.UniversalDataIO import FileTypeUnknownError, SaveError, LoadError
-from ncatbot.plugin_sys.config import PERSISTENT_DIR
+from pathlib import Path
+from typing import Any, Awaitable, Callable, Dict, List
+
+from ncatbot.plugin.custom_err import PluginLoadError
+from ncatbot.plugin.event import Event, EventBus
+from ncatbot.utils.io import (
+    FileTypeUnknownError,
+    LoadError,
+    SaveError,
+    UniversalLoader,
+)
+from ncatbot.utils.literals import PERSISTENT_DIR
 
 
 class BasePlugin:
-    '''插件基类'''
+    """插件基类"""
+
     name: str
     version: str
     dependencies: dict
     meta_data: dict
-    
+
     def __init__(self, event_bus: EventBus, **kwd):
-        if not self.name: raise ValueError('缺失插件名称')
-        if not self.version: raise ValueError('缺失插件版本号')
-        if not self.dependencies: self.dependencies = {}
+        if not self.name:
+            raise ValueError("缺失插件名称")
+        if not self.version:
+            raise ValueError("缺失插件版本号")
+        if not self.dependencies:
+            self.dependencies = {}
         self.event_bus = event_bus
         self.work_path = Path(PERSISTENT_DIR) / self.name
         self.work_path.mkdir(parents=True, exist_ok=True)
@@ -50,7 +58,7 @@ class BasePlugin:
         try:
             loader = UniversalLoader(data_path)
             return loader.load()
-        except (FileTypeUnknownError, LoadError, FileNotFoundError) as e:
+        except (FileTypeUnknownError, LoadError, FileNotFoundError):
             return {}
 
     def _save_persistent_data(self):
@@ -68,7 +76,9 @@ class BasePlugin:
     def publish_async(self, event: Event) -> Awaitable[List[Any]]:
         return self.event_bus.publish_async(event)
 
-    def register_handler(self, event_type: str, handler: Callable[[Event], Any], priority: int = 0):
+    def register_handler(
+        self, event_type: str, handler: Callable[[Event], Any], priority: int = 0
+    ):
         handler_id = self.event_bus.subscribe(event_type, handler, priority)
         self._event_handlers.append(handler_id)
 
