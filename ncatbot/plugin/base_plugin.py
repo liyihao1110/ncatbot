@@ -110,7 +110,7 @@ class BasePlugin:
         发布事件,不等待事件处理完成
         :param event: 要发布的事件对象
         """
-        return self.event_bus.publish_async(event)
+        return (await self.event_bus.publish_async(event))
 
     def register_handler(self, event_type: str, handler: Callable, priority: int = 0):
         """
