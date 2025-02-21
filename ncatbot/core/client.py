@@ -12,9 +12,8 @@ from ncatbot.core.api import BotAPI
 from ncatbot.core.launcher import start_qq
 from ncatbot.core.message import GroupMessage, PrivateMessage
 from ncatbot.plugin.loader import Event, PluginLoader
-from ncatbot.utils.check_version import check_version
 from ncatbot.utils.config import config
-from ncatbot.utils.github_helper import get_proxy_url, get_version
+from ncatbot.utils.env_checker import check_version
 from ncatbot.utils.literals import (
     INSTALL_CHECK_PATH,
     NAPCAT_DIR,
@@ -24,7 +23,7 @@ from ncatbot.utils.literals import (
     OFFICIAL_REQUEST_EVENT,
 )
 from ncatbot.utils.logger import get_log
-from ncatbot.utils.napcat_helper import download_napcat
+from ncatbot.utils.tp_helper import download_napcat, get_proxy_url, get_version
 
 _log = get_log()
 
