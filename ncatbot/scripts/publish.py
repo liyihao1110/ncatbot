@@ -5,7 +5,7 @@ import time
 import requests
 from git import GitCommandError, Repo
 
-from ncatbot.plugin.loader import PluginLoader
+from ncatbot.plugin import PluginLoader
 
 MAIN_REPO_OWNER = "ncatbot"
 MAIN_BRANCH_NAME = "main"

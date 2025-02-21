@@ -1,4 +1,4 @@
-from ncatbot.core.client import BotClient
+from ncatbot.core import BotClient
 from ncatbot.core.message import GroupMessage, PrivateMessage
 from ncatbot.utils.config import config
 from ncatbot.utils.logger import get_log
