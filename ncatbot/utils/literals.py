@@ -60,3 +60,9 @@ class Status:
     熬夜中 = {"status": 10, "ext_status": 1032, "battery_status": 0}
     追剧中 = {"status": 10, "ext_status": 1021, "battery_status": 0}
     我的电量 = {"status": 10, "ext_status": 1000, "battery_status": 0}
+
+
+EVENT_QUEUE_MAX_SIZE = 64  # 事件队列最大长度
+PLUGINS_DIR = "plugins"  # 插件目录
+META_CONFIG_PATH = None  # 元数据，所有插件一份(只读)
+PERSISTENT_DIR = "data"  # 插件私有数据目录
