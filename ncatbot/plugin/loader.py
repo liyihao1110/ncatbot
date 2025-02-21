@@ -26,13 +26,13 @@ from packaging.version import parse as parse_version
 
 from ncatbot.core.api import BotAPI
 from ncatbot.plugin.base_plugin import BasePlugin
-from ncatbot.plugin.config import PLUGINS_DIR
 from ncatbot.plugin.custom_err import (
     PluginCircularDependencyError,
     PluginDependencyError,
     PluginVersionError,
 )
 from ncatbot.plugin.event import CompatibleEnrollment, Event, EventBus
+from ncatbot.utils.literals import PLUGINS_DIR
 from ncatbot.utils.logger import get_log
 
 _log = get_log()

@@ -13,8 +13,8 @@ from typing import (
 )
 from weakref import ReferenceType, WeakMethod, ref
 
-from ncatbot.plugin.config import EVENT_QUEUE_MAX_SIZE
 from ncatbot.utils.literals import (
+    EVENT_QUEUE_MAX_SIZE,
     OFFICIAL_GROUP_MESSAGE_EVENT,
     OFFICIAL_NOTICE_EVENT,
     OFFICIAL_PRIVATE_MESSAGE_EVENT,
