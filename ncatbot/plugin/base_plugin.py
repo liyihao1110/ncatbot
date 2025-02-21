@@ -11,7 +11,7 @@ import asyncio
 from pathlib import Path
 from typing import Any, Awaitable, Callable, Dict, List
 
-from ncatbot.core.api import BotAPI
+from ncatbot.core import BotAPI
 from ncatbot.plugin.custom_err import PluginLoadError
 from ncatbot.plugin.event import Event, EventBus
 from ncatbot.utils.io import (

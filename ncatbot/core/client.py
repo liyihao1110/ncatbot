@@ -11,7 +11,7 @@ from ncatbot.conn.wsroute import check_websocket
 from ncatbot.core.api import BotAPI
 from ncatbot.core.launcher import start_napcat
 from ncatbot.core.message import GroupMessage, PrivateMessage
-from ncatbot.plugin.loader import Event, EventBus, PluginLoader
+from ncatbot.plugin import Event, EventBus, PluginLoader
 from ncatbot.utils.config import config
 from ncatbot.utils.env_checker import check_version
 from ncatbot.utils.literals import (

@@ -17,7 +17,7 @@ from typing import Dict, List, Set, Type
 from packaging.specifiers import SpecifierSet
 from packaging.version import parse as parse_version
 
-from ncatbot.core.api import BotAPI
+from ncatbot.core import BotAPI
 from ncatbot.plugin.base_plugin import BasePlugin
 from ncatbot.plugin.compatible import CompatibleEnrollment
 from ncatbot.plugin.event import EventBus

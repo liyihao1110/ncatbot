@@ -33,7 +33,7 @@ __all__ = ['MyPlugin']
 
 ```python
 # main.py
-from ncatbot.plugins_sys import BasePlugin, Event
+from ncatbot.plugin import BasePlugin, Event
 
 class MyPlugin(BasePlugin):
     name = "MyPlugin"
