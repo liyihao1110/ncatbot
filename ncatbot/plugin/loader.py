@@ -7,11 +7,8 @@
 # @message: 喵喵喵?
 # @Copyright (c) 2025 by Fish-LP, MIT License
 # -------------------------
-import asyncio
-import atexit
 import importlib
 import os
-import signal
 import sys
 from collections import defaultdict, deque
 from types import MethodType, ModuleType
@@ -20,6 +17,7 @@ from typing import Dict, List, Set, Type
 from packaging.specifiers import SpecifierSet
 from packaging.version import parse as parse_version
 
+from ncatbot.core.api import BotAPI
 from ncatbot.plugin.base_plugin import BasePlugin
 from ncatbot.plugin.compatible import CompatibleEnrollment
 from ncatbot.plugin.event import EventBus
@@ -33,7 +31,7 @@ from .custom_err import (
     PluginVersionError,
 )
 
-LOG = get_log("PluginLoader")
+_log = get_log("PluginLoader")
 
 
 class PluginLoader:
@@ -41,10 +39,11 @@ class PluginLoader:
     插件加载器,用于加载、卸载和管理插件
     """
 
-    def __init__(self, event_bus: EventBus):
+    def __init__(self, event_bus: EventBus, api: BotAPI):
         """
         初始化插件加载器
         """
+        self.api = api  # 机器人API
         self.plugins: Dict[str, BasePlugin] = {}  # 存储已加载的插件
         self.event_bus = event_bus  # 事件总线
         self._dependency_graph: Dict[str, Set[str]] = {}  # 插件依赖关系图
@@ -53,9 +52,9 @@ class PluginLoader:
             self.meta_data = UniversalLoader(META_CONFIG_PATH)
         else:
             self.meta_data = {}
-        signal.signal(signal.SIGTERM, self._unload_all)
-        signal.signal(signal.SIGINT, self._unload_all)
-        atexit.register(self._unload_all)
+        # signal.signal(signal.SIGTERM, self._unload_all)
+        # signal.signal(signal.SIGINT, self._unload_all)
+        # atexit.register(self._unload_all)
 
     def _validate_plugin(self, plugin_cls: Type[BasePlugin]) -> bool:
         """
@@ -126,14 +125,14 @@ class PluginLoader:
         :param plugins: 插件类列表
         """
         valid_plugins = [p for p in plugins if self._validate_plugin(p)]
-        self._build_dependency_graph(valid_plugins)
+        self._build_dependency_graph(plugins)
         load_order = self._resolve_load_order()
 
         temp_plugins = {}
         for name in load_order:
             plugin_cls = next(p for p in valid_plugins if p.name == name)
             temp_plugins[name] = plugin_cls(
-                self.event_bus, meta_data=self.meta_data.copy(), **kwargs
+                self.event_bus, self.api, meta_data=self.meta_data.copy(), **kwargs
             )
 
         self.plugins = temp_plugins
@@ -148,13 +147,18 @@ class PluginLoader:
         从指定目录加载插件
         :param plugins_path: 插件目录路径
         """
-        modules = self._load_modules_from_directory(plugins_path)
-        plugins = []
-        for plugin in modules.values():
-            for plugin_class_name in getattr(plugin, "__all__", []):
-                plugins.append(getattr(plugin, plugin_class_name))
-        await self.from_class_load_plugins(plugins, **kwargs)
-        self.load_compatible_data()
+        if os.path.exists(plugins_path):
+            _log.info(f"插件加载目录: {plugins_path}")
+            modules = self._load_modules_from_directory(plugins_path)
+            plugins = []
+            for plugin in modules.values():
+                for plugin_class_name in getattr(plugin, "__all__", []):
+                    plugins.append(getattr(plugin, plugin_class_name))
+            await self.from_class_load_plugins(plugins, **kwargs)
+            self.load_compatible_data()
+        else:
+            _log.warning(f"插件加载目录: {os.path.abspath(plugins_path)} 不存在")
+            _log.warning("请检查工作目录下是否有 `plugins` 文件夹")
 
     def load_compatible_data(self):
         """
@@ -228,7 +232,7 @@ class PluginLoader:
                     module = importlib.import_module(filename)
                     modules[filename] = module
                 except ImportError as e:
-                    LOG.error(f"导入模块 {filename} 时出错: {e}")
+                    _log.error(f"导入模块 {filename} 时出错: {e}")
                     continue
 
         finally:
@@ -236,12 +240,6 @@ class PluginLoader:
 
         return modules
 
-    def _unload_all(self):
-        loop = asyncio.new_event_loop()
-        try:
-            asyncio.set_event_loop(loop)  # 设置为当前事件循环
-            for plugin in tuple(self.plugins.keys()):
-                loop.run_until_complete(self.unload_plugin(plugin))
-        finally:
-            loop.close()  # 关闭事件循环
-        return
+    async def _unload_all(self, *args, **kwargs):
+        for plugin in tuple(self.plugins.keys()):
+            await self.unload_plugin(plugin)

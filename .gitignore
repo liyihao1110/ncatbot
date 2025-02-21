@@ -185,3 +185,4 @@ plugins/
 logs/
 napcat/
 plugin.py
+data/

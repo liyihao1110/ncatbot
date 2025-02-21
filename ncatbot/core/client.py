@@ -11,7 +11,7 @@ from ncatbot.conn.wsroute import check_websocket
 from ncatbot.core.api import BotAPI
 from ncatbot.core.launcher import start_napcat
 from ncatbot.core.message import GroupMessage, PrivateMessage
-from ncatbot.plugin.loader import Event, PluginLoader
+from ncatbot.plugin.loader import Event, EventBus, PluginLoader
 from ncatbot.utils.config import config
 from ncatbot.utils.env_checker import check_version
 from ncatbot.utils.literals import (
@@ -42,7 +42,7 @@ class BotClient:
         self._notice_event_handlers = []
         self._request_event_handlers = []
         self.plugins_path = plugins_path
-        self.plugin_sys = PluginLoader()
+        self.plugin_sys = PluginLoader(EventBus(), self.api)
 
     async def handle_group_event(self, msg: dict):
         msg = GroupMessage(msg)
@@ -102,7 +102,7 @@ class BotClient:
 
     async def run_async(self):
         websocket_server = Websocket(self)
-        await self.plugin_sys.load_plugin(self.api)
+        await self.plugin_sys.load_plugins()
         await websocket_server.on_connect()
 
     def napcat_server_ok(self):
@@ -112,6 +112,8 @@ class BotClient:
         try:
             asyncio.run(self.run_async())
         except KeyboardInterrupt:
+            _log.info("插件卸载中...")
+            asyncio.run(self.plugin_sys._unload_all())
             _log.info("正常退出")
             exit(0)
 
@@ -176,7 +178,7 @@ class BotClient:
                 if time.time() > INFO_TIME_EXPIRE:
                     _log.info("连接 napcat websocket 服务器超时, 请检查以下内容:")
                     _log.info("1. 你在另一个黑框框扫码登录了吗?")
-                    _log.info(f"2. 确认 QQ 号: {config.bot_uin}")
+                    _log.info(f"2. 确认 QQ 号: {config.bt_uin}")
                     INFO_TIME_EXPIRE += 100
             _log.info("连接 napcat websocket 服务器成功!")
 
@@ -189,12 +191,15 @@ class BotClient:
 
         def ncatbot_quick_start():
             if self.napcat_server_ok():
+                _log.info("ncatbot 服务器在线, 连接中...")
                 self._run()
             elif reload:
                 _log.info("napcat 服务器未启动, 且开启了重加载模式, 运行失败")
                 exit(1)
+            _log.info("napcat 服务器离线, 启动中...")
 
         def config_napcat():
+            ws_enable = False if config.ws_uri == "" else True
             expected_data = {
                 "network": {
                     "websocketServers": [
@@ -218,7 +223,6 @@ class BotClient:
                 "enableLocalFile2Url": False,
                 "parseMultMsg": False,
             }
-            ws_enable = False if config.ws_uri == "" else True
 
             def write_start_log():
                 _log.info(
