@@ -7,30 +7,52 @@ import zipfile
 import requests
 from tqdm import tqdm
 
-from ncatbot.scripts.check_linux_permissions import check_linux_permissions
-from ncatbot.utils.github_helper import get_proxy_url, get_version
+from ncatbot.utils.env_checker import check_linux_permissions
 from ncatbot.utils.literals import NAPCAT_DIR
 from ncatbot.utils.logger import get_log
 
 _log = get_log()
 
 
-def download_napcat(type: str, base_path: str):
-    """
-    下载和安装 napcat 客户端
+def get_proxy_url():
+    """获取 github 代理 URL"""
+    github_proxy_urls = [
+        "https://github.7boe.top/",
+        "https://cdn.moran233.xyz/",
+        "https://gh-proxy.ygxz.in/",
+        "https://gh-proxy.lyln.us.kg/",
+        "https://github.whrstudio.top/",
+        "https://proxy.yaoyaoling.net/",
+        "https://ghproxy.net/",
+        "https://fastgit.cc/",
+        "https://git.886.be/",
+        "https://gh-proxy.com/",
+        "https://ghfast.top/",
+    ]
+    _log.info("正在尝试连接 GitHub 代理...")
+    for url in github_proxy_urls:
+        try:
+            _log.info(f"正在尝试连接 {url}")
+            response = requests.get(url, timeout=5)
+            if response.status_code == 200:
+                return url
+        except requests.RequestException as e:
+            _log.info(f"无法连接到 {url}: {e}, 继续尝试下一个代理...")
+            continue
+    _log.info("无法连接到任何 GitHub 代理, 将直接连接 GitHub")
+    return ""
 
-    Args:
-        type: 安装类型, 可选值为 "install" 或 "update"
-        base_path: 安装路径
 
-    Returns:
-        bool: 安装成功返回True, 否则返回False
-    """
-    if platform.system() == "Windows":
-        return download_napcat_windows(type, base_path)
-    elif platform.system() == "Linux":
-        return download_napcat_linux(type)
-    return False
+def get_version(github_proxy_url: str):
+    """从GitHub获取 napcat 版本号"""
+    version_url = f"{github_proxy_url}https://raw.githubusercontent.com/NapNeko/NapCatQQ/main/package.json"
+    version_response = requests.get(version_url)
+    if version_response.status_code == 200:
+        version = version_response.json()["version"]
+        _log.info(f"获取最新版本信息成功, 版本号: {version}")
+        return version
+    _log.info(f"获取最新版本信息失败, http 状态码: {version_response.status_code}")
+    return None
 
 
 def download_napcat_windows(type: str, base_path: str):
@@ -144,3 +166,21 @@ def download_napcat_linux(type: str):
     except Exception as e:
         _log.error("执行一键安装脚本失败，错误信息:", e)
         exit(1)
+
+
+def download_napcat(type: str, base_path: str):
+    """
+    下载和安装 napcat 客户端
+
+    Args:
+        type: 安装类型, 可选值为 "install" 或 "update"
+        base_path: 安装路径
+
+    Returns:
+        bool: 安装成功返回True, 否则返回False
+    """
+    if platform.system() == "Windows":
+        return download_napcat_windows(type, base_path)
+    elif platform.system() == "Linux":
+        return download_napcat_linux(type)
+    return False

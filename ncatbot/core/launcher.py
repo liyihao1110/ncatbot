@@ -3,7 +3,7 @@ import os
 import platform
 import subprocess
 
-from ncatbot.scripts.check_linux_permissions import check_linux_permissions
+from ncatbot.utils.env_checker import check_linux_permissions
 from ncatbot.utils.literals import NAPCAT_DIR
 from ncatbot.utils.logger import get_log
 
