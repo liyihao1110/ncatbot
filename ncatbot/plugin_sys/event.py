@@ -1,3 +1,12 @@
+# -------------------------
+# @Author       : Fish-LP fish.zh@outlook.com
+# @Date         : 2025-02-21 18:23:06
+# @LastEditors  : Fish-LP fish.zh@outlook.com
+# @LastEditTime : 2025-02-21 19:44:50
+# @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
+# @message: 喵喵喵?
+# @Copyright (c) 2025 by Fish-LP, MIT License 
+# -------------------------
 from typing import List, Any, Callable, Tuple
 import inspect
 import re
@@ -105,17 +114,18 @@ class EventBus:
             event: Event - 要发布的事件
 
         返回值:
-            List[Any] - 所有处理器返回的结果的列表(通常不会内容)
+            List[Any] - 所有处理器返回的结果的列表
         """
         handlers = []
-        # 处理精确匹配处理器
         if event.type in self._exact_handlers:
+            # 处理精确匹配处理器
             for (pattern, priority, handler, handler_id) in self._exact_handlers[event.type]:
                 handlers.append((handler, priority, handler_id))
-        # 处理正则匹配处理器
-        for (pattern, priority, handler, handler_id) in self._regex_handlers:
-            if pattern and pattern.match(event.type):
-                handlers.append((handler, priority, handler_id))
+        else:
+            # 处理正则匹配处理器
+            for (pattern, priority, handler, handler_id) in self._regex_handlers:
+                if pattern and pattern.match(event.type):
+                    handlers.append((handler, priority, handler_id))
         
         # 按优先级排序
         sorted_handlers = sorted(handlers, key=lambda x: (-x[1], x[0].__name__))

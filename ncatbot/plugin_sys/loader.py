@@ -1,65 +1,60 @@
-"""
-具有事件处理能力的插件系统
-
-Raises:
-    ValueError：未提供插件名称或版本时引发。
-    PluginDependencyError：缺少插件依赖项时引发。
-    PluginVersionError：当插件版本不符合所需版本时引发。
-    PluginCircularDependencyError：当插件之间存在循环依赖关系时引发。
-"""
-
-import signal
-import atexit
-import asyncio
+# -------------------------
+# @Author       : Fish-LP fish.zh@outlook.com
+# @Date         : 2025-02-21 18:23:06
+# @LastEditors  : Fish-LP fish.zh@outlook.com
+# @LastEditTime : 2025-02-21 19:46:22
+# @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
+# @message: 喵喵喵?
+# @Copyright (c) 2025 by Fish-LP, MIT License 
+# -------------------------
 import importlib
+import asyncio
 import os
 import sys
 from collections import defaultdict, deque
 from types import ModuleType, MethodType
-from typing import (
-    Dict,
-    List,
-    Set,
-    Type,
-)
+from typing import Dict, List, Set, Type
 
 from packaging.specifiers import SpecifierSet
 from packaging.version import parse as parse_version
 
-from ncatbot.core.api import BotAPI
-from ncatbot.plugin.base_plugin import BasePlugin
-from ncatbot.plugin.config import PLUGINS_DIR
-from ncatbot.plugin.custom_err import (
+from .custom_err import (
     PluginCircularDependencyError,
     PluginDependencyError,
     PluginVersionError,
 )
-from ncatbot.plugin.compatible import CompatibleEnrollment
-from ncatbot.plugin.event import Event, EventBus
+from ncatbot.plugin_sys.base_plugin import BasePlugin
+from ncatbot.plugin_sys.event import EventBus
+from ncatbot.plugin_sys.compatible import CompatibleEnrollment
+from ncatbot.plugin_sys.config import PLUGINS_DIR, META_CONFIG_PATH
 from ncatbot.utils.logger import get_log
+from ncatbot.utils.UniversalDataIO import UniversalLoader
 
+import signal
+import atexit
 
-_log = get_log()
+LOG = get_log('PluginLoader')
 
-
-# region ----------------- 插件加载器 -----------------
 class PluginLoader:
     """
     插件加载器,用于加载、卸载和管理插件
     """
 
-    def __init__(self):
+    def __init__(self, event_bus: EventBus):
         """
         初始化插件加载器
         """
-        self.plugins: Dict[str, BasePlugin] = {}
-        self.event_bus = EventBus()
-        self._dependency_graph: Dict[str, Set[str]] = {}
-        self._version_constraints: Dict[str, Dict[str, str]] = {}
+        self.plugins: Dict[str, BasePlugin] = {}  # 存储已加载的插件
+        self.event_bus = event_bus  # 事件总线
+        self._dependency_graph: Dict[str, Set[str]] = {}  # 插件依赖关系图
+        self._version_constraints: Dict[str, Dict[str, str]] = {}  # 插件版本约束
+        if META_CONFIG_PATH:
+            self.meta_data = UniversalLoader(META_CONFIG_PATH)
+        else:
+            self.meta_data = {}
         signal.signal(signal.SIGTERM, self._unload_all)
         signal.signal(signal.SIGINT, self._unload_all)
         atexit.register(self._unload_all)
-
 
     def _validate_plugin(self, plugin_cls: Type[BasePlugin]) -> bool:
         """
@@ -84,20 +79,15 @@ class PluginLoader:
         """
         验证插件依赖关系是否满足
         """
-        # 遍历所有插件及其版本约束
         for plugin_name, deps in self._version_constraints.items():
-            # 遍历当前插件的所有依赖项及其版本约束
             for dep_name, constraint in deps.items():
-                # 检查依赖项是否存在于已安装的插件中
                 if dep_name not in self.plugins:
-                    raise PluginDependencyError(plugin_name, dep_name)
+                    raise PluginDependencyError(plugin_name, dep_name, constraint)
 
-                # 获取已安装依赖项的版本
                 installed_ver = parse_version(self.plugins[dep_name].version)
-                # 检查已安装版本是否满足版本约束
                 if not SpecifierSet(constraint).contains(installed_ver):
                     raise PluginVersionError(
-                        dep_name, plugin_name, constraint, installed_ver
+                        plugin_name, dep_name, constraint, installed_ver
                     )
 
     def _resolve_load_order(self) -> List[str]:
@@ -107,9 +97,7 @@ class PluginLoader:
         in_degree = {k: 0 for k in self._dependency_graph}
         adj_list = defaultdict(list)
 
-        # 遍历依赖图,构建入度表和邻接表
         for dependent, dependencies in self._dependency_graph.items():
-            # dependent 是当前插件,dependencies 是它依赖的插件列表
             for dep in dependencies:
                 adj_list[dep].append(dependent)
                 in_degree[dependent] += 1
@@ -117,65 +105,53 @@ class PluginLoader:
         queue = deque([k for k, v in in_degree.items() if v == 0])
         load_order = []
 
-        # 拓扑排序
         while queue:
             node = queue.popleft()
             load_order.append(node)
-            # 遍历该插件的所有依赖者
             for neighbor in adj_list[node]:
                 in_degree[neighbor] -= 1
                 if in_degree[neighbor] == 0:
                     queue.append(neighbor)
 
-        # 检测是否存在循环依赖
-        for plugin_name, dependency in self._dependency_graph.items():
-            if not dependency.issubset(self._dependency_graph.keys()):
-                raise PluginDependencyError(plugin_name, dependency)
-
         if len(load_order) != len(self._dependency_graph):
             missing = set(self._dependency_graph.keys()) - set(load_order)
-            # 抛出异常,提示循环依赖的插件
             raise PluginCircularDependencyError(missing)
 
-        # 返回最终的加载顺序
         return load_order
 
-    async def from_class_load_plugins(
-        self, plugins: List[Type[BasePlugin]], api: BotAPI
-    ):
+    async def from_class_load_plugins(self, plugins: List[Type[BasePlugin]], **kwargs):
         """
-        加载插件
+        从插件类加载插件
         :param plugins: 插件类列表
         """
         valid_plugins = [p for p in plugins if self._validate_plugin(p)]
         self._build_dependency_graph(valid_plugins)
         load_order = self._resolve_load_order()
 
-        # 实例化所有插件
         temp_plugins = {}
         for name in load_order:
             plugin_cls = next(p for p in valid_plugins if p.name == name)
-            temp_plugins[name] = plugin_cls(self.event_bus, api)
-        # 验证依赖版本
+            temp_plugins[name] = plugin_cls(self.event_bus, meta_data = self.meta_data.copy(), **kwargs)
+
         self.plugins = temp_plugins
         self._validate_dependencies()
 
-        # 初始化插件
         for name in load_order:
+            self.plugins[name]._init_()
             await self.plugins[name].on_load()
 
-    async def load_plugin(self, api: BotAPI):
-        if not os.path.exists(PLUGINS_DIR):
-            _log.info("插件目录不存在, 跳过插件加载")
-            return
-        models: Dict = self._load_modules_from_directory(directory_path=PLUGINS_DIR)
+    async def load_plugins(self, plugins_path: str = PLUGINS_DIR, **kwargs):
+        """
+        从指定目录加载插件
+        :param plugins_path: 插件目录路径
+        """
+        modules = self._load_modules_from_directory(plugins_path)
         plugins = []
-        for plugin in models.values():
-            for plugin_class_name in plugin.__all__:
+        for plugin in modules.values():
+            for plugin_class_name in getattr(plugin, "__all__", []):
                 plugins.append(getattr(plugin, plugin_class_name))
-        await self.from_class_load_plugins(plugins, api)
-        self.load_compatible_data(self.plugins.values())
-        return self.plugins.values()
+        await self.from_class_load_plugins(plugins, **kwargs)
+        self.load_compatible_data()
 
     def load_compatible_data(self):
         """
@@ -201,8 +177,7 @@ class PluginLoader:
         if plugin_name not in self.plugins:
             return
 
-        await self.plugins[plugin_name]._close_()
-        await self.plugins[plugin_name].on_unload()
+        await self.plugins[plugin_name].__unload__()
         del self.plugins[plugin_name]
 
     async def reload_plugin(self, plugin_name: str):
@@ -211,46 +186,19 @@ class PluginLoader:
         :param plugin_name: 插件名称
         """
         if plugin_name not in self.plugins:
-            # 有点想报个错
-            pass
+            raise ValueError(f"插件 '{plugin_name}' 未加载")
 
-        old = self.plugins[plugin_name]
-        await old._close_()
+        old_plugin = self.plugins[plugin_name]
+        await self.unload_plugin(plugin_name)
 
-        module = importlib.import_module(old.__class__.__module__)
+        module = importlib.import_module(old_plugin.__class__.__module__)
         importlib.reload(module)
 
-        new_cls = getattr(module, old.__class__.name)
-        new_plugin = new_cls(old.event_bus)
+        new_cls = getattr(module, old_plugin.__class__.__name__)
+        new_plugin = new_cls(self.event_bus)
+        new_plugin._init_()
         await new_plugin.on_load()
         self.plugins[plugin_name] = new_plugin
-
-    def get_plugin_info(self, plugin_path):
-
-        original_sys_path = sys.path.copy()
-        try:
-            # 临时插入目录到 sys.path，用于加载模块
-            directory_path = os.path.abspath(plugin_path)
-            sys.path.append(os.path.dirname(directory_path))
-            filename = plugin_path.split("/")[-1]
-            try:
-                # 动态导入模块
-                module = importlib.import_module(filename)
-                if len(module.__all__) != 1:
-                    raise ValueError("Plugin __init__.py wrong format")
-                for plugin_class_name in module.__all__:
-                    plugin_class = getattr(module, plugin_class_name)
-                    if not self._validate_plugin(plugin_class):
-                        raise TypeError("Plugin Class is invalid")
-                    name, version = plugin_class.name, plugin_class.version
-                    break
-            except BaseException as e:
-                _log.error(f"查找模块 {filename} 时出错: {e}")
-
-        finally:
-            sys.path = original_sys_path
-
-        return name, version
 
     def _load_modules_from_directory(
         self, directory_path: str
@@ -259,36 +207,27 @@ class PluginLoader:
         从指定文件夹动态加载模块，返回模块名到模块的字典。
         不修改 `sys.path`，仅在必要时临时添加路径。
         """
-        # 存储模块的字典
         modules = {}
-
-        # 避免重复添加目录到 sys.path
         original_sys_path = sys.path.copy()
 
         try:
-            # 临时插入目录到 sys.path，用于加载模块
             directory_path = os.path.abspath(directory_path)
             sys.path.append(directory_path)
 
-            # 遍历文件夹中的所有文件
             for filename in os.listdir(directory_path):
-                # 忽略非文件夹
                 if not os.path.isdir(os.path.join(directory_path, filename)):
                     continue
-                # 异常捕获，防止导入失败导致程序崩溃
+
                 try:
-                    # 动态导入模块
                     module = importlib.import_module(filename)
                     modules[filename] = module
                 except ImportError as e:
-                    _log.error(f"导入模块 {filename} 时出错: {e}")
+                    LOG.error(f"导入模块 {filename} 时出错: {e}")
                     continue
 
         finally:
-            # 恢复原 sys.path，移除临时路径
             sys.path = original_sys_path
 
-        # 返回所有加载成功的模块字典
         return modules
 
     def _unload_all(self):
@@ -300,7 +239,3 @@ class PluginLoader:
         finally:
             loop.close()  # 关闭事件循环
         return
-
-# endregion
-
-__all__ = ["PluginLoader", "Event"]
