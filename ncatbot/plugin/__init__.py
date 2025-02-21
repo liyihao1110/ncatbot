@@ -5,17 +5,17 @@
 # @LastEditTime : 2025-02-21 19:43:52
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @message: 喵喵喵?
-# @Copyright (c) 2025 by Fish-LP, MIT License 
+# @Copyright (c) 2025 by Fish-LP, MIT License
 # -------------------------
 from .base_plugin import BasePlugin
+from .compatible import CompatibleEnrollment
 from .event import Event, EventBus
 from .loader import PluginLoader
-from .compatible import CompatibleEnrollment
 
 __all__ = [
-    'BasePlugin',
-    'Event',
-    'EventBus',
-    'PluginLoader',
-    'CompatibleEnrollment',
+    "BasePlugin",
+    "Event",
+    "EventBus",
+    "PluginLoader",
+    "CompatibleEnrollment",
 ]
