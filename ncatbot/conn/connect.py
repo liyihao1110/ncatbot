@@ -55,4 +55,4 @@ class Websocket:
                 except Exception as e:
                     _log.error(f"Websocket error: {e}")
                     break
-                _log.info("Websocket connected.")
+            _log.info("Websocket connected.")
