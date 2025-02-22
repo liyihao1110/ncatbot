@@ -130,7 +130,7 @@ class AtAll(Element):
 
     type = "at"
 
-    def as_dict(self):
+    def to_dict(self):
         return {"type": "at", "data": {"qq": "all"}}
 
 
