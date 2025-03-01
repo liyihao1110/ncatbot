@@ -19,7 +19,7 @@ class SetConfig:
             f"[BotQQ]: {self.bt_uin}\n"
             f"[Wsuri]: {self.ws_uri}\n"
             f"[Token]: {self.token}"
-            f"\n--{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}--"
+            f"\n--{datetime.datetime.now().strftime('%m/%d---%H:%M')}--"
         )
 
     def load_config(self, path):
