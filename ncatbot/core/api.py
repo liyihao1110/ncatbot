@@ -2,7 +2,7 @@ import os
 from typing import Union
 
 from ncatbot.conn.wsroute import Route
-from ncatbot.core.message import *
+from ncatbot.core.element import *
 from ncatbot.utils.io import convert_uploadable_object, read_file
 from ncatbot.utils.literals import REQUEST_SUCCESS, Status
 from ncatbot.utils.logger import get_log
