@@ -88,7 +88,9 @@ class BotAPI:
             "news": news,
         }
 
-    # TODO: 用户接口
+    # ---------------------
+    # region 用户接口
+    # ---------------------
     async def set_qq_profile(self, nickname: str, personal_note: str, sex: str):
         """
         :param nickname: 昵称
@@ -263,7 +265,9 @@ class BotAPI:
         """
         return await self._http.post("/get_mini_app_ark", params=app_json)
 
-    # TODO: 消息接口
+    # ---------------------
+    # region 消息接口
+    # ---------------------
     async def mark_msg_as_read(
         self, group_id: Union[int, str] = None, user_id: Union[int, str] = None
     ):
@@ -514,7 +518,9 @@ class BotAPI:
         payload["user_id"] = user_id
         return await self._http.post("/send_private_forward_msg", payload)
 
-    # TODO: 群组接口
+    # ---------------------
+    # region 群组接口
+    # ---------------------
     async def set_group_kick(
         self,
         group_id: Union[int, str],
@@ -938,7 +944,9 @@ class BotAPI:
 
         return await self._http.post("/send_private_forward_msg", payload)
 
-    # TODO: 系统接口
+    # ---------------------
+    # region 系统接口
+    # ---------------------
     async def get_client_key(self):
         """
         :return: 获取client_key
