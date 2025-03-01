@@ -1,4 +1,3 @@
 ws_uri: ws://127.0.0.1:3001
-hp_uri: http://127.0.0.1:3000
 bt_uin: 123456 # 机器人 qq 号
-token: your token # token, 似乎不填也行
+token:  # token, 似乎不填也行
