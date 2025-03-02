@@ -1,5 +1,7 @@
-import yaml
 import datetime
+import time
+
+import yaml
 
 from ncatbot.utils.logger import get_log
 
@@ -20,6 +22,11 @@ class SetConfig:
             f"[Wsuri]: {self.ws_uri}\n"
             f"[Token]: {self.token}"
             f"\n--{datetime.datetime.now().strftime('%m/%d---%H:%M')}--"
+        )
+
+    def is_localhost(self):
+        return (
+            self.ws_uri.find("localhost") != -1 or self.ws_uri.find("127.0.0.1") != -1
         )
 
     def load_config(self, path):
@@ -58,6 +65,11 @@ class SetConfig:
         self._updated = True
         self.ws_uri = ws_uri
         self.standerize_uri()
+        if not self.is_localhost():
+            _log.info(
+                f'请注意, 当前配置的 ws_uri="{ws_uri}" 不是本地地址, 请确保远端 napcat 服务正确配置.'
+            )
+            time.sleep(1)
 
     def set_bot_uin(self, uin: str):
         self._updated = True

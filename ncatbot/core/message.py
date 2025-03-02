@@ -1,10 +1,15 @@
 from ncatbot.core.api import BotAPI
-_api = BotAPI()
+
 
 class BaseMessage:
+    api_initialized = False
+    api = None
     __slots__ = ("self_id", "time", "post_type")
 
     def __init__(self, message):
+        if not BaseMessage.api_initialized:
+            BaseMessage.api = BotAPI()
+            BaseMessage.api_initialized = True
         self.self_id = message.get("self_id", None)
         self.time = message.get("time", None)
         self.post_type = message.get("post_type", None)
@@ -55,12 +60,13 @@ class GroupMessage(BaseMessage):
 
     def __repr__(self):
         return str({items: str(getattr(self, items)) for items in self.__slots__})
-    
+
     async def reply(self, is_file: bool = False, **kwargs):
         if is_file:
-            return await _api.post_group_file(self.group_id, **kwargs)
+            return await self.api.post_group_file(self.group_id, **kwargs)
         else:
-            return await _api.post_group_msg(self.group_id, **kwargs)
+            return await self.api.post_group_msg(self.group_id, **kwargs)
+
 
 class PrivateMessage(BaseMessage):
     __slots__ = (
@@ -95,9 +101,9 @@ class PrivateMessage(BaseMessage):
 
     def __repr__(self):
         return str({items: str(getattr(self, items)) for items in self.__slots__})
-    
+
     async def reply(self, is_file: bool = False, **kwargs):
         if is_file:
-            return await _api.post_private_file(self.user_id, **kwargs)
+            return await self.api.post_private_file(self.user_id, **kwargs)
         else:
-            return await _api.post_private_msg(self.user_id, **kwargs)
+            return await self.api.post_private_msg(self.user_id, **kwargs)
