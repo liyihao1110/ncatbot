@@ -43,7 +43,7 @@ NcatBot 同时提供针对非开发者用户的一键部署方案, 详情请前�
 
 作者: [最可爱的木子喵~](https://gitee.com/li-yihao0328)
 
-邮箱: yihaoli_2002@foxmail.com
+邮箱: lyh_02@foxmail.com
 
 
 ## 贡献者们
