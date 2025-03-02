@@ -2,23 +2,9 @@ import os
 from typing import Union
 
 from ncatbot.conn.wsroute import Route
-from ncatbot.core.message import (
-    At,
-    CustomMusic,
-    Dice,
-    Face,
-    File,
-    Image,
-    Json,
-    MessageChain,
-    Music,
-    Record,
-    Reply,
-    Rps,
-    Text,
-    Video,
-)
+from ncatbot.core.element import *
 from ncatbot.utils.io import convert_uploadable_object, read_file
+from ncatbot.utils.config import config
 from ncatbot.utils.literals import REQUEST_SUCCESS, Status
 from ncatbot.utils.logger import get_log
 from ncatbot.utils.mdmaker import md_maker
@@ -103,7 +89,9 @@ class BotAPI:
             "news": news,
         }
 
-    # TODO: 用户接口
+    # ---------------------
+    # region 用户接口
+    # ---------------------
     async def set_qq_profile(self, nickname: str, personal_note: str, sex: str):
         """
         :param nickname: 昵称
@@ -278,7 +266,9 @@ class BotAPI:
         """
         return await self._http.post("/get_mini_app_ark", params=app_json)
 
-    # TODO: 消息接口
+    # ---------------------
+    # region 消息接口
+    # ---------------------
     async def mark_msg_as_read(
         self, group_id: Union[int, str] = None, user_id: Union[int, str] = None
     ):
@@ -529,7 +519,9 @@ class BotAPI:
         payload["user_id"] = user_id
         return await self._http.post("/send_private_forward_msg", payload)
 
-    # TODO: 群组接口
+    # ---------------------
+    # region 群组接口
+    # ---------------------
     async def set_group_kick(
         self,
         group_id: Union[int, str],
@@ -953,7 +945,9 @@ class BotAPI:
 
         return await self._http.post("/send_private_forward_msg", payload)
 
-    # TODO: 系统接口
+    # ---------------------
+    # region 系统接口
+    # ---------------------
     async def get_client_key(self):
         """
         :return: 获取client_key
@@ -1405,3 +1399,35 @@ class BotAPI:
 
         params = {"user_id": user_id, "message": message}
         return check_and_log(await self._http.post("/send_private_msg", json=params))
+
+
+    # ---------------------
+    # region ncatbot扩展接口
+    # ---------------------
+
+    async def send_qqmail_text(self, receiver: str, token: str, subject: str, content: str, sender: str = f"{config.bt_uin}@qq.com" if config.bt_uin else ""):
+        """发送QQ邮箱文本
+        :param sender: 发送者QQ邮箱
+        :param receiver: 接收者QQ邮箱
+        :param token: QQ邮箱授权码
+        :param subject: 邮件主题
+        :param content: 邮件内容
+        :return: 发送结果
+        """
+        import smtplib
+        from email.mime.text import MIMEText
+        smtp_server = "smtp.qq.com"
+        port = 465
+        msg = MIMEText(content, 'plain', 'utf-8')
+        msg['From'] = sender
+        msg['To'] = receiver
+        msg['Subject'] = subject
+        try:
+            server = smtplib.SMTP_SSL(smtp_server, port)
+            server.login(sender, token)
+            server.sendmail(sender, [receiver], msg.as_string())
+            return {"code": 0, "msg": "发送成功"}
+        except Exception as e:
+            return {"code": 0, "msg": str(e)}
+        finally:
+            server.quit()

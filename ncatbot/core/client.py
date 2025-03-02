@@ -31,12 +31,12 @@ _log = get_log()
 class BotClient:
     def __init__(self, plugins_path="plugins"):
         if not config._updated:
-            _log.warning("没有主动设置配置项, 配置项将使用默认值")
-            time.sleep(0.8)
+            _log.info("没有主动设置配置项, 配置项将使用默认值")
         _log.info(config)
-        time.sleep(1.6)
 
         self.api = BotAPI()
+        self._subscribe_group_message_types = []
+        self._subscribe_private_message_types = []
         self._group_event_handlers = []
         self._private_event_handlers = []
         self._notice_event_handlers = []
@@ -48,7 +48,7 @@ class BotClient:
         msg = GroupMessage(msg)
         _log.debug(msg)
         for handler, types in self._group_event_handlers:
-            if types is None or any(i["type"] in types for i in msg["message"]):
+            if types is None or any(i["type"] in types for i in msg.message):
                 await handler(msg)
         await self.plugin_sys.event_bus.publish_async(
             Event(OFFICIAL_GROUP_MESSAGE_EVENT, msg)
@@ -58,7 +58,7 @@ class BotClient:
         msg = PrivateMessage(msg)
         _log.debug(msg)
         for handler, types in self._private_event_handlers:
-            if types is None or any(i["type"] in types for i in msg["message"]):
+            if types is None or any(i["type"] in types for i in msg.message):
                 await handler(msg)
         await self.plugin_sys.event_bus.publish_async(
             Event(OFFICIAL_PRIVATE_MESSAGE_EVENT, msg)
@@ -79,6 +79,7 @@ class BotClient:
         )
 
     def group_event(self, types=None):
+        self._subscribe_group_message_types = types
         def decorator(func):
             self._group_event_handlers.append((func, types))
             return func
@@ -86,6 +87,7 @@ class BotClient:
         return decorator
 
     def private_event(self, types=None):
+        self._subscribe_private_message_types = types
         def decorator(func):
             self._private_event_handlers.append((func, types))
             return func
@@ -101,6 +103,7 @@ class BotClient:
         return func
 
     async def run_async(self):
+        _log.info(f"已订阅消息类型:[群聊]->{"全部消息类型" if self._subscribe_group_message_types == None else self._subscribe_group_message_types};[私聊]->{"全部消息类型" if self._subscribe_private_message_types == None else self._subscribe_private_message_types}")
         websocket_server = Websocket(self)
         await self.plugin_sys.load_plugins()
         await websocket_server.on_connect()

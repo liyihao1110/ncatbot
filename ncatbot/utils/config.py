@@ -1,4 +1,5 @@
 import yaml
+import datetime
 
 from ncatbot.utils.logger import get_log
 
@@ -15,9 +16,10 @@ class SetConfig:
     def __str__(self):
         return (
             f"\n--Configuration--\n"
-            f"BOT QQ 号: {self.bt_uin}\n"
-            f"WebSocket URI: {self.ws_uri}\n"
-            f"Token: {self.token}"
+            f"[BotQQ]: {self.bt_uin}\n"
+            f"[Wsuri]: {self.ws_uri}\n"
+            f"[Token]: {self.token}"
+            f"\n--{datetime.datetime.now().strftime('%m/%d---%H:%M')}--"
         )
 
     def load_config(self, path):

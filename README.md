@@ -5,6 +5,7 @@
 <h2 align="center">基于 NapCat 的 QQ 机器人 Python 快速开发框架 (SDK)</h2>
 <p align="center">
 	<a href="https://pypi.org/project/ncatbot/"><img src="https://img.shields.io/pypi/v/ncatbot"></a>
+  <a><img src="https://img.shields.io/badge/License-NcatBot License-green.svg"></a>
 	<a href="https://gitee.com/y_project/RuoYi-Vue/blob/master/LICENSE"><img src="https://img.shields.io/github/license/mashape/apistatus.svg"></a>
     <a href="https://qm.qq.com/q/CHbzJ2LH4k"><img src="https://img.shields.io/badge/官方群聊-201487478-brightgreen.svg"></a>
     <a href="https://qm.qq.com/q/S2zIli2qsu"><img src="https://img.shields.io/badge/基于ncatbot开发的小机器人-3786498591-brightgreen.svg"></a>
@@ -42,7 +43,7 @@ NcatBot 同时提供针对非开发者用户的一键部署方案, 详情请前�
 
 作者: [最可爱的木子喵~](https://gitee.com/li-yihao0328)
 
-邮箱: yihaoli_2002@foxmail.com
+邮箱: lyh_02@foxmail.com
 
 
 ## 贡献者们
