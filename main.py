@@ -15,6 +15,8 @@ bot = BotClient()
 @bot.group_event()
 async def on_group_message(msg: GroupMessage):
     _log.info(msg)
+    if msg.raw_message == "测试":
+        await msg.reply(text="NcatBot 测试成功喵~")
 
 
 @bot.private_event()
