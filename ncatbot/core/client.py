@@ -80,6 +80,7 @@ class BotClient:
 
     def group_event(self, types=None):
         self._subscribe_group_message_types = types
+
         def decorator(func):
             self._group_event_handlers.append((func, types))
             return func
@@ -88,6 +89,7 @@ class BotClient:
 
     def private_event(self, types=None):
         self._subscribe_private_message_types = types
+
         def decorator(func):
             self._private_event_handlers.append((func, types))
             return func
@@ -103,7 +105,9 @@ class BotClient:
         return func
 
     async def run_async(self):
-        _log.info(f"已订阅消息类型:[群聊]->{"全部消息类型" if self._subscribe_group_message_types == None else self._subscribe_group_message_types};[私聊]->{"全部消息类型" if self._subscribe_private_message_types == None else self._subscribe_private_message_types}")
+        _log.info(
+            f"已订阅消息类型:[群聊]->{"全部消息类型" if self._subscribe_group_message_types == None else self._subscribe_group_message_types};[私聊]->{"全部消息类型" if self._subscribe_private_message_types == None else self._subscribe_private_message_types}"
+        )
         websocket_server = Websocket(self)
         await self.plugin_sys.load_plugins()
         await websocket_server.on_connect()
@@ -156,11 +160,12 @@ class BotClient:
                     os.path.join(napcat_dir, "package.json"), "r", encoding="utf-8"
                 ) as f:
                     version = json.load(f)["version"]
-                _log.info(f"当前 napcat 版本: {version}")
-                _log.info("正在检查更新...")
+                _log.info(f"当前 napcat 版本: {version}, 正在检查更新...")
                 github_version = get_version(get_proxy_url())
                 if version != github_version:
-                    _log.info(f"发现新版本: {github_version}")
+                    _log.info(
+                        f"发现新版本: {github_version}, 是否要更新 napcat 客户端？"
+                    )
                     if not download_napcat("update", base_path):
                         _log.info(f"跳过 napcat {version} 更新")
                 else:
@@ -191,14 +196,29 @@ class BotClient:
                 version_ok = check_version()
                 if not version_ok:
                     exit(0)
+            else:
+                _log.info("调试模式, 跳过 ncatbot 安装检查")
 
         def ncatbot_quick_start():
             if self.napcat_server_ok():
-                _log.info("ncatbot 服务器在线, 连接中...")
+                _log.info(f"ncatbot 服务器 {config.ws_uri} 在线, 连接中...")
                 self._run()
             elif reload:
                 _log.info("napcat 服务器未启动, 且开启了重加载模式, 运行失败")
                 exit(1)
+            elif not config.is_localhost():
+                _log.error("napcat 服务器没有配置在本地, 无法连接服务器, 自动退出")
+                _log.error(f'服务器参数: uri="{config.ws_uri}", token="{config.token}"')
+                _log.info(
+                    """可能的错误原因:
+                          1. napcat webui 中服务器类型错误, 应该为 "WebSocket 服务器", 而非 "WebSocket 客户端"
+                          2. napcat webui 中服务器配置了但没有启用, 请确保勾选了启用服务器"
+                          3. napcat webui 中服务器 host 没有设置为监听全部地址, 应该将 host 改为 0.0.0.0
+                          4. 检查以上配置后, 在 webui 中使用 error 信息中的的服务器参数, \"接口调试\"选择\"WebSocket\"尝试连接.
+                          5. webui 中连接成功后再尝试启动 ncatbot
+                          """
+                )
+                exit(0)
             _log.info("napcat 服务器离线, 启动中...")
 
         def config_napcat():

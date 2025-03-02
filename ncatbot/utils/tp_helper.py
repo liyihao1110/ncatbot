@@ -29,17 +29,17 @@ def get_proxy_url():
         "https://gh-proxy.com/",
         "https://ghfast.top/",
     ]
-    _log.info("正在尝试连接 GitHub 代理...")
+    _log.debug("正在尝试连接 GitHub 代理...")
     for url in github_proxy_urls:
         try:
-            _log.info(f"正在尝试连接 {url}")
+            _log.debug(f"正在尝试连接 {url}")
             response = requests.get(url, timeout=5)
             if response.status_code == 200:
                 return url
         except requests.RequestException as e:
-            _log.info(f"无法连接到 {url}: {e}, 继续尝试下一个代理...")
+            _log.warning(f"无法连接到 {url}: {e}, 继续尝试下一个代理...")
             continue
-    _log.info("无法连接到任何 GitHub 代理, 将直接连接 GitHub")
+    _log.warning("无法连接到任何 GitHub 代理, 将直接连接 GitHub")
     return ""
 
 
@@ -49,7 +49,7 @@ def get_version(github_proxy_url: str):
     version_response = requests.get(version_url)
     if version_response.status_code == 200:
         version = version_response.json()["version"]
-        _log.info(f"获取最新版本信息成功, 版本号: {version}")
+        _log.debug(f"获取最新版本信息成功, 版本号: {version}")
         return version
     _log.info(f"获取最新版本信息失败, http 状态码: {version_response.status_code}")
     return None
@@ -69,9 +69,8 @@ def download_napcat_windows(type: str, base_path: str):
     if type == "install":
         _log.info("未找到 napcat ，是否要自动安装？")
         if input("输入 Y 继续安装或 N 退出: ").strip().lower() not in ["y", "yes"]:
-            return False
+            exit(0)  # 未安装不安装的直接退出程序
     elif type == "update":
-        _log.info("是否要更新 napcat 客户端？")
         if input("输入 Y 继续安装或 N 跳过更新: ").strip().lower() not in ["y", "yes"]:
             return False
 
