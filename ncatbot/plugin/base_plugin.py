@@ -2,7 +2,7 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-21 18:23:06
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-02-23 18:41:52
+# @LastEditTime : 2025-03-02 20:22:51
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @message: 喵喵喵?
 # @Copyright (c) 2025 by Fish-LP, MIT License
@@ -22,6 +22,7 @@ from ncatbot.utils.io import (
     UniversalLoader,
 )
 from ncatbot.utils.literals import PERSISTENT_DIR
+from ncatbot.utils.ChangeDir import ChangeDir
 
 
 class BasePlugin:
@@ -61,7 +62,11 @@ class BasePlugin:
         except FileExistsError:
             self.first_load = False
         
-        os.chdir(self.work_path) # 切换工作目录到私有文件夹
+        self.work_space = ChangeDir(self.work_path, create_missing=True)
+        # 由于支持注册非类函数，且os.chdir管理混乱所以不强制切换路径
+        # 使用以下代码进入私有目录
+        # with self.work_space:
+        #     pass
 
     async def __unload__(self):
         self._close_()
