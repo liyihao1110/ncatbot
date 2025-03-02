@@ -2,7 +2,7 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-21 18:23:06
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-02-21 19:46:22
+# @LastEditTime : 2025-03-02 17:43:53
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @message: 喵喵喵?
 # @Copyright (c) 2025 by Fish-LP, MIT License
@@ -52,6 +52,7 @@ class PluginLoader:
             self.meta_data = UniversalLoader(META_CONFIG_PATH)
         else:
             self.meta_data = {}
+        # 以下是退出事件自动处理(存在问题)
         # signal.signal(signal.SIGTERM, self._unload_all)
         # signal.signal(signal.SIGINT, self._unload_all)
         # atexit.register(self._unload_all)
