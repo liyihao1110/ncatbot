@@ -2,7 +2,7 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-21 18:23:06
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-02-21 19:44:50
+# @LastEditTime : 2025-03-02 17:44:36
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @message: 喵喵喵?
 # @Copyright (c) 2025 by Fish-LP, MIT License
@@ -124,7 +124,7 @@ class EventBus:
             event: Event - 要发布的事件
 
         返回值:
-            List[Any] - 所有处理器返回的结果的列表
+            List[Any] - 所有处理器返回的结果的列表(通常是空列表)
         """
         handlers = []
         if event.type in self._exact_handlers:
