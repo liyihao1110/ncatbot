@@ -106,7 +106,7 @@ class BotClient:
 
     async def run_async(self):
         _log.info(
-            f"已订阅消息类型:[群聊]->{"全部消息类型" if self._subscribe_group_message_types == None else self._subscribe_group_message_types};[私聊]->{"全部消息类型" if self._subscribe_private_message_types == None else self._subscribe_private_message_types}"
+            f"已订阅消息类型:[群聊]->{'全部消息类型' if self._subscribe_group_message_types == None else self._subscribe_group_message_types};[私聊]->{'全部消息类型' if self._subscribe_private_message_types == None else self._subscribe_private_message_types}"
         )
         websocket_server = Websocket(self)
         await self.plugin_sys.load_plugins()
@@ -203,9 +203,6 @@ class BotClient:
             if self.napcat_server_ok():
                 _log.info(f"ncatbot 服务器 {config.ws_uri} 在线, 连接中...")
                 self._run()
-            elif reload:
-                _log.info("napcat 服务器未启动, 且开启了重加载模式, 运行失败")
-                exit(1)
             elif not config.is_localhost():
                 _log.error("napcat 服务器没有配置在本地, 无法连接服务器, 自动退出")
                 _log.error(f'服务器参数: uri="{config.ws_uri}", token="{config.token}"')
@@ -218,7 +215,10 @@ class BotClient:
                           5. webui 中连接成功后再尝试启动 ncatbot
                           """
                 )
-                exit(0)
+                exit(1)
+            elif reload:
+                _log.info("napcat 服务器未启动, 且开启了重加载模式, 运行失败")
+                exit(1)
             _log.info("napcat 服务器离线, 启动中...")
 
         def config_napcat():
