@@ -133,7 +133,7 @@ class PluginLoader:
         for name in load_order:
             plugin_cls = next(p for p in valid_plugins if p.name == name)
             temp_plugins[name] = plugin_cls(
-                self.event_bus, self.api, meta_data=self.meta_data.copy(), **kwargs
+                self.event_bus, api=self.api, meta_data=self.meta_data.copy(), **kwargs
             )
 
         self.plugins = temp_plugins
