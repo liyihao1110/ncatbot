@@ -4,7 +4,7 @@ import platform
 import subprocess
 
 from ncatbot.utils.env_checker import check_linux_permissions
-from ncatbot.utils.literals import NAPCAT_DIR
+from ncatbot.utils.literals import LINUX_NAPCAT_DIR, NAPCAT_CLI_PATH, WINDOWS_NAPCAT_DIR
 from ncatbot.utils.logger import get_log
 
 _log = get_log()
@@ -44,6 +44,29 @@ def get_launcher_name():
     return "launcher-win10.bat"
 
 
+def check_napcat_statu_linux(qq):
+    process = subprocess.Popen(
+        ["bash", NAPCAT_CLI_PATH, "status", str(qq)], stdout=subprocess.PIPE
+    )
+    process.wait()
+    output = process.stdout.read().decode(encoding="utf-8")
+    return output.find(str(qq)) != -1
+
+
+def start_napcat_linux(qq):
+    process = subprocess.Popen(
+        ["sudo", "bash", NAPCAT_CLI_PATH, "start", str(qq)], stdout=subprocess.PIPE
+    )
+    process.wait()
+
+
+def stop_napcat_linux(qq):
+    process = subprocess.Popen(
+        ["bash", NAPCAT_CLI_PATH, "stop", str(qq)], stdout=subprocess.PIPE
+    )
+    process.wait()
+
+
 def start_napcat(config_data, system_type: str = "Windows"):
     """
     启动 napcat 客户端, 启动不了就退出
@@ -53,10 +76,11 @@ def start_napcat(config_data, system_type: str = "Windows"):
         system_type: 操作系统类型, 可选值为 "Windows" 或 "Linux"
 
     """
+    _log.info("正在启动 napcat 服务器")
     if system_type == "Windows":
         # Windows启动逻辑
         launcher = get_launcher_name()
-        napcat_dir = os.path.abspath(NAPCAT_DIR)
+        napcat_dir = os.path.abspath(WINDOWS_NAPCAT_DIR)
         launcher_path = os.path.join(napcat_dir, launcher)
 
         if not os.path.exists(launcher_path):
@@ -73,7 +97,7 @@ def start_napcat(config_data, system_type: str = "Windows"):
         )
     else:
         # Linux启动逻辑
-        napcat_path = "/opt/QQ/resources/app/app_launcher/napcat"
+        napcat_path = LINUX_NAPCAT_DIR
         if not os.path.exists(napcat_path):
             _log.error("未找到 napcat")
             exit(1)
@@ -83,32 +107,16 @@ def start_napcat(config_data, system_type: str = "Windows"):
             exit(1)
 
         try:
-            result = subprocess.run(
-                ["pgrep", "xvfb"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            if result.stdout.decode().strip() != "":
-                _log.info("QQ 已启动")
-                atexit.register(lambda: subprocess.run(["pkill", "qq"], check=False))
-                return
-            else:
-                subprocess.Popen(
-                    [
-                        "xvfb-run",
-                        "-a",
-                        "qq",
-                        "--no-sandbox",
-                        "-q",
-                        str(config_data.bt_uin),
-                    ],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                )
-                # 添加一个简单的清理函数
-                atexit.register(lambda: subprocess.run(["pkill", "xvfb"], check=False))
-                atexit.register(lambda: subprocess.run(["pkill", "qq"], check=False))
+            # 启动并注册清理函数
+            start_napcat_linux(config_data.bt_uin)
+            atexit.register(lambda: stop_napcat_linux(config_data.bt_uin))
         except Exception as e:
-            # 如果发生异常，则可能pgrep命令没有正确执行
             _log.error(f"pgrep 命令执行失败, 无法判断 QQ 是否启动, 请检查错误: {e}")
             exit(1)
 
+    if not check_napcat_statu_linux(config_data.bt_uin):
+        _log.error("napcat 启动失败，请检查日志")
+        exit(1)
+    else:
+        _log.info("napcat 启动成功")
     return
