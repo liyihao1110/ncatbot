@@ -5,16 +5,14 @@ import platform
 import shutil
 import time
 import urllib
-import urllib.parse
 
-from ncatbot.conn.connect import Websocket
-from ncatbot.conn.wsroute import check_websocket
+from ncatbot.conn import LoginHandler, Websocket, check_websocket
 from ncatbot.core.api import BotAPI
 from ncatbot.core.launcher import start_napcat
 from ncatbot.core.message import GroupMessage, PrivateMessage
 from ncatbot.plugin import Event, EventBus, PluginLoader
 from ncatbot.utils.config import config
-from ncatbot.utils.env_checker import check_version
+from ncatbot.utils.env_checker import check_linux_permissions, check_version
 from ncatbot.utils.literals import (
     LINUX_NAPCAT_DIR,
     OFFICIAL_GROUP_MESSAGE_EVENT,
@@ -131,7 +129,7 @@ class BotClient:
     def _run(self):
         try:
             asyncio.run(self.run_async())
-        except KeyboardInterrupt:
+        except Exception:
             _log.info("插件卸载中...")
             asyncio.run(self.plugin_sys._unload_all())
             _log.info("正常退出")
@@ -155,6 +153,11 @@ class BotClient:
         else:
             _log.error("暂不支持 Windows/Linux 之外的系统")
             exit(1)
+
+        def check_permission():
+            if check_linux_permissions("root") != "root":
+                _log.error("请使用 root 权限运行 ncatbot")
+                exit(1)
 
         def check_ncatbot_install():
             """检查 ncatbot 版本, 以及是否正确安装"""
@@ -243,15 +246,22 @@ class BotClient:
                     "enableLocalFile2Url": False,
                     "parseMultMsg": False,
                 }
-
-                with open(
-                    os.path.join(
-                        napcat_dir, "config", "onebot11_" + str(config.bt_uin) + ".json"
-                    ),
-                    "w",
-                    encoding="utf-8",
-                ) as f:
-                    json.dump(expected_data, f, indent=4, ensure_ascii=False)
+                try:
+                    with open(
+                        os.path.join(
+                            napcat_dir,
+                            "config",
+                            "onebot11_" + str(config.bt_uin) + ".json",
+                        ),
+                        "w",
+                        encoding="utf-8",
+                    ) as f:
+                        json.dump(expected_data, f, indent=4, ensure_ascii=False)
+                except Exception as e:
+                    _log.error("配置 onebot 失败: " + str(e))
+                    if not check_permission():
+                        _log.info("请使用 root 权限运行 ncatbot")
+                        exit(1)
 
             def config_quick_login():
                 ori = os.path.join(napcat_dir, "quickLoginExample.bat")
@@ -266,6 +276,8 @@ class BotClient:
                         webui_config = json.load(f)
                         port = webui_config.get("port", 6099)
                         token = webui_config.get("token", "")
+                        config.webui_token = token
+                        config.webui_port = port
                     _log.info("Token: " + token + ", Webui port: " + str(port))
 
                 except FileNotFoundError:
@@ -281,9 +293,10 @@ class BotClient:
             def info_windows():
                 _log.info("1. 请允许终端修改计算机, 并在弹出的另一个终端扫码登录")
                 _log.info(f"2. 确认 QQ 号 {config.bt_uin} 是否正确")
+                _log.info(f"3. websocket url 是否正确: {config.ws_uri}")
 
             def info_linux():
-                pass
+                _log.info(f"1. websocket url 是否正确: {config.ws_uri}")
 
             def info(quit=False):
                 _log.info("连接 napcat websocket 服务器超时, 请检查以下内容:")
@@ -295,6 +308,8 @@ class BotClient:
                     exit(1)
 
             start_napcat(config, platform.system())  # 启动 napcat
+            if platform.system() == "Linux":
+                LoginHandler().login()
 
             MAX_TIME_EXPIRE = time.time() + 60
             INFO_TIME_EXPIRE = time.time() + 20

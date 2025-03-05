@@ -8,8 +8,6 @@ from ncatbot.utils.env_checker import check_linux_permissions
 from ncatbot.utils.io import download_file, unzip_file
 from ncatbot.utils.literals import (
     INSTALL_SCRIPT_URL,
-    NAPCAT_CLI_PATH,
-    NAPCAT_CLI_URL,
     WINDOWS_NAPCAT_DIR,
 )
 from ncatbot.utils.logger import get_log
@@ -95,12 +93,8 @@ def download_napcat_windows(type: str):
 
 
 def download_napcat_cli():
-    """linux 下载 napcat cli"""
-    _log.info("正在下载 napcat cli...")
-    download_file(
-        NAPCAT_CLI_URL,
-        NAPCAT_CLI_PATH,
-    )
+    # 已经弃用
+    pass
 
 
 def download_napcat_linux(type: str):
@@ -128,7 +122,7 @@ def download_napcat_linux(type: str):
     try:
         _log.info("正在下载一键安装脚本...")
         process = subprocess.Popen(
-            f"sudo bash -c 'curl -sSL {INSTALL_SCRIPT_URL} | sudo bash'",
+            f"sudo bash -c 'curl {INSTALL_SCRIPT_URL} -o install && yes | bash install'",
             shell=True,
             stdin=sys.stdin,
             stdout=sys.stdout,
@@ -141,7 +135,6 @@ def download_napcat_linux(type: str):
         else:
             _log.error("执行一键安装脚本失败, 请检查命令行输出")
             exit(1)
-        download_napcat_cli()
     except Exception as e:
         _log.error("执行一键安装脚本失败，错误信息:", e)
         exit(1)

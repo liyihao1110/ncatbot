@@ -2,9 +2,9 @@ import atexit
 import os
 import platform
 import subprocess
+import time
 
-from ncatbot.utils.env_checker import check_linux_permissions
-from ncatbot.utils.literals import LINUX_NAPCAT_DIR, NAPCAT_CLI_PATH, WINDOWS_NAPCAT_DIR
+from ncatbot.utils.literals import LINUX_NAPCAT_DIR, WINDOWS_NAPCAT_DIR
 from ncatbot.utils.logger import get_log
 
 _log = get_log()
@@ -46,7 +46,7 @@ def get_launcher_name():
 
 def check_napcat_statu_linux(qq):
     process = subprocess.Popen(
-        ["bash", NAPCAT_CLI_PATH, "status", str(qq)], stdout=subprocess.PIPE
+        ["bash", "napcat", "status", str(qq)], stdout=subprocess.PIPE
     )
     process.wait()
     output = process.stdout.read().decode(encoding="utf-8")
@@ -55,14 +55,14 @@ def check_napcat_statu_linux(qq):
 
 def start_napcat_linux(qq):
     process = subprocess.Popen(
-        ["sudo", "bash", NAPCAT_CLI_PATH, "start", str(qq)], stdout=subprocess.PIPE
+        ["sudo", "bash", "napcat", "start", str(qq)], stdout=subprocess.PIPE
     )
     process.wait()
 
 
 def stop_napcat_linux(qq):
     process = subprocess.Popen(
-        ["bash", NAPCAT_CLI_PATH, "stop", str(qq)], stdout=subprocess.PIPE
+        ["bash", "napcat", "stop", str(qq)], stdout=subprocess.PIPE
     )
     process.wait()
 
@@ -102,10 +102,6 @@ def start_napcat(config_data, system_type: str = "Windows"):
             _log.error("未找到 napcat")
             exit(1)
 
-        if check_linux_permissions("root") != "root":
-            _log.error("请使用 root 权限运行 ncatbot")
-            exit(1)
-
         try:
             # 启动并注册清理函数
             start_napcat_linux(config_data.bt_uin)
@@ -114,9 +110,10 @@ def start_napcat(config_data, system_type: str = "Windows"):
             _log.error(f"pgrep 命令执行失败, 无法判断 QQ 是否启动, 请检查错误: {e}")
             exit(1)
 
-    if not check_napcat_statu_linux(config_data.bt_uin):
-        _log.error("napcat 启动失败，请检查日志")
-        exit(1)
-    else:
-        _log.info("napcat 启动成功")
+        if not check_napcat_statu_linux(config_data.bt_uin):
+            _log.error("napcat 启动失败，请检查日志")
+            exit(1)
+        else:
+            time.sleep(0.5)
+            _log.info("napcat 启动成功")
     return
