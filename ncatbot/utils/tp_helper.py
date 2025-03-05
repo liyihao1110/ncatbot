@@ -1,14 +1,17 @@
-import os
 import platform
 import subprocess
 import sys
-import zipfile
 
 import requests
-from tqdm import tqdm
 
 from ncatbot.utils.env_checker import check_linux_permissions
-from ncatbot.utils.literals import NAPCAT_DIR
+from ncatbot.utils.io import download_file, unzip_file
+from ncatbot.utils.literals import (
+    INSTALL_SCRIPT_URL,
+    NAPCAT_CLI_PATH,
+    NAPCAT_CLI_URL,
+    WINDOWS_NAPCAT_DIR,
+)
 from ncatbot.utils.logger import get_log
 
 _log = get_log()
@@ -43,8 +46,9 @@ def get_proxy_url():
     return ""
 
 
-def get_version(github_proxy_url: str):
+def get_version():
     """从GitHub获取 napcat 版本号"""
+    github_proxy_url = get_proxy_url()
     version_url = f"{github_proxy_url}https://raw.githubusercontent.com/NapNeko/NapCatQQ/main/package.json"
     version_response = requests.get(version_url)
     if version_response.status_code == 200:
@@ -55,14 +59,12 @@ def get_version(github_proxy_url: str):
     return None
 
 
-def download_napcat_windows(type: str, base_path: str):
+def download_napcat_windows(type: str):
     """
     Windows系统下载安装napcat
 
     Args:
         type: 安装类型, 可选值为 "install" 或 "update"
-        base_path: 安装路径
-
     Returns:
         bool: 安装成功返回True, 否则返回False
     """
@@ -75,58 +77,34 @@ def download_napcat_windows(type: str, base_path: str):
             return False
 
     try:
+        version = get_version()
         github_proxy_url = get_proxy_url()
-        version = get_version(github_proxy_url)
+        download_url = f"{github_proxy_url}https://github.com/NapNeko/NapCatQQ/releases/download/v{version}/NapCat.Shell.zip"
         if not version:
             return False
 
-        download_url = f"{github_proxy_url}https://github.com/NapNeko/NapCatQQ/releases/download/v{version}/NapCat.Shell.zip"
+        # 下载并解压 napcat 客户端
         _log.info(f"下载链接为 {download_url}...")
         _log.info("正在下载 napcat 客户端, 请稍等...")
-        # 下载 napcat 客户端
-        try:
-            r = requests.get(download_url, stream=True)
-            total_size = int(r.headers.get("content-length", 0))
-            progress_bar = tqdm(
-                total=total_size,
-                unit="iB",
-                unit_scale=True,
-                desc=f"Downloading {NAPCAT_DIR}.zip",
-                bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]",
-                colour="green",
-                dynamic_ncols=True,
-                smoothing=0.3,
-                mininterval=0.1,
-                maxinterval=1.0,
-            )
-            with open(f"{NAPCAT_DIR}.zip", "wb") as f:
-                for data in r.iter_content(chunk_size=1024):
-                    progress_bar.update(len(data))
-                    f.write(data)
-            progress_bar.close()
-        except Exception as e:
-            _log.error(
-                "下载 napcat 客户端失败, 请检查网络连接或手动下载 napcat 客户端。"
-            )
-            _log.error("错误信息:", e)
-            return
-        try:
-            with zipfile.ZipFile(f"{NAPCAT_DIR}.zip", "r") as zip_ref:
-                zip_ref.extractall(NAPCAT_DIR)
-                _log.info("解压 napcat 客户端成功, 请运行 napcat 客户端.")
-            os.remove(f"{NAPCAT_DIR}.zip")
-        except Exception as e:
-            _log.error("解压 napcat 客户端失败, 请检查 napcat 客户端是否正确.")
-            _log.error("错误信息: ", e)
-            return
+        download_file(download_url, f"{WINDOWS_NAPCAT_DIR}.zip")
+        unzip_file(f"{WINDOWS_NAPCAT_DIR}.zip", WINDOWS_NAPCAT_DIR, True)
         return True
     except Exception as e:
         _log.error("安装失败:", e)
         return False
 
 
+def download_napcat_cli():
+    """linux 下载 napcat cli"""
+    _log.info("正在下载 napcat cli...")
+    download_file(
+        NAPCAT_CLI_URL,
+        NAPCAT_CLI_PATH,
+    )
+
+
 def download_napcat_linux(type: str):
-    """Linux系统下载安装napcat
+    """Linux 系统下载安装 napcat 和 cli
 
     Args:
         type: 安装类型, 可选值为 "install" 或 "update"
@@ -149,37 +127,38 @@ def download_napcat_linux(type: str):
 
     try:
         _log.info("正在下载一键安装脚本...")
-        install_script_url = (
-            "https://nclatest.znin.net/NapNeko/NapCat-Installer/main/script/install.sh"
-        )
         process = subprocess.Popen(
-            f"sudo bash -c 'curl -sSL {install_script_url} | sudo bash'",
+            f"sudo bash -c 'curl -sSL {INSTALL_SCRIPT_URL} | sudo bash'",
             shell=True,
             stdin=sys.stdin,
             stdout=sys.stdout,
             stderr=sys.stderr,
         )
         process.wait()
-        _log.info("napcat 客户端安装完成。")
-        return True
+        if process.returncode == 0:
+            _log.info("napcat 客户端安装完成。")
+            return True
+        else:
+            _log.error("执行一键安装脚本失败, 请检查命令行输出")
+            exit(1)
+        download_napcat_cli()
     except Exception as e:
         _log.error("执行一键安装脚本失败，错误信息:", e)
         exit(1)
 
 
-def download_napcat(type: str, base_path: str):
+def download_napcat(type: str):
     """
     下载和安装 napcat 客户端
 
     Args:
         type: 安装类型, 可选值为 "install" 或 "update"
-        base_path: 安装路径
 
     Returns:
         bool: 安装成功返回True, 否则返回False
     """
     if platform.system() == "Windows":
-        return download_napcat_windows(type, base_path)
+        return download_napcat_windows(type)
     elif platform.system() == "Linux":
         return download_napcat_linux(type)
     return False
