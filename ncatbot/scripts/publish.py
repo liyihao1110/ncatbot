@@ -4,7 +4,7 @@ import time
 
 import requests
 from git import GitCommandError, Repo
-
+import stat
 from ncatbot.plugin.loader import get_plugin_info
 
 MAIN_REPO_OWNER = "ncatbot"
@@ -293,5 +293,24 @@ def main():
     # 创建 Pull Request
     create_pull_request(branch_name, plugin_name, version)
 
+    # 删除临时文件夹
+    temp_repo_path = repo.working_dir
+    print(f"Deleting temporary folder: {temp_repo_path}")
+    
+    # 首先关闭仓库对象以释放文件句柄
+    repo.close()
+    # 抽象repo关太慢了，不小睡一下会继续占用
+    time.sleep(2)
+
+    def on_rm_error(func, path, _):
+        # 去掉只读
+        os.chmod(path, stat.S_IWRITE)
+        func(path)
+
+    try:
+        shutil.rmtree(temp_repo_path, onexc=on_rm_error)
+        print(f"Temporary folder deleted successfully.")
+    except Exception as e:
+        print(f"Error deleting temporary folder: {e}")
 
 main()
