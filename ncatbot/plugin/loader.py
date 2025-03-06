@@ -151,16 +151,28 @@ class PluginLoader:
         从插件类加载插件
         :param plugins: 插件类列表
         """
-        valid_plugins = [p for p in plugins if self._validate_plugin(p)]
-        self._build_dependency_graph(plugins)
-        load_order = self._resolve_load_order()
+        try:
+            _log.debug("正在构造插件依赖图")
+            valid_plugins = [p for p in plugins if self._validate_plugin(p)]
+            self._build_dependency_graph(plugins)
+            load_order = self._resolve_load_order()
+        except Exception as e:
+            _log.error(f"构造插件依赖图时出错: {e}")
+            exit(1)
 
         temp_plugins = {}
         for name in load_order:
-            plugin_cls = next(p for p in valid_plugins if p.name == name)
-            temp_plugins[name] = plugin_cls(
-                self.event_bus, api=self.api, meta_data=self.meta_data.copy(), **kwargs
-            )
+            try:
+                _log.debug(f"正在初始化插件 {name}")
+                plugin_cls = next(p for p in valid_plugins if p.name == name)
+                temp_plugins[name] = plugin_cls(
+                    self.event_bus,
+                    api=self.api,
+                    meta_data=self.meta_data.copy(),
+                    **kwargs,
+                )
+            except Exception as e:
+                _log.error(f"加载插件 {name} 时出错: {e}")
 
         self.plugins = temp_plugins
         self._validate_dependencies()
@@ -174,18 +186,25 @@ class PluginLoader:
         从指定目录加载插件
         :param plugins_path: 插件目录路径
         """
-        if os.path.exists(plugins_path):
-            _log.info(f"插件加载目录: {plugins_path}")
-            modules = self._load_modules_from_directory(plugins_path)
-            plugins = []
-            for plugin in modules.values():
-                for plugin_class_name in getattr(plugin, "__all__", []):
-                    plugins.append(getattr(plugin, plugin_class_name))
-            await self.from_class_load_plugins(plugins, **kwargs)
-            self.load_compatible_data()
-        else:
-            _log.warning(f"插件加载目录: {os.path.abspath(plugins_path)} 不存在")
-            _log.warning("请检查工作目录下是否有 `plugins` 文件夹")
+        try:
+            _log.debug("正在获取插件")
+            if os.path.exists(plugins_path):
+                _log.info(f"插件加载目录: {plugins_path}")
+                modules = self._load_modules_from_directory(plugins_path)
+                plugins = []
+                for plugin in modules.values():
+                    for plugin_class_name in getattr(plugin, "__all__", []):
+                        try:
+                            plugins.append(getattr(plugin, plugin_class_name))
+                        except Exception as e:
+                            _log.error(f"获取插件 {plugin.__name__} 时出错 {e}")
+                await self.from_class_load_plugins(plugins, **kwargs)
+                self.load_compatible_data()
+            else:
+                _log.warning(f"插件加载目录: {os.path.abspath(plugins_path)} 不存在")
+                _log.warning("请检查工作目录下是否有 `plugins` 文件夹")
+        except Exception as e:
+            _log.error(f"加载插件时出错: {e}")
 
     def load_compatible_data(self):
         """
