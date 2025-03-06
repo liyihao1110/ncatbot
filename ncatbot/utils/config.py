@@ -14,6 +14,8 @@ class SetConfig:
         self.bt_uin = "123456"
         self.ws_uri = "localhost:3001"
         self.token = ""
+        self.webui_token = ""  # webui 令牌, 自动读取, 无需设置
+        self.webui_port = ""  # webui 端口, 自动读取, 无需设置
 
     def __str__(self):
         return (

@@ -1,5 +1,15 @@
-NAPCAT_DIR = "napcat"
-INSTALL_CHECK_PATH = "install.success"
+WINDOWS_NAPCAT_DIR = "napcat"
+LINUX_NAPCAT_DIR = "/opt/QQ/resources/app/app_launcher/napcat"
+
+INSTALL_SCRIPT_URL = (
+    "https://nclatest.znin.net/NapNeko/NapCat-Installer/main/script/install.sh"
+)
+NAPCAT_CLI_URL = (
+    "https://nclatest.znin.net/NapNeko/NapCat-Installer/main/script/napcat_cli"
+)
+
+NAPCAT_CLI_PATH = LINUX_NAPCAT_DIR + "/napcat_cli"
+
 REQUEST_SUCCESS = "ok"
 
 OFFICIAL_GROUP_MESSAGE_EVENT = "ncatbot.group_message_event"
