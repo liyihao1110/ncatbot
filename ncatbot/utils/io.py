@@ -203,10 +203,16 @@ class UniversalLoader:
             ValueError:                 当未手动开启pickle支持时抛出
         """
         # 统一路径为 Path 类型
-        self.file_path: Path = Path(file_path).resolve()  # 获取绝对路径
-        self.data: Dict[str, Any] = {}
-        self.file_type = file_type.lower() if file_type else self._detect_file_type()
-        self._async_lock = asyncio.Lock()
+        _log.debug("读取插件数据中")
+        try:
+            self.file_path: Path = Path(file_path).resolve()  # 获取绝对路径
+            self.data: Dict[str, Any] = {}
+            self.file_type = (
+                file_type.lower() if file_type else self._detect_file_type()
+            )
+            self._async_lock = asyncio.Lock()
+        except Exception as e:
+            _log.error(f"创建 UniversalLoader 实例时发生错误: {e}")
 
     def _detect_file_type(self) -> str:
         """通过文件扩展名检测文件类型"""

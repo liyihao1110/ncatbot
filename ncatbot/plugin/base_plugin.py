@@ -21,6 +21,9 @@ from ncatbot.utils.io import (
     UniversalLoader,
 )
 from ncatbot.utils.literals import PERSISTENT_DIR
+from ncatbot.utils.logger import get_log
+
+_log = get_log()
 
 
 class BasePlugin:
@@ -54,8 +57,14 @@ class BasePlugin:
 
         try:  # 加载持久化数据
             self.data = self._data_file.load()
+        except FileNotFoundError:
+            _log.debug(f"持久化数据文件不存在: {self.name}.json, 数据将被重置")
+            self.data = {}
         except LoadError:
             self.data = self._data_file
+        except Exception as e:
+            _log.error(f"加载持久化数据时出错: {e}")
+            raise RuntimeError(self.name, "加载持久化数据时出错")
 
         try:
             self.work_path.mkdir(parents=True)
