@@ -120,6 +120,32 @@ class PluginLoader:
 
         return load_order
 
+    def get_plugin_info(self, plugin_path):
+        original_sys_path = sys.path.copy()
+        try:
+            # 临时插入目录到 sys.path，用于加载模块
+            directory_path = os.path.abspath(plugin_path)
+            sys.path.append(os.path.dirname(directory_path))
+            filename = plugin_path.split("/")[-1]
+            try:
+                # 动态导入模块
+                module = importlib.import_module(filename)
+                if len(module.__all__) != 1:
+                    raise ValueError("Plugin __init__.py wrong format")
+                for plugin_class_name in module.__all__:
+                    plugin_class = getattr(module, plugin_class_name)
+                    if not self._validate_plugin(plugin_class):
+                        raise TypeError("Plugin Class is invalid")
+                    name, version = plugin_class.name, plugin_class.version
+                    break
+            except BaseException as e:
+                _log.error(f"查找模块 {filename} 时出错: {e}")
+
+        finally:
+            sys.path = original_sys_path
+
+        return name, version
+
     async def from_class_load_plugins(self, plugins: List[Type[BasePlugin]], **kwargs):
         """
         从插件类加载插件
@@ -244,3 +270,24 @@ class PluginLoader:
     async def _unload_all(self, *args, **kwargs):
         for plugin in tuple(self.plugins.keys()):
             await self.unload_plugin(plugin)
+
+
+def get_plugin_info(path: str):
+    if os.path.exists(path):
+        return PluginLoader().get_plugin_info(path)
+    else:
+        raise FileNotFoundError(f"dir not found: {path}")
+
+
+def get_pulgin_info_by_name(name: str):
+    """
+    Args:
+        name (str): 插件名
+    Returns:
+        Tuple[bool, str]: 是否存在插件, 插件版本
+    """
+    plugin_path = os.path.join(PLUGINS_DIR, name)
+    if os.path.exists(plugin_path):
+        return True, PluginLoader().get_plugin_info(plugin_path)[1]
+    else:
+        return False, "0.0.0"

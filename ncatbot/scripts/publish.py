@@ -5,7 +5,7 @@ import time
 import requests
 from git import GitCommandError, Repo
 
-from ncatbot.plugin import PluginLoader
+from ncatbot.plugin.loader import get_plugin_info
 
 MAIN_REPO_OWNER = "ncatbot"
 MAIN_BRANCH_NAME = "main"
@@ -84,13 +84,6 @@ def create_pull_request(local_branch_name, plugin_name, version):
         print("Pull Request created successfully!")
     else:
         print(f"Failed to create Pull Request: {response.text}")
-
-
-def get_plugin_info(path):
-    if os.path.exists(path):
-        return PluginLoader().get_plugin_info(path)
-    else:
-        raise FileNotFoundError(f"dir not found: {path}")
 
 
 # 检查是否已经存在 Fork
@@ -238,7 +231,7 @@ def main():
     path = input()
 
     plugin_name, version = get_plugin_info(path)
-    source_folder = path
+    print(f"Plugin name: {plugin_name}, version: {version}")
 
     github_token = get_github_token(github_token)
     test_github_token(github_token)
@@ -263,9 +256,18 @@ def main():
     branch_name = f"publish-{plugin_name}-{version}"
     repo.git.checkout("-b", branch_name)
 
-    # 复制插件文件到目标路径
+    # 写版本
+    target_base_folder = os.path.join("plugins", plugin_name)
+    version_list = os.path.join(target_base_folder, "version.txt")
+    with open(version_list, "a") as f:
+        f.write(version + "\n")
+
+    # 打包插件并移动到对应文件夹(整个文件夹打包, 直接解压到 plugins/ 即可)
     target_folder = os.path.join("plugins", plugin_name, version)
-    shutil.copytree(source_folder, os.path.join(repo.working_dir, target_folder))
+    archived_file = shutil.make_archive(
+        f"{plugin_name}-{version}", "zip", target_folder
+    )
+    shutil.move(archived_file, target_base_folder)
 
     # 添加并提交更改
     repo.git.add(all=True)
