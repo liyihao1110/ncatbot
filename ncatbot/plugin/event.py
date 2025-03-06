@@ -2,7 +2,7 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-21 18:23:06
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-03-02 17:44:36
+# @LastEditTime : 2025-03-06 20:41:46
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @message: 喵喵喵?
 # @Copyright (c) 2025 by Fish-LP, MIT License
@@ -66,7 +66,7 @@ class EventBus:
 
     def subscribe(
         self, event_type: str, handler: Callable[[Event], Any], priority: int = 0
-    ) -> str:
+    ) -> uuid.UUID:
         """
         订阅事件处理器，并返回处理器的唯一 ID
 
@@ -89,12 +89,12 @@ class EventBus:
             )
         return handler_id
 
-    def unsubscribe(self, handler_id: str) -> bool:
+    def unsubscribe(self, handler_id: uuid.UUID) -> bool:
         """
         取消订阅事件处理器
 
         参数:
-            handler_id: str - 处理器的唯一 ID
+            handler_id: UUID - 处理器的唯一 ID
 
         返回:
             bool - 是否成功取消订阅

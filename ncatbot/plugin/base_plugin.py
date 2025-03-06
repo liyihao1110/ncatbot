@@ -2,13 +2,14 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-15 20:08:02
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-03-06 20:14:36
+# @LastEditTime : 2025-03-06 20:46:54
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @Copyright (c) 2025 by Fish-LP, MIT License 
 # -------------------------
 import asyncio
 from pathlib import Path
 from typing import Any, Awaitable, Callable, List, final
+from uuid import UUID
 
 from ncatbot.core import BotAPI
 from ncatbot.plugin.custom_err import PluginLoadError, PluginUnloadError
@@ -148,7 +149,7 @@ class BasePlugin:
         return self.event_bus.publish_async(event)
 
     @final
-    def register_handler(self, event_type: str, handler: Callable[[Event], Any], priority: int = 0):
+    def register_handler(self, event_type: str, handler: Callable[[Event], Any], priority: int = 0) -> UUID:
         '''注册事件处理器
         
         Args:
@@ -158,6 +159,22 @@ class BasePlugin:
         '''
         handler_id = self.event_bus.subscribe(event_type, handler, priority)
         self._event_handlers.append(handler_id)
+        return handler_id
+
+    @final
+    def unregister_handler(self, handler_id: UUID):
+        '''注销事件处理器(此插件注册)
+        
+        Args:
+            handler_id (UUID): 事件id
+        
+        Returns:
+            bool: 操作结果
+        '''
+        if handler_id in self._event_handlers:
+            self._event_handlers.append(handler_id)
+            return True
+        return False
 
     @final
     def unregister_handlers(self):
