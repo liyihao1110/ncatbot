@@ -224,11 +224,15 @@ def fork(owner, repo):
         return response.json()["html_url"]
 
 
+def get_plugin_path():
+    path = input("Where is your Plugin?\n")
+    return path
+
+
 def main():
     global github_token
 
-    print("Where is your Plugin?")
-    path = input()
+    path = get_plugin_path()
 
     plugin_name, version = get_plugin_info(path)
     print(f"Plugin name: {plugin_name}, version: {version}")
