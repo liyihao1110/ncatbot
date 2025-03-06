@@ -176,7 +176,7 @@ void setup_env() {
     success.close();
 #ifdef _WIN32
     string python_path = target_dir + "\\python\\python.exe";
-    string cmd = "" + python_path + " -m pip install ncatbot";
+    string cmd = "" + python_path + " -m pip install ncatbot -i https://mirrors.aliyun.com/pypi/simple";
     cerr << "exec:" << cmd.c_str() << endl;
     system(cmd.c_str());
 #else
