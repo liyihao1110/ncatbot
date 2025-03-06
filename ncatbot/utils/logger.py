@@ -2,18 +2,85 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-12 13:41:02
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-03-02 20:11:31
+# @LastEditTime : 2025-03-04 21:17:16
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @Copyright (c) 2025 by Fish-LP, MIT License 
 # -------------------------
 import logging
 import os
+import sys
 import warnings
 from datetime import datetime
 from logging.handlers import TimedRotatingFileHandler
 
 from tqdm import tqdm as tqdm_original
 
+import ctypes
+from ctypes import wintypes
+
+def is_ansi_supported():
+    """
+    检查系统是否支持 ANSI 转义序列。
+
+    返回:
+        bool: 如果系统支持 ANSI 转义序列返回 True，否则返回 False。
+    """
+    if sys.platform != "win32":
+        # 非 Windows 系统通常支持 ANSI 转义序列
+        return True
+
+    # 检查 Windows 版本
+    is_windows_10_or_higher = False
+    try:
+        # 获取 Windows 版本信息
+        version_info = sys.getwindowsversion()
+        major_version = version_info[0]
+        build_number = version_info[3]
+
+        # Windows 10 (major version 10) 或更高版本
+        if major_version >= 10:
+            is_windows_10_or_higher = True
+    except AttributeError:
+        # 如果无法获取版本信息，假设不支持
+        return False
+
+    # 检查控制台是否支持虚拟终端处理
+    kernel32 = ctypes.windll.kernel32
+    stdout_handle = kernel32.GetStdHandle(-11)
+    if stdout_handle == wintypes.HANDLE(-1).value:
+        return False
+
+    # 获取当前控制台模式
+    console_mode = wintypes.DWORD()
+    if not kernel32.GetConsoleMode(stdout_handle, ctypes.byref(console_mode)):
+        return False
+
+    # 检查是否支持虚拟终端处理
+    return (console_mode.value & 0x0004) != 0 or is_windows_10_or_higher
+
+def set_console_mode(mode=7):
+    """
+    设置控制台输出模式。
+
+    参数:
+        mode (int): 控制台模式标志，默认为7（ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING）。
+
+    返回:
+        bool: 如果操作成功返回True，否则返回False。
+    """
+    try:
+        kernel32 = ctypes.windll.kernel32
+        # 获取标准输出句柄
+        stdout_handle = kernel32.GetStdHandle(-11)
+        if stdout_handle == wintypes.HANDLE(-1).value:
+            return False
+        
+        # 设置控制台模式
+        if not kernel32.SetConsoleMode(stdout_handle, mode):
+            return False
+    except Exception:
+        return False
+    return True
 
 class Color:
     """
@@ -25,6 +92,12 @@ class Color:
     - 样式：设置样式（如加粗、下划线、反转）
     - RESET：重置所有颜和样式
     """
+    _COLOR = is_ansi_supported()# or set_console_mode(7) 等待测试
+    def __getattribute__(self, name):
+        if self._COLOR:
+            return super().__getattribute__(name)
+        else:
+            return ''
 
     # 前景
     BLACK = "\033[30m"
@@ -184,6 +257,8 @@ def setup_logging():
     # 环境变量读取
     console_level = os.getenv("LOG_LEVEL", "INFO").upper()
     file_level = os.getenv("FILE_LOG_LEVEL", "DEBUG").upper()
+    # 为了保证有效日志信息仅支持控制台
+    console_log_format = os.getenv("LOG_FORMAT", None)
     
     # 验证并转换日志级别
     console_log_level = _get_valid_log_level(console_level, "INFO")
@@ -208,7 +283,7 @@ def setup_logging():
     # 日志格式配置
     log_format = os.getenv(
         "LOG_FORMAT",
-        default_log_format['console'][console_level]
+        console_log_format or default_log_format['console'][console_level]
     )
     file_format = os.getenv(
         "LOG_FILE_FORMAT",
@@ -264,3 +339,31 @@ setup_logging()
 def get_log(name='Loger'):
     """获取日志记录器"""
     return logging.getLogger(name)
+
+
+
+# 示例用法
+if __name__ == "__main__":
+    from time import sleep
+
+    from tqdm.contrib.logging import logging_redirect_tqdm
+
+    logger = get_log(__name__)
+    logger.debug("这是一个调试信息")
+    logger.info("这是一个普通信息")
+    logger.warning("这是一个警告信息")
+    logger.error("这是一个错误信息")
+    logger.critical("这是一个严重错误信息")
+    # 常见参数
+    # total：总进度数。
+    # desc：进度条描述。
+    # ncols：进度条宽度。
+    # unit：进度单位。
+    # leave：是否在完成后保留进度条。
+
+    with logging_redirect_tqdm():
+        with tqdm(range(0, 100)) as pbar:
+            for i in pbar:
+                if i % 10 == 0:
+                    logger.info(f"now: {i}")
+                sleep(0.1)
