@@ -4,15 +4,14 @@
 # @LastEditors  : Fish-LP fish.zh@outlook.com
 # @LastEditTime : 2025-03-02 18:50:38
 # @Description  : 上下文管理器，用于暂时切换工作路径。
-# @Copyright (c) 2025 by Fish-LP, MIT License 
+# @Copyright (c) 2025 by Fish-LP, MIT License
 # @message      : 我迟早炸
 # -------------------------
 import os
 import tempfile
+from contextlib import ContextDecorator
 from typing import Optional
 from uuid import UUID, uuid4
-
-from contextlib import ContextDecorator
 
 from .logger import get_log
 
@@ -24,13 +23,14 @@ class ChangeDir(ContextDecorator):
     上下文管理器，用于暂时切换工作路径。
     支持自动恢复原始路径和目录创建/清理。
     """
+
     _DIRS_REGISTRY: dict[UUID, str] = {}  # 保存所有可用目录的 UUID 和路径
 
     def __init__(
         self,
         path: Optional[str | UUID] = None,
         create_missing: bool = False,
-        keep_temp: bool = False
+        keep_temp: bool = False,
     ) -> None:
         """
         初始化工作路径切换器。
