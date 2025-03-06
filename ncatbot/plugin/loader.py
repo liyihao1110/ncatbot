@@ -2,7 +2,7 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-21 18:23:06
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-03-02 17:43:53
+# @LastEditTime : 2025-03-06 19:13:12
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @message: 喵喵喵?
 # @Copyright (c) 2025 by Fish-LP, MIT License
@@ -133,15 +133,17 @@ class PluginLoader:
         for name in load_order:
             plugin_cls = next(p for p in valid_plugins if p.name == name)
             temp_plugins[name] = plugin_cls(
-                self.event_bus, api=self.api, meta_data=self.meta_data.copy(), **kwargs
+                event_bus = self.event_bus,
+                api = self.api,
+                meta_data = self.meta_data.copy(),
+                **kwargs
             )
 
         self.plugins = temp_plugins
         self._validate_dependencies()
 
         for name in load_order:
-            self.plugins[name]._init_()
-            await self.plugins[name].on_load()
+            await self.plugins[name].__onload__()
 
     async def load_plugins(self, plugins_path: str = PLUGINS_DIR, **kwargs):
         """
