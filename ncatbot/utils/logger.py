@@ -2,7 +2,7 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-12 13:41:02
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-03-04 21:17:16
+# @LastEditTime : 2025-03-06 22:22:24
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @Copyright (c) 2025 by Fish-LP, MIT License 
 # -------------------------
@@ -190,30 +190,54 @@ class Color:
 
 # 定义自定义的 tqdm 类，继承自原生的 tqdm 类
 class tqdm(tqdm_original):
-    def __init__(self, *args, **kwargs):
-        """
-        自定义 tqdm 类的初始化方法。
-        通过设置默认参数，确保每次创建 tqdm 进度条时都能应用统一的风格。
+    """
+    自定义 tqdm 类的初始化方法。
+    通过设置默认参数，确保每次创建 tqdm 进度条时都能应用统一的风格。
 
-        参数说明：
-        :param args: 原生 tqdm 支持的非关键字参数（如可迭代对象等）。
-        :param kwargs: 原生 tqdm 支持的关键字参数，用于自定义进度条的行为和外观。
-            - bar_format (str): 进度条的格式化字符串。
-            - ncols (int): 进度条的宽度（以字符为单位）。
-            - colour (str): 进度条的颜色。
-            - desc (str): 进度条的描述信息。
-            - unit (str): 进度条的单位。
-            - leave (bool): 进度条完成后是否保留显示。
-        """
-        kwargs.setdefault(
-            "bar_format", "{desc} {percentage:3.0f}%[{n_fmt}]|{bar:20}|[{elapsed}]"
+    参数说明：
+    :param args: 原生 tqdm 支持的非关键字参数（如可迭代对象等）。
+    :param kwargs: 原生 tqdm 支持的关键字参数，用于自定义进度条的行为和外观。
+        - bar_format (str): 进度条的格式化字符串。
+        - ncols (int): 进度条的宽度（以字符为单位）。
+        - colour (str): 进度条的颜色。
+        - desc (str): 进度条的描述信息。
+        - unit (str): 进度条的单位。
+        - leave (bool): 进度条完成后是否保留显示。
+    """
+    _STYLE_MAP = {
+        "BLACK,": Color.BLACK,
+        "RED": Color.RED,
+        "GREEN": Color.GREEN,
+        "YELLOW": Color.YELLOW,
+        "BLUE": Color.BLUE,
+        "MAGENTA": Color.MAGENTA,
+        "CYAN": Color.CYAN,
+        "WHITE": Color.WHITE,
+    }
+    
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("bar_format", 
+            f"{Color.LIGHT_CYAN}{{desc}}{Color.RESET} "
+            f"{Color.LIGHT_WHITE}{{percentage:3.0f}}%{Color.RESET}"
+            f"{Color.LIGHT_GRAY}[{{n_fmt}}]{Color.RESET}"
+            f"{Color.WHITE}|{{bar:20}}|{Color.RESET}"
+            f"{Color.LIGHT_BLUE}[{{elapsed}}]{Color.RESET}"
         )
-        kwargs.setdefault("ncols", 60)
+        kwargs.setdefault("ncols", 80)
         kwargs.setdefault("colour", "green")
-        kwargs.setdefault("desc", "Loading")
-        kwargs.setdefault("unit", "items")
-        kwargs.setdefault("leave", False)
         super().__init__(*args, **kwargs)
+        
+    @property
+    def colour(self):
+        return self._colour
+        
+    @colour.setter 
+    def colour(self, color):
+        # 确保颜色值有效
+        valid_color = self._STYLE_MAP.get(color, "GREEN")  # 如果无效，回退到 GREEN
+        self._colour = valid_color
+        self.desc = f"{getattr(Color, valid_color)}{self.desc}{Color.RESET}"
 
 
 # 日志级别颜色映射
@@ -228,19 +252,28 @@ LOG_LEVEL_TO_COLOR = {
 
 # 定义彩色格式化器
 class ColoredFormatter(logging.Formatter):
-    def __init__(self, fmt=None, datefmt='%H:%M:%S', style="%", use_color=False):
-        super().__init__(fmt, datefmt, style)
-        self.use_color = use_color
-
+    use_color = True
     def format(self, record):
-        # 创建带有颜色的 levelname
-        if self.use_color:
-            color_code = LOG_LEVEL_TO_COLOR.get(record.levelname, Color.RESET)
-            record.colored_levelname = f"{color_code}{record.levelname.ljust(8)}{Color.RESET}"
-        else:
-            record.colored_levelname = record.levelname
-        record.long_time = self.formatTime(record)
-        return super().format(record)
+        try:
+            # 动态颜色处理
+            if self.use_color:
+                record.colored_levelname = (
+                    f"{LOG_LEVEL_TO_COLOR.get(record.levelname, Color.RESET)}"
+                    f"{record.levelname:8}"
+                    f"{Color.RESET}"
+                )
+                # 添加统一颜色字段
+                record.colored_name = f"{Color.MAGENTA}{record.name}{Color.RESET}"
+                record.colored_time = f"{Color.CYAN}{self.formatTime(record)}{Color.RESET}"
+            else:
+                record.colored_levelname = record.levelname
+                record.colored_name = record.name
+                record.colored_time = self.formatTime(record)
+
+            return super().format(record)
+        except Exception as e:
+            warnings.warn(f"日志格式化错误: {str(e)}")
+            return f"[FORMAT ERROR] {record.getMessage()}"
 
 
 def _get_valid_log_level(level_name: str, default: str):
@@ -264,22 +297,51 @@ def setup_logging():
     console_log_level = _get_valid_log_level(console_level, "INFO")
     file_log_level = _get_valid_log_level(file_level, "DEBUG")
 
+    # 日志格式配置
     default_log_format = {
         "console": {
-            "DEBUG": "%(colored_levelname)-8s - [%(threadName)s|%(processName)s] - %(name)s - %(filename)s:%(funcName)s:%(lineno)d | %(message)s",
-            "INFO": "[%(colored_levelname)s]%(asctime)s| %(name)s: %(message)s",
-            "WARNING": "%(long_time)s - %(colored_levelname)s - %(name)s: %(message)s",
-            "ERROR": "%(long_time)s - %(colored_levelname)s [%(filename)s]%(name)s:%(lineno)d |%(message)s",
-            "CRITICAL": "%(long_time)s - {%(module)s}[%(filename)s]%(name)s:%(lineno)d |%(message)s",
+            "DEBUG": f"{Color.CYAN}[%(asctime)s.%(msecs)03d]{Color.RESET} "
+                    f"{Color.LIGHT_BLUE}%(colored_levelname)-8s{Color.RESET} "
+                    f"{Color.LIGHT_GRAY}[%(threadName)s|%(processName)s]{Color.RESET} "
+                    f"{Color.MAGENTA}%(name)s{Color.RESET} "
+                    f"{Color.YELLOW}%(filename)s:%(funcName)s:%(lineno)d{Color.RESET} "
+                    "| %(message)s",
+            
+            "INFO": f"{Color.CYAN}[%(asctime)s.%(msecs)03d]{Color.RESET} "
+                    f"{Color.GREEN}%(colored_levelname)-8s{Color.RESET} "
+                    f"{Color.MAGENTA}%(name)s{Color.RESET} ➜ "
+                    f"{Color.LIGHT_WHITE}%(message)s{Color.RESET}",
+            
+            "WARNING": f"{Color.CYAN}[%(asctime)s.%(msecs)03d]{Color.RESET} "
+                    f"{Color.YELLOW}%(colored_levelname)-8s{Color.RESET} "
+                    f"{Color.MAGENTA}%(name)s{Color.RESET} "
+                    f"{Color.LIGHT_RED}➜{Color.RESET} "
+                    f"{Color.YELLOW}%(message)s{Color.RESET}",
+            
+            "ERROR": f"{Color.CYAN}[%(asctime)s.%(mctime)s.%(msecs)03d]{Color.RESET} "
+                    f"{Color.RED}%(colored_levelname)-8s{Color.RESET} "
+                    f"{Color.LIGHT_GRAY}[%(filename)s]{Color.RESET}"
+                    f"{Color.MAGENTA}%(name)s:%(lineno)d{Color.RESET} "
+                    f"{Color.LIGHT_RED}➜{Color.RESET} "
+                    f"{Color.RED}%(message)s{Color.RESET}",
+            
+            "CRITICAL": f"{Color.CYAN}[%(asctime)s.%(msecs)03d]{Color.RESET} "
+                        f"{Color.BG_RED}{Color.WHITE}%(colored_levelname)-8s{Color.RESET} "
+                        f"{Color.LIGHT_GRAY}{{%(module)s}}{Color.RESET}"
+                        f"{Color.MAGENTA}[%(filename)s]{Color.RESET}"
+                        f"{Color.LIGHT_MAGENTA}%(name)s:%(lineno)d{Color.RESET} "
+                        f"{Color.BG_RED}➜{Color.RESET} "
+                        f"{Color.BOLD}%(message)s{Color.RESET}"
         },
         "file": {
-            "DEBUG": "%(levelname)-8s - [%(threadName)s|%(processName)s] - %(name)s - %(filename)s:%(funcName)s:%(lineno)d | %(message)s",
-            "INFO": "[%(levelname)s]%(asctime)s| %(name)s: %(message)s",
-            "WARNING": "%(long_time)s - %(levelname)s - %(name)s: %(message)s",
-            "ERROR": "%(long_time)s - %(levelname)s [%(filename)s]%(name)s:%(lineno)d |%(message)s",
-            "CRITICAL": "%(long_time)s - {%(module)s}[%(filename)s]%(name)s:%(funcName)s:%(lineno)d |%(message)s",
+            "DEBUG": "[%(asctime)s.%(msecs)03d] %(levelname)-8s [%(threadName)s|%(processName)s] %(name)s (%(filename)s:%(funcName)s:%(lineno)d) | %(message)s",
+            "INFO": "[%(asctime)s.%(msecs)03d] %(levelname)-8s %(name)s ➜ %(message)s",
+            "WARNING": "[%(asctime)s.%(msecs)03d] %(levelname)-8s %(name)s ➜ %(message)s",
+            "ERROR": "[%(asctime)s.%(msecs)03d] %(levelname)-8s [%(filename)s]%(name)s:%(lineno)d ➜ %(message)s",
+            "CRITICAL": "[%(asctime)s.%(msecs)03d] %(levelname)-8s {%(module)s}[%(filename)s]%(name)s:%(lineno)d ➜ %(message)s",
         }
     }
+
     # 日志格式配置
     log_format = os.getenv(
         "LOG_FORMAT",
@@ -313,7 +375,7 @@ def setup_logging():
     # 控制台处理器
     console_handler = logging.StreamHandler()
     console_handler.setLevel(console_log_level)
-    console_handler.setFormatter(ColoredFormatter(log_format, use_color=True))
+    console_handler.setFormatter(ColoredFormatter(log_format))
 
     # 文件处理器
     file_handler = TimedRotatingFileHandler(
