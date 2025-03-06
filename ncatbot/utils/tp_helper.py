@@ -18,6 +18,7 @@ _log = get_log()
 def get_proxy_url():
     """获取 github 代理 URL"""
     github_proxy_urls = [
+        "https://ghfast.top/",
         "https://github.7boe.top/",
         "https://cdn.moran233.xyz/",
         "https://gh-proxy.ygxz.in/",
@@ -28,7 +29,6 @@ def get_proxy_url():
         "https://fastgit.cc/",
         "https://git.886.be/",
         "https://gh-proxy.com/",
-        "https://ghfast.top/",
     ]
     _log.debug("正在尝试连接 GitHub 代理...")
     for url in github_proxy_urls:

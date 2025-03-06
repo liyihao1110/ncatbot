@@ -11,7 +11,7 @@ import asyncio
 from pathlib import Path
 from typing import Any, Awaitable, Callable, List
 
-from ncatbot.core import BotAPI
+from ncatbot.core.api import BotAPI
 from ncatbot.plugin.event import Event, EventBus
 from ncatbot.utils.change_dir import ChangeDir
 from ncatbot.utils.io import (
@@ -82,7 +82,10 @@ class BasePlugin:
         self._close_()
         await self.on_unload()
         try:
-            self.data.save()
+            if isinstance(self.data, dict) and len(self.data) == 0:
+                pass
+            else:
+                self.data.save()
         except (FileTypeUnknownError, SaveError, FileNotFoundError) as e:
             raise RuntimeError(self.name, f"保存持久化数据时出错: {e}")
         self.unregister_handlers()

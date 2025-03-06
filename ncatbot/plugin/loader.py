@@ -126,7 +126,7 @@ class PluginLoader:
             # 临时插入目录到 sys.path，用于加载模块
             directory_path = os.path.abspath(plugin_path)
             sys.path.append(os.path.dirname(directory_path))
-            filename = plugin_path.split("/")[-1]
+            filename = plugin_path.split(os.path.sep)[-1]
             try:
                 # 动态导入模块
                 module = importlib.import_module(filename)
@@ -274,7 +274,7 @@ class PluginLoader:
 
 def get_plugin_info(path: str):
     if os.path.exists(path):
-        return PluginLoader().get_plugin_info(path)
+        return PluginLoader(None, None).get_plugin_info(path)
     else:
         raise FileNotFoundError(f"dir not found: {path}")
 
@@ -288,6 +288,6 @@ def get_pulgin_info_by_name(name: str):
     """
     plugin_path = os.path.join(PLUGINS_DIR, name)
     if os.path.exists(plugin_path):
-        return True, PluginLoader().get_plugin_info(plugin_path)[1]
+        return True, get_plugin_info(plugin_path)[1]
     else:
         return False, "0.0.0"

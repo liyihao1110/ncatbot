@@ -257,17 +257,21 @@ def main():
     repo.git.checkout("-b", branch_name)
 
     # 写版本
-    target_base_folder = os.path.join("plugins", plugin_name)
+    target_base_folder = os.path.join(repo.working_dir, "plugins", plugin_name)
     version_list = os.path.join(target_base_folder, "version.txt")
-    with open(version_list, "a") as f:
-        f.write(version + "\n")
+    os.makedirs(target_base_folder, exist_ok=True)
+    if not os.path.exists(version_list):
+        with open(version_list, "w") as f:
+            f.write(version + "\n")
+    else:
+        with open(version_list, "a") as f:
+            f.write(version + "\n")
 
-    # 打包插件并移动到对应文件夹(整个文件夹打包, 直接解压到 plugins/ 即可)
-    target_folder = os.path.join("plugins", plugin_name, version)
-    archived_file = shutil.make_archive(
-        f"{plugin_name}-{version}", "zip", target_folder
-    )
+    # 打包插件并移动到对应文件夹(打包文件而非文件夹, 要解压到 plugins/plugin_name/)
+    archived_file = shutil.make_archive(f"{plugin_name}-{version}", "zip", path)
+    # 移动到 git 文件夹
     shutil.move(archived_file, target_base_folder)
+    # shutil.move(archived_file, target_base_folder)
 
     # 添加并提交更改
     repo.git.add(all=True)

@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include <vector>
 #include <string>
+#include <fstream>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -169,34 +170,51 @@ bool extract() {
 }
 
 void setup_env() {
+    string success_path = target_dir + "/success.txt";
+    ofstream success(success_path);
+    success << "success" << endl;
+    success.close();
 #ifdef _WIN32
-    string python_path = target_dir + "\\python";
-    python_path += "\\python.exe";
+    string python_path = target_dir + "\\python\\python.exe";
     string cmd = "" + python_path + " -m pip install ncatbot";
+    cerr << "exec:" << cmd.c_str() << endl;
+    system(cmd.c_str());
 #else
     string python_path = target_dir + "/python";
     python_path += "/bin/python3";
     string cmd = python_path + " -m pip install ncatbot";
 #endif
-    cerr << "exec:" << cmd.c_str() << endl;
-    system(cmd.c_str());
-    cmd = python_path + " -m ncatbot.cli.main";
+}
+
+void start_cli(){
+    string python_path = target_dir + "\\python\\python.exe";
+    string cmd = python_path + " -m ncatbot.cli.main";
     cerr << "exec:" << cmd << endl;
     system(cmd.c_str());
 }
 
+bool detect_installed(){
+    string success_path = target_dir + "/success.txt";
+    return file_exists(success_path);
+}
+
 int init(){
-    if (!download()) {
-        cerr << "All download attempts failed!" << endl;
-        return 1;
-    }
+    if(!detect_installed()){
+        if (!download()) {
+            cerr << "All download attempts failed!" << endl;
+            return 1;
+        }
 
-    if (!extract()) {
-        cerr << "Extraction failed!" << endl;
-        return 1;
+        if (!extract()) {
+            cerr << "Extraction failed!" << endl;
+            return 1;
+        }
+        setup_env();
     }
-
-    setup_env();
+    else{
+        cerr << "检测到已安装, 跳过下载和安装" << endl;
+    }
+    start_cli();
     return 0;
 }
 
