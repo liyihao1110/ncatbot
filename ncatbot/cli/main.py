@@ -21,7 +21,7 @@ from ncatbot.utils.tp_helper import get_proxy_url
 _log = get_log()
 
 GITHUB_PROXY = get_proxy_url()
-PYPI_SOURCE = "http://mirrors.aliyun.com/pypi/simple/"
+PYPI_SOURCE = "https://mirrors.aliyun.com/pypi/simple/"
 NCATBOT_PATH = "ncatbot"
 NUMBER_SAVE = "number.txt"
 PLUGIN_DOWNLOAD_REPO = (
