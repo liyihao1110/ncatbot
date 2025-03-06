@@ -2,7 +2,7 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-21 18:23:06
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-02-21 19:44:37
+# @LastEditTime : 2025-03-06 19:08:27
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @message: 喵喵喵?
 # @Copyright (c) 2025 by Fish-LP, MIT License
@@ -43,11 +43,6 @@ class PluginVersionError(PluginSystemError):
 class PluginUnloadError(PluginSystemError):
     def __init__(self, plugin_name, reason):
         super().__init__(f"无法卸载插件 '{plugin_name}': {reason}")
-
-
-class PluginSecurityError(PluginSystemError):
-    def __init__(self, plugin_name, reason):
-        super().__init__(f"插件 '{plugin_name}' 存在安全问题: {reason}")
 
 
 class InvalidPluginStateError(PluginSystemError):
