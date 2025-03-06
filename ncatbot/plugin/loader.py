@@ -2,7 +2,7 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-21 18:23:06
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-03-06 19:13:12
+# @LastEditTime : 2025-03-06 21:51:15
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @message: 喵喵喵?
 # @Copyright (c) 2025 by Fish-LP, MIT License
@@ -17,7 +17,6 @@ from typing import Dict, List, Set, Type
 from packaging.specifiers import SpecifierSet
 from packaging.version import parse as parse_version
 
-from ncatbot.core import BotAPI
 from ncatbot.plugin.base_plugin import BasePlugin
 from ncatbot.plugin.compatible import CompatibleEnrollment
 from ncatbot.plugin.event import EventBus
@@ -39,11 +38,10 @@ class PluginLoader:
     插件加载器,用于加载、卸载和管理插件
     """
 
-    def __init__(self, event_bus: EventBus, api: BotAPI):
+    def __init__(self, event_bus: EventBus):
         """
         初始化插件加载器
         """
-        self.api = api  # 机器人API
         self.plugins: Dict[str, BasePlugin] = {}  # 存储已加载的插件
         self.event_bus = event_bus  # 事件总线
         self._dependency_graph: Dict[str, Set[str]] = {}  # 插件依赖关系图
@@ -132,10 +130,9 @@ class PluginLoader:
         temp_plugins = {}
         for name in load_order:
             plugin_cls = next(p for p in valid_plugins if p.name == name)
+            _log.info(f"加载插件: {plugin_cls.name}[{plugin_cls.version}]")
             temp_plugins[name] = plugin_cls(
                 event_bus = self.event_bus,
-                api = self.api,
-                meta_data = self.meta_data.copy(),
                 **kwargs
             )
 
@@ -151,17 +148,20 @@ class PluginLoader:
         :param plugins_path: 插件目录路径
         """
         if os.path.exists(plugins_path):
-            _log.info(f"插件加载目录: {plugins_path}")
+            _log.info(f"从 {os.path.abspath(plugins_path)} 导入插件")
             modules = self._load_modules_from_directory(plugins_path)
             plugins = []
             for plugin in modules.values():
                 for plugin_class_name in getattr(plugin, "__all__", []):
                     plugins.append(getattr(plugin, plugin_class_name))
+            _log.info(f"准备加载插件 [{len(plugins)}]......")
             await self.from_class_load_plugins(plugins, **kwargs)
+            _log.info(f"已加载插件数 [{len(self.plugins)}]")
+            _log.info(f"准备加载兼容内容......")
             self.load_compatible_data()
+            _log.info(f"兼容内容加载成功")
         else:
-            _log.warning(f"插件加载目录: {os.path.abspath(plugins_path)} 不存在")
-            _log.warning("请检查工作目录下是否有 `plugins` 文件夹")
+            _log.info(f"插件目录: {os.path.abspath(plugins_path)} 不存在......跳过加载插件")
 
     def load_compatible_data(self):
         """

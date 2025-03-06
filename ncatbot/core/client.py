@@ -41,7 +41,7 @@ class BotClient:
         self._notice_event_handlers = []
         self._request_event_handlers = []
         self.plugins_path = plugins_path
-        self.plugin_sys = PluginLoader(EventBus(), self.api)
+        self.plugin_sys = PluginLoader(EventBus())
 
     async def handle_group_event(self, msg: dict):
         msg = GroupMessage(msg)
@@ -120,7 +120,9 @@ class BotClient:
 
         info_subscribe_message_types()
         websocket_server = Websocket(self)
-        await self.plugin_sys.load_plugins()
+        await self.plugin_sys.load_plugins(
+            api = self.api
+            )
         await websocket_server.on_connect()
 
     def napcat_server_ok(self):
