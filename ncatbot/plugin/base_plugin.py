@@ -2,7 +2,7 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-15 20:08:02
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-03-06 19:27:57
+# @LastEditTime : 2025-03-06 20:14:36
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @Copyright (c) 2025 by Fish-LP, MIT License 
 # -------------------------
@@ -71,17 +71,7 @@ class BasePlugin:
         self.lock = asyncio.Lock()  # 创建一个异步锁对象
         self.work_path = Path(PERSISTENT_DIR) / self.name
         self._event_handlers = []
-
-        try: 
-            self.data = UniversalLoader(self.work_path / f"{self.name}.json") # 好想改成yaml啊
-        except FileNotFoundError:
-            _log.debug(f"持久化数据文件不存在: {self.name}.json, 数据将被重置")
-            self.data = {}
-        except LoadError:
-            raise RuntimeError(self.name, f"读取持久化数据时出错: {e}")
-        except Exception as e:
-            _log.error(f"加载持久化数据时出错: {e}")
-            raise RuntimeError(self.name, "加载持久化数据时出错")
+        self.data = UniversalLoader(self.work_path / f"{self.name}.json") # 好想改成yaml啊
 
         if not self.work_path.exists():
             try:
@@ -104,7 +94,7 @@ class BasePlugin:
             RuntimeError: 保存持久化数据失败时抛出
         '''
         try:
-            asyncio.create_task(self._close_())
+            await asyncio.to_thread(self._close_)
             await self.on_unload()
             try:
                 self.data.save()
@@ -124,7 +114,7 @@ class BasePlugin:
             RuntimeError: 读取持久化数据失败时抛出
         '''
         try:
-            asyncio.create_task(self._init_())
+            await asyncio.create_task(self._init_)
             await self.on_load()
             try:
                 self.data.load()
