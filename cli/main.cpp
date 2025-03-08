@@ -336,7 +336,7 @@ void setup_env() {
     success.close();
 #ifdef _WIN32
     string python_path = target_dir + "\\python\\python.exe";
-    cerr << "正在安装 Python 依赖..."
+    cerr << "正在安装 Python 依赖...\n";
     string cmd = "" + python_path + " -m pip install ncatbot -i https://mirrors.aliyun.com/pypi/simple";
     // cerr << "exec:" << cmd.c_str() << endl;
     system(cmd.c_str());
@@ -350,7 +350,8 @@ void setup_env() {
 void start_cli(){
     string python_path = target_dir + "\\python\\python.exe";
     string cmd = python_path + " -m ncatbot.cli.main";
-    cerr << "exec:" << cmd << endl;
+    // cerr << "exec:" << cmd << endl;
+    cerr << "正在启动 NcatBot CLI...\n";
     system(cmd.c_str());
 }
 
