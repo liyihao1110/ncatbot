@@ -45,6 +45,7 @@ def get_qq():
 
 
 def set_qq():
+    # 提示输入, 确认输入, 保存到文件
     qq = input("请输入 QQ 号: ")
     if not qq.isdigit():
         print("QQ 号必须为数字!")
@@ -60,7 +61,7 @@ def set_qq():
     return qq
 
 
-def install(plugin, *arg):
+def install(plugin, *args):
     def get_versions():
         def remove_empty_values(values):
             return [v for v in values if v != ""]
@@ -108,7 +109,7 @@ def install(plugin, *arg):
             )
             process.wait()
 
-    fix = arg[0] == "--fix"
+    fix = args == "--fix" if len(args) else False
 
     os.makedirs("plugins", exist_ok=True)
     print(f"正在尝试安装插件: {plugin}")
