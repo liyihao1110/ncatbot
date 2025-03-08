@@ -186,3 +186,5 @@ logs/
 napcat/
 plugin.py
 data/
+package.zip
+resource.o
