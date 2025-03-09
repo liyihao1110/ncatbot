@@ -31,7 +31,7 @@ class BasePlugin:
 
     name: str
     version: str
-    dependencies: dict = {}
+    dependencies: dict = {}  # 依赖的插件以及版本(不是 PYPI 依赖)
     meta_data: dict
     api: BotAPI
 

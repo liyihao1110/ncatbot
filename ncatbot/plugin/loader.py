@@ -11,6 +11,7 @@ import importlib
 import os
 import sys
 from collections import defaultdict, deque
+from pathlib import Path
 from types import MethodType, ModuleType
 from typing import Dict, List, Set, Type
 
@@ -28,6 +29,7 @@ from ncatbot.utils.logger import get_log
 from .custom_err import (
     PluginCircularDependencyError,
     PluginDependencyError,
+    PluginNotFoundError,
     PluginVersionError,
 )
 
@@ -101,6 +103,9 @@ class PluginLoader:
         for dependent, dependencies in self._dependency_graph.items():
             for dep in dependencies:
                 adj_list[dep].append(dependent)
+                if dep not in self._dependency_graph.items():
+                    _log.error(f"插件 {dependent} 的依赖项 {dep} 不存在")
+                    raise PluginNotFoundError(dep)
                 in_degree[dependent] += 1
 
         queue = deque([k for k, v in in_degree.items() if v == 0])
@@ -126,7 +131,7 @@ class PluginLoader:
             # 临时插入目录到 sys.path，用于加载模块
             directory_path = os.path.abspath(plugin_path)
             sys.path.append(os.path.dirname(directory_path))
-            filename = plugin_path.split(os.path.sep)[-1]
+            filename = Path(plugin_path).stem
             try:
                 # 动态导入模块
                 module = importlib.import_module(filename)
@@ -138,8 +143,13 @@ class PluginLoader:
                         raise TypeError("Plugin Class is invalid")
                     name, version = plugin_class.name, plugin_class.version
                     break
+                if plugin_class_name != name or plugin_class_name != filename:
+                    raise ValueError(
+                        f"插件文件夹名 {filename}, 插件类名 {plugin_class_name}, 插件名 {name} 不匹配."
+                    )
             except BaseException as e:
                 _log.error(f"查找模块 {filename} 时出错: {e}")
+                return None, None
 
         finally:
             sys.path = original_sys_path
