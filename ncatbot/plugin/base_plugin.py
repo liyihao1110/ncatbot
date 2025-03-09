@@ -2,7 +2,7 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-15 20:08:02
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-03-06 20:46:54
+# @LastEditTime : 2025-03-09 18:12:57
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @Copyright (c) 2025 by Fish-LP, MIT License 
 # -------------------------
@@ -32,12 +32,18 @@ class BasePlugin:
     
     所有插件的基类，提供了插件系统的基本功能支持。
     
-    属性:
+    Attributes:
         name (str): 插件名称
         version (str): 插件版本号
         dependencies (dict): 插件依赖项
         meta_data (dict): 插件元数据
         api (BotAPI): API接口处理器
+        event_bus (EventBus): 事件总线实例
+        lock (asyncio.Lock): 异步锁对象
+        work_path (Path): 插件工作目录路径
+        data (UniversalLoader): 插件数据管理器
+        work_space (ChangeDir): 插件工作目录上下文管理器
+        first_load (bool): 是否首次加载标志
     '''
 
     name: str
@@ -51,11 +57,12 @@ class BasePlugin:
         '''初始化插件实例
         
         Args:
-            event_bus (EventBus): 事件总线实例
-            **kwd: 额外的关键字参数(将成为类的属性)
+            event_bus: 事件总线实例
+            **kwd: 额外的关键字参数，将被设置为插件属性
         
         Raises:
             ValueError: 当缺少插件名称或版本号时抛出
+            PluginLoadError: 当工作目录无效时抛出
         '''
         if not self.name:
             raise ValueError("缺失插件名称")
@@ -87,42 +94,37 @@ class BasePlugin:
 
     @final
     async def __unload__(self):
-        '''卸载插件时的清理操作
+        """卸载插件时的清理操作
         
         执行插件卸载前的清理工作，保存数据并注销事件处理器
         
         Raises:
             RuntimeError: 保存持久化数据失败时抛出
-        '''
+        """
+        await asyncio.to_thread(self._close_)
+        await self.on_unload()
         try:
-            await asyncio.to_thread(self._close_)
-            await self.on_unload()
-            try:
-                self.data.save()
-            except (FileTypeUnknownError, SaveError, FileNotFoundError) as e:
-                raise RuntimeError(f"保存持久化数据时出错: {e}")
-            self.unregister_handlers()
-        except Exception as e:
-            PluginUnloadError(self.name,e)
+            self.data.save()
+        except (FileTypeUnknownError, SaveError, FileNotFoundError) as e:
+            raise RuntimeError(self.name, f"保存持久化数据时出错: {e}")
+        self.unregister_handlers()
 
     @final
     async def __onload__(self):
-        '''加载插件时的初始化操作
+        """加载插件时的初始化操作
         
         执行插件加载时的初始化工作，加载数据
         
         Raises:
             RuntimeError: 读取持久化数据失败时抛出
-        '''
+        """
         try:
-            await asyncio.create_task(self._init_)
-            await self.on_load()
-            try:
-                self.data.load()
-            except (FileTypeUnknownError, LoadError, FileNotFoundError) as e:
-                raise RuntimeError(f"读取持久化数据时出错: {e}")
-        except Exception as e:
-            PluginLoadError(self.name,e)
+            self.data.load()
+        except (FileTypeUnknownError, LoadError, FileNotFoundError) as e:
+            open(self.work_path / f'{self.name}.json','w').write('{}')
+            self.data.load()
+        await asyncio.to_thread(self._init_)
+        await self.on_load()
 
     @final
     def publish_sync(self, event: Event) -> List[Any]:
