@@ -109,7 +109,7 @@ def install(plugin, *args):
             )
             process.wait()
 
-    fix = args == "--fix" if len(args) else False
+    fix = args[0] == "--fix" if len(args) else False
 
     os.makedirs("plugins", exist_ok=True)
     print(f"正在尝试安装插件: {plugin}")
