@@ -2,7 +2,7 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-15 20:08:02
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-03-09 18:12:57
+# @LastEditTime : 2025-03-09 18:35:25
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @Copyright (c) 2025 by Fish-LP, MIT License 
 # -------------------------
@@ -101,13 +101,13 @@ class BasePlugin:
         Raises:
             RuntimeError: 保存持久化数据失败时抛出
         """
-        await asyncio.to_thread(self._close_)
-        await self.on_unload()
         try:
             self.data.save()
         except (FileTypeUnknownError, SaveError, FileNotFoundError) as e:
             raise RuntimeError(self.name, f"保存持久化数据时出错: {e}")
         self.unregister_handlers()
+        await asyncio.to_thread(self._close_)
+        await self.on_unload()
 
     @final
     async def __onload__(self):
@@ -118,13 +118,13 @@ class BasePlugin:
         Raises:
             RuntimeError: 读取持久化数据失败时抛出
         """
+        await asyncio.to_thread(self._init_)
+        await self.on_load()
         try:
             self.data.load()
         except (FileTypeUnknownError, LoadError, FileNotFoundError) as e:
             open(self.work_path / f'{self.name}.json','w').write('{}')
             self.data.load()
-        await asyncio.to_thread(self._init_)
-        await self.on_load()
 
     @final
     def publish_sync(self, event: Event) -> List[Any]:
