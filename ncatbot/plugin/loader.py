@@ -2,11 +2,12 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-21 18:23:06
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-03-06 21:51:15
+# @LastEditTime : 2025-03-09 18:29:06
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @message: 喵喵喵?
 # @Copyright (c) 2025 by Fish-LP, MIT License
 # -------------------------
+import asyncio
 import importlib
 import os
 import sys
@@ -21,6 +22,7 @@ from ncatbot.plugin.base_plugin import BasePlugin
 from ncatbot.plugin.compatible import CompatibleEnrollment
 from ncatbot.plugin.event import EventBus
 from ncatbot.utils.io import UniversalLoader
+from ncatbot.utils.PipTool import PipTool
 from ncatbot.utils.literals import META_CONFIG_PATH, PLUGINS_DIR
 from ncatbot.utils.logger import get_log
 
@@ -31,7 +33,7 @@ from .custom_err import (
 )
 
 _log = get_log("PluginLoader")
-
+PM = PipTool()
 
 class PluginLoader:
     """
@@ -50,10 +52,6 @@ class PluginLoader:
             self.meta_data = UniversalLoader(META_CONFIG_PATH)
         else:
             self.meta_data = {}
-        # 以下是退出事件自动处理(存在问题)
-        # signal.signal(signal.SIGTERM, self._unload_all)
-        # signal.signal(signal.SIGINT, self._unload_all)
-        # atexit.register(self._unload_all)
 
     def _validate_plugin(self, plugin_cls: Type[BasePlugin]) -> bool:
         """
@@ -133,6 +131,7 @@ class PluginLoader:
             _log.info(f"加载插件: {plugin_cls.name}[{plugin_cls.version}]")
             temp_plugins[name] = plugin_cls(
                 event_bus = self.event_bus,
+                meta_data = self.meta_data.copy(),
                 **kwargs
             )
 
@@ -147,6 +146,7 @@ class PluginLoader:
         从指定目录加载插件
         :param plugins_path: 插件目录路径
         """
+        if not plugins_path: plugins_path = PLUGINS_DIR
         if os.path.exists(plugins_path):
             _log.info(f"从 {os.path.abspath(plugins_path)} 导入插件")
             modules = self._load_modules_from_directory(plugins_path)
@@ -205,6 +205,7 @@ class PluginLoader:
         await self.unload_plugin(plugin_name)
 
         module = importlib.import_module(old_plugin.__class__.__module__)
+        # 如果模块有依赖项，这些依赖项不会自动重新加载
         importlib.reload(module)
 
         new_cls = getattr(module, old_plugin.__class__.__name__)
@@ -222,6 +223,7 @@ class PluginLoader:
         """
         modules = {}
         original_sys_path = sys.path.copy()
+        all_install = {pack['name'] for pack in PM.list_installed() if 'name' in pack}
 
         try:
             directory_path = os.path.abspath(directory_path)
@@ -230,6 +232,12 @@ class PluginLoader:
             for filename in os.listdir(directory_path):
                 if not os.path.isdir(os.path.join(directory_path, filename)):
                     continue
+                if os.path.isfile(os.path.join(directory_path, filename, "requirements.txt")):
+                    requirements = set(open(os.path.join(directory_path, filename, "requirements.txt")).readlines())
+                    if all_install <= requirements:
+                        download = requirements - requirements
+                        for pack in download:
+                            PM.install(pack)
 
                 try:
                     module = importlib.import_module(filename)
@@ -246,3 +254,12 @@ class PluginLoader:
     async def _unload_all(self, *args, **kwargs):
         for plugin in tuple(self.plugins.keys()):
             await self.unload_plugin(plugin)
+
+    def unload_all(self, *arg, **kwd):
+        loop = asyncio.new_event_loop()
+        try:
+            asyncio.set_event_loop(loop)
+            tasks = [self.unload_plugin(plugin) for plugin in self.plugins.keys()]
+            loop.run_until_complete(asyncio.gather(*tasks))
+        finally:
+            loop.close()
