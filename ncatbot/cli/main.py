@@ -152,8 +152,9 @@ def start():
 
 
 def update():
-    print("正在更新 Ncatbot 版本...")
-    process = subprocess.Popen(
+    print("正在更新 Ncatbot 版本, 更新后请重新运行 NcatBotCLI 或者 main.exe")
+    time.sleep(1)
+    subprocess.Popen(
         [
             sys.executable,
             "-m",
@@ -165,8 +166,9 @@ def update():
             PYPI_SOURCE,
         ],
         shell=True,
+        start_new_session=True,
     )
-    process.wait()
+    exit(0)
     print("Ncatbot 版本更新成功!")
 
 
@@ -241,6 +243,7 @@ def main():
                 list_plugin()
             elif command == "exit":
                 print("\n 正在退出 Ncatbot CLI. 再见!")
+                break
             else:
                 print(f"不支持的命令: {command}")
         except KeyboardInterrupt:
