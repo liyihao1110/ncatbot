@@ -124,8 +124,10 @@ def check_version():
     result = compare_versions(package_name)
     if result["installed"]:
         if result["update_available"]:
-            _log.warning(
-                "NcatBot 有可用更新！推荐您使用以下命令更新：pip install --upgrade ncatbot"
+            _log.warning("NcatBot 有可用更新！")
+            _log.info("若使用 main.exe 或者 NcatBot CLI 启动, CLI 输入 update 即可更新")
+            _log.info(
+                "若手动安装, 推荐您使用以下命令更新: pip install --upgrade ncatbot"
             )
         return True
     else:

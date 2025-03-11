@@ -10,7 +10,6 @@ from ncatbot.conn import LoginHandler, Websocket, check_websocket
 from ncatbot.core.api import BotAPI
 from ncatbot.core.launcher import start_napcat
 from ncatbot.core.message import GroupMessage, PrivateMessage
-from ncatbot.plugin import Event, EventBus, PluginLoader
 from ncatbot.utils.config import config
 from ncatbot.utils.env_checker import check_linux_permissions, check_version
 from ncatbot.utils.literals import (
@@ -41,6 +40,8 @@ class BotClient:
         self._notice_event_handlers = []
         self._request_event_handlers = []
         self.plugins_path = plugins_path
+        from ncatbot.plugin import EventBus, PluginLoader
+
         self.plugin_sys = PluginLoader(EventBus())
 
     async def handle_group_event(self, msg: dict):
@@ -49,6 +50,8 @@ class BotClient:
         for handler, types in self._group_event_handlers:
             if types is None or any(i["type"] in types for i in msg.message):
                 await handler(msg)
+        from ncatbot.plugin import Event
+
         await self.plugin_sys.event_bus.publish_async(
             Event(OFFICIAL_GROUP_MESSAGE_EVENT, msg)
         )
@@ -59,6 +62,8 @@ class BotClient:
         for handler, types in self._private_event_handlers:
             if types is None or any(i["type"] in types for i in msg.message):
                 await handler(msg)
+        from ncatbot.plugin import Event
+
         await self.plugin_sys.event_bus.publish_async(
             Event(OFFICIAL_PRIVATE_MESSAGE_EVENT, msg)
         )
@@ -67,12 +72,16 @@ class BotClient:
         _log.debug(msg)
         for handler in self._notice_event_handlers:
             await handler(msg)
+        from ncatbot.plugin import Event
+
         await self.plugin_sys.event_bus.publish_async(Event(OFFICIAL_NOTICE_EVENT, msg))
 
     async def handle_request_event(self, msg: dict):
         _log.debug(msg)
         for handler in self._request_event_handlers:
             await handler(msg)
+        from ncatbot.plugin import Event
+
         await self.plugin_sys.event_bus.publish_async(
             Event(OFFICIAL_REQUEST_EVENT, msg)
         )
@@ -120,9 +129,7 @@ class BotClient:
 
         info_subscribe_message_types()
         websocket_server = Websocket(self)
-        await self.plugin_sys.load_plugins(
-            api = self.api
-            )
+        await self.plugin_sys.load_plugins(api=self.api)
         await websocket_server.on_connect()
 
     def napcat_server_ok(self):
@@ -135,6 +142,7 @@ class BotClient:
             _log.info("插件卸载中...")
             asyncio.run(self.plugin_sys._unload_all())
             _log.info("正常退出")
+            time.sleep(1)
             exit(0)
 
     def run(self, reload=False, debug=False):

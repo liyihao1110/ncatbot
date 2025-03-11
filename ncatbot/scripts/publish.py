@@ -1,11 +1,13 @@
 import os
 import shutil
+import stat
 import time
+from pathlib import Path
 
 import requests
 from git import GitCommandError, Repo
 
-from ncatbot.plugin import PluginLoader
+from ncatbot.plugin.loader import get_plugin_info
 
 MAIN_REPO_OWNER = "ncatbot"
 MAIN_BRANCH_NAME = "main"
@@ -60,7 +62,7 @@ def get_token_owner(token):
 
 
 def create_pull_request(local_branch_name, plugin_name, version):
-    print("creating pull request")
+    print("正在创建插件推送请求...")
     global github_token
     # 获取主仓库的 owner 和 repo 名称
     owner = MAIN_REPO_OWNER
@@ -81,16 +83,9 @@ def create_pull_request(local_branch_name, plugin_name, version):
 
     response = requests.post(api_url, json=data, headers=headers)
     if response.status_code == 201:
-        print("Pull Request created successfully!")
+        print("成功发起请求!")
     else:
-        print(f"Failed to create Pull Request: {response.text}")
-
-
-def get_plugin_info(path):
-    if os.path.exists(path):
-        return PluginLoader().get_plugin_info(path)
-    else:
-        raise FileNotFoundError(f"dir not found: {path}")
+        print(f"发起请求失败: {response.text}")
 
 
 # 检查是否已经存在 Fork
@@ -189,7 +184,7 @@ def sync_fork_with_source():
             fork_default_branch,
         )
         if not has_diff:
-            print("No difference between source and fork branches. Exiting...")
+            print("已 Fork 的仓库和官方无差异")
             return
 
         # 创建拉取请求
@@ -205,7 +200,7 @@ def sync_fork_with_source():
 
         # 合并拉取请求
         merge_pull_request(fork_owner, fork_repo_name, pr_number)
-        print(f"Synced fork {fork_owner}/{fork_repo_name} successfully!")
+        print(f"成功同步 fork {fork_owner}/{fork_repo_name}!")
 
     except Exception as e:
         print(f"Error occurred during synchronization: {e}")
@@ -215,7 +210,7 @@ def fork(owner, repo):
     global github_token
     token_owner = get_token_owner(github_token)
     if has_existing_fork(token_owner, MAIN_REPO_NAME):
-        print("Existing fork detected, trying to sync...")
+        print("已经存在 Fork, 尝试同步")
         return sync_fork_with_source()
     else:
         # Fork 主仓库
@@ -231,14 +226,100 @@ def fork(owner, repo):
         return response.json()["html_url"]
 
 
+def get_plugin_path():
+    path = input("输入插件文件夹路径 (plugins/your_plugin_name)\n")
+    return path
+
+
+def make_archive_with_gitignore(plugin_name, version, path):
+    """
+    打包文件, 同时忽略 .gitignore 中的文件
+    """
+
+    def read_gitignore(path):
+        """
+        解析 .gitignore 文件，返回被忽略的文件模式列表
+        """
+        ignore_patterns = [".git"]
+        gitignore_path = Path(path) / ".gitignore"
+
+        if gitignore_path.exists():
+            with open(gitignore_path, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#"):
+                        continue
+                    ignore_patterns.append(line)
+        return ignore_patterns
+
+    def should_ignore(file_path, ignore_patterns):
+        """
+        判断文件是否应该被忽略
+        """
+        for pattern in ignore_patterns:
+            if file_path.match(pattern):
+                return True
+        return False
+
+    # 解析 .gitignore 文件
+    ignore_patterns = read_gitignore(path)
+
+    # 创建一个临时目录用于存放需要打包的文件
+    temp_dir = Path(path) / "temp_pack"
+    temp_dir.mkdir(exist_ok=True)
+
+    # 遍历根目录下的所有文件和文件夹
+    for root, dirs, files in os.walk(path):
+        for name in files:
+            file_path = Path(root) / name
+            relative_path = file_path.relative_to(path)
+
+            # 如果文件在 .gitignore 中，则跳过
+            if should_ignore(relative_path, ignore_patterns):
+                continue
+
+            # 将文件复制到临时目录
+            target_path = temp_dir / relative_path
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(file_path, target_path)
+
+    # 使用 shutil.make_archive 打包临时目录
+    archive_name = f"{plugin_name}-{version}"
+    shutil.make_archive(archive_name, "zip", temp_dir)
+
+    # 删除临时目录
+    shutil.rmtree(temp_dir)
+
+    print(f"打包完成：{archive_name}.zip")
+    return archive_name + ".zip"
+
+
+def do_version_change(target_base_folder, version):
+    version_list = os.path.join(target_base_folder, "version.txt")
+    os.makedirs(target_base_folder, exist_ok=True)
+    if not os.path.exists(version_list):
+        with open(version_list, "w") as f:
+            f.write(version + "\n")
+    else:
+        with open(version_list, "r") as f:
+            versions = f.readlines()
+        if version in versions:
+            print(f"版本 {version} 已存在, 请更改版本号后再使用自动发布功能")
+            exit(1)
+        with open(version_list, "a") as f:
+            f.write(version + "\n")
+
+
 def main():
     global github_token
 
-    print("Where is your Plugin?")
-    path = input()
+    path = get_plugin_path()
 
     plugin_name, version = get_plugin_info(path)
-    source_folder = path
+    if plugin_name is None:
+        print("获取插件信息失败, 请检查错误信息")
+        exit(0)
+    print(f"Plugin name: {plugin_name}, version: {version}")
 
     github_token = get_github_token(github_token)
     test_github_token(github_token)
@@ -248,24 +329,30 @@ def main():
     fork_repo = (
         f"https://github.com/{get_token_owner(github_token)}/{MAIN_REPO_NAME}.git"
     )
-    print(f"Fork finished: {fork_repo}")
+    print(f"Fork 完成: {fork_repo}")
 
     # 克隆 Fork 的仓库
     try:
-        print("Cloning repository...")
+        print("正在克隆远端仓库...")
         repo = Repo.clone_from(fork_repo, f"temp_repo{time.time()}")
     except GitCommandError as e:
         print(f"Failed to clone repository: {e}")
         return
 
-    print("Cloning finished. Making a new branch to publish plugin...")
+    print("克隆完成, 为插件发布创建新的分支...")
     # 创建新分支
     branch_name = f"publish-{plugin_name}-{version}"
     repo.git.checkout("-b", branch_name)
+    target_base_folder = os.path.join(repo.working_dir, "plugins", plugin_name)
 
-    # 复制插件文件到目标路径
-    target_folder = os.path.join("plugins", plugin_name, version)
-    shutil.copytree(source_folder, os.path.join(repo.working_dir, target_folder))
+    # 写版本
+    do_version_change(target_base_folder, version)
+
+    # 打包插件并移动到对应文件夹(打包文件而非文件夹, 要解压到 plugins/plugin_name/)
+    archived_file = make_archive_with_gitignore(plugin_name, version, path)
+
+    # 移动到 git 文件夹
+    shutil.move(archived_file, target_base_folder)
 
     # 添加并提交更改
     repo.git.add(all=True)
@@ -274,7 +361,7 @@ def main():
 
     # 推送更改到 GitHub
     try:
-        print("Pushing changes...")
+        print("推送更改...")
         repo.git.push("--force", "origin", branch_name)
     except GitCommandError as e:
         print(f"Failed to push changes: {e}")
@@ -282,6 +369,26 @@ def main():
 
     # 创建 Pull Request
     create_pull_request(branch_name, plugin_name, version)
+
+    # 删除临时文件夹
+    temp_repo_path = repo.working_dir
+    print(f"删除临时路径: {temp_repo_path}")
+
+    # 首先关闭仓库对象以释放文件句柄
+    repo.close()
+    # 抽象repo关太慢了，不小睡一下会继续占用
+    time.sleep(2)
+
+    def on_rm_error(func, path, _):
+        # 去掉只读
+        os.chmod(path, stat.S_IWRITE)
+        func(path)
+
+    try:
+        shutil.rmtree(temp_repo_path, onexc=on_rm_error)
+        print("成功删除临时路径.")
+    except Exception as e:
+        print(f"删除临时路径时出错: {e}")
 
 
 main()
