@@ -12,6 +12,7 @@ import importlib
 import os
 import sys
 from collections import defaultdict, deque
+from pathlib import Path
 from types import MethodType, ModuleType
 from typing import Dict, List, Set, Type
 
@@ -22,18 +23,20 @@ from ncatbot.plugin.base_plugin import BasePlugin
 from ncatbot.plugin.compatible import CompatibleEnrollment
 from ncatbot.plugin.event import EventBus
 from ncatbot.utils.io import UniversalLoader
-from ncatbot.utils.PipTool import PipTool
 from ncatbot.utils.literals import META_CONFIG_PATH, PLUGINS_DIR
 from ncatbot.utils.logger import get_log
+from ncatbot.utils.PipTool import PipTool
 
 from .custom_err import (
     PluginCircularDependencyError,
     PluginDependencyError,
+    PluginNotFoundError,
     PluginVersionError,
 )
 
 _log = get_log("PluginLoader")
 PM = PipTool()
+
 
 class PluginLoader:
     """
@@ -97,6 +100,9 @@ class PluginLoader:
         for dependent, dependencies in self._dependency_graph.items():
             for dep in dependencies:
                 adj_list[dep].append(dependent)
+                if dep not in self._dependency_graph.items():
+                    _log.error(f"插件 {dependent} 的依赖项 {dep} 不存在")
+                    raise PluginNotFoundError(dep)
                 in_degree[dependent] += 1
 
         queue = deque([k for k, v in in_degree.items() if v == 0])
@@ -116,24 +122,64 @@ class PluginLoader:
 
         return load_order
 
+    def get_plugin_info(self, plugin_path):
+        original_sys_path = sys.path.copy()
+        try:
+            # 临时插入目录到 sys.path，用于加载模块
+            directory_path = os.path.abspath(plugin_path)
+            sys.path.append(os.path.dirname(directory_path))
+            filename = Path(plugin_path).stem
+            try:
+                # 动态导入模块
+                module = importlib.import_module(filename)
+                if len(module.__all__) != 1:
+                    raise ValueError("Plugin __init__.py wrong format")
+                for plugin_class_name in module.__all__:
+                    plugin_class = getattr(module, plugin_class_name)
+                    if not self._validate_plugin(plugin_class):
+                        raise TypeError("Plugin Class is invalid")
+                    name, version = plugin_class.name, plugin_class.version
+                    break
+                if plugin_class_name != name or plugin_class_name != filename:
+                    raise ValueError(
+                        f"插件文件夹名 {filename}, 插件类名 {plugin_class_name}, 插件名 {name} 不匹配."
+                    )
+            except BaseException as e:
+                _log.error(f"查找模块 {filename} 时出错: {e}")
+                return None, None
+
+        finally:
+            sys.path = original_sys_path
+
+        return name, version
+
     async def from_class_load_plugins(self, plugins: List[Type[BasePlugin]], **kwargs):
         """
         从插件类加载插件
         :param plugins: 插件类列表
         """
-        valid_plugins = [p for p in plugins if self._validate_plugin(p)]
-        self._build_dependency_graph(plugins)
-        load_order = self._resolve_load_order()
+        try:
+            _log.debug("正在构造插件依赖图")
+            valid_plugins = [p for p in plugins if self._validate_plugin(p)]
+            self._build_dependency_graph(plugins)
+            load_order = self._resolve_load_order()
+        except Exception as e:
+            _log.error(f"构造插件依赖图时出错: {e}")
+            exit(1)
 
         temp_plugins = {}
         for name in load_order:
-            plugin_cls = next(p for p in valid_plugins if p.name == name)
-            _log.info(f"加载插件: {plugin_cls.name}[{plugin_cls.version}]")
-            temp_plugins[name] = plugin_cls(
-                event_bus = self.event_bus,
-                meta_data = self.meta_data.copy(),
-                **kwargs
-            )
+            try:
+                _log.debug(f"正在初始化插件 {name}")
+                plugin_cls = next(p for p in valid_plugins if p.name == name)
+                temp_plugins[name] = plugin_cls(
+                    self.event_bus,
+                    api=self.api,
+                    meta_data=self.meta_data.copy(),
+                    **kwargs,
+                )
+            except Exception as e:
+                _log.error(f"加载插件 {name} 时出错: {e}")
 
         self.plugins = temp_plugins
         self._validate_dependencies()
@@ -146,22 +192,31 @@ class PluginLoader:
         从指定目录加载插件
         :param plugins_path: 插件目录路径
         """
-        if not plugins_path: plugins_path = PLUGINS_DIR
+        if not plugins_path:
+            plugins_path = PLUGINS_DIR
         if os.path.exists(plugins_path):
-            _log.info(f"从 {os.path.abspath(plugins_path)} 导入插件")
-            modules = self._load_modules_from_directory(plugins_path)
-            plugins = []
-            for plugin in modules.values():
-                for plugin_class_name in getattr(plugin, "__all__", []):
-                    plugins.append(getattr(plugin, plugin_class_name))
-            _log.info(f"准备加载插件 [{len(plugins)}]......")
-            await self.from_class_load_plugins(plugins, **kwargs)
-            _log.info(f"已加载插件数 [{len(self.plugins)}]")
-            _log.info(f"准备加载兼容内容......")
-            self.load_compatible_data()
-            _log.info(f"兼容内容加载成功")
+            try:
+                _log.info(f"插件加载目录: {os.path.abspath(plugins_path)}")
+                modules = self._load_modules_from_directory(plugins_path)
+                plugins = []
+                for plugin in modules.values():
+                    for plugin_class_name in getattr(plugin, "__all__", []):
+                        try:
+                            plugins.append(getattr(plugin, plugin_class_name))
+                        except Exception as e:
+                            _log.error(f"获取插件 {plugin.__name__} 时出错 {e}")
+                _log.info(f"准备加载插件 [{len(plugins)}]......")
+                await self.from_class_load_plugins(plugins, **kwargs)
+                _log.info(f"已加载插件数 [{len(self.plugins)}]")
+                _log.info("准备加载兼容内容......")
+                self.load_compatible_data()
+                _log.info("兼容内容加载成功")
+            except Exception as e:
+                _log.error(f"加载插件时出错: {e}")
         else:
-            _log.info(f"插件目录: {os.path.abspath(plugins_path)} 不存在......跳过加载插件")
+            _log.info(
+                f"插件目录: {os.path.abspath(plugins_path)} 不存在......跳过加载插件"
+            )
 
     def load_compatible_data(self):
         """
@@ -223,7 +278,7 @@ class PluginLoader:
         """
         modules = {}
         original_sys_path = sys.path.copy()
-        all_install = {pack['name'] for pack in PM.list_installed() if 'name' in pack}
+        all_install = {pack["name"] for pack in PM.list_installed() if "name" in pack}
 
         try:
             directory_path = os.path.abspath(directory_path)
@@ -232,8 +287,14 @@ class PluginLoader:
             for filename in os.listdir(directory_path):
                 if not os.path.isdir(os.path.join(directory_path, filename)):
                     continue
-                if os.path.isfile(os.path.join(directory_path, filename, "requirements.txt")):
-                    requirements = set(open(os.path.join(directory_path, filename, "requirements.txt")).readlines())
+                if os.path.isfile(
+                    os.path.join(directory_path, filename, "requirements.txt")
+                ):
+                    requirements = set(
+                        open(
+                            os.path.join(directory_path, filename, "requirements.txt")
+                        ).readlines()
+                    )
                     if all_install <= requirements:
                         download = requirements - requirements
                         for pack in download:
@@ -263,3 +324,24 @@ class PluginLoader:
             loop.run_until_complete(asyncio.gather(*tasks))
         finally:
             loop.close()
+
+
+def get_plugin_info(path: str):
+    if os.path.exists(path):
+        return PluginLoader(None, None).get_plugin_info(path)
+    else:
+        raise FileNotFoundError(f"dir not found: {path}")
+
+
+def get_pulgin_info_by_name(name: str):
+    """
+    Args:
+        name (str): 插件名
+    Returns:
+        Tuple[bool, str]: 是否存在插件, 插件版本
+    """
+    plugin_path = os.path.join(PLUGINS_DIR, name)
+    if os.path.exists(plugin_path):
+        return True, get_plugin_info(plugin_path)[1]
+    else:
+        return False, "0.0.0"

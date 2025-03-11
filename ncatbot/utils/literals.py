@@ -17,6 +17,8 @@ OFFICIAL_PRIVATE_MESSAGE_EVENT = "ncatbot.private_message_event"
 OFFICIAL_REQUEST_EVENT = "ncatbot.request_event"
 OFFICIAL_NOTICE_EVENT = "ncatbot.notice_event"
 
+PLUGIN_BROKEN_MARK = "插件已损坏"
+
 STATUS_ONLINE = {"status": 10, "ext_status": 0, "battery_status": 0}
 STATUS_Q_ME = {"status": 60, "ext_status": 0, "battery_status": 0}
 STATUS_LEAVE = {"status": 30, "ext_status": 0, "battery_status": 0}
