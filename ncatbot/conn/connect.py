@@ -45,7 +45,7 @@ class Websocket:
                     self.on_message(message)
                 # 这里的错误处理没有进行细分，我觉得没有很大的必要，报错的可能性不大，如果你对websocket了解很深，请完善此部分。
                 except Exception as e:
-                    _log.error("Websocket error:", e)
+                    _log.error("Websocket error: %s", e)
                     break
             _log.info("Websocket connection closed.")
 
