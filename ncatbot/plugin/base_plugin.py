@@ -7,13 +7,14 @@
 # @Copyright (c) 2025 by Fish-LP, MIT License
 # -------------------------
 import asyncio
+import re
 from pathlib import Path
-from typing import Any, Awaitable, Callable, List, final
+from typing import Any, Awaitable, Callable, List, Union, final
 from uuid import UUID
 
 from ncatbot.core.api import BotAPI
 from ncatbot.plugin.custom_err import PluginLoadError
-from ncatbot.plugin.event import Event, EventBus
+from ncatbot.plugin.event import Conf, Event, EventBus, Func, PermissionGroup
 from ncatbot.utils.change_dir import ChangeDir
 from ncatbot.utils.io import (
     FileTypeUnknownError,
@@ -51,6 +52,8 @@ class BasePlugin:
     dependencies: dict = {}  # 依赖的插件以及版本(不是 PYPI 依赖)
     meta_data: dict
     api: BotAPI
+    funcs: list[Func] = []  # 功能
+    configs: list[Conf] = []  # 配置项
 
     @final
     def __init__(self, event_bus: EventBus, **kwd):
@@ -190,6 +193,93 @@ class BasePlugin:
         """注销所有已注册的事件处理器"""
         for handler_id in self._event_handlers:
             self.event_bus.unsubscribe(handler_id)
+
+    @final
+    def _register_func(
+        self,
+        name: str,
+        handler: Callable[[Event], Any],
+        filter: Callable = None,
+        raw_message_filter: Union[str, re.Pattern] = None,
+        permission: PermissionGroup = PermissionGroup.USER,
+        permission_raise: bool = False,
+    ):
+        if all([name != var.name for var in self.funcs]):
+            self.funcs.append(
+                Func(
+                    name,
+                    self.name,
+                    handler,
+                    filter,
+                    raw_message_filter,
+                    permission,
+                    permission_raise,
+                )
+            )
+        else:
+            raise ValueError(f"插件 {self.name} 已存在功能 {name}")
+        # self.
+
+    def register_user_func(
+        self,
+        name: str,
+        handler: Callable[[Event], Any],
+        filter: Callable = None,
+        raw_message_filter: Union[str, re.Pattern] = None,
+        permission_raise: bool = False,
+    ):
+        if filter is None and raw_message_filter is None:
+            raise ValueError("普通功能至少添加一个过滤器")
+        self._register_func(
+            name,
+            handler,
+            filter,
+            raw_message_filter,
+            PermissionGroup.USER,
+            permission_raise,
+        )
+
+    def register_admin_func(
+        self,
+        name: str,
+        handler: Callable[[Event], Any],
+        filter: Callable = None,
+        raw_message_filter: Union[str, re.Pattern] = None,
+        permission_raise: bool = False,
+    ):
+        if filter is None and raw_message_filter is None:
+            raise ValueError("普通功能至少添加一个过滤器")
+        self._register_func(
+            name,
+            handler,
+            filter,
+            raw_message_filter,
+            PermissionGroup.ADMIN,
+            permission_raise,
+        )
+
+    def register_default_func(
+        self,
+        handler: Callable[[Event], Any],
+        permission: PermissionGroup = PermissionGroup.USER,
+    ):
+        """默认处理功能
+
+        如果没能触发其它功能, 则触发默认功能.
+        """
+        self._register_func("default", handler, None, None, permission, False)
+
+    def register_config(
+        self, key: str, default: Any, rptr: Callable[[str], Any] = None
+    ):
+        """注册配置项
+        Args:
+            key (str): 配置项键名
+            default (Any): 默认值
+            rptr (Callable[[str], Any], optional): 值转换函数. 默认使用直接转换.
+        """
+        self.data["config"][key] = default
+        self.configs.append(Conf(self, key, rptr))
 
     async def on_load(self):
         """插件初始化时的钩子函数，可被子类重写"""

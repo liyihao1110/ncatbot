@@ -11,7 +11,71 @@ import asyncio
 import inspect
 import re
 import uuid
-from typing import Any, Callable, List
+from enum import Enum
+from typing import Any, Callable, List, Union
+
+from RBACManager.RBACManager import RBACManager
+
+from ncatbot.core.message import BaseMessage
+from ncatbot.utils.literals import (
+    OFFICIAL_GROUP_MESSAGE_EVENT,
+    OFFICIAL_PRIVATE_MESSAGE_EVENT,
+)
+
+
+class Conf:
+    def __init__(self, plugin, key, rptr: Callable[[str], Any] = None):
+        self.full_key = f"{plugin.name}.{key}"
+        self.key = key
+        self.rptr = rptr
+        self.hook_config = plugin.data["config"]
+
+    def modify(self, value):
+        # try:
+        value = self.rptr(value) if self.rptr else value
+        self.hook_config[self.full_key] = value
+        # except Exception as e:
+
+
+class PermissionGroup(Enum):
+    ROOT = "root"
+    ADMIN = "admin"
+    USER = "user"
+
+
+class EventSource:
+    def __init__(self, user_id: Union[str, int], group_id: Union[str, int]):
+        self.user_id = f"USER-{user_id}"
+        self.group_id = f"GROUP-{group_id}"
+
+
+class EventType:
+    def __init__(self, plugin_name: str, event_name: str):
+        self.plugin_name = plugin_name
+        self.event_name = event_name
+
+    def __str__(self):
+        return f"{self.plugin_name}.{self.event_name}"
+
+
+class EventBusRBACManager(RBACManager):
+    def has_user(self, user: str):
+        return user in self.users
+
+    def create_user(self, user_name, base_role=PermissionGroup.USER):
+        super().create_user(user_name)
+        self.assign_role_to_user(user_name, base_role)
+
+    def with_permission(
+        self, source: EventSource, type: EventType, permission_raise: bool = False
+    ):
+        if not self.has_user(source.group_id):
+            self.create_user(source.group_id)
+        if not self.has_user(source.user_id):
+            self.create_user(source.user_id)
+        return self.has_user_permission(
+            source.user_id, type
+        ) and self.has_user_permission(source.group_id, type)
 
 
 class Event:
@@ -19,7 +83,7 @@ class Event:
     事件类，用于封装事件的类型和数据
     """
 
-    def __init__(self, type: str, data: Any):
+    def __init__(self, type: EventType, data: Any, source: EventSource):
         """
         初始化事件
 
@@ -29,6 +93,7 @@ class Event:
         """
         self.type = type
         self.data = data
+        self.source = source  # 事件源
         self._results: List[Any] = []
         self._propagation_stopped = False
 
@@ -52,6 +117,39 @@ class Event:
         return f'Event(type="{self.type}",data={self.data})'
 
 
+class Func:
+    """功能函数"""
+
+    def __init__(
+        self,
+        name,
+        plugin_name,
+        func: Callable,
+        filter: Callable[[Event], bool] = None,
+        raw_message_filter: str = None,
+        permission: PermissionGroup = PermissionGroup.USER,
+        permission_raise: bool = False,
+    ):
+        self.name = name
+        self.plugin_name = plugin_name
+        self.func = func
+        self.filter = filter
+        self.raw_message_filter = raw_message_filter
+        self.permission = permission
+        self.permission_raise = permission_raise
+
+    def activate(self, event: Event) -> bool:
+        """激活功能函数"""
+        if self.filter and not self.filter(event):
+            return False
+        elif isinstance(event.data, BaseMessage):
+            if self.raw_message_filter and not re.match(
+                self.raw_message_filter, event.data.raw_message
+            ):
+                return False
+        return True
+
+
 class EventBus:
     """
     事件总线类，用于管理和分发事件
@@ -63,12 +161,59 @@ class EventBus:
         """
         self._exact_handlers = {}
         self._regex_handlers = []
+        self.RBAC = EventBusRBACManager()
+        self.funcs: List[Func] = []
+        self._create_basic_roles()
+        self._assign_root_permission()
+        self.subscribe(OFFICIAL_GROUP_MESSAGE_EVENT, self._func_activator, 100)
+        self.subscribe(OFFICIAL_PRIVATE_MESSAGE_EVENT, self._func_activator, 100)
+
+    def _cfg(self):
+        pass
+
+    def _sam(self):
+        pass
+
+    def _acs(self):
+        pass
+
+    def _func_activator(self, event: Event):
+        # message:BaseMessage = event.data
+        for func in self.funcs:
+            if func.activate(event):
+                if self.RBAC.with_permission(
+                    event.source, event.type, func.permission_raise
+                ):
+                    func.func(event)
+
+    def _assign_root_permission(self):
+        self.RBAC.create_user("root")
+        self.RBAC.assign_role_to_user("root", "root")
+        self.RBAC.assign_permission("root", "**")
+
+    def _create_basic_roles(self):
+        self.RBAC.create_role("root")
+        self.RBAC.create_role("admin")
+        self.RBAC.create_role("user")
+        self.RBAC.create_role("blacklist")
+        self.RBAC.add_role_parent("root", "admin")
+        self.RBAC.add_role_parent("admin", "user")
+
+    def set_plugin_funcs(self, plugin):
+        from ncatbot.plugin.base_plugin import BasePlugin
+
+        assert isinstance(plugin, BasePlugin)
+        for func in plugin.funcs:
+            self.RBAC.assign_permission(
+                func.permission, f"{func.plugin_name}.{func.name}"
+            )
 
     def subscribe(
-        self, event_type: str, handler: Callable[[Event], Any], priority: int = 0
+        self, event_type: EventType, handler: Callable[[Event], Any], priority: int = 0
     ) -> uuid.UUID:
         """
         订阅事件处理器，并返回处理器的唯一 ID
+        权限路径为: plugin_name.hander_id
 
         参数:
             event_type: str - 事件类型或正则模式（以 're:' 开头表示正则匹配）
@@ -78,7 +223,7 @@ class EventBus:
         返回:
             str - 处理器的唯一 ID
         """
-        handler_id = str(uuid.uuid4())
+        handler_id = f"{event_type.plugin_name}.{str(uuid.uuid4())}"
         pattern = None
         if event_type.startswith("re:"):
             pattern = re.compile(event_type[3:])
@@ -147,6 +292,11 @@ class EventBus:
         for handler, priority, handler_id in sorted_handlers:
             if event._propagation_stopped:
                 break
+
+            if not self.RBAC.with_permission(
+                event.source, handler_id
+            ):  # 检查事件发起者权限
+                continue
 
             if inspect.iscoroutinefunction(handler):
                 await handler(event)

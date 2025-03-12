@@ -172,12 +172,15 @@ class PluginLoader:
             try:
                 _log.debug(f"正在初始化插件 {name}")
                 plugin_cls = next(p for p in valid_plugins if p.name == name)
-                temp_plugins[name] = plugin_cls(
+                plugin = plugin_cls(
                     self.event_bus,
                     api=self.api,
                     meta_data=self.meta_data.copy(),
                     **kwargs,
                 )
+                self.event_bus.set_plugin_funcs(plugin)
+                temp_plugins[name] = plugin
+
             except Exception as e:
                 _log.error(f"加载插件 {name} 时出错: {e}")
 
