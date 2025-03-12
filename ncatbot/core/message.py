@@ -4,7 +4,7 @@ from ncatbot.core.api import BotAPI
 class BaseMessage:
     api_initialized = False
     api = None
-    __slots__ = ("self_id", "time", "post_type")
+    __slots__ = ("self_id", "time", "post_type", "raw_message")
 
     def __init__(self, message):
         if not BaseMessage.api_initialized:
@@ -33,7 +33,6 @@ class GroupMessage(BaseMessage):
         "user_id",
         "message_type",
         "sub_type",
-        "raw_message",
         "font",
         "sender",
         "message_id",
@@ -74,7 +73,6 @@ class PrivateMessage(BaseMessage):
         "user_id",
         "message_seq",
         "real_id",
-        "message_type",
         "sender",
         "raw_message",
         "font",
