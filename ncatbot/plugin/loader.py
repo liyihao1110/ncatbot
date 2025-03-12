@@ -179,6 +179,7 @@ class PluginLoader:
                     **kwargs,
                 )
                 self.event_bus.set_plugin_funcs(plugin)
+                self.event_bus.set_plugin_configs(plugin)
                 temp_plugins[name] = plugin
 
             except Exception as e:

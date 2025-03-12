@@ -23,9 +23,14 @@ from ncatbot.utils.literals import (
 )
 
 
+class DefaultPermissions(Enum):
+    ACCESS = "access"
+    SETADMIN = "setadmin"
+
+
 class Conf:
     def __init__(self, plugin, key, rptr: Callable[[str], Any] = None):
-        self.full_key = f"{plugin.name}.{key}"
+        self.full_key = f"{plugin.name}.{key}"  # 全限定名 {plugin_name}.{key}
         self.key = key
         self.rptr = rptr
         self.hook_config = plugin.data["config"]
@@ -43,12 +48,6 @@ class PermissionGroup(Enum):
     USER = "user"
 
 
-class EventSource:
-    def __init__(self, user_id: Union[str, int], group_id: Union[str, int]):
-        self.user_id = f"USER-{user_id}"
-        self.group_id = f"GROUP-{group_id}"
-
-
 class EventType:
     def __init__(self, plugin_name: str, event_name: str):
         self.plugin_name = plugin_name
@@ -59,6 +58,11 @@ class EventType:
 
 
 class EventBusRBACManager(RBACManager):
+    # TODO: 做好 USER 和 GROUP 的包装
+    def __init__(self, case_sensitive=False, is_group: bool = False):
+        super().__init__(case_sensitive)
+        self.is_group = is_group
+
     def has_user(self, user: str):
         return user in self.users
 
@@ -66,16 +70,42 @@ class EventBusRBACManager(RBACManager):
         super().create_user(user_name)
         self.assign_role_to_user(user_name, base_role)
 
+    def user_has_role(self, user_name: str, role: str):
+        pass
+
+    def remove_role(self, user_name: str, role: str):
+        pass
+
+    def permission_exists(self, path: str):
+        pass
+
+    def remove_user_permission(self, user_name: str, path: str):
+        pass
+
+    def assign_user_permission(self, user_name: str, path: str):
+        pass
+
+
+class EventSource:
+    def __init__(self, user_id: Union[str, int], group_id: Union[str, int]):
+        self.user_id = user_id
+        self.group_id = group_id
+
     def with_permission(
-        self, source: EventSource, type: EventType, permission_raise: bool = False
+        self,
+        ur: EventBusRBACManager,
+        gr: EventBusRBACManager,
+        path: str,
+        permission_raise: bool = False,
     ):
-        if not self.has_user(source.group_id):
-            self.create_user(source.group_id)
-        if not self.has_user(source.user_id):
-            self.create_user(source.user_id)
-        return self.has_user_permission(
-            source.user_id, type
-        ) and self.has_user_permission(source.group_id, type)
+        if not gr.has_user(self.group_id):
+            ur.create_user(self.group_id)
+        if not ur.has_user(self.user_id):
+            ur.create_user(self.user_id)
+        group = self.group_id if not permission_raise else "root"
+        return ur.has_user_permission(self.user_id, path) and gr.user_has_role(
+            group, path
+        )
 
 
 class Event:
@@ -83,7 +113,7 @@ class Event:
     事件类，用于封装事件的类型和数据
     """
 
-    def __init__(self, type: EventType, data: Any, source: EventSource):
+    def __init__(self, type: EventType, data: Any, source: EventSource = None):
         """
         初始化事件
 
@@ -122,13 +152,14 @@ class Func:
 
     def __init__(
         self,
-        name,
-        plugin_name,
-        func: Callable,
+        name,  # 功能名, 构造权限路径时使用
+        plugin_name,  # 插件名, 构造权限路径时使用
+        func: Callable[[Event], None],
         filter: Callable[[Event], bool] = None,
         raw_message_filter: str = None,
-        permission: PermissionGroup = PermissionGroup.USER,
-        permission_raise: bool = False,
+        permission: PermissionGroup = PermissionGroup.USER,  # 向事件总线传递默认权限设置
+        permission_raise: bool = False,  # 是否提权, 判断是否有权限执行时使用
+        reply: bool = False,
     ):
         self.name = name
         self.plugin_name = plugin_name
@@ -137,6 +168,7 @@ class Func:
         self.raw_message_filter = raw_message_filter
         self.permission = permission
         self.permission_raise = permission_raise
+        self.reply = reply  # 权限不足是否回复
 
     def activate(self, event: Event) -> bool:
         """激活功能函数"""
@@ -150,6 +182,14 @@ class Func:
         return True
 
 
+def event_command_warper(func: Callable[[List[str]], Any]) -> Callable[[Event], Any]:
+    def wrapper(event: Event):
+        args = event.data.raw_message.split(" ")[1:]
+        return func(*args)
+
+    return wrapper
+
+
 class EventBus:
     """
     事件总线类，用于管理和分发事件
@@ -161,52 +201,173 @@ class EventBus:
         """
         self._exact_handlers = {}
         self._regex_handlers = []
-        self.RBAC = EventBusRBACManager()
+        self.RBAC_U = EventBusRBACManager()
+        self.RBAC_G = EventBusRBACManager()
         self.funcs: List[Func] = []
+        self.configs: dict[str, Conf] = {}
         self._create_basic_roles()
         self._assign_root_permission()
+        self.load_builtin_funcs()
         self.subscribe(OFFICIAL_GROUP_MESSAGE_EVENT, self._func_activator, 100)
         self.subscribe(OFFICIAL_PRIVATE_MESSAGE_EVENT, self._func_activator, 100)
 
-    def _cfg(self):
-        pass
+    # def _cfg(self, *args):
+    #     input:str = event.data.raw_message
+    #     pass
 
-    def _sam(self):
-        pass
+    def _sam(self, event: Event):
+        message: BaseMessage = event.data
+        args = message.raw_message.split(" ")[1:]
+        if len(args) != 1:
+            message.reply("参数个数错误, 命令格式(不含尖括号): /sam <qq_number>")
+        else:
+            has_role = self.RBAC_U.user_has_role(args[0], PermissionGroup.ADMIN)
+            if not has_role:
+                self.RBAC_U.assign_role_to_user(args[0], PermissionGroup.ADMIN)
+                message.reply(f"已经将用户 {args[0]} 设为管理员")
+            else:
+                self.RBAC_U.remove_role(args[0], PermissionGroup.ADMIN)
+                message.reply(f"已经将用户 {args[0]} 取消管理员")
 
-    def _acs(self):
-        pass
+    def _acs(self, event: Event):
+        # access [-g] <number> path
+        message: BaseMessage = event.data
+        args = message.raw_message.split(" ")[1:]
+        if len(args) >= 4 or len(args) < 2:
+            message.reply(
+                "参数个数错误, 命令格式(不含尖括号): /access [-g] [ban]/[grant] <number> path"
+            )
+        else:
+            path = args[-1]
+            number = args[-2]
+            option = args[-3]
+            RBAC = self.RBAC_U if "-g" not in args else self.RBAC_G
+            if RBAC.has_user_permission(number, DefaultPermissions.ACCESS):
+                message.reply(
+                    f"{'群组' if '-g' in args else '用户'} {number} 已经拥有 /acs 权限, 同级用户无法修改其权限"
+                )
+            elif not RBAC.permission_exists(path):
+                message.reply(f"权限 {path} 不存在")
+            else:
+                if option == "ban":
+                    RBAC.remove_user_permission(number, path)
+                    message.reply(
+                        f"{'群组' if '-g' in args else '用户'} {number} 已经被禁止访问 {path}"
+                    )
+                elif option == "grant":
+                    RBAC.assign_user_permission(number, path)
+                    message.reply(
+                        f"{'群组' if '-g' in args else '用户'} {number} 已经被授权访问 {path}"
+                    )
+
+    def _cfg(self, event: Event):
+        # /cfg <plugin_name>.<key> <value>
+        message: BaseMessage = event.data
+        args = message.raw_message.split(" ")[1:]
+        if len(args) != 2:
+            message.reply(
+                "参数个数错误, 命令格式(不含尖括号): /cfg <plugin_name>.<key> <value>"
+            )
+
+        full_key, value = tuple(args)
+        if full_key not in self.configs:
+            message.reply(f"配置 {full_key} 不存在")
+        else:
+            try:
+                self.configs[full_key].modify(value)
+            except Exception as e:
+                message.reply(f"配置 {full_key} 修改失败: {e}")
 
     def _func_activator(self, event: Event):
         # message:BaseMessage = event.data
         for func in self.funcs:
             if func.activate(event):
-                if self.RBAC.with_permission(
-                    event.source, event.type, func.permission_raise
+                if event.source.with_permission(
+                    self.RBAC_U,
+                    self.RBAC_G,
+                    f"{func.plugin_name}.{func.name}",
                 ):
                     func.func(event)
+                elif func.reply:
+                    event.message.reply("权限不足")
 
     def _assign_root_permission(self):
-        self.RBAC.create_user("root")
-        self.RBAC.assign_role_to_user("root", "root")
-        self.RBAC.assign_permission("root", "**")
+        self.RBAC_U.create_user("root")
+        self.RBAC_U.assign_role_to_user("root", "root")
+        self.RBAC_U.assign_permission("root", "**")
+        self.RBAC_G.create_user("root")
+        self.RBAC_G.assign_role_to_user("root", "root")
+        self.RBAC_G.assign_permission("root", "**")
 
     def _create_basic_roles(self):
-        self.RBAC.create_role("root")
-        self.RBAC.create_role("admin")
-        self.RBAC.create_role("user")
-        self.RBAC.create_role("blacklist")
-        self.RBAC.add_role_parent("root", "admin")
-        self.RBAC.add_role_parent("admin", "user")
+        self.RBAC_U.create_role("root")
+        self.RBAC_U.create_role("admin")
+        self.RBAC_U.create_role("user")
+        self.RBAC_U.add_role_parent("root", "admin")
+        self.RBAC_U.add_role_parent("admin", "user")
+        self.RBAC_G.create_role("root")
+        self.RBAC_G.create_role("user")
+        self.RBAC_G.create_role("admin")
+        self.RBAC_G.add_role_parent("root", "admin")
+        self.RBAC_G.add_role_parent("admin", "user")
+
+    def load_builtin_funcs(self):
+        self.funcs.append(
+            Func(
+                name=DefaultPermissions.SETADMIN,
+                plugin_name="ncatbot",
+                func=self._acs,
+                filter=None,
+                raw_message_filter="/acs",
+                permission=PermissionGroup.ROOT,
+                permission_raise=True,
+                reply=True,
+            )
+        )
+        self.funcs.append(
+            Func(
+                name=DefaultPermissions.ACCESS,
+                plugin_name="ncatbot",
+                func=self._acs,
+                filter=None,
+                raw_message_filter="/sam",
+                permission=PermissionGroup.ADMIN,
+                permission_raise=True,
+                reply=True,
+            )
+        )
+
+    def set_plugin_configs(self, plugin):
+        from ncatbot.plugin.base_plugin import BasePlugin
+
+        assert isinstance(plugin, BasePlugin)
+
+        for conf in plugin.configs:
+            self.RBAC_U.assign_permission(PermissionGroup.ADMIN, f"cfg.{conf.full_key}")
+            self.funcs.append(
+                Func(
+                    name=f"{conf.full_key}",
+                    plugin_name="cfg",
+                    func=self._cfg,
+                    filter=None,
+                    raw_message_filter="/cfg",
+                    permission=PermissionGroup.ADMIN,
+                    permission_raise=True,
+                    reply=True,
+                )
+            )
+            self.configs[conf.full_key] = conf
 
     def set_plugin_funcs(self, plugin):
         from ncatbot.plugin.base_plugin import BasePlugin
 
         assert isinstance(plugin, BasePlugin)
+
         for func in plugin.funcs:
-            self.RBAC.assign_permission(
+            self.RBAC_U.assign_permission(
                 func.permission, f"{func.plugin_name}.{func.name}"
             )
+            self.funcs.append(func)
 
     def subscribe(
         self, event_type: EventType, handler: Callable[[Event], Any], priority: int = 0
