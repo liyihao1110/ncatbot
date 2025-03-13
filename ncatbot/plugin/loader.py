@@ -174,12 +174,10 @@ class PluginLoader:
                 plugin_cls = next(p for p in valid_plugins if p.name == name)
                 plugin = plugin_cls(
                     self.event_bus,
-                    api=self.api,
                     meta_data=self.meta_data.copy(),
                     **kwargs,
                 )
-                self.event_bus.set_plugin_funcs(plugin)
-                self.event_bus.set_plugin_configs(plugin)
+                self.event_bus.add_plugin(plugin)
                 temp_plugins[name] = plugin
 
             except Exception as e:
@@ -196,6 +194,9 @@ class PluginLoader:
         从指定目录加载插件
         :param plugins_path: 插件目录路径
         """
+        if "api" not in kwargs:
+            raise ValueError("缺少参数: api")
+
         if not plugins_path:
             plugins_path = PLUGINS_DIR
         if os.path.exists(plugins_path):

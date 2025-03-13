@@ -8,8 +8,6 @@
 # -------------------------
 from typing import Dict, List, Optional, Set, Tuple
 
-from ..utils import Color
-
 
 class TrieNode:
     """Trie树的节点
