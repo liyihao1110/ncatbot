@@ -14,7 +14,7 @@ from datetime import datetime
 from logging.handlers import TimedRotatingFileHandler
 
 from tqdm import tqdm as tqdm_original
-from .Color import Color
+from ncatbot.utils.color import Color
 
 import ctypes
 from ctypes import wintypes

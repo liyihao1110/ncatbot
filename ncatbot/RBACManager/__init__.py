@@ -2,11 +2,13 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-24 21:59:13
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-03-06 18:27:54
+# @LastEditTime : 2025-03-15 17:46:15
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @Copyright (c) 2025 by Fish-LP, MIT License 
 # -------------------------
 from .RBACManager import RBACManager
+from .RBACManager import PermissionPath
+from .Trie import Trie
 """
 * 基本概念
 * RBAC(Role-Based Access Control)基于角色的访问控制, 是一种权限管理模型, 通过为用户分配角色, 再为角色分配权限, 实现对系统资源的访问控制。
@@ -31,10 +33,12 @@ from .RBACManager import RBACManager
     例如
     具体权限 : "插件.插件功能1" 表示 "插件" 下的 "插件功能1" 权限。
     通配符 "*" : "插件.*" 代表 "插件" 下的所有权限。
-    通配符 "**" : "插件.**" 代表 "插件" 下的所有权限，包括子权限。
+    通配符 "**" : "插件.**" 代表 "插件" 下的所有权限,包括子权限。
 
 ! 警告: 没有进行完全的安全检查
 """
 __all__ = [
-    'RBACManager'
+    'RBACManager',
+    'PermissionPath',
+    'Trie',
 ]
