@@ -2,7 +2,7 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-15 20:08:02
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-03-09 18:35:25
+# @LastEditTime : 2025-03-15 18:52:05
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @Copyright (c) 2025 by Fish-LP, MIT License 
 # -------------------------
@@ -93,7 +93,7 @@ class BasePlugin:
         self.work_space = ChangeDir(self.work_path)
 
     @final
-    async def __unload__(self):
+    def __unload__(self):
         """卸载插件时的清理操作
         
         执行插件卸载前的清理工作，保存数据并注销事件处理器
@@ -101,13 +101,12 @@ class BasePlugin:
         Raises:
             RuntimeError: 保存持久化数据失败时抛出
         """
+        self.unregister_handlers()
+        self._close_()
         try:
             self.data.save()
         except (FileTypeUnknownError, SaveError, FileNotFoundError) as e:
             raise RuntimeError(self.name, f"保存持久化数据时出错: {e}")
-        self.unregister_handlers()
-        await asyncio.to_thread(self._close_)
-        await self.on_unload()
 
     @final
     async def __onload__(self):
@@ -190,10 +189,6 @@ class BasePlugin:
 
     def _init_(self):
         '''插件初始化时的子函数，可被子类重写'''
-        pass
-
-    async def on_unload(self):
-        '''插件卸载时的钩子函数，可被子类重写'''
         pass
 
     def _close_(self):
