@@ -1,13 +1,13 @@
 # -------------------------
 # @Author       : Fish-LP fish.zh@outlook.com
-# @Date         : 2025-02-21 18:23:06
+# @Date         : 2025-02-11 17:26:43
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-03-09 18:29:06
+# @LastEditTime : 2025-03-15 18:59:41
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
-# @message: 喵喵喵?
-# @Copyright (c) 2025 by Fish-LP, MIT License
+# @Copyright (c) 2025 by Fish-LP, MIT License 
 # -------------------------
 import asyncio
+import atexit
 import importlib
 import os
 import sys
@@ -32,8 +32,8 @@ from .custom_err import (
     PluginVersionError,
 )
 
-_log = get_log("PluginLoader")
 PM = PipTool()
+LOG = get_log('PluginLoader')
 
 class PluginLoader:
     """
@@ -49,7 +49,7 @@ class PluginLoader:
         self._dependency_graph: Dict[str, Set[str]] = {}  # 插件依赖关系图
         self._version_constraints: Dict[str, Dict[str, str]] = {}  # 插件版本约束
         if META_CONFIG_PATH:
-            self.meta_data = UniversalLoader(META_CONFIG_PATH)
+            self.meta_data = UniversalLoader(META_CONFIG_PATH).load().data
         else:
             self.meta_data = {}
 
@@ -122,18 +122,13 @@ class PluginLoader:
         :param plugins: 插件类列表
         """
         valid_plugins = [p for p in plugins if self._validate_plugin(p)]
-        self._build_dependency_graph(plugins)
+        self._build_dependency_graph(valid_plugins)
         load_order = self._resolve_load_order()
 
         temp_plugins = {}
         for name in load_order:
             plugin_cls = next(p for p in valid_plugins if p.name == name)
-            _log.info(f"加载插件: {plugin_cls.name}[{plugin_cls.version}]")
-            temp_plugins[name] = plugin_cls(
-                event_bus = self.event_bus,
-                meta_data = self.meta_data.copy(),
-                **kwargs
-            )
+            temp_plugins[name] = plugin_cls(self.event_bus, meta_data = self.meta_data.copy(), **kwargs)
 
         self.plugins = temp_plugins
         self._validate_dependencies()
@@ -148,20 +143,22 @@ class PluginLoader:
         """
         if not plugins_path: plugins_path = PLUGINS_DIR
         if os.path.exists(plugins_path):
-            _log.info(f"从 {os.path.abspath(plugins_path)} 导入插件")
+            LOG.info(f"从 {os.path.abspath(plugins_path)} 导入插件")
             modules = self._load_modules_from_directory(plugins_path)
             plugins = []
             for plugin in modules.values():
                 for plugin_class_name in getattr(plugin, "__all__", []):
                     plugins.append(getattr(plugin, plugin_class_name))
-            _log.info(f"准备加载插件 [{len(plugins)}]......")
+            LOG.info(f"准备加载插件 [{len(plugins)}]......")
             await self.from_class_load_plugins(plugins, **kwargs)
-            _log.info(f"已加载插件数 [{len(self.plugins)}]")
-            _log.info(f"准备加载兼容内容......")
+            atexit.register(self.unload_all)
+            LOG.info(f"已加载插件数 [{len(self.plugins)}]")
+            LOG.info(f"准备加载兼容内容......")
             self.load_compatible_data()
-            _log.info(f"兼容内容加载成功")
+            LOG.info(f"兼容内容加载成功")
         else:
-            _log.info(f"插件目录: {os.path.abspath(plugins_path)} 不存在......跳过加载插件")
+            LOG.info(f"插件目录: {os.path.abspath(plugins_path)} 不存在......跳过加载插件")
+
 
     def load_compatible_data(self):
         """
@@ -172,17 +169,14 @@ class PluginLoader:
             for func, priority, in_class in packs:
                 if in_class:
                     for plugin_name, plugin in self.plugins.items():
-                        if (
-                            plugin.__class__.__qualname__
-                            == func.__qualname__.split(".")[0]
-                        ):
+                        if plugin.__class__.__qualname__ == func.__qualname__.split('.')[0]:
                             func = MethodType(func, plugin)
                             self.event_bus.subscribe(event_type, func, priority)
                             break
                 else:
                     self.event_bus.subscribe(event_type, func, priority)
 
-    async def unload_plugin(self, plugin_name: str):
+    def unload_plugin(self, plugin_name: str):
         """
         卸载插件
         :param plugin_name: 插件名称
@@ -190,7 +184,7 @@ class PluginLoader:
         if plugin_name not in self.plugins:
             return
 
-        await self.plugins[plugin_name].__unload__()
+        self.plugins[plugin_name].__unload__()
         del self.plugins[plugin_name]
 
     async def reload_plugin(self, plugin_name: str):
@@ -205,7 +199,7 @@ class PluginLoader:
         await self.unload_plugin(plugin_name)
 
         module = importlib.import_module(old_plugin.__class__.__module__)
-        # 如果模块有依赖项，这些依赖项不会自动重新加载
+        # 如果模块有依赖项,这些依赖项不会自动重新加载
         importlib.reload(module)
 
         new_cls = getattr(module, old_plugin.__class__.__name__)
@@ -218,8 +212,8 @@ class PluginLoader:
         self, directory_path: str
     ) -> Dict[str, ModuleType]:
         """
-        从指定文件夹动态加载模块，返回模块名到模块的字典。
-        不修改 `sys.path`，仅在必要时临时添加路径。
+        从指定文件夹动态加载模块,返回模块名到模块的字典。
+        不修改 `sys.path`,仅在必要时临时添加路径。
         """
         modules = {}
         original_sys_path = sys.path.copy()
@@ -243,7 +237,7 @@ class PluginLoader:
                     module = importlib.import_module(filename)
                     modules[filename] = module
                 except ImportError as e:
-                    _log.error(f"导入模块 {filename} 时出错: {e}")
+                    LOG.error(f"导入模块 {filename} 时出错: {e}")
                     continue
 
         finally:
@@ -251,15 +245,6 @@ class PluginLoader:
 
         return modules
 
-    async def _unload_all(self, *args, **kwargs):
-        for plugin in tuple(self.plugins.keys()):
-            await self.unload_plugin(plugin)
-
     def unload_all(self, *arg, **kwd):
-        loop = asyncio.new_event_loop()
-        try:
-            asyncio.set_event_loop(loop)
-            tasks = [self.unload_plugin(plugin) for plugin in self.plugins.keys()]
-            loop.run_until_complete(asyncio.gather(*tasks))
-        finally:
-            loop.close()
+        for plugin in tuple(self.plugins.keys()):
+            self.unload_plugin(plugin)
