@@ -2,7 +2,7 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-18 21:06:40
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-03-11 22:03:05
+# @LastEditTime : 2025-03-16 14:03:15
 # @Description  : 上下文管理器,用于暂时切换工作路径。
 # @Copyright (c) 2025 by Fish-LP, MIT License 
 # -------------------------
@@ -10,7 +10,7 @@ import os
 import tempfile
 from typing import Optional, Union
 from uuid import UUID, uuid4
-
+from pathlib import Path
 from contextlib import ContextDecorator
 
 from .logger import get_log
@@ -27,7 +27,7 @@ class ChangeDir(ContextDecorator):
 
     def __init__(
         self,
-        path: Optional[Union[str, UUID]] = None,
+        path: Optional[Union[str, UUID, Path]] = None,
         create_missing: bool = False,
         keep_temp: bool = False,
         init_path: bool = False,
@@ -36,7 +36,7 @@ class ChangeDir(ContextDecorator):
         初始化工作路径切换器。
 
         Args
-            path (Optional[str | UUID]): 新的工作路径。若为 None,则创建临时目录。
+            path (Optional[str | UUID | Path]): 新的工作路径。若为 None,则创建临时目录。
             create_missing (bool): 如果目标路径不存在,是否自动创建。
             keep_temp (bool): 是否在退出后暂存临时目录。
             init_path (bool): 立刻初始化路径。否则在使用时初始化
@@ -62,6 +62,9 @@ class ChangeDir(ContextDecorator):
         elif isinstance(self.path, UUID):
             # 从路径注册表中加载路径
             self._load_path(self.path)
+        elif isinstance(self.data, Path):
+            self.new_path = str(self.path.absolute())
+            self._handle_str_path()
         else:
             # 未指定路径,创建临时目录
             self._create_temp_directory()
