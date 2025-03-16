@@ -2,7 +2,7 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-18 21:06:40
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-03-16 14:03:15
+# @LastEditTime : 2025-03-16 14:08:58
 # @Description  : 上下文管理器,用于暂时切换工作路径。
 # @Copyright (c) 2025 by Fish-LP, MIT License 
 # -------------------------
@@ -62,7 +62,7 @@ class ChangeDir(ContextDecorator):
         elif isinstance(self.path, UUID):
             # 从路径注册表中加载路径
             self._load_path(self.path)
-        elif isinstance(self.data, Path):
+        elif isinstance(self.path, Path):
             self.new_path = str(self.path.absolute())
             self._handle_str_path()
         else:
