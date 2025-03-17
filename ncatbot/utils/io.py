@@ -99,7 +99,7 @@ try:
     _open_file = aiofiles.open  # type: ignore
 except ImportError:
     _open_file = open
-    warnings.warn("aiofiles 模块未安装。异步功能将被禁用。", ImportWarning)
+    pass
 
 # YAML 模块检测
 YAML_AVAILABLE = False
