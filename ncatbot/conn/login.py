@@ -32,6 +32,12 @@ class LoginHandler:
                 ).json()
                 break
             except Exception:
+                _log.error(
+                    "获取登录列表失败, 请检查 ufw 防火墙、服务商网络防火墙等网络设备, 并开放对应端口"
+                )
+                _log.info("请开放 webui 端口 (默认 6099)")
+                _log.info(f"请开放 websocket 端口 {config.ws_port}")
+                exit(1)
                 pass
 
         self.header = {
