@@ -36,7 +36,7 @@ class Websocket:
             _log.error("Unknown error: Unrecognized message type!Please check log info!") and _log.debug(message)
 
     async def on_connect(self):
-        async with websockets.connect(uri=self._websocket_uri, extra_headers=self._header) as ws:
+        async with websockets.connect(uri=self._websocket_uri, extra_headers=self._header, ping_interval=None) as ws:
             # 我发现你们在client.py中已经进行了websocket连接的测试，故删除了此处不必要的错误处理。
             while True:
                 try:
@@ -45,7 +45,6 @@ class Websocket:
                     self.on_message(message)
                 # 这里的错误处理没有进行细分，我觉得没有很大的必要，报错的可能性不大，如果你对websocket了解很深，请完善此部分。
                 except Exception as e:
-                    _log.error("Websocket error: %s", e)
+                    _log.error(f"Websocket error: {e}")
                     break
             _log.info("Websocket connection closed.")
-
