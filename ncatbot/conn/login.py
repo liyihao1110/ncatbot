@@ -26,19 +26,19 @@ class LoginHandler:
             + str(config.webui_port)
         )
         while True:
+            EXPIRE = time.time() + 10
             try:
                 content = requests.post(
                     self.host + "/api/auth/login", json={"token": config.webui_token}
                 ).json()
                 break
             except Exception:
-                _log.error(
-                    "获取登录列表失败, 请检查 ufw 防火墙、服务商网络防火墙等网络设备, 并开放对应端口"
-                )
-                _log.info("请开放 webui 端口 (默认 6099)")
-                _log.info(f"请开放 websocket 端口 {config.ws_port}")
-                exit(1)
-                pass
+                time.sleep(1)
+                if time.time() > EXPIRE:
+                    _log.error("连接 WebUI 失败")
+                    _log.info("请开放 webui 端口 (默认 6099)")
+                    _log.info(f"请开放 websocket 端口 {config.ws_port}")
+                    exit(1)
 
         self.header = {
             "Authorization": "Bearer " + content["data"]["Credential"],
