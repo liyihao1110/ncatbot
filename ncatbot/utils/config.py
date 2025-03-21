@@ -69,7 +69,7 @@ class SetConfig:
         self.standerize_uri()
         parts = self.ws_uri.split(":")
         self.ws_ip = parts[0]
-        self.ws_port = parts[1]
+        self.ws_port = parts[-1]
         if not self.is_localhost():
             _log.info(
                 f'请注意, 当前配置的 ws_uri="{ws_uri}" 不是本地地址, 请确保远端 napcat 服务正确配置.'
