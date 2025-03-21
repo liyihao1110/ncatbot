@@ -50,14 +50,16 @@ class LoginHandler:
     def check_login_statu(self):
         # 检查 QQ 是否登录
         return requests.post(
-            self.host + "/api/QQLogin/CheckLoginStatus", headers=self.header
+            self.host + "/api/QQLogin/CheckLoginStatus", headers=self.header, timeout=5
         ).json()["data"]["isLogin"]
 
     def check_online_statu(self):
         # 检查 QQ 是否在线
         return (
             requests.post(
-                self.host + "/api/QQLogin/GetQQLoginInfo", headers=self.header
+                self.host + "/api/QQLogin/GetQQLoginInfo",
+                headers=self.header,
+                timeout=5,
             )
             .json()["data"]
             .get("online", False)

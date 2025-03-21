@@ -58,6 +58,8 @@ def start_napcat_linux(qq):
         ["sudo", "bash", "napcat", "start", str(qq)], stdout=subprocess.PIPE
     )
     process.wait()
+    if process.returncode != 0:
+        _log.error("启动 napcat 失败，请检查日志，ncatbot cli 可能没有被正确安装")
 
 
 def stop_napcat_linux(qq):
