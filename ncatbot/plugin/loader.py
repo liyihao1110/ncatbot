@@ -11,6 +11,7 @@ import asyncio
 import importlib
 import os
 import sys
+import traceback
 from collections import defaultdict, deque
 from pathlib import Path
 from types import MethodType, ModuleType
@@ -177,7 +178,6 @@ class PluginLoader:
                     meta_data=self.meta_data.copy(),
                     **kwargs,
                 )
-                self.event_bus.add_plugin(plugin)
                 temp_plugins[name] = plugin
 
             except Exception as e:
@@ -188,6 +188,7 @@ class PluginLoader:
 
         for name in load_order:
             await self.plugins[name].__onload__()
+            self.event_bus.add_plugin(self.plugins[name])
 
     async def load_plugins(self, plugins_path: str = PLUGINS_DIR, **kwargs):
         """
@@ -218,6 +219,7 @@ class PluginLoader:
                 _log.info("兼容内容加载成功")
             except Exception as e:
                 _log.error(f"加载插件时出错: {e}")
+                _log.error(traceback.format_exc())
         else:
             _log.info(
                 f"插件目录: {os.path.abspath(plugins_path)} 不存在......跳过加载插件"

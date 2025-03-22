@@ -9,13 +9,19 @@ _log = get_log()
 
 
 class SetConfig:
+
+    deault_root = "123456"
+    default_bt_uin = "123456"
+
     def __init__(self):
         self._updated = False
         self.bt_uin = "123456"
+        self.root = "123456"
         self.ws_uri = "ws://localhost:3001"
         self.token = ""
         self.webui_token = ""  # webui 令牌, 自动读取, 无需设置
         self.webui_port = ""  # webui 端口, 自动读取, 无需设置
+        self.root = ""
 
     def __str__(self):
         return (
@@ -62,6 +68,9 @@ class SetConfig:
     def standerize_uri(self):
         if not (self.ws_uri.startswith("ws://") or self.ws_uri.startswith("wss://")):
             self.ws_uri = "ws://" + self.ws_uri
+
+    def set_root(self, root: str):
+        self.root = root
 
     def set_ws_uri(self, ws_uri: str):
         self._updated = True

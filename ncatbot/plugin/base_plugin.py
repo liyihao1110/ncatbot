@@ -52,8 +52,6 @@ class BasePlugin:
     dependencies: dict = {}  # 依赖的插件以及版本(不是 PYPI 依赖)
     meta_data: dict
     api: BotAPI
-    funcs: list[Func] = []  # 功能
-    configs: list[Conf] = []  # 配置项
 
     @final
     def __init__(self, event_bus: EventBus, **kwd):
@@ -78,6 +76,8 @@ class BasePlugin:
         if not self.dependencies:
             self.dependencies = {}
 
+        self.funcs: list[Func] = []  # 功能
+        self.configs: list[Conf] = []  # 配置项
         self.event_bus = event_bus
         self.lock = asyncio.Lock()  # 创建一个异步锁对象
         self.work_path = Path(PERSISTENT_DIR) / self.name
@@ -201,7 +201,7 @@ class BasePlugin:
         handler: Callable[[Event], Any],
         filter: Callable = None,
         raw_message_filter: Union[str, re.Pattern] = None,
-        permission: PermissionGroup = PermissionGroup.USER,
+        permission: PermissionGroup = PermissionGroup.USER.value,
         permission_raise: bool = False,
     ):
         if all([name != var.name for var in self.funcs]):
@@ -235,7 +235,7 @@ class BasePlugin:
             handler,
             filter,
             raw_message_filter,
-            PermissionGroup.USER,
+            PermissionGroup.USER.value,
             permission_raise,
         )
 
@@ -254,14 +254,14 @@ class BasePlugin:
             handler,
             filter,
             raw_message_filter,
-            PermissionGroup.ADMIN,
+            PermissionGroup.ADMIN.value,
             permission_raise,
         )
 
     def register_default_func(
         self,
         handler: Callable[[Event], Any],
-        permission: PermissionGroup = PermissionGroup.USER,
+        permission: PermissionGroup = PermissionGroup.USER.value,
     ):
         """默认处理功能
 
@@ -278,8 +278,7 @@ class BasePlugin:
             default (Any): 默认值
             rptr (Callable[[str], Any], optional): 值转换函数. 默认使用直接转换.
         """
-        self.data["config"][key] = default
-        self.configs.append(Conf(self, key, rptr))
+        self.configs.append(Conf(self, key, rptr, default))
 
     async def on_load(self):
         """插件初始化时的钩子函数，可被子类重写"""
