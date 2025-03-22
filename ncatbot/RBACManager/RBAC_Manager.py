@@ -2,10 +2,11 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-03-06 18:30:02
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-03-15 17:55:51
+# @LastEditTime : 2025-03-22 17:11:43
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议
 # -------------------------
+from functools import lru_cache
 from typing import Dict, Literal, Set
 
 from ncatbot.RBACManager.permission_path import PermissionPath
@@ -35,18 +36,17 @@ class RBACManager:
         刷新权限缓存（当权限数据变化时调用）
         策略: 清除相关用户或角色的缓存计算结果
         """
-        pass
-        # if user_name:  # 清除指定用户的缓存
-        #     self._get_user_permissions.cache_clear()
-        # elif role_name:  # 清除所有关联该角色的用户的缓存
-        #     for user in self.users.values():
-        #         if role_name in user["role_list"]:
-        #             self._get_user_permissions.cache_clear()
-        #             break
-        # else:  # 全局刷新
-        #     self._get_user_permissions.cache_clear()
+        if user_name:  # 清除指定用户的缓存
+            self._get_user_permissions.cache_clear()
+        elif role_name:  # 清除所有关联该角色的用户的缓存
+            for user in self.users.values():
+                if role_name in user["role_list"]:
+                    self._get_user_permissions.cache_clear()
+                    break
+        else:  # 全局刷新
+            self._get_user_permissions.cache_clear()
 
-    # @lru_cache(maxsize=128)
+    @lru_cache(maxsize=128)
     def _get_user_permissions(self, user_name: str) -> Dict[str, Set[str]]:
         """
         获取用户的最终权限集合（带缓存）,并自动清理无效权限
@@ -115,10 +115,15 @@ class RBACManager:
 
         return {"white": white, "black": black}
 
-    def check_permission(self, user_name: str, path: str) -> bool:
+    def check_permission(self, user_name: str, path: str, strict: bool = False) -> bool:
         """
         检查用户是否拥有某路径的权限
         规则优先级: 黑名单 > 白名单 > 默认拒绝
+
+        Args:
+            user_name: 用户名
+            path: 权限路径
+            strict: 是否严格匹配。True时仅允许完全匹配，False时允许通配符匹配
         """
         if not self.check_availability(user_name=user_name):
             raise ValueError(f"用户 {user_name} 不存在")
@@ -126,19 +131,27 @@ class RBACManager:
         permissions = self._get_user_permissions(user_name)
         formatted_path = self.permissions_trie.format_path(path)
 
-        # 先检查黑名单（只要有一个匹配就拒绝）
+        # 快速路径: 精确匹配黑名单
+        if formatted_path.row_path in permissions["black"]:
+            return False
+
+        # 快速路径: 精确匹配白名单
+        if formatted_path.row_path in permissions["white"]:
+            return True
+
+        if strict:
+            return False
+
+        # 通配符匹配
         for black_path in permissions["black"]:
             if self._is_path_covered(black_path, formatted_path):
                 return False
 
-        # 再检查白名单（至少有一个匹配才允许）
-        white_allowed = False
         for white_path in permissions["white"]:
             if self._is_path_covered(white_path, formatted_path):
-                white_allowed = True
-                break
+                return True
 
-        return white_allowed
+        return False
 
     def _is_path_covered(self, pattern: str, target: PermissionPath) -> bool:
         """
@@ -209,9 +222,12 @@ class RBACManager:
         del self.users[user_name]
 
     def assign_permissions_to_role(
-        self, role_name: str, permissions_path: str, mode: Literal["white", "black"]
+        self,
+        role_name: str,
+        permissions_path: str,
+        mode: Literal["white", "black"] = "white",
     ):
-        """为角色分配权限,确保权限路径存在"""
+        """为角色分配权限"""
         if not self.check_availability(role_name=role_name):
             raise IndexError(f"角色 {role_name} 不存在")
         if not self.check_availability(permissions_path=permissions_path):
@@ -306,3 +322,89 @@ class RBACManager:
         ):
             self.role_inheritance[role].remove(inherited_role)
             self.refresh_cache(role_name=role)
+
+    def to_dict(self) -> dict:
+        """将RBACManager实例转换为可序列化字典"""
+        return {
+            # 保存配置参数
+            "case_sensitive": self.case_sensitive,
+            "default_role": self.default_role,
+            # 保存角色数据（包含权限列表）
+            "roles": {
+                role_name: {
+                    "white_permissions_list": role_data["white_permissions_list"],
+                    "black_permissions_list": role_data["black_permissions_list"],
+                }
+                for role_name, role_data in self.roles.items()
+            },
+            # 保存用户数据（包含直接权限和角色关联）
+            "users": {
+                user_name: {
+                    "white_permissions_list": user_data["white_permissions_list"],
+                    "black_permissions_list": user_data["black_permissions_list"],
+                    "role_list": user_data["role_list"],
+                }
+                for user_name, user_data in self.users.items()
+            },
+            # 保存权限树所有有效路径
+            "permissions_trie_paths": self.permissions_trie.trie,
+            # 保存角色继承关系
+            "role_inheritance": self.role_inheritance,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "RBACManager":
+        """从字典重建RBACManager实例"""
+        # 检查全局配置
+        original_case_sensitive = cls.case_sensitive
+        new_case_sensitive = data.get("case_sensitive", True)
+        if new_case_sensitive != original_case_sensitive:
+            raise ValueError("全局唯一配置不匹配，请检查大小写匹配设置")
+
+        instance = RBACManager()
+
+        trie_paths = data.get("permissions_trie_paths", [])
+        instance.permissions_trie.trie = trie_paths
+
+        # 恢复角色继承关系
+        instance.role_inheritance = data.get("role_inheritance", {})
+
+        # 恢复角色数据
+        for role_name, role_data in data.get("roles", {}).items():
+            instance.roles[role_name] = {
+                "white_permissions_list": [
+                    p
+                    for p in role_data["white_permissions_list"]
+                    if instance.permissions_trie.check_path(p)
+                ],
+                "black_permissions_list": [
+                    p
+                    for p in role_data["black_permissions_list"]
+                    if instance.permissions_trie.check_path(p)
+                ],
+            }
+
+        # 恢复用户数据
+        valid_roles = set(instance.roles.keys())
+        for user_name, user_data in data.get("users", {}).items():
+            instance.users[user_name] = {
+                "white_permissions_list": [
+                    p
+                    for p in user_data["white_permissions_list"]
+                    if instance.permissions_trie.check_path(p)
+                ],
+                "black_permissions_list": [
+                    p
+                    for p in user_data["black_permissions_list"]
+                    if instance.permissions_trie.check_path(p)
+                ],
+                "role_list": [
+                    r
+                    for r in user_data["role_list"]
+                    if r in valid_roles or r == instance.default_role
+                ],
+            }
+
+        # 强制刷新所有缓存
+        instance.refresh_cache()
+        return instance
