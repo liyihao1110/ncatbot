@@ -2,16 +2,16 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-18 21:06:40
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-03-02 18:50:38
-# @Description  : 上下文管理器，用于暂时切换工作路径。
-# @Copyright (c) 2025 by Fish-LP, MIT License
-# @message      : 我迟早炸
+# @LastEditTime : 2025-03-16 14:08:58
+# @Description  : 上下文管理器,用于暂时切换工作路径。
+# @Copyright (c) 2025 by Fish-LP, MIT License 
 # -------------------------
 import os
 import tempfile
-from contextlib import ContextDecorator
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID, uuid4
+from pathlib import Path
+from contextlib import ContextDecorator
 
 from .logger import get_log
 
@@ -20,43 +20,55 @@ LOG = get_log("ChangeDir")
 
 class ChangeDir(ContextDecorator):
     """
-    上下文管理器，用于暂时切换工作路径。
+    上下文管理器,用于暂时切换工作路径。
     支持自动恢复原始路径和目录创建/清理。
     """
-
     _DIRS_REGISTRY: dict[UUID, str] = {}  # 保存所有可用目录的 UUID 和路径
 
     def __init__(
         self,
-        path: Optional[str | UUID] = None,
+        path: Optional[Union[str, UUID, Path]] = None,
         create_missing: bool = False,
         keep_temp: bool = False,
+        init_path: bool = False,
     ) -> None:
         """
         初始化工作路径切换器。
 
-        参数:
-            path (Optional[str | UUID]): 新的工作路径。若为 None，则创建临时目录。
-            create_missing (bool): 如果目标路径不存在，是否自动创建。
+        Args
+            path (Optional[str | UUID | Path]): 新的工作路径。若为 None,则创建临时目录。
+            create_missing (bool): 如果目标路径不存在,是否自动创建。
             keep_temp (bool): 是否在退出后暂存临时目录。
+            init_path (bool): 立刻初始化路径。否则在使用时初始化
         """
         self.create_missing = create_missing
         self.keep_temp = keep_temp
         self.temp_dir = None  # 临时目录管理器
         self.origin_path = os.getcwd()
+        self.path = path
+        self.init = False
         self.new_path = ""
         self.dir_id = None  # 目录对应的 UUID
+        if init_path:
+            self.init_path()
 
-        # 初始化目标路径
-        if isinstance(path, str):
-            self.new_path = os.path.abspath(path)
+    def init_path(self):
+        '''初始化目标路径'''
+        if self.init:
+            return
+        if isinstance(self.path, str):
+            self.new_path = os.path.abspath(self.path)
             self._handle_str_path()
-        elif isinstance(path, UUID):
+        elif isinstance(self.path, UUID):
             # 从路径注册表中加载路径
-            self._load_path(path)
+            self._load_path(self.path)
+        elif isinstance(self.path, Path):
+            self.new_path = str(self.path.absolute())
+            self._handle_str_path()
         else:
-            # 未指定路径，创建临时目录
+            # 未指定路径,创建临时目录
             self._create_temp_directory()
+        self.init = True
 
     def _handle_str_path(self) -> None:
         """
@@ -96,14 +108,15 @@ class ChangeDir(ContextDecorator):
 
     def __enter__(self) -> "UUID":
         """
-        进入上下文时，切换到新的工作路径。
+        进入上下文时,初始化并切换到新的工作路径。
         """
+        self.init_path()
         os.chdir(self.new_path)
         return self.dir_id if self.dir_id else UUID(int=0)
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
         """
-        退出上下文时，恢复原始路径并清理临时目录。
+        退出上下文时,恢复原始路径并清理临时目录。
         """
         try:
             os.chdir(self.origin_path)

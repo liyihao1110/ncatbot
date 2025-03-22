@@ -2,7 +2,7 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-12 13:41:02
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-03-06 22:22:24
+# @LastEditTime : 2025-03-15 16:14:50
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @Copyright (c) 2025 by Fish-LP, MIT License 
 # -------------------------
@@ -14,6 +14,7 @@ from datetime import datetime
 from logging.handlers import TimedRotatingFileHandler
 
 from tqdm import tqdm as tqdm_original
+from ncatbot.utils.color import Color
 
 import ctypes
 from ctypes import wintypes
@@ -22,10 +23,10 @@ def is_ansi_supported():
     """
     检查系统是否支持 ANSI 转义序列。
 
-    返回:
-        bool: 如果系统支持 ANSI 转义序列返回 True，否则返回 False。
+    return:
+        bool: 如果系统支持 ANSI 转义序列返回 True,否则返回 False。
     """
-    if sys.platform != "win32":
+    if not sys.platform.startswith("win"):
         # 非 Windows 系统通常支持 ANSI 转义序列
         return True
 
@@ -41,7 +42,7 @@ def is_ansi_supported():
         if major_version >= 10:
             is_windows_10_or_higher = True
     except AttributeError:
-        # 如果无法获取版本信息，假设不支持
+        # 如果无法获取版本信息,假设不支持
         return False
 
     # 检查控制台是否支持虚拟终端处理
@@ -62,11 +63,11 @@ def set_console_mode(mode=7):
     """
     设置控制台输出模式。
 
-    参数:
-        mode (int): 控制台模式标志，默认为7（ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING）。
+    Args
+        mode (int): 控制台模式标志,默认为7（ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING）。
 
-    返回:
-        bool: 如果操作成功返回True，否则返回False。
+    return:
+        bool: 如果操作成功返回True,否则返回False。
     """
     try:
         kernel32 = ctypes.windll.kernel32
@@ -82,121 +83,15 @@ def set_console_mode(mode=7):
         return False
     return True
 
-class Color:
-    """
-    用于在终端中显示颜色和样式。
-
-    包含以下功能：
-    - 前景：设置颜
-    - 背景：设置背景颜
-    - 样式：设置样式（如加粗、下划线、反转）
-    - RESET：重置所有颜和样式
-    """
-    _COLOR = is_ansi_supported()# or set_console_mode(7) 等待测试
-    def __getattribute__(self, name):
-        if self._COLOR:
-            return super().__getattribute__(name)
-        else:
-            return ''
-
-    # 前景
-    BLACK = "\033[30m"
-    """前景-黑"""
-    RED = "\033[31m"
-    """前景-红"""
-    GREEN = "\033[32m"
-    """前景-绿"""
-    YELLOW = "\033[33m"
-    """前景-黄"""
-    BLUE = "\033[34m"
-    """前景-蓝"""
-    MAGENTA = "\033[35m"
-    """前景-品红"""
-    CYAN = "\033[36m"
-    """前景-青"""
-    WHITE = "\033[37m"
-    """前景-白"""
-    RESET = "\033[0m"
-    """重置所有颜色和样式"""
-
-    # 扩展前景
-    LIGHT_GRAY = "\033[90m"
-    """前景-亮灰"""
-    LIGHT_RED = "\033[91m"
-    """前景-亮红"""
-    LIGHT_GREEN = "\033[92m"
-    """前景-亮绿"""
-    LIGHT_YELLOW = "\033[93m"
-    """前景-亮黄"""
-    LIGHT_BLUE = "\033[94m"
-    """前景-亮蓝"""
-    LIGHT_MAGENTA = "\033[95m"
-    """前景-亮品红"""
-    LIGHT_CYAN = "\033[96m"
-    """前景-亮青"""
-    LIGHT_WHITE = "\033[97m"
-    """前景-亮白"""
-
-    # 背景
-    BG_BLACK = "\033[40m"
-    """背景-黑"""
-    BG_RED = "\033[41m"
-    """背景-红"""
-    BG_GREEN = "\033[42m"
-    """背景-绿"""
-    BG_YELLOW = "\033[43m"
-    """背景-黄"""
-    BG_BLUE = "\033[44m"
-    """背景-蓝"""
-    BG_MAGENTA = "\033[45m"
-    """背景-品红"""
-    BG_CYAN = "\033[46m"
-    """背景-青"""
-    BG_WHITE = "\033[47m"
-    """背景-白"""
-
-    # 扩展背景
-    BG_LIGHT_GRAY = "\033[100m"
-    """背景-亮灰"""
-    BG_LIGHT_RED = "\033[101m"
-    """背景-亮红"""
-    BG_LIGHT_GREEN = "\033[102m"
-    """背景-亮绿"""
-    BG_LIGHT_YELLOW = "\033[103m"
-    """背景-亮黄"""
-    BG_LIGHT_BLUE = "\033[104m"
-    """背景-亮蓝"""
-    BG_LIGHT_MAGENTA = "\033[105m"
-    """背景-亮品红"""
-    BG_LIGHT_CYAN = "\033[106m"
-    """背景-亮青"""
-    BG_LIGHT_WHITE = "\033[107m"
-    """背景-亮白"""
-
-    # 样式
-    BOLD = "\033[1m"
-    """加粗"""
-    UNDERLINE = "\033[4m"
-    """下划线"""
-    REVERSE = "\033[7m"
-    """反转（前景色和背景色互换）"""
-    ITALIC = "\033[3m"
-    """斜体"""
-    BLINK = "\033[5m"
-    """闪烁"""
-    STRIKE = "\033[9m"
-    """删除线"""
-
-
-# 定义自定义的 tqdm 类，继承自原生的 tqdm 类
+# 定义自定义的 tqdm 类,继承自原生的 tqdm 类
 class tqdm(tqdm_original):
     """
     自定义 tqdm 类的初始化方法。
-    通过设置默认参数，确保每次创建 tqdm 进度条时都能应用统一的风格。
+    通过设置默认参数,确保每次创建 tqdm 进度条时都能应用统一的风格。
 
-    参数说明：
+    参数说明: 
     :param args: 原生 tqdm 支持的非关键字参数（如可迭代对象等）。
-    :param kwargs: 原生 tqdm 支持的关键字参数，用于自定义进度条的行为和外观。
+    :param kwargs: 原生 tqdm 支持的关键字参数,用于自定义进度条的行为和外观。
         - bar_format (str): 进度条的格式化字符串。
         - ncols (int): 进度条的宽度（以字符为单位）。
         - colour (str): 进度条的颜色。
@@ -218,11 +113,11 @@ class tqdm(tqdm_original):
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("bar_format", 
-            f"{Color.LIGHT_CYAN}{{desc}}{Color.RESET} "
-            f"{Color.LIGHT_WHITE}{{percentage:3.0f}}%{Color.RESET}"
-            f"{Color.LIGHT_GRAY}[{{n_fmt}}]{Color.RESET}"
+            f"{Color.CYAN}{{desc}}{Color.RESET} "
+            f"{Color.WHITE}{{percentage:3.0f}}%{Color.RESET}"
+            f"{Color.GRAY}[{{n_fmt}}]{Color.RESET}"
             f"{Color.WHITE}|{{bar:20}}|{Color.RESET}"
-            f"{Color.LIGHT_BLUE}[{{elapsed}}]{Color.RESET}"
+            f"{Color.BLUE}[{{elapsed}}]{Color.RESET}"
         )
         kwargs.setdefault("ncols", 80)
         kwargs.setdefault("colour", "green")
@@ -235,7 +130,7 @@ class tqdm(tqdm_original):
     @colour.setter 
     def colour(self, color):
         # 确保颜色值有效
-        valid_color = self._STYLE_MAP.get(color, "GREEN")  # 如果无效，回退到 GREEN
+        valid_color = self._STYLE_MAP.get(color, "GREEN")  # 如果无效,回退到 GREEN
         self._colour = valid_color
         self.desc = f"{getattr(Color, valid_color)}{self.desc}{Color.RESET}"
 
@@ -301,8 +196,8 @@ def setup_logging():
     default_log_format = {
         "console": {
             "DEBUG": f"{Color.CYAN}[%(asctime)s.%(msecs)03d]{Color.RESET} "
-                    f"{Color.LIGHT_BLUE}%(colored_levelname)-8s{Color.RESET} "
-                    f"{Color.LIGHT_GRAY}[%(threadName)s|%(processName)s]{Color.RESET} "
+                    f"{Color.BLUE}%(colored_levelname)-8s{Color.RESET} "
+                    f"{Color.GRAY}[%(threadName)s|%(processName)s]{Color.RESET} "
                     f"{Color.MAGENTA}%(name)s{Color.RESET} "
                     f"{Color.YELLOW}%(filename)s:%(funcName)s:%(lineno)d{Color.RESET} "
                     "| %(message)s",
@@ -310,26 +205,26 @@ def setup_logging():
             "INFO": f"{Color.CYAN}[%(asctime)s.%(msecs)03d]{Color.RESET} "
                     f"{Color.GREEN}%(colored_levelname)-8s{Color.RESET} "
                     f"{Color.MAGENTA}%(name)s{Color.RESET} ➜ "
-                    f"{Color.LIGHT_WHITE}%(message)s{Color.RESET}",
+                    f"{Color.WHITE}%(message)s{Color.RESET}",
             
             "WARNING": f"{Color.CYAN}[%(asctime)s.%(msecs)03d]{Color.RESET} "
                     f"{Color.YELLOW}%(colored_levelname)-8s{Color.RESET} "
                     f"{Color.MAGENTA}%(name)s{Color.RESET} "
-                    f"{Color.LIGHT_RED}➜{Color.RESET} "
+                    f"{Color.RED}➜{Color.RESET} "
                     f"{Color.YELLOW}%(message)s{Color.RESET}",
             
             "ERROR": f"{Color.CYAN}[%(asctime)s.%(mctime)s.%(msecs)03d]{Color.RESET} "
                     f"{Color.RED}%(colored_levelname)-8s{Color.RESET} "
-                    f"{Color.LIGHT_GRAY}[%(filename)s]{Color.RESET}"
+                    f"{Color.GRAY}[%(filename)s]{Color.RESET}"
                     f"{Color.MAGENTA}%(name)s:%(lineno)d{Color.RESET} "
-                    f"{Color.LIGHT_RED}➜{Color.RESET} "
+                    f"{Color.RED}➜{Color.RESET} "
                     f"{Color.RED}%(message)s{Color.RESET}",
             
             "CRITICAL": f"{Color.CYAN}[%(asctime)s.%(msecs)03d]{Color.RESET} "
                         f"{Color.BG_RED}{Color.WHITE}%(colored_levelname)-8s{Color.RESET} "
-                        f"{Color.LIGHT_GRAY}{{%(module)s}}{Color.RESET}"
+                        f"{Color.GRAY}{{%(module)s}}{Color.RESET}"
                         f"{Color.MAGENTA}[%(filename)s]{Color.RESET}"
-                        f"{Color.LIGHT_MAGENTA}%(name)s:%(lineno)d{Color.RESET} "
+                        f"{Color.MAGENTA}%(name)s:%(lineno)d{Color.RESET} "
                         f"{Color.BG_RED}➜{Color.RESET} "
                         f"{Color.BOLD}%(message)s{Color.RESET}"
         },
@@ -361,7 +256,7 @@ def setup_logging():
         backup_count = int(os.getenv("BACKUP_COUNT", "7"))
     except ValueError:
         backup_count = 7
-        warnings.warn("BACKUP_COUNT 为无效值，使用默认值 7")
+        warnings.warn("BACKUP_COUNT 为无效值,使用默认值 7")
         os.environ["BACKUP_COUNT"] = 7
 
     # 创建日志目录
@@ -417,11 +312,11 @@ if __name__ == "__main__":
     logger.error("这是一个错误信息")
     logger.critical("这是一个严重错误信息")
     # 常见参数
-    # total：总进度数。
-    # desc：进度条描述。
-    # ncols：进度条宽度。
-    # unit：进度单位。
-    # leave：是否在完成后保留进度条。
+    # total: 总进度数。
+    # desc: 进度条描述。
+    # ncols: 进度条宽度。
+    # unit: 进度单位。
+    # leave: 是否在完成后保留进度条。
 
     with logging_redirect_tqdm():
         with tqdm(range(0, 100)) as pbar:
