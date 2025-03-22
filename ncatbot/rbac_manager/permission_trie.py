@@ -2,13 +2,13 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-24 21:52:42
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-03-15 19:09:56
+# @LastEditTime : 2025-03-22 17:06:48
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
-# @Copyright (c) 2025 by Fish-LP, MIT License 
+# @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议
 # -------------------------
-from ..utils.color import Color
-from .RBACManager import PermissionPath
-from json import dumps
+from Fcatbot import Color
+from Fcatbot.utils import visualize_tree
+from .RBAC_manager import PermissionPath
 
 class Trie:
     def __init__(self, case_sensitive: bool = True):
@@ -16,7 +16,7 @@ class Trie:
         self.case_sensitive = case_sensitive    # 设置是否区分大小写
 
     def __str__(self):
-        return dumps(self.trie,indent=2)
+        return '\n'.join([f'{Color.RED}*{Color.RESET}'] + visualize_tree(self.trie))
 
     def format_path(self, path: str) -> PermissionPath:
         if self.case_sensitive:
@@ -109,25 +109,34 @@ class Trie:
 
     @classmethod
     def _check_path_in_trie(cls, trie: dict, path: PermissionPath, complete: bool = False):
+        """路径匹配实现"""
         current_node = trie
-
+        path_len = len(path)
+        
+        # 使用迭代代替递归，提高性能
         for i, node in enumerate(path):
+            # 快速处理 ** 通配符
             if node == '**':
-                # 当 complete 为 True 时,** 必须是路径的最后一个节点
-                if complete and i != len(path) - 1:
-                    return False
-                return True
+                return True if not complete or i == path_len - 1 else False
+                
+            # 处理 * 通配符
             elif node == '*':
-                # 递归检查所有子节点,传递 complete 参数
+                if i == path_len - 1:  # 路径最后一个节点
+                    return bool(current_node) if complete else True
+                    
+                # 检查所有可能的子路径
+                remaining = path[i+1:]
                 return any(
-                    cls._check_path_in_trie(current_node[child], path[i+1:], complete)
+                    cls._check_path_in_trie(current_node[child], remaining, complete)
                     for child in current_node
                 )
+                
+            # 普通节点匹配
             elif node not in current_node:
                 return False
+                
             current_node = current_node[node]
-        
-        # 检查是否到达路径尽头（如果是 complete 模式,当前节点必须无子节点）
+            
         return not complete or not current_node
 
     def check_path(self, path: str, complete: bool = False):

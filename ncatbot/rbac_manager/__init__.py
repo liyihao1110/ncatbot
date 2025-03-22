@@ -4,11 +4,11 @@
 # @LastEditors  : Fish-LP fish.zh@outlook.com
 # @LastEditTime : 2025-03-15 17:46:15
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
-# @Copyright (c) 2025 by Fish-LP, MIT License 
+# @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议
 # -------------------------
-from .RBACManager import RBACManager
-from .RBACManager import PermissionPath
-from .Trie import Trie
+from .RBAC_manager import RBACManager
+from .RBAC_manager import PermissionPath
+from .permission_trie import Trie
 """
 * 基本概念
 * RBAC(Role-Based Access Control)基于角色的访问控制, 是一种权限管理模型, 通过为用户分配角色, 再为角色分配权限, 实现对系统资源的访问控制。
@@ -38,7 +38,7 @@ from .Trie import Trie
 ! 警告: 没有进行完全的安全检查
 """
 __all__ = [
-    'RBACManager',
+    'RBAC_manager',
     'PermissionPath',
-    'Trie',
+    'permission_trie',
 ]
