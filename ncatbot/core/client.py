@@ -28,10 +28,17 @@ _log = get_log()
 
 class BotClient:
     def __init__(self, plugins_path="plugins"):
-        if not config._updated:
-            _log.info("没有主动设置配置项, 配置项将使用默认值")
-        _log.info(config)
+        def check_config():
+            if not config._updated:
+                _log.info("没有主动设置配置项, 配置项将使用默认值")
+            if config.bt_uin is config.default_bt_uin:
+                _log.error("请设置正确的 Bot QQ 号")
+                exit(1)
+            if config.root is config.deault_root:
+                _log.warning("建议设置好 root 账号保证权限功能能够正常使用")
+            _log.info(config)
 
+        check_config()
         self.api = BotAPI()
         self._subscribe_group_message_types = []
         self._subscribe_private_message_types = []
@@ -54,7 +61,9 @@ class BotClient:
 
         await self.plugin_sys.event_bus.publish_async(
             Event(
-                OFFICIAL_GROUP_MESSAGE_EVENT, msg, EventSource(msg.user_id, msg.user_id)
+                OFFICIAL_GROUP_MESSAGE_EVENT,
+                msg,
+                EventSource(msg.user_id, msg.group_id),
             )
         )
 
@@ -67,7 +76,7 @@ class BotClient:
         from ncatbot.plugin.event import Event, EventSource
 
         await self.plugin_sys.event_bus.publish_async(
-            Event(OFFICIAL_PRIVATE_MESSAGE_EVENT, msg, EventSource("root", msg.user_id))
+            Event(OFFICIAL_PRIVATE_MESSAGE_EVENT, msg, EventSource(msg.user_id, "root"))
         )
 
     async def handle_notice_event(self, msg: dict):
@@ -327,7 +336,7 @@ class BotClient:
             INFO_TIME_EXPIRE = time.time() + 20
             _log.info("正在连接 napcat websocket 服务器...")
             while not self.napcat_server_ok():
-                time.sleep(2)
+                time.sleep(0.5)
                 if time.time() > MAX_TIME_EXPIRE:
                     info(True)
                 if time.time() > INFO_TIME_EXPIRE:

@@ -87,10 +87,12 @@ class PrivateMessage(BaseMessage):
         "message",
         "message_format",
         "target_id",
+        "message_type",
     )
 
     def __init__(self, message):
         super().__init__(message)
+
         self.user_id = message.get("user_id", None)
         self.message_id = message.get("message_id", None)
         self.message_seq = message.get("message_seq", None)

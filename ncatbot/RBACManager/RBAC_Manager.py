@@ -6,11 +6,10 @@
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议
 # -------------------------
-from functools import lru_cache
 from typing import Dict, Literal, Set
 
-from .permission_path import PermissionPath
-from .permission_trie import Trie
+from ncatbot.RBACManager.permission_path import PermissionPath
+from ncatbot.RBACManager.permission_trie import Trie
 
 
 class RBACManager:
@@ -36,17 +35,18 @@ class RBACManager:
         刷新权限缓存（当权限数据变化时调用）
         策略: 清除相关用户或角色的缓存计算结果
         """
-        if user_name:  # 清除指定用户的缓存
-            self._get_user_permissions.cache_clear()
-        elif role_name:  # 清除所有关联该角色的用户的缓存
-            for user in self.users.values():
-                if role_name in user["role_list"]:
-                    self._get_user_permissions.cache_clear()
-                    break
-        else:  # 全局刷新
-            self._get_user_permissions.cache_clear()
+        pass
+        # if user_name:  # 清除指定用户的缓存
+        #     self._get_user_permissions.cache_clear()
+        # elif role_name:  # 清除所有关联该角色的用户的缓存
+        #     for user in self.users.values():
+        #         if role_name in user["role_list"]:
+        #             self._get_user_permissions.cache_clear()
+        #             break
+        # else:  # 全局刷新
+        #     self._get_user_permissions.cache_clear()
 
-    @lru_cache(maxsize=128)
+    # @lru_cache(maxsize=128)
     def _get_user_permissions(self, user_name: str) -> Dict[str, Set[str]]:
         """
         获取用户的最终权限集合（带缓存）,并自动清理无效权限

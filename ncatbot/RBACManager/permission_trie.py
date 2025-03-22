@@ -6,7 +6,7 @@
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议
 # -------------------------
-from ncatbot.RBACManager.RBAC_Manager import PermissionPath
+from ncatbot.RBACManager.permission_path import PermissionPath
 from ncatbot.utils import visualize_tree
 from ncatbot.utils.logger import Color
 
