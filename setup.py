@@ -39,5 +39,6 @@ setup(
         "qrcode~=8.0",
         "qrcode-terminal~=0.8",
         "gitpython~=3.1.44",
+        "schedule~=1.2.2",
     ],
 )
