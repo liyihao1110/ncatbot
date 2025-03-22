@@ -105,7 +105,6 @@ class Trie:
                             else:
                                 break  # 遇到非空节点则停止
                 return  # ** 通配符处理完毕后直接返回,不再处理剩余路径（因为已经删除了所有后代）
-
             # 处理普通节点
             else:
                 if current_part in current_node:
