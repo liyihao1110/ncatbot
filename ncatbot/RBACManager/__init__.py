@@ -2,11 +2,13 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-24 21:59:13
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-03-06 18:27:54
+# @LastEditTime : 2025-03-15 17:46:15
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
-# @Copyright (c) 2025 by Fish-LP, MIT License 
+# @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议
 # -------------------------
-from .RBACManager import RBACManager
+from ncatbot.RBACManager.permission_trie import Trie
+from ncatbot.RBACManager.RBAC_Manager import PermissionPath, RBACManager
+
 """
 * 基本概念
 * RBAC(Role-Based Access Control)基于角色的访问控制, 是一种权限管理模型, 通过为用户分配角色, 再为角色分配权限, 实现对系统资源的访问控制。
@@ -22,7 +24,7 @@ from .RBACManager import RBACManager
 角色—权限关系 : 角色与权限之间也是多对多的关系。一个角色可以包含多个权限, 一个权限也可以被分配给多个角色。
     例如, "内容编辑" 角色拥有对文档的编辑、删除权限, 而"内容审核" 角色拥有审核文档和编辑权限。
 
-* 角色继承 : 
+* 角色继承 :
 角色之间可以形成层级关系, 允许父角色的权限被子角色继承。这种继承关系可以简化权限管理
     例如, 管理员角色可以继承一般用户的权限, 并在其基础上增加系统管理相关的权限。
 
@@ -31,10 +33,12 @@ from .RBACManager import RBACManager
     例如
     具体权限 : "插件.插件功能1" 表示 "插件" 下的 "插件功能1" 权限。
     通配符 "*" : "插件.*" 代表 "插件" 下的所有权限。
-    通配符 "**" : "插件.**" 代表 "插件" 下的所有权限，包括子权限。
+    通配符 "**" : "插件.**" 代表 "插件" 下的所有权限,包括子权限。
 
 ! 警告: 没有进行完全的安全检查
 """
 __all__ = [
-    'RBACManager'
+    "RBACManager",
+    "PermissionPath",
+    "Trie",
 ]
