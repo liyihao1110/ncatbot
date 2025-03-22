@@ -141,7 +141,22 @@ class BotClient:
         info_subscribe_message_types()
         websocket_server = Websocket(self)
         await self.plugin_sys.load_plugins(api=self.api)
-        await websocket_server.on_connect()
+        while True:
+            try:
+                await websocket_server.on_connect()
+            except Exception:
+                _log.info("正在尝试重连服务器...")
+                EXPIER = time.time() + 300
+                interval = 1
+                while not (await check_websocket(config.ws_uri)):
+                    _log.info(f"正在尝试重连服务器...第 {interval} s")
+                    time.sleep(interval)
+                    interval *= 2
+                    if time.time() > EXPIER:
+                        _log.error("重连服务器超时, 退出程序")
+                        exit(1)
+            finally:
+                _log.info("重连服务器成功")
 
     def napcat_server_ok(self):
         return asyncio.run(check_websocket(config.ws_uri))
