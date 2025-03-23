@@ -92,7 +92,7 @@ class LoginHandler:
             val = requests.post(
                 self.host + "/api/QQLogin/CheckLoginStatus", headers=self.header
             ).json()["data"]["qrcodeurl"]
-            if val is not None:
+            if val is not None and val != "":
                 return val
 
         _log.error("获取二维码失败")
