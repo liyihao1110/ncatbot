@@ -4,7 +4,7 @@
 # @LastEditors  : Fish-LP fish.zh@outlook.com
 # @LastEditTime : 2025-03-16 14:08:58
 # @Description  : 上下文管理器,用于暂时切换工作路径。
-# @Copyright (c) 2025 by Fish-LP, MIT License 
+# @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议 
 # -------------------------
 import os
 import tempfile
