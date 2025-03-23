@@ -261,6 +261,27 @@ def make_archive_with_gitignore(plugin_name, version, path):
                 return True
         return False
 
+    def remove_read_only_files(temp_dir):
+        """
+        遍历并修改临时目录中文件和目录的权限，确保能够删除
+        """
+        for root, dirs, files in os.walk(temp_dir, topdown=False):
+            for name in files:
+                file_path = os.path.join(root, name)
+                try:
+                    os.chmod(file_path, 0o777)  # 修改文件权限为可写
+                    os.remove(file_path)
+                except PermissionError:
+                    print(f"无法删除文件: {file_path}")
+
+            for name in dirs:
+                dir_path = os.path.join(root, name)
+                try:
+                    os.chmod(dir_path, 0o777)  # 修改目录权限为可写
+                    os.rmdir(dir_path)
+                except PermissionError:
+                    print(f"无法删除目录: {dir_path}")
+
     # 解析 .gitignore 文件
     ignore_patterns = read_gitignore(path)
 
@@ -287,7 +308,8 @@ def make_archive_with_gitignore(plugin_name, version, path):
     archive_name = f"{plugin_name}-{version}"
     shutil.make_archive(archive_name, "zip", temp_dir)
 
-    # 删除临时目录
+    # 删除临时目录，并确保有权限删除
+    remove_read_only_files(temp_dir)
     shutil.rmtree(temp_dir)
 
     print(f"打包完成：{archive_name}.zip")
