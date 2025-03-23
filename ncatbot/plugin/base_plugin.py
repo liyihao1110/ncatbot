@@ -74,18 +74,20 @@ class BasePlugin:
     api: BotAPI
     save_type: str = 'json'
     first_load: bool = 'True'
-    _debug: bool = False  # 调试模式标记
+    debug: bool = False  # 调试模式标记
     time_task_scheduler: TimeTaskScheduler
     
     @final
     def __init__(self,
                 event_bus: EventBus,
+                time_task_scheduler: TimeTaskScheduler,
                 debug: bool = False,
                 **kwd):
         """初始化插件实例
         
         Args:
             event_bus: 事件总线实例
+            time_task_scheduler: 定时任务调度器
             debug: 是否启用调试模式
             **kwd: 额外的关键字参数,将被设置为插件属性
             
@@ -117,9 +119,9 @@ class BasePlugin:
         self._debug = debug
         self._event_handlers = []
         self._event_bus = event_bus
-        self._time_task_scheduler = TimeTaskScheduler
-        self._work_path = Path(PERSISTENT_DIR).resolve() / extract_relative_path('.', self.self_path)
-        self._data_path = self._work_path / f"{self.name}.{self.save_type}"
+        self._time_task_scheduler = time_task_scheduler
+        self._work_path = Path(PERSISTENT_DIR).resolve() / self.self_path.name
+        self._data_path = self._work_path / f"{self.self_path.name}.{self.save_type}"
 
         # 检查是否为第一次启动
         self.first_load = False
@@ -134,8 +136,6 @@ class BasePlugin:
 
         self.data = UniversalLoader(self._data_path)
         self.work_space = ChangeDir(self._work_path)
-        self.funcs: list[Func] = []  # 功能
-        self.configs: list[Conf] = []  # 配置项
 
     @property
     def debug(self) -> bool:
