@@ -1,4 +1,6 @@
+import argparse
 import asyncio
+import importlib
 import os
 import shutil
 import subprocess
@@ -6,6 +8,8 @@ import sys
 import time
 
 import requests
+
+from ncatbot.utils.PipTool import PipTool
 
 os.environ["LOG_FILE_PATH"] = "ncatbot/logs/"
 
@@ -87,27 +91,73 @@ def install(plugin, *args):
             return True
 
         print("正在下载插件包...")
+        print(os.path.abspath(f"plugins/{plugin}.zip"))
         download_file(gen_plugin_download_url(plugin, version), f"plugins/{plugin}.zip")
         print("正在解压插件包...")
-        os.makedirs(f"plugins/{plugin}", exist_ok=True)
-        shutil.unpack_archive(f"plugins/{plugin}.zip", f"plugins/{plugin}")
-        os.remove(f"plugins/{plugin}.zip")
-        if os.path.exists(f"plugins/{plugin}/requirements.txt"):
-            print("正在安装插件第三方依赖...")
-            process = subprocess.Popen(
-                [
-                    sys.executable,
-                    "-m",
-                    "pip",
-                    "install",
-                    "-r",
-                    f"plugins/{plugin}/requirements.txt",
-                    "-i",
-                    PYPI_SOURCE,
-                ],
-                shell=True,
-            )
-            process.wait()
+        directory_path = f"plugins/{plugin}"
+        os.makedirs(directory_path, exist_ok=True)
+        shutil.unpack_archive(f"{directory_path}.zip", directory_path)
+        os.remove(f"{directory_path}.zip")
+        if os.path.exists(f"{directory_path}/requirements.txt"):
+            PM = PipTool()
+            original_sys_path = sys.path.copy()
+            all_install = {
+                pack["name"].strip().lower()
+                for pack in PM.list_installed()
+                if "name" in pack
+            }
+            download_new = False
+
+            try:
+                directory_path = os.path.abspath(directory_path)
+                sys.path.append(os.path.dirname(directory_path))
+
+                if os.path.isfile(os.path.join(directory_path, "requirements.txt")):
+                    requirements = set(
+                        [
+                            pack.strip().lower()
+                            for pack in open(
+                                os.path.join(directory_path, "requirements.txt")
+                            ).readlines()
+                        ]
+                    )
+                    download = requirements - all_install
+                    if download:
+                        download_new = True
+                        _log.warning(
+                            f'即将安装 {plugin} 中要求的库: {" ".join(download)}'
+                        )
+                        # if input("是否安装(Y/n):").lower() in ("y", ""):
+                        for pack in download:
+                            _log.info(f"开始安装库: {pack}")
+                            PM.install(pack)
+
+                    try:
+                        importlib.import_module(plugin)
+                    except ImportError as e:
+                        _log.error(f"导入模块 {plugin} 时出错: {e}")
+
+                if download_new:
+                    _log.warning(
+                        "在某些环境中, 动态安装的库可能不会立即生效, 需要重新启动。"
+                    )
+            finally:
+                sys.path = original_sys_path
+            # print("正在安装插件第三方依赖...")
+            # process = subprocess.Popen(
+            #     [
+            #         sys.executable,
+            #         "-m",
+            #         "pip",
+            #         "install",
+            #         "-r",
+            #         f"plugins/{plugin}/requirements.txt",
+            #         "-i",
+            #         PYPI_SOURCE,
+            #     ],
+            #     shell=True,
+            # )
+            # process.wait()
 
     fix = args[0] == "--fix" if len(args) else False
 
@@ -215,7 +265,20 @@ def help(qq):
 
 
 def main():
-    os.chdir(NCATBOT_PATH)
+    parser = argparse.ArgumentParser(description="NcatBot CLI 参数表")
+    parser.add_argument(
+        "work_dir",
+        type=str,
+        nargs="?",
+        default=NCATBOT_PATH,
+        help="可选参数, 默认为 NcatBot 安装目录",
+    )
+    args = parser.parse_args()
+    if not os.path.isdir(args.work_dir):
+        print("工作目录参数不合法")
+        exit(1)
+    print("工作目录: ", os.path.abspath(args.work_dir))
+    os.chdir(args.work_dir)
     help(get_qq())
 
     while True:
@@ -253,4 +316,5 @@ def main():
             print(f"出现错误: {e}")
 
 
+print(os.getcwd())
 main()
