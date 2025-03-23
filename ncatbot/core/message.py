@@ -62,7 +62,9 @@ class GroupMessage(BaseMessage):
     def __repr__(self):
         return str({items: str(getattr(self, items)) for items in self.__slots__})
 
-    async def reply(self, is_file: bool = False, **kwargs):
+    async def reply(self, text: str = "", is_file: bool = False, **kwargs):
+        if len(text):
+            kwargs["text"] = text
         if is_file:
             return await self.api.post_group_file(self.group_id, **kwargs)
         else:
@@ -70,7 +72,7 @@ class GroupMessage(BaseMessage):
                 self.group_id, reply=self.message_id, **kwargs
             )
 
-    def reply_text_sync(self, text, **kwargs):
+    def reply_text_sync(self, text: str = "", **kwargs):
         return asyncio.create_task(self.reply(text=text, **kwargs))
 
 
@@ -109,11 +111,13 @@ class PrivateMessage(BaseMessage):
     def __repr__(self):
         return str({items: str(getattr(self, items)) for items in self.__slots__})
 
-    async def reply(self, is_file: bool = False, **kwargs):
+    async def reply(self, text: str = "", is_file: bool = False, **kwargs):
+        if len(text):
+            kwargs["text"] = text
         if is_file:
             return await self.api.post_private_file(self.user_id, **kwargs)
         else:
             return await self.api.post_private_msg(self.user_id, **kwargs)
 
-    def reply_text_sync(self, text, **kwargs):
+    def reply_text_sync(self, text: str = "", **kwargs):
         return asyncio.create_task(self.reply(text=text, **kwargs))
