@@ -11,6 +11,7 @@ _log = get_log()
 
 
 def show_qrcode(barcode_url):
+    _log.info(f"二维码指代的 url 地址: {barcode_url}")
     qr = qrcode.QRCode()
     qr.add_data(barcode_url)
     qr.print_ascii(invert=True)
