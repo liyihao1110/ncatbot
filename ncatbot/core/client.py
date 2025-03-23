@@ -155,8 +155,8 @@ class BotClient:
                     if time.time() > EXPIER:
                         _log.error("重连服务器超时, 退出程序")
                         exit(1)
-            finally:
-                _log.info("重连服务器成功")
+
+            _log.info("重连服务器成功")
 
     def napcat_server_ok(self):
         return asyncio.run(check_websocket(config.ws_uri))
@@ -164,11 +164,14 @@ class BotClient:
     def _run(self):
         try:
             asyncio.run(self.run_async())
+        except asyncio.CancelledError:
+            pass
         except Exception:
+            pass
+        finally:
             _log.info("插件卸载中...")
-            asyncio.run(self.plugin_sys._unload_all())
+            self.plugin_sys.unload_all()
             _log.info("正常退出")
-            time.sleep(1)
             exit(0)
 
     def run(self, reload=False, debug=False):

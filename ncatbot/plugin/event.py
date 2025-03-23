@@ -278,10 +278,6 @@ class EventBus:
         self.subscribe(OFFICIAL_GROUP_MESSAGE_EVENT, self._func_activator, 100)
         self.subscribe(OFFICIAL_PRIVATE_MESSAGE_EVENT, self._func_activator, 100)
 
-    # def _cfg(self, *args):
-    #     input:str = event.data.raw_message
-    #     pass
-
     async def _sm(self, message: BaseMessage):
         args = message.raw_message.split(" ")[1:]
         if len(args) != 1:
@@ -334,6 +330,18 @@ class EventBus:
                         f"{'群组' if '-g' in args else '用户'} {number} 已经被授权访问 {path}"
                     )
 
+    async def _cfg_default(self, message: BaseMessage):
+        # /cfg <plugin_name>.<key> <value>
+        args = message.raw_message.split(" ")[1:]
+        if len(args) != 2:
+            message.reply_text_sync(
+                "参数个数错误, 命令格式(不含尖括号): /cfg <plugin_name>.<key> <value>"
+            )
+
+        full_key, value = tuple(args)
+        if full_key not in self.configs:
+            message.reply_text_sync(f"配置 {full_key} 不存在")
+
     async def _cfg(self, message: BaseMessage):
         # /cfg <plugin_name>.<key> <value>
         args = message.raw_message.split(" ")[1:]
@@ -348,6 +356,7 @@ class EventBus:
         else:
             try:
                 self.configs[full_key].modify(value)
+                message.reply_text_sync(f"配置 {full_key} 已经修改为 {value}")
             except Exception as e:
                 message.reply_text_sync(f"配置 {full_key} 修改失败: {e}")
 
@@ -410,6 +419,18 @@ class EventBus:
                 permission=PermissionGroup.ADMIN.value,
             )
         )
+        self.funcs.append(
+            Func(
+                name="default",
+                plugin_name="cfg",
+                func=self._cfg_default,
+                filter=None,
+                raw_message_filter="/cfg",
+                permission=PermissionGroup.ADMIN.value,
+                permission_raise=True,
+                reply=True,
+            )
+        )
         self.RM.assign_permissions_to_role(
             PermissionGroup.ADMIN.value, "ncatbot.plg", "white", True
         )
@@ -465,7 +486,7 @@ class EventBus:
                     plugin_name="cfg",
                     func=self._cfg,
                     filter=None,
-                    raw_message_filter="/cfg",
+                    raw_message_filter=f"/cfg {conf.full_key}",
                     permission=PermissionGroup.ADMIN.value,
                     permission_raise=True,
                     reply=True,
