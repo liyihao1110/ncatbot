@@ -4,7 +4,7 @@
 # @LastEditors  : Fish-LP fish.zh@outlook.com
 # @LastEditTime : 2025-03-22 17:43:22
 # @Description  : 导入好tm长啊
-# @Copyright (c) 2025 by Fish-LP, MIT License
+# @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议
 # -------------------------
 import asyncio
 import importlib
