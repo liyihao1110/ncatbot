@@ -2,19 +2,21 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-15 20:08:02
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-03-23 20:58:15
+# @LastEditTime : 2025-03-23 21:09:27
 # @Description  : 猫娘慢慢看，鱼鱼不急
 # @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议
 # -------------------------
 import asyncio
 import inspect
 from pathlib import Path
+import re
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Union, final
 from uuid import UUID
 
 from ncatbot.core.api import BotAPI
+from ncatbot.core.message import BaseMessage
 from ncatbot.plugin.custom_err import PluginLoadError
-from ncatbot.plugin.event import Event, EventBus
+from ncatbot.plugin.event import Conf, Event, EventBus, Func, PermissionGroup
 from ncatbot.utils.Color import Color
 from ncatbot.utils.change_dir import ChangeDir
 from ncatbot.utils.io import (
@@ -48,7 +50,7 @@ class BasePlugin:
     Attributes:
         name (str): 插件名称
         version (str): 插件版本号
-        dependencies (dict): 插件依赖项配置
+        dependencies (dict): 插件依赖项配置(不是 PYPI 依赖)
         self_path (Path): 插件目录
         this_file_path (Path): 此文件路径
         meta_data (dict): 插件元数据
@@ -65,7 +67,7 @@ class BasePlugin:
 
     name: str
     version: str
-    dependencies: dict
+    dependencies: dict = {}  # 依赖的插件以及版本(不是 PYPI 依赖)
     self_path: Path
     this_file_path: Path
     meta_data: dict
@@ -132,6 +134,8 @@ class BasePlugin:
 
         self.data = UniversalLoader(self._data_path)
         self.work_space = ChangeDir(self._work_path)
+        self.funcs: list[Func] = []  # 功能
+        self.configs: list[Conf] = []  # 配置项
 
     @property
     def debug(self) -> bool:
@@ -300,6 +304,92 @@ class BasePlugin:
         """注销所有已注册的事件处理器"""
         for handler_id in self._event_handlers:
             self._event_bus.unsubscribe(handler_id)
+
+    @final
+    def _register_func(
+        self,
+        name: str,
+        handler: Callable[[BaseMessage], Any],
+        filter: Callable = None,
+        raw_message_filter: Union[str, re.Pattern] = None,
+        permission: PermissionGroup = PermissionGroup.USER.value,
+        permission_raise: bool = False,
+    ):
+        if all([name != var.name for var in self.funcs]):
+            self.funcs.append(
+                Func(
+                    name,
+                    self.name,
+                    handler,
+                    filter,
+                    raw_message_filter,
+                    permission,
+                    permission_raise,
+                )
+            )
+        else:
+            raise ValueError(f"插件 {self.name} 已存在功能 {name}")
+        # self.
+
+    def register_user_func(
+        self,
+        name: str,
+        handler: Callable[[BaseMessage], Any],
+        filter: Callable = None,
+        raw_message_filter: Union[str, re.Pattern] = None,
+        permission_raise: bool = False,
+    ):
+        if filter is None and raw_message_filter is None:
+            raise ValueError("普通功能至少添加一个过滤器")
+        self._register_func(
+            name,
+            handler,
+            filter,
+            raw_message_filter,
+            PermissionGroup.USER.value,
+            permission_raise,
+        )
+
+    def register_admin_func(
+        self,
+        name: str,
+        handler: Callable[[BaseMessage], Any],
+        filter: Callable = None,
+        raw_message_filter: Union[str, re.Pattern] = None,
+        permission_raise: bool = False,
+    ):
+        if filter is None and raw_message_filter is None:
+            raise ValueError("普通功能至少添加一个过滤器")
+        self._register_func(
+            name,
+            handler,
+            filter,
+            raw_message_filter,
+            PermissionGroup.ADMIN.value,
+            permission_raise,
+        )
+
+    def register_default_func(
+        self,
+        handler: Callable[[BaseMessage], Any],
+        permission: PermissionGroup = PermissionGroup.USER.value,
+    ):
+        """默认处理功能
+
+        如果没能触发其它功能, 则触发默认功能.
+        """
+        self._register_func("default", handler, None, None, permission, False)
+
+    def register_config(
+        self, key: str, default: Any, rptr: Callable[[str], Any] = None
+    ):
+        """注册配置项
+        Args:
+            key (str): 配置项键名
+            default (Any): 默认值
+            rptr (Callable[[str], Any], optional): 值转换函数. 默认使用直接转换.
+        """
+        self.configs.append(Conf(self, key, rptr, default))
 
     async def on_load(self):
         """插件初始化时的子函数,可被子类重写"""
