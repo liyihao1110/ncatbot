@@ -5,7 +5,7 @@
 # @LastEditTime : 2025-02-21 19:44:14
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @message: 喵喵喵?
-# @Copyright (c) 2025 by Fish-LP, MIT License
+# @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议
 # -------------------------
 import inspect
 from functools import wraps
