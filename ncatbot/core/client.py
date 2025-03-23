@@ -174,14 +174,13 @@ class BotClient:
             _log.info("正常退出")
             exit(0)
 
-    def run(self, reload=False, debug=False):
+    def run(self, debug=False, *args, **kwargs):
         """
         启动 Bot 客户端
 
         Args:
-            reload: 是否同时启动 NapCat , 默认为 False
             debug: 是否开启调试模式, 默认为 False, 用户不应该修改此参数
-
+            **kwargs: 保持弃用参数的兼容性
         Returns:
             None
         """
@@ -226,7 +225,7 @@ class BotClient:
                           """
                 )
                 exit(1)
-            elif reload:
+            elif kwargs.get("reload", False):
                 _log.info("napcat 服务器未启动, 且开启了重加载模式, 运行失败")
                 exit(1)
             _log.info("napcat 服务器离线")

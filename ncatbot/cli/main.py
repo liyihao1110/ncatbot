@@ -1,5 +1,4 @@
 import argparse
-import asyncio
 import importlib
 import os
 import shutil
@@ -191,12 +190,6 @@ def start():
     try:
         client = BotClient()
         client.run()
-    except KeyboardInterrupt:
-        _log.info("插件卸载中...")
-        asyncio.run(client.plugin_sys._unload_all())
-        _log.info("NcatBot 已退出")
-        time.sleep(2)
-        exit(0)
     except Exception as e:
         _log.error(e)
 

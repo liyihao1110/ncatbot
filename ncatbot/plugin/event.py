@@ -9,6 +9,8 @@
 # -------------------------
 import asyncio
 import inspect
+import json
+import os
 import re
 import uuid
 from enum import Enum
@@ -217,7 +219,7 @@ class Func:
         self,
         name,  # 功能名, 构造权限路径时使用
         plugin_name,  # 插件名, 构造权限路径时使用
-        func: Callable[[Event], None],
+        func: Callable[[BaseMessage], None],
         filter: Callable[[Event], bool] = None,
         raw_message_filter: str = None,
         permission: PermissionGroup = PermissionGroup.USER.value,  # 向事件总线传递默认权限设置
@@ -277,6 +279,33 @@ class EventBus:
         self.load_builtin_funcs()
         self.subscribe(OFFICIAL_GROUP_MESSAGE_EVENT, self._func_activator, 100)
         self.subscribe(OFFICIAL_PRIVATE_MESSAGE_EVENT, self._func_activator, 100)
+        self._load_access()
+
+    def _load_access(self):
+        _log.debug("加载权限")
+        try:
+            if os.path.exists("data/U_access.json"):
+                with open("data/U_access.json", "r", encoding="utf-8") as f:
+                    self.RBAC_U.from_dict(json.JSONDecoder().decode(f.read()))
+            else:
+                _log.warning("权限文件不存在, 将创建新的权限文件")
+            if os.path.exists("data/G_access.json"):
+                with open("data/G_access.json", "r", encoding="utf-8") as f:
+                    self.RBAC_G.from_dict(json.JSONDecoder().decode(f.read()))
+            else:
+                _log.warning("权限文件不存在, 将创建新的权限文件")
+        except Exception as e:
+            _log.error(f"加载权限时出错: {e}")
+
+    def _save_access(self):
+        _log.debug("保存权限")
+        try:
+            with open("data/U_access.json", "w", encoding="utf-8") as f:
+                f.write(json.JSONEncoder().encode(self.RBAC_U.to_dict()))
+            with open("data/G_access.json", "w", encoding="utf-8") as f:
+                f.write(json.JSONEncoder().encode(self.RBAC_G.to_dict()))
+        except Exception as e:
+            _log.error(f"保存权限时出错: {e}")
 
     async def _sm(self, message: BaseMessage):
         args = message.raw_message.split(" ")[1:]
@@ -298,7 +327,7 @@ class EventBus:
         args = message.raw_message.split(" ")[1:]
         if len(args) > 4 or len(args) < 2:
             message.reply_text_sync(
-                "参数个数错误, 命令格式(不含尖括号): /access [-g](可选) [ban]/[grant] <number> path"
+                "参数个数错误, 命令格式(不含尖括号): /acs [-g](可选) [ban]/[grant] <number> path"
             )
         else:
             path = args[-1]
@@ -375,6 +404,7 @@ class EventBus:
         message.reply_text_sync(text)
 
     async def _func_activator(self, event: Event):
+        activate_plugin_func = []
         message: BaseMessage = event.data
         for func in self.funcs:
             if func.activate(event):
@@ -384,7 +414,12 @@ class EventBus:
                     f"{func.plugin_name}.{func.name}",
                     permission_raise=func.permission_raise,
                 ):
-                    await func.func(message)
+                    if func.name == "default":
+                        if func.plugin_name not in activate_plugin_func:
+                            await func.func(message)
+                    else:
+                        activate_plugin_func.append(func.plugin_name)
+                        await func.func(message)
                 elif func.reply:
                     message.reply_text_sync("权限不足")
 
