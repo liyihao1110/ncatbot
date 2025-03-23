@@ -13,6 +13,7 @@ from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Union,
 from uuid import UUID
 
 from ncatbot.core.api import BotAPI
+from ncatbot.core.message import BaseMessage
 from ncatbot.plugin.custom_err import PluginLoadError
 from ncatbot.plugin.event import Conf, Event, EventBus, Func, PermissionGroup
 from ncatbot.utils.change_dir import ChangeDir
@@ -243,13 +244,13 @@ class BasePlugin:
 
     @final
     def register_handler(
-        self, event_type: str, handler: Callable[[Event], Any], priority: int = 0
+        self, event_type: str, handler: Callable[[BaseMessage], Any], priority: int = 0
     ) -> UUID:
         """注册事件处理器
 
         Args:
             event_type (str): 事件类型
-            handler (Callable[[Event], Any]): 事件处理函数
+            handler (Callable[[BaseMessage], Any]): 事件处理函数
             priority (int, optional): 处理器优先级,默认为0
 
         Returns:
@@ -284,7 +285,7 @@ class BasePlugin:
     def _register_func(
         self,
         name: str,
-        handler: Callable[[Event], Any],
+        handler: Callable[[BaseMessage], Any],
         filter: Callable = None,
         raw_message_filter: Union[str, re.Pattern] = None,
         permission: PermissionGroup = PermissionGroup.USER.value,
@@ -309,7 +310,7 @@ class BasePlugin:
     def register_user_func(
         self,
         name: str,
-        handler: Callable[[Event], Any],
+        handler: Callable[[BaseMessage], Any],
         filter: Callable = None,
         raw_message_filter: Union[str, re.Pattern] = None,
         permission_raise: bool = False,
@@ -328,7 +329,7 @@ class BasePlugin:
     def register_admin_func(
         self,
         name: str,
-        handler: Callable[[Event], Any],
+        handler: Callable[[BaseMessage], Any],
         filter: Callable = None,
         raw_message_filter: Union[str, re.Pattern] = None,
         permission_raise: bool = False,
@@ -346,7 +347,7 @@ class BasePlugin:
 
     def register_default_func(
         self,
-        handler: Callable[[Event], Any],
+        handler: Callable[[BaseMessage], Any],
         permission: PermissionGroup = PermissionGroup.USER.value,
     ):
         """默认处理功能
