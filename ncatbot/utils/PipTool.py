@@ -4,7 +4,7 @@
 # @LastEditors  : Fish-LP fish.zh@outlook.com
 # @LastEditTime : 2025-03-09 18:33:20
 # @Description  : 应该只有插件加载会用，有空可以塞进去，而不是这个文件
-# @Copyright (c) 2025 by Fish-LP, MIT License 
+# @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议 
 # -------------------------
 import importlib
 import json
