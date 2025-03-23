@@ -2,20 +2,20 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-15 20:08:02
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-03-22 17:44:14
-# @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
+# @LastEditTime : 2025-03-23 20:58:15
+# @Description  : 猫娘慢慢看，鱼鱼不急
 # @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议
 # -------------------------
 import asyncio
-import re
+import inspect
 from pathlib import Path
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Union, final
 from uuid import UUID
 
 from ncatbot.core.api import BotAPI
-from ncatbot.core.message import BaseMessage
 from ncatbot.plugin.custom_err import PluginLoadError
-from ncatbot.plugin.event import Conf, Event, EventBus, Func, PermissionGroup
+from ncatbot.plugin.event import Event, EventBus
+from ncatbot.utils.Color import Color
 from ncatbot.utils.change_dir import ChangeDir
 from ncatbot.utils.io import (
     FileTypeUnknownError,
@@ -23,19 +23,34 @@ from ncatbot.utils.io import (
     SaveError,
     UniversalLoader,
 )
-from ncatbot.utils.literals import PERSISTENT_DIR
+from ncatbot.utils.literals import PERSISTENT_DIR, PLUGINS_DIR
+from ncatbot.utils.logger import get_log
 from ncatbot.utils.time_task_scheduler import TimeTaskScheduler
+from ncatbot.utils.visualize_data import visualize_tree
 
+
+LOG = get_log('BasePlugin')
+
+def extract_relative_path(base_path, target_path):
+    base = Path(base_path).resolve()
+    target = Path(target_path).resolve()
+    try:
+        relative_path = target.relative_to(base)
+        return relative_path
+    except ValueError:
+        return None
 
 class BasePlugin:
     """插件基类
 
-    所有插件的基类，提供了插件系统的基本功能支持。
+    所有插件必须继承此类来实现插件功能。提供了插件系统所需的基本功能支持。
 
     Attributes:
         name (str): 插件名称
         version (str): 插件版本号
-        dependencies (dict): 插件依赖项
+        dependencies (dict): 插件依赖项配置
+        self_path (Path): 插件目录
+        this_file_path (Path): 此文件路径
         meta_data (dict): 插件元数据
         api (BotAPI): API接口处理器
         event_bus (EventBus): 事件总线实例
@@ -43,64 +58,66 @@ class BasePlugin:
         work_path (Path): 插件工作目录路径
         data (UniversalLoader): 插件数据管理器
         work_space (ChangeDir): 插件工作目录上下文管理器
+        save_type (str): 私有数据保存类型
         first_load (bool): 是否首次加载标志
+        debug (bool): 调试模式标记
     """
 
     name: str
     version: str
-    dependencies: dict = {}  # 依赖的插件以及版本(不是 PYPI 依赖)
+    dependencies: dict
+    self_path: Path
+    this_file_path: Path
     meta_data: dict
     api: BotAPI
-
+    save_type: str = 'json'
+    first_load: bool = 'True'
+    _debug: bool = False  # 调试模式标记
+    time_task_scheduler: TimeTaskScheduler
+    
     @final
-    def __init__(
-        self,
-        event_bus: EventBus,
-        time_task_scheduler: TimeTaskScheduler,
-        debug: bool = False,
-        **kwd,
-    ):
+    def __init__(self,
+                event_bus: EventBus,
+                debug: bool = False,
+                **kwd):
         """初始化插件实例
-
+        
         Args:
             event_bus: 事件总线实例
-            time_task_scheduler: 定时任务调度器
             debug: 是否启用调试模式
             **kwd: 额外的关键字参数,将被设置为插件属性
-
+            
         Raises:
             ValueError: 当缺少插件名称或版本号时抛出
             PluginLoadError: 当工作目录无效时抛出
         """
         # 插件信息检查
         if not self.name:
-            raise ValueError("缺失插件名称")
+            raise ValueError('缺失插件名称')
         if not self.version:
-            raise ValueError("缺失插件版本号")
+            raise ValueError('缺失插件版本号')
 
         # 添加额外属性
         if kwd:
             for k, v in kwd.items():
                 setattr(self, k, v)
+        if not self.save_type:
+            self.save_type = 'json'
         if not self.dependencies:
             self.dependencies = {}
 
-        if not self.dependencies:
-            self.dependencies = {}
+        # 固定属性
+        self.this_file_path = Path(inspect.getmodule(self.__class__).__file__).resolve()
+        self.self_path = Path(PLUGINS_DIR).resolve() / extract_relative_path(Path(PLUGINS_DIR).resolve() ,self.this_file_path.parent)
+        self.lock = asyncio.Lock()  # 创建一个异步锁对象
 
         # 隐藏属性
         self._debug = debug
         self._event_handlers = []
         self._event_bus = event_bus
-        self._time_task_scheduler = time_task_scheduler
-        self._work_path = Path(PERSISTENT_DIR) / self.name
-        self._data_path = self._work_path / f"{self.name}.json"
-
-        # 暴露的属性
-        self.lock = asyncio.Lock()  # 创建一个异步锁对象
-        self.data = UniversalLoader(self._work_path / f"{self.name}.json")
-        self.funcs: list[Func] = []  # 功能
-        self.configs: list[Conf] = []  # 配置项
+        self._time_task_scheduler = TimeTaskScheduler
+        self._work_path = Path(PERSISTENT_DIR).resolve() / extract_relative_path('.', self.self_path)
+        self._data_path = self._work_path / f"{self.name}.{self.save_type}"
 
         # 检查是否为第一次启动
         self.first_load = False
@@ -113,14 +130,20 @@ class BasePlugin:
         if not self._work_path.is_dir():
             raise PluginLoadError(self.name, f"{self._work_path} 不是目录文件夹")
 
+        self.data = UniversalLoader(self._data_path)
         self.work_space = ChangeDir(self._work_path)
+
+    @property
+    def debug(self) -> bool:
+        """是否处于调试模式"""
+        return self._debug
 
     @final
     async def __unload__(self, *arg, **kwd):
         """卸载插件时的清理操作
-
+        
         执行插件卸载前的清理工作,保存数据并注销事件处理器
-
+        
         Raises:
             RuntimeError: 保存持久化数据失败时抛出
         """
@@ -128,8 +151,9 @@ class BasePlugin:
         await asyncio.to_thread(self._close_, *arg, **kwd)
         await self.on_close(*arg, **kwd)
         try:
-            if isinstance(self.data, dict) and len(self.data) == 0:
-                pass
+            if self._debug:
+                LOG.warning(f"{Color.YELLOW}debug模式{Color.RED}取消{Color.RESET}退出时的保存行为")
+                print(f'{Color.GRAY}{self.name}\n', '\n'.join(visualize_tree(self.data.data)), sep='')
             else:
                 self.data.save()
         except (FileTypeUnknownError, SaveError, FileNotFoundError) as e:
@@ -138,38 +162,36 @@ class BasePlugin:
     @final
     async def __onload__(self):
         """加载插件时的初始化操作
-
+        
         执行插件加载时的初始化工作,加载数据
-
+        
         Raises:
             RuntimeError: 读取持久化数据失败时抛出
         """
         # load时传入的参数作为属性被保存在self中
         try:
-            if isinstance(self.data, dict):
+            if isinstance(self.data,dict):
                 data = UniversalLoader()
                 data.data = self.data
                 self.data = data
             self.data.load()
-        except (FileTypeUnknownError, LoadError, FileNotFoundError):
-            open(self._work_path / f"{self.name}.json", "w").write("{}")
+        except (FileTypeUnknownError, LoadError, FileNotFoundError) as e:
+            open(self._work_path / f'{self.name}.json','w').write('{}')
             self.data.load()
         await asyncio.to_thread(self._init_)
         await self.on_load()
 
     @final
-    def add_scheduled_task(
-        self,
-        job_func: Callable,
-        name: str,
-        interval: Union[str, int, float],
-        conditions: Optional[List[Callable[[], bool]]] = None,
-        max_runs: Optional[int] = None,
-        args: Optional[Tuple] = None,
-        kwargs: Optional[Dict] = None,
-        args_provider: Optional[Callable[[], Tuple]] = None,
-        kwargs_provider: Optional[Callable[[], Dict[str, Any]]] = None,
-    ) -> bool:
+    def add_scheduled_task(self,
+                job_func: Callable,
+                name: str,
+                interval: Union[str, int, float],
+                conditions: Optional[List[Callable[[], bool]]] = None,
+                max_runs: Optional[int] = None,
+                args: Optional[Tuple] = None,
+                kwargs: Optional[Dict] = None,
+                args_provider: Optional[Callable[[], Tuple]] = None,
+                kwargs_provider: Optional[Callable[[], Dict[str, Any]]] = None) -> bool:
         """
         添加定时任务
 
@@ -190,33 +212,33 @@ class BasePlugin:
         Raises:
             ValueError: 当参数冲突或时间格式无效时
         """
-
+        
         job_info = {
-            "name": name,
-            "job_func": job_func,
-            "interval": interval,
-            "max_runs": max_runs,
-            "run_count": 0,
-            "conditions": conditions or [],
-            "args": args,
-            "kwargs": kwargs or {},
-            "args_provider": args_provider,
-            "kwargs_provider": kwargs_provider,
+            'name': name,
+            'job_func': job_func,
+            'interval': interval,
+            'max_runs': max_runs,
+            'run_count': 0,
+            'conditions': conditions or [],
+            'args': args,
+            'kwargs': kwargs or {},
+            'args_provider': args_provider,
+            'kwargs_provider': kwargs_provider
         }
         return self._time_task_scheduler.add_job(**job_info)
 
     @final
-    def remove_scheduled_task(self, task_name: str):
+    def remove_scheduled_task(self, task_name:str):
         """
         移除指定名称的定时任务
-
+        
         Args:
             name (str): 要移除的任务名称
-
+            
         Returns:
             bool: 是否成功找到并移除任务
         """
-        return self._time_task_scheduler.remove_job(name=task_name)
+        return self._time_task_scheduler.remove_job(name = task_name)
 
     @final
     def publish_sync(self, event: Event) -> List[Any]:
@@ -243,16 +265,14 @@ class BasePlugin:
         return self._event_bus.publish_async(event)
 
     @final
-    def register_handler(
-        self, event_type: str, handler: Callable[[BaseMessage], Any], priority: int = 0
-    ) -> UUID:
+    def register_handler(self, event_type: str, handler: Callable[[Event], Any], priority: int = 0) -> UUID:
         """注册事件处理器
-
+        
         Args:
             event_type (str): 事件类型
-            handler (Callable[[BaseMessage], Any]): 事件处理函数
+            handler (Callable[[Event], Any]): 事件处理函数
             priority (int, optional): 处理器优先级,默认为0
-
+            
         Returns:
             处理器的唯一标识UUID
         """
@@ -263,10 +283,10 @@ class BasePlugin:
     @final
     def unregister_handler(self, handler_id: UUID) -> bool:
         """注销指定的事件处理器
-
+        
         Args:
             handler_id (UUID): 事件id
-
+        
         Returns:
             bool: 操作结果
         """
@@ -281,105 +301,18 @@ class BasePlugin:
         for handler_id in self._event_handlers:
             self._event_bus.unsubscribe(handler_id)
 
-    @final
-    def _register_func(
-        self,
-        name: str,
-        handler: Callable[[BaseMessage], Any],
-        filter: Callable = None,
-        raw_message_filter: Union[str, re.Pattern] = None,
-        permission: PermissionGroup = PermissionGroup.USER.value,
-        permission_raise: bool = False,
-    ):
-        if all([name != var.name for var in self.funcs]):
-            self.funcs.append(
-                Func(
-                    name,
-                    self.name,
-                    handler,
-                    filter,
-                    raw_message_filter,
-                    permission,
-                    permission_raise,
-                )
-            )
-        else:
-            raise ValueError(f"插件 {self.name} 已存在功能 {name}")
-        # self.
-
-    def register_user_func(
-        self,
-        name: str,
-        handler: Callable[[BaseMessage], Any],
-        filter: Callable = None,
-        raw_message_filter: Union[str, re.Pattern] = None,
-        permission_raise: bool = False,
-    ):
-        if filter is None and raw_message_filter is None:
-            raise ValueError("普通功能至少添加一个过滤器")
-        self._register_func(
-            name,
-            handler,
-            filter,
-            raw_message_filter,
-            PermissionGroup.USER.value,
-            permission_raise,
-        )
-
-    def register_admin_func(
-        self,
-        name: str,
-        handler: Callable[[BaseMessage], Any],
-        filter: Callable = None,
-        raw_message_filter: Union[str, re.Pattern] = None,
-        permission_raise: bool = False,
-    ):
-        if filter is None and raw_message_filter is None:
-            raise ValueError("普通功能至少添加一个过滤器")
-        self._register_func(
-            name,
-            handler,
-            filter,
-            raw_message_filter,
-            PermissionGroup.ADMIN.value,
-            permission_raise,
-        )
-
-    def register_default_func(
-        self,
-        handler: Callable[[BaseMessage], Any],
-        permission: PermissionGroup = PermissionGroup.USER.value,
-    ):
-        """默认处理功能
-
-        如果没能触发其它功能, 则触发默认功能.
-        """
-        self._register_func("default", handler, None, None, permission, False)
-
-    def register_config(
-        self, key: str, default: Any, rptr: Callable[[str], Any] = None
-    ):
-        """注册配置项
-        Args:
-            key (str): 配置项键名
-            default (Any): 默认值
-            rptr (Callable[[str], Any], optional): 值转换函数. 默认使用直接转换.
-        """
-        self.configs.append(Conf(self, key, rptr, default))
-
     async def on_load(self):
-        """插件初始化时的钩子函数，可被子类重写"""
+        """插件初始化时的子函数,可被子类重写"""
         pass
 
-    @final
-    async def on_close(self):
-        """插件卸载时的子函数，暂时存在问题"""
+    async def on_close(self, *arg, **kwd):
+        """插件卸载时的子函数,可被子类重写"""
         pass
 
     def _init_(self):
-        """插件初始化时的子函数，可被子类重写"""
+        """插件初始化时的子函数,可被子类重写"""
         pass
 
-    def _close_(self):
-        """插件卸载时的子函数，可被子类重写"""
+    def _close_(self, *arg, **kwd):
+        """插件卸载时的子函数,可被子类重写"""
         pass
