@@ -400,7 +400,7 @@ class PluginLoader:
 
 def get_plugin_info(path: str):
     if os.path.exists(path):
-        return PluginLoader(None, None).get_plugin_info(path)
+        return PluginLoader(None).get_plugin_info(path)
     else:
         raise FileNotFoundError(f"dir not found: {path}")
 
