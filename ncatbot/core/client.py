@@ -4,7 +4,7 @@ import os
 import platform
 import shutil
 import time
-import urllib
+from urllib.parse import urlparse
 
 from ncatbot.conn import LoginHandler, Websocket, check_websocket
 from ncatbot.core.api import BotAPI
@@ -34,7 +34,7 @@ class BotClient:
             if config.bt_uin is config.default_bt_uin:
                 _log.error("请设置正确的 Bot QQ 号")
                 exit(1)
-            if config.root is config.deault_root:
+            if config.root is config.default_root:
                 _log.warning("建议设置好 root 账号保证权限功能能够正常使用")
             _log.info(config)
 
@@ -263,10 +263,8 @@ class BotClient:
                             {
                                 "name": "WsServer",
                                 "enable": True,
-                                "host": str(
-                                    urllib.parse.urlparse(config.ws_uri).hostname
-                                ),
-                                "port": int(urllib.parse.urlparse(config.ws_uri).port),
+                                "host": str(urlparse(config.ws_uri).hostname),
+                                "port": int(urlparse(config.ws_uri).port),
                                 "messagePostFormat": "array",
                                 "reportSelfMessage": False,
                                 "token": (
