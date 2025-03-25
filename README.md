@@ -23,7 +23,13 @@ NcatBot 是 **[NapCat](https://github.com/NapNeko/NapCatQQ)** 的 Python SDK, �
 
 前往 [Release](https://github.com/liyihao1110/ncatbot/releases) 下载 `main.exe`, 双击执行.
 
-**不要或者删除 `main.exe` 生成的 `ncatbot` 文件夹**, 第一次执行后也**不要移动 `ncatbot` 文件夹或者 `main.exe`**.
+**不要删除 `main.exe` 生成的 `ncatbot` 文件夹**, 第一次执行后也**不要移动 `ncatbot` 文件夹或者 `main.exe`**.
+
+在出现 "欢迎使用 NcatBot CLI" 的提示后, 输入 `install Another_Plugin` 并回车安装测试插件. 插件安装成功后输入 `start` 启动 NcatBot, **将 Bot 拉入一个群聊**, 在群聊中输入 `插件测试`, 如果 Bot 正常回复, 那么测试成功.
+
+![image](https://github.com/user-attachments/assets/ab78bf3c-c254-4e45-b476-ed0ab4c4bca2)
+
+
 
 ### 开发者使用
 
