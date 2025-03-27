@@ -26,6 +26,7 @@ _log = get_log()
 GITHUB_PROXY = get_proxy_url()
 PYPI_SOURCE = "https://mirrors.aliyun.com/pypi/simple/"
 NCATBOT_PATH = "ncatbot"
+TEST_PLUGIN = "TestPlugin"
 NUMBER_SAVE = "number.txt"
 PLUGIN_DOWNLOAD_REPO = (
     "https://raw.githubusercontent.com/ncatbot/NcatBot-Plugins/refs/heads/main/plugins"
@@ -44,6 +45,9 @@ def get_qq():
     if os.path.exists(NUMBER_SAVE):
         with open(NUMBER_SAVE, "r") as f:
             return f.read()
+    print("第一次运行, 即将安装测试插件, 若不需要测试插件, 稍后可以删除...")
+    time.sleep(1)
+    install("TestPlugin")
     return set_qq()
 
 
@@ -74,7 +78,7 @@ def install(plugin, *args):
 
         response = requests.get(version_url)
         if response.status_code != 200:
-            print(f"获取版本信息失败: {response.status_code}")
+            print(f"获取版本信息失败: {response.status_code}, 请检查是否存在该插件")
             return False, []
         return True, remove_empty_values(response.content.decode("utf-8").split("\n"))
 
@@ -183,13 +187,13 @@ def install(plugin, *args):
     print(f"插件 {plugin}-{latest_version} 安装成功!")
 
 
-def start():
+def start(*args, **kwargs):
     print("正在启动 NcatBot...")
     print("按下 Ctrl + C 可以正常退出程序")
     config.set_bot_uin(get_qq())
     try:
         client = BotClient()
-        client.run()
+        client.run(debug=("-d" in args or "-D" in args or "--debug" in args))
     except Exception as e:
         _log.error(e)
 
@@ -290,7 +294,7 @@ def main():
             elif command == "setqq":
                 set_qq()
             elif command == "start":
-                start()
+                start(*command_parts[1:])
             elif command == "update":
                 update()
             elif command == "remove":
@@ -309,5 +313,4 @@ def main():
             print(f"出现错误: {e}")
 
 
-print(os.getcwd())
 main()

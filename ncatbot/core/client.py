@@ -138,11 +138,17 @@ class BotClient:
             _log.info(f"已订阅消息类型:[群聊]->{subsribe_group_message_types}")
             _log.info(f"已订阅消息类型:[私聊]->{subsribe_private_message_types}")
 
+        async def time_schedule_heartbeat():
+            while True:
+                await asyncio.sleep(5)
+                self.plugin_sys.time_task_scheduler.step()
+
         info_subscribe_message_types()
         websocket_server = Websocket(self)
         await self.plugin_sys.load_plugins(api=self.api)
         while True:
             try:
+                asyncio.create_task(time_schedule_heartbeat())
                 await websocket_server.on_connect()
             except Exception:
                 _log.info("正在尝试重连服务器...")
