@@ -78,4 +78,5 @@ NcatBot 是 **[NapCat](https://github.com/NapNeko/NapCatQQ)** 的 Python SDK, �
 
 感谢 [IppClub](https://github.com/IppClub) 的宣传支持.
 
-感谢 [Fish-LP](https://github.com/Fish-LP/Fcatbot) 提供代码和灵感.
+感谢 [Fcatbot](https://github.com/Fish-LP/Fcatbot) 提供代码和灵感.
+
