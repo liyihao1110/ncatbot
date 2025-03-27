@@ -187,13 +187,13 @@ def install(plugin, *args):
     print(f"插件 {plugin}-{latest_version} 安装成功!")
 
 
-def start():
+def start(*args, **kwargs):
     print("正在启动 NcatBot...")
     print("按下 Ctrl + C 可以正常退出程序")
     config.set_bot_uin(get_qq())
     try:
         client = BotClient()
-        client.run()
+        client.run(debug=("-d" in args or "-D" in args or "--debug" in args))
     except Exception as e:
         _log.error(e)
 
@@ -294,7 +294,7 @@ def main():
             elif command == "setqq":
                 set_qq()
             elif command == "start":
-                start()
+                start(*command_parts[1:])
             elif command == "update":
                 update()
             elif command == "remove":
@@ -313,5 +313,4 @@ def main():
             print(f"出现错误: {e}")
 
 
-print(os.getcwd())
 main()

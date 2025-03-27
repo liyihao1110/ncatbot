@@ -277,8 +277,12 @@ class EventBus:
         self._create_basic_roles()
         self._assign_root_permission()
         self.load_builtin_funcs()
-        self.subscribe(OFFICIAL_GROUP_MESSAGE_EVENT, self._func_activator, 100)
-        self.subscribe(OFFICIAL_PRIVATE_MESSAGE_EVENT, self._func_activator, 100)
+        self.subscribe(
+            OFFICIAL_GROUP_MESSAGE_EVENT, self._func_activator, 100
+        )  # 加载功能注册钩子
+        self.subscribe(
+            OFFICIAL_PRIVATE_MESSAGE_EVENT, self._func_activator, 100
+        )  # 加载功能注册钩子
         self._load_access()
 
     def _load_access(self):

@@ -14,14 +14,14 @@ class SetConfig:
     default_bt_uin = "123456"
 
     def __init__(self):
-        self._updated = False
-        self.bt_uin = "123456"
-        self.root = "123456"
+        self._updated = False  # 内部状态
+        self.bt_uin = "123456"  # bot 账号
+        self.root = "123456"  # root 账号
         self.ws_uri = "ws://localhost:3001"
-        self.token = ""
+        self.stop_napcat = False  # 结束时是否停止 napcat
+        self.token = ""  # napcat 令牌
         self.webui_token = ""  # webui 令牌, 自动读取, 无需设置
         self.webui_port = ""  # webui 端口, 自动读取, 无需设置
-        self.root = ""
 
     def __str__(self):
         return (
