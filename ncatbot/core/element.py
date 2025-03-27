@@ -1,6 +1,10 @@
 import json
 from typing import Union
+
+from deprecated import deprecated
+
 from ncatbot.utils.io import convert_uploadable_object
+
 
 class MessageChain:
     """消息链"""
@@ -92,6 +96,10 @@ class Element:
         instance = super().__new__(cls)
         instance.__init__(*args, **kwargs)
         return instance.to_dict()
+
+    def to_dict(self) -> dict:
+        """将消息元素转换为字典"""
+        return {"type": self.type, "data": {}}
 
 
 class Text(Element):
@@ -239,7 +247,13 @@ class CustomMusic(Element):
     type = "music"
 
     def __init__(
-        self, url: str, audio: str, title: str, image: str = "", singer: str = "", type: str = "custom"
+        self,
+        url: str,
+        audio: str,
+        title: str,
+        image: str = "",
+        singer: str = "",
+        type: str = "custom",
     ):
         self.url = url
         self.audio = audio
@@ -275,6 +289,7 @@ class CustomMusic(Element):
 #         return convert(await md_maker(self.markdown), "image")
 
 
+@deprecated
 class File(Element):
     """文件消息元素"""
 
