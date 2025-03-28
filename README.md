@@ -17,19 +17,20 @@ NcatBot 是 **[NapCat](https://github.com/NapNeko/NapCatQQ)** 的 Python SDK, �
 
 ## 如何使用
 
+### 使用限制
+
+- **严禁将本项目以任何形式用于传播 反动、暴力、淫秽 信息，违者将追究法律责任**.
+- 将本项目以**任何形式**用于**盈利性用途**时，必须取得项目开发组(本仓库 Collaborators 和 Owner)的**书面授权**.
+
 ### 用户使用
 
-**不要下载 .zip 压缩包!!!**
-
-前往 [Release](https://github.com/liyihao1110/ncatbot/releases) 下载 `main.exe`, 双击执行.
-
-**不要删除 `main.exe` 生成的 `ncatbot` 文件夹**, 第一次执行后也**不要移动 `ncatbot` 文件夹或者 `main.exe`**.
+针对没有计算机基础的用户群体, 可以直接下载我们的**一键安装包**安装 NcatBot 运行时环境, 并使用他人发布的插件.
 
 [阅读有关文档了解更多](https://docs.ncatbot.xyz/guide/onestepi/).
 
 ### 开发者使用
 
-请**认真阅读**[文档](https://docs.ncatbot.xyz/), **严格**按照文档中说明正确安装和使用 NcatBot.
+请**认真阅读**[文档](https://docs.ncatbot.xyz/). 文档中包含详细的**开发指南**和**示例项目及其解析**.
 
 [插件仓库地址](https://github.com/ncatbot/NcatBot-Plugins).
 
