@@ -81,3 +81,7 @@ NcatBot 是 **[NapCat](https://github.com/NapNeko/NapCatQQ)** 的 Python SDK, �
 
 感谢 [Fcatbot](https://github.com/Fish-LP/Fcatbot) 提供代码和灵感.
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=liyihao1110/ncatbot&type=Date)](https://www.star-history.com/#liyihao1110/ncatbot&Date)
+
