@@ -25,13 +25,7 @@ class SetConfig:
         self.webui_port = ""  # webui 端口, 自动读取, 无需设置
 
     def __str__(self):
-        return (
-            f"\n--Configuration--\n"
-            f"[BotQQ]: {self.bt_uin}\n"
-            f"[Wsuri]: {self.ws_uri}\n"
-            f"[Token]: {self.token}"
-            f"\n--{datetime.datetime.now().strftime('%m/%d---%H:%M')}--"
-        )
+        return f"[BOTQQ]: {self.bt_uin} | [WSURI]: {self.ws_uri} | [TOKEN]: {self.token}"
 
     def is_localhost(self):
         return (
