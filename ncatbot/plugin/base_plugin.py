@@ -226,7 +226,6 @@ class BasePlugin:
             'job_func': job_func,
             'interval': interval,
             'max_runs': max_runs,
-            'run_count': 0,
             'conditions': conditions or [],
             'args': args,
             'kwargs': kwargs or {},
