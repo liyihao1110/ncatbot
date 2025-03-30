@@ -33,50 +33,47 @@ from ncatbot.utils.visualize_data import visualize_tree
 
 LOG = get_log('BasePlugin')
 
-def extract_relative_path(base_path, target_path):
-    base = Path(base_path).resolve()
-    target = Path(target_path).resolve()
-    try:
-        relative_path = target.relative_to(base)
-        return relative_path
-    except ValueError:
-        return None
-
 class BasePlugin:
     """插件基类
 
     所有插件必须继承此类来实现插件功能。提供了插件系统所需的基本功能支持。
 
     Attributes:
-        name (str): 插件名称
-        version (str): 插件版本号
-        dependencies (dict): 插件依赖项配置(不是 PYPI 依赖)
+        name (str[需要定义]): 插件名称
+        version (str[需要定义]): 插件版本号 
+        dependencies (dict[可选]): 插件依赖项配置
+        author (str[可选]): 作者名称
+        info (str[可选]): 插件消息/描述
+        save_type (str[可选]): 私有数据保存类型(默认json)
+        
         self_path (Path): 插件目录
         this_file_path (Path): 此文件路径
         meta_data (dict): 插件元数据
-        api (BotAPI): API接口处理器
+        api (WebSocketHandler): API接口处理器
         event_bus (EventBus): 事件总线实例
         lock (asyncio.Lock): 异步锁对象
         work_path (Path): 插件工作目录路径
         data (UniversalLoader): 插件数据管理器
         work_space (ChangeDir): 插件工作目录上下文管理器
-        save_type (str): 私有数据保存类型
+        self_space (ChangeDir): 插件目录上下文管理器
         first_load (bool): 是否首次加载标志
         debug (bool): 调试模式标记
     """
 
     name: str
     version: str
-    dependencies: dict = {}  # 依赖的插件以及版本(不是 PYPI 依赖)
+    dependencies: dict
+    author: str = 'Unknown'
+    info: str = '这个作者很懒且神秘,没有写一点点描述,真是一个神秘的插件'
+    save_type: str = 'json'
+    
     self_path: Path
     this_file_path: Path
     meta_data: dict
     api: BotAPI
-    save_type: str = 'json'
     first_load: bool = 'True'
     debug: bool = False  # 调试模式标记
-    time_task_scheduler: TimeTaskScheduler
-    
+
     @final
     def __init__(self,
                 event_bus: EventBus,
@@ -96,23 +93,24 @@ class BasePlugin:
             PluginLoadError: 当工作目录无效时抛出
         """
         # 插件信息检查
-        if not self.name:
+        if getattr(self,'name',None):
             raise ValueError('缺失插件名称')
-        if not self.version:
+        if getattr(self,'version',None):
             raise ValueError('缺失插件版本号')
-
+        if getattr(self,'dependencies',None):
+            self.dependencies = {}
         # 添加额外属性
         if kwd:
             for k, v in kwd.items():
                 setattr(self, k, v)
-        if not self.save_type:
-            self.save_type = 'json'
-        if not self.dependencies:
-            self.dependencies = {}
+                
 
         # 固定属性
-        self.this_file_path = Path(inspect.getmodule(self.__class__).__file__).resolve()
-        self.self_path = Path(PLUGINS_DIR).resolve() / extract_relative_path(Path(PLUGINS_DIR).resolve() ,self.this_file_path.parent)
+        plugin_file = Path(inspect.getmodule(self.__class__).__file__).resolve()
+        # plugins_dir = Path(PLUGINS_DIR).resolve()
+        self.this_file_path = plugin_file
+        # 使用插件文件所在目录作为self_path
+        self.self_path = plugin_file.parent
         self.lock = asyncio.Lock()  # 创建一个异步锁对象
 
         # 隐藏属性
@@ -120,8 +118,10 @@ class BasePlugin:
         self._event_handlers = []
         self._event_bus = event_bus
         self._time_task_scheduler = time_task_scheduler
-        self._work_path = Path(PERSISTENT_DIR).resolve() / self.self_path.name
-        self._data_path = self._work_path / f"{self.self_path.name}.{self.save_type}"
+        # 使用插件目录名作为工作目录名
+        plugin_dir_name = self.self_path.name
+        self._work_path = Path(PERSISTENT_DIR).resolve() / plugin_dir_name
+        self._data_path = self._work_path / f"{plugin_dir_name}.{self.save_type}"
 
         # 检查是否为第一次启动
         self.first_load = False
@@ -134,8 +134,9 @@ class BasePlugin:
         if not self._work_path.is_dir():
             raise PluginLoadError(self.name, f"{self._work_path} 不是目录文件夹")
 
-        self.data = UniversalLoader(self._data_path)
+        self.data = UniversalLoader(self._data_path, self.save_type)
         self.work_space = ChangeDir(self._work_path)
+        self.self_space = ChangeDir(self.self_path)
 
     @property
     def debug(self) -> bool:
@@ -155,7 +156,7 @@ class BasePlugin:
         await asyncio.to_thread(self._close_, *arg, **kwd)
         await self.on_close(*arg, **kwd)
         try:
-            if self._debug:
+            if self.debug:
                 LOG.warning(f"{Color.YELLOW}debug模式{Color.RED}取消{Color.RESET}退出时的保存行为")
                 print(f'{Color.GRAY}{self.name}\n', '\n'.join(visualize_tree(self.data.data)), sep='')
             else:
@@ -173,16 +174,18 @@ class BasePlugin:
             RuntimeError: 读取持久化数据失败时抛出
         """
         # load时传入的参数作为属性被保存在self中
+        if isinstance(self.data, (dict, list)):
+            self.data = UniversalLoader(self._data_path, self.save_type)
+            self.data.data = self.data
         try:
-            if isinstance(self.data,dict):
-                data = UniversalLoader()
-                data.data = self.data
-                self.data = data
             self.data.load()
         except (FileTypeUnknownError, LoadError, FileNotFoundError) as e:
-            open(self._data_path,'w').write('')
-            self.data.save()
-            self.data.load()
+            if self.debug:
+                pass
+            else:
+                open(self._data_path,'w').write('')
+                self.data.save()
+                self.data.load()
         await asyncio.to_thread(self._init_)
         await self.on_load()
 
