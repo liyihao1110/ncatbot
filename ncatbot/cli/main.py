@@ -8,7 +8,7 @@ import time
 
 import requests
 
-from ncatbot.utils.PipTool import PipTool
+from ncatbot.utils.pip_tool import PipTool
 
 os.environ["LOG_FILE_PATH"] = "ncatbot/logs/"
 
