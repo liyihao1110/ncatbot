@@ -237,7 +237,7 @@ class BasePlugin(EventHandlerMixin, SchedulerMixin):
         await asyncio.to_thread(self._init_)
         await self.on_load()
 
-    # TODO 下面记得拆掉
+    # TODO 下面记得拆掉太长不好维护
 
     @final
     def _register_func(
