@@ -27,4 +27,4 @@ async def on_private_message(msg: PrivateMessage):
 
 
 if __name__ == "__main__":
-    bot.run(reload=False)
+    bot.run()

@@ -14,18 +14,12 @@ from ncatbot.RBACManager.permission_trie import Trie
 
 
 class RBACManager:
-    case_sensitive: bool = None
-
     def __init__(self, case_sensitive: bool = True, default_role: str = None):
-        if not RBACManager.case_sensitive:
-            RBACManager.case_sensitive = (
-                case_sensitive  # 设置是否区分大小写(仅第一次初始化生效)
-            )
+        self.case_sensitive = case_sensitive
         self.roles: Dict = {}
         self.users: Dict = {}
-        self.permissions_trie: Trie = Trie(RBACManager.case_sensitive)
+        self.permissions_trie: Trie = Trie(self.case_sensitive)
         self.default_role = default_role
-        self.case_sensitive = RBACManager.case_sensitive
         self.role_inheritance = {}  # 存储角色继承关系 {role: [inherited_roles]}
 
     def __str__(self):
@@ -352,16 +346,15 @@ class RBACManager:
             "role_inheritance": self.role_inheritance,
         }
 
-    @classmethod
-    def from_dict(cls, data: dict) -> "RBACManager":
+    def from_dict(self, data: dict) -> "RBACManager":
         """从字典重建RBACManager实例"""
         # 检查全局配置
-        original_case_sensitive = cls.case_sensitive
+        original_case_sensitive = self.case_sensitive
         new_case_sensitive = data.get("case_sensitive", True)
         if new_case_sensitive != original_case_sensitive:
             raise ValueError("全局唯一配置不匹配，请检查大小写匹配设置")
 
-        instance = RBACManager()
+        instance = self
 
         trie_paths = data.get("permissions_trie_paths", [])
         instance.permissions_trie.trie = trie_paths
