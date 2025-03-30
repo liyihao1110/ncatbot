@@ -383,6 +383,7 @@ class PluginLoader:
 
         try:
             # 创建任务列表
+            self.event_bus._save_access()
             tasks = [
                 self.unload_plugin(plugin, *arg, **kwd)
                 for plugin in self.plugins.keys()
