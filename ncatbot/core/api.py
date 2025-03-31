@@ -28,7 +28,7 @@ _log = get_log()
 
 
 def check_and_log(result):
-    if result["status"] == REQUEST_SUCCESS:
+    if result.get("status", None) == REQUEST_SUCCESS:
         _log.debug(result)
     else:
         _log.warning(result)
