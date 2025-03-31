@@ -40,5 +40,6 @@ setup(
         "qrcode-terminal~=0.8",
         "gitpython~=3.1.44",
         "schedule~=1.2.2",
+        "Deprecated~=1.2.12",
     ],
 )

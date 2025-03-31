@@ -10,10 +10,11 @@ _log = get_log()
 
 class SetConfig:
 
-    deault_root = "123456"
+    default_root = "123456"
     default_bt_uin = "123456"
 
     def __init__(self):
+        self.ws_ip = "localhost"
         self._updated = False  # 内部状态
         self.bt_uin = "123456"  # bot 账号
         self.root = "123456"  # root 账号
@@ -24,13 +25,7 @@ class SetConfig:
         self.webui_port = ""  # webui 端口, 自动读取, 无需设置
 
     def __str__(self):
-        return (
-            f"\n--Configuration--\n"
-            f"[BotQQ]: {self.bt_uin}\n"
-            f"[Wsuri]: {self.ws_uri}\n"
-            f"[Token]: {self.token}"
-            f"\n--{datetime.datetime.now().strftime('%m/%d---%H:%M')}--"
-        )
+        return f"[BOTQQ]: {self.bt_uin} | [WSURI]: {self.ws_uri} | [TOKEN]: {self.token}"
 
     def is_localhost(self):
         return (
@@ -41,7 +36,7 @@ class SetConfig:
         self._updated = True
         try:
             with open(path, "r", encoding="utf-8") as f:
-                config = yaml.safe_load(f)
+                conf = yaml.safe_load(f)
         except FileNotFoundError:
             _log.warning("未找到配置文件")
             raise ValueError("[setting] 配置文件不存在，请检查！")
@@ -50,7 +45,7 @@ class SetConfig:
         except Exception as e:
             raise ValueError(f"[setting] 未知错误：{e}")
         try:
-            self.ws_uri = config["ws_uri"]
+            self.ws_uri = conf["ws_uri"]
             location = (
                 self.ws_uri.replace("ws://", "")
                 if self.ws_uri.startswith("ws://")
@@ -59,13 +54,13 @@ class SetConfig:
             parts = location.split(":")
             self.ws_ip = parts[0]
             self.ws_port = parts[1]
-            self.token = config["token"]
-            self.bt_uin = config["bt_uin"]
-            self.standerize_uri()
+            self.token = conf["token"]
+            self.bt_uin = conf["bt_uin"]
+            self.standardize_uri()
         except KeyError as e:
             raise KeyError(f"[setting] 缺少配置项，请检查！详情:{e}")
 
-    def standerize_uri(self):
+    def standardize_uri(self):
         if not (self.ws_uri.startswith("ws://") or self.ws_uri.startswith("wss://")):
             self.ws_uri = "ws://" + self.ws_uri
 
@@ -75,7 +70,7 @@ class SetConfig:
     def set_ws_uri(self, ws_uri: str):
         self._updated = True
         self.ws_uri = ws_uri
-        self.standerize_uri()
+        self.standardize_uri()
         parts = self.ws_uri.split(":")
         self.ws_ip = parts[0]
         self.ws_port = parts[-1]
