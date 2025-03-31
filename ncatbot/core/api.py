@@ -2,14 +2,30 @@ import os
 from typing import Union
 
 from ncatbot.conn.wsroute import Route
-from ncatbot.core.element import *
-from ncatbot.utils.io import convert_uploadable_object, read_file
+from ncatbot.core.element import (
+    At,
+    CustomMusic,
+    Dice,
+    Face,
+    File,
+    Image,
+    Json,
+    MessageChain,
+    Music,
+    Record,
+    Reply,
+    Rps,
+    Text,
+    Video,
+)
 from ncatbot.utils.config import config
+from ncatbot.utils.io import convert_uploadable_object, read_file
 from ncatbot.utils.literals import REQUEST_SUCCESS, Status
 from ncatbot.utils.logger import get_log
 from ncatbot.utils.mdmaker import md_maker
 
 _log = get_log()
+
 
 def check_and_log(result):
     if result["status"] == REQUEST_SUCCESS:
@@ -28,24 +44,22 @@ class BotAPI:
         :param messages: 消息列表
         :return: 转发消息
         """
-        def decode_summary(report):
-            def decode_single_message(message):
-                if message["type"] == "text":
-                    return message["data"]["text"]
 
-                if message["type"] == "image":
-                    if (
-                        "summary" in message["data"]
-                        and message["data"]["summary"] != ""
-                    ):
-                        return message["data"]["summary"]
+        def decode_summary(rpt):
+            def decode_single_message(msg):
+                if msg["type"] == "text":
+                    return msg["data"]["text"]
+
+                if msg["type"] == "image":
+                    if "summary" in msg["data"] and msg["data"]["summary"] != "":
+                        return msg["data"]["summary"]
                     return "[图片]"
 
-                if message["type"] == "forward":
+                if msg["type"] == "forward":
                     return "[聊天记录]"
 
             result = ""
-            for message in report["message"]:
+            for message in rpt["message"]:
                 result += decode_single_message(message)
             return result
 
@@ -67,10 +81,21 @@ class BotAPI:
                 {"text": report["sender"]["nickname"] + ": " + decode_summary(report)}
             )
 
+        # 检查messages是否为空
+        if not reports:
+            return {
+                "messages": [],
+                "source": "空的聊天记录",
+                "summary": "没有可查看的转发消息",
+                "news": [],
+            }
+
+        last_report = reports[-1]
+
         if len(news) > 4:
             news = news[:4]
 
-        if report["message_type"] == "group":
+        if last_report["message_type"] == "group":
             target = "群聊"
         else:
             participants = list(
@@ -1145,7 +1170,7 @@ class BotAPI:
         group_id: Union[int, str],
         text: str = None,
         face: int = None,
-        json: str = None,
+        jsond: str = None,
         markdown: str = None,
         at: Union[int, str] = None,
         reply: Union[int, str] = None,
@@ -1159,7 +1184,7 @@ class BotAPI:
         :param group_id: 群号
         :param text: 文本
         :param face: 表情
-        :param json: JSON
+        :param jsond: JSON
         :param markdown: Markdown
         :param at: at
         :param reply: 回复
@@ -1175,8 +1200,8 @@ class BotAPI:
             message.append(Text(text))
         if face:
             message.append(Face(face))
-        if json:
-            message.append(Json(json))
+        if jsond:
+            message.append(Json(jsond))
         if markdown:
             message.append(convert_uploadable_object(await md_maker(markdown), "image"))
         if at:
@@ -1400,12 +1425,18 @@ class BotAPI:
         params = {"user_id": user_id, "message": message}
         return check_and_log(await self._http.post("/send_private_msg", json=params))
 
-
     # ---------------------
     # region ncatbot扩展接口
     # ---------------------
 
-    async def send_qqmail_text(self, receiver: str, token: str, subject: str, content: str, sender: str = f"{config.bt_uin}@qq.com" if config.bt_uin else ""):
+    async def send_qqmail_text(
+        self,
+        receiver: str,
+        token: str,
+        subject: str,
+        content: str,
+        sender: str = f"{config.bt_uin}@qq.com" if config.bt_uin else "",
+    ):
         """发送QQ邮箱文本
         :param sender: 发送者QQ邮箱
         :param receiver: 接收者QQ邮箱
@@ -1416,12 +1447,15 @@ class BotAPI:
         """
         import smtplib
         from email.mime.text import MIMEText
+
         smtp_server = "smtp.qq.com"
         port = 465
-        msg = MIMEText(content, 'plain', 'utf-8')
-        msg['From'] = sender
-        msg['To'] = receiver
-        msg['Subject'] = subject
+        msg = MIMEText(content, "plain", "utf-8")
+        msg["From"] = sender
+        msg["To"] = receiver
+        msg["Subject"] = subject
+
+        server = None  # 初始化server变量为None
         try:
             server = smtplib.SMTP_SSL(smtp_server, port)
             server.login(sender, token)
@@ -1430,4 +1464,5 @@ class BotAPI:
         except Exception as e:
             return {"code": 0, "msg": str(e)}
         finally:
-            server.quit()
+            if server:  # 只有server存在时才调用quit方法
+                server.quit()
