@@ -1,4 +1,5 @@
 import time
+import traceback
 import urllib.parse
 
 import qrcode
@@ -47,43 +48,66 @@ class LoginHandler:
 
     def get_quick_login(self):
         # 获取快速登录列表
-        data = requests.post(
-            self.host + "/api/QQLogin/GetQuickLoginListNew", headers=self.header
-        ).json()["data"]
-        list = [rec["uin"] for rec in data if rec["isQuickLogin"]]
-        _log.info("快速登录列表: " + str(list))
-        return list
+        try:
+            data = requests.post(
+                self.host + "/api/QQLogin/GetQuickLoginListNew",
+                headers=self.header,
+                timeout=5,
+            ).json()["data"]
+            list = [rec["uin"] for rec in data if rec["isQuickLogin"]]
+            _log.info("快速登录列表: " + str(list))
+            return list
+        except TimeoutError:
+            _log.warning("获取快速登录列表失败, 禁用快速登录")
+            return []
 
     def check_login_statu(self):
         # 检查 QQ 是否登录
-        return requests.post(
-            self.host + "/api/QQLogin/CheckLoginStatus", headers=self.header, timeout=5
-        ).json()["data"]["isLogin"]
+        try:
+            return requests.post(
+                self.host + "/api/QQLogin/CheckLoginStatus",
+                headers=self.header,
+                timeout=5,
+            ).json()["data"]["isLogin"]
+        except TimeoutError:
+            _log.warning("检查登录状态超时, 默认未登录")
+            return False
 
     def check_online_statu(self):
         # 检查 QQ 是否在线
-        return (
-            requests.post(
-                self.host + "/api/QQLogin/GetQQLoginInfo",
-                headers=self.header,
-                timeout=5,
+        try:
+            return (
+                requests.post(
+                    self.host + "/api/QQLogin/GetQQLoginInfo",
+                    headers=self.header,
+                    timeout=5,
+                )
+                .json()["data"]
+                .get("online", False)
             )
-            .json()["data"]
-            .get("online", False)
-        )
+        except TimeoutError:
+            _log.warning("检查在线状态超时, 默认不在线")
+            return False
 
     def send_quick_login(self):
         # 发送快速登录请求
-        return (
-            requests.post(
-                self.host + "/api/QQLogin/SetQuickLogin",
-                headers=self.header,
-                json={"uin": config.bt_uin},
+        _log.info("正在发送快速登录请求...")
+        try:
+            status = (
+                requests.post(
+                    self.host + "/api/QQLogin/SetQuickLogin",
+                    headers=self.header,
+                    json={"uin": config.bt_uin},
+                    timeout=5,
+                )
+                .json()
+                .get("message", "failed")
+                == "success"
             )
-            .json()
-            .get("message", "failed")
-            == "success"
-        )
+            return status
+        except TimeoutError:
+            _log.warning("快速登录失败, 进行其它登录尝试")
+            pass
 
     def reqeust_qrcode_url(self):
         EXPIRE = time.time() + 10
@@ -96,6 +120,7 @@ class LoginHandler:
                 return val
 
         _log.error("获取二维码失败")
+        _log.info(traceback.format_exc())
         exit(1)
 
     def login(self):
