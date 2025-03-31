@@ -207,12 +207,12 @@ class BasePlugin:
         }
         if not isinstance(job_info["args"], tuple) and args is not None:
             _log.warning(
-                f"args 必须为 tuple 类型, {job_info["args"]} 不是 tuple 类型, 而是 {type(job_info["args"])}, 注册定时任务失败"
+                f"args 必须为 tuple 类型, {job_info['args']} 不是 tuple 类型, 而是 {type(job_info['args'])}, 注册定时任务失败"
             )
             return
         if not isinstance(job_info["kwargs"], dict):
             _log.warning(
-                f"kwargs 必须为 dict 类型, {job_info["kwargs"]} 不是 dict 类型, 而是 {type(job_info["kwargs"])}, 注册定时任务失败"
+                f"kwargs 必须为 dict 类型, {job_info['kwargs']} 不是 dict 类型, 而是 {type(job_info['kwargs'])}, 注册定时任务失败"
             )
             return
         return self._time_task_scheduler.add_job(**job_info)
