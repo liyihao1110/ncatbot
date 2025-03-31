@@ -27,6 +27,8 @@ _log = get_log()
 
 
 class BotClient:
+    registered = False
+
     def __init__(self, plugins_path="plugins"):
         def check_config():
             if not config._updated:
@@ -38,6 +40,15 @@ class BotClient:
                 _log.warning("建议设置好 root 账号保证权限功能能够正常使用")
             _log.info(config)
 
+        def check_duplicate_register():
+            if BotClient.registered:
+                _log.error(
+                    "一个主程序只允许注册一个 BotClient 实例, 请检查你的引导程序"
+                )
+                exit(1)
+            BotClient.registered = True
+
+        check_duplicate_register()
         check_config()
         self.api = BotAPI()
         self._subscribe_group_message_types = []
