@@ -38,7 +38,7 @@ def gen_plugin_version_url(plugin):
 
 
 def gen_plugin_download_url(plugin, version):
-    return f"{GITHUB_PROXY}/{PLUGIN_DOWNLOAD_REPO}/{plugin}/{plugin}-{version}.zip"
+    return f"{GITHUB_PROXY}/{PLUGIN_DOWNLOAD_REPO}/{plugin}/{plugin}-{version.strip()}.zip"
 
 
 def get_qq():
