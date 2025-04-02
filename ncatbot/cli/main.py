@@ -8,7 +8,7 @@ import time
 
 import requests
 
-from ncatbot.utils.PipTool import PipTool
+from ncatbot.utils.pip_tool import PipTool
 
 os.environ["LOG_FILE_PATH"] = "ncatbot/logs/"
 
@@ -38,7 +38,9 @@ def gen_plugin_version_url(plugin):
 
 
 def gen_plugin_download_url(plugin, version):
-    return f"{GITHUB_PROXY}/{PLUGIN_DOWNLOAD_REPO}/{plugin}/{plugin}-{version.strip()}.zip"
+    return (
+        f"{GITHUB_PROXY}/{PLUGIN_DOWNLOAD_REPO}/{plugin}/{plugin}-{version.strip()}.zip"
+    )
 
 
 def get_qq():

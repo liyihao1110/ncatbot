@@ -25,7 +25,7 @@ from ncatbot.plugin.event import EventBus
 from ncatbot.utils.io import UniversalLoader
 from ncatbot.utils.literals import META_CONFIG_PATH, PLUGINS_DIR
 from ncatbot.utils.logger import get_log
-from ncatbot.utils.PipTool import PipTool
+from ncatbot.utils.pip_tool import PipTool
 from ncatbot.utils.time_task_scheduler import TimeTaskScheduler
 
 from .custom_err import (
