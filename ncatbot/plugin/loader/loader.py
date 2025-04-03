@@ -38,6 +38,50 @@ PM = PipTool()
 LOG = get_log("PluginLoader")
 
 
+def install_plugin_dependecies(plugin_name, confirm=False):
+    directory_path = os.path.join(PLUGINS_DIR, plugin_name)
+    if not os.path.exists(f"{directory_path}/requirements.txt"):
+        return
+
+    original_sys_path = sys.path.copy()
+    all_install = {
+        pack["name"].strip().lower() for pack in PM.list_installed() if "name" in pack
+    }
+    download_new = False
+
+    try:
+        directory_path = os.path.abspath(directory_path)
+        sys.path.append(os.path.dirname(directory_path))
+
+        if os.path.isfile(os.path.join(directory_path, "requirements.txt")):
+            requirements = set(
+                [
+                    pack.strip().lower()
+                    for pack in open(
+                        os.path.join(directory_path, "requirements.txt")
+                    ).readlines()
+                ]
+            )
+            download = requirements - all_install
+            if download:
+                download_new = True
+                LOG.warning(f'即将安装 {plugin_name} 中要求的库: {" ".join(download)}')
+                if not confirm or input("是否安装(Y/n):").lower() in ("y", ""):
+                    for pack in download:
+                        LOG.info(f"开始安装库: {pack}")
+                        PM.install(pack)
+
+            try:
+                importlib.import_module(plugin_name)
+            except ImportError as e:
+                LOG.error(f"导入模块 {plugin_name} 时出错: {e}")
+
+        if download_new:
+            LOG.warning("在某些环境中, 动态安装的库可能不会立即生效, 需要重新启动。")
+    finally:
+        sys.path = original_sys_path
+
+
 class PluginLoader:
     """
     插件加载器,用于加载、卸载和管理插件
@@ -328,61 +372,18 @@ class PluginLoader:
         """
         从指定文件夹动态加载模块,返回模块名到模块的字典。
         不修改 `sys.path`,仅在必要时临时添加路径。
+
+        Args:
+            directory_path: 插件加载路径, 一般就是插件名
         """
         modules = {}
-        original_sys_path = sys.path.copy()
-        all_install = {
-            pack["name"].strip().lower()
-            for pack in PM.list_installed()
-            if "name" in pack
-        }
-        download_new = False
+        directory_path = os.path.abspath(directory_path)
+        sys.path.append(directory_path)
 
-        try:
-            directory_path = os.path.abspath(directory_path)
-            sys.path.append(directory_path)
-
-            for filename in os.listdir(directory_path):
-                if not os.path.isdir(os.path.join(directory_path, filename)):
-                    continue
-                if os.path.isfile(
-                    os.path.join(directory_path, filename, "requirements.txt")
-                ):
-                    requirements = set(
-                        [
-                            pack.strip().lower()
-                            for pack in open(
-                                os.path.join(
-                                    directory_path, filename, "requirements.txt"
-                                )
-                            ).readlines()
-                        ]
-                    )
-                    download = requirements - all_install
-                    if download:
-                        download_new = True
-                        LOG.warning(
-                            f'即将安装 {filename} 中要求的库: {" ".join(download)}'
-                        )
-                        if input("是否安装(Y/n):").lower() in ("y", ""):
-                            for pack in download:
-                                LOG.info(f"开始安装库: {pack}")
-                                PM.install(pack)
-
-                try:
-                    module = importlib.import_module(filename)
-                    modules[filename] = module
-                except ImportError as e:
-                    LOG.error(f"导入模块 {filename} 时出错: {e}")
-                    continue
-
-            if download_new:
-                LOG.warning(
-                    "在某些环境中, 动态安装的库可能不会立即生效, 需要重新启动。"
-                )
-
-        finally:
-            sys.path = original_sys_path
+        for filename in os.listdir(directory_path):
+            if not os.path.isdir(os.path.join(directory_path, filename)):
+                continue
+            install_plugin_dependecies(directory_path)
 
         return modules
 
