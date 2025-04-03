@@ -1,5 +1,8 @@
-import datetime
+# 配置文件
+
 import time
+import urllib
+import urllib.parse
 
 import yaml
 
@@ -12,25 +15,51 @@ class SetConfig:
 
     default_root = "123456"
     default_bt_uin = "123456"
+    default_ws_uri = "ws://localhost:3001"
+    default_webui_uri = "http://localhost:6099"
+    default_webui_token = "napcat"
 
     def __init__(self):
-        self.ws_ip = "localhost"
-        self._updated = False  # 内部状态
-        self.bt_uin = "123456"  # bot 账号
-        self.root = "123456"  # root 账号
-        self.ws_uri = "ws://localhost:3001"
+        # 内部状态
+        # 可设置状态
+        self.root = self.default_root  # root 账号
+        self.bt_uin = self.default_bt_uin  # bot 账号
+        self.ws_uri = self.default_ws_uri  # ws 地址
+        self.webui_uri = self.default_webui_uri  # webui 地址
+        self.webui_token = self.default_webui_token  # webui 令牌
+        self.ws_token = ""  # ws_uri 令牌
+
+        # 自动获取状态
+        self.ws_host = None  # ws host
+        self.webui_host = None  # webui host
+        self.ws_port = None  # ws 端口
+        self.webui_port = None  # webui 端口
+
+        # 暂不支持的状态
         self.stop_napcat = False  # 结束时是否停止 napcat
-        self.token = ""  # napcat 令牌
-        self.webui_token = ""  # webui 令牌, 自动读取, 无需设置
-        self.webui_port = ""  # webui 端口, 自动读取, 无需设置
 
     def __str__(self):
-        return f"[BOTQQ]: {self.bt_uin} | [WSURI]: {self.ws_uri} | [TOKEN]: {self.token}"
+        return f"[BOTQQ]: {self.bt_uin} | [WSURI]: {self.ws_uri} | [TOKEN]: {self.token} | [ROOT]: {self.root} | [WEBUI]: {self.webui_uri}"
 
-    def is_localhost(self):
+    def _is_localhost(self):
         return (
             self.ws_uri.find("localhost") != -1 or self.ws_uri.find("127.0.0.1") != -1
         )
+
+    def _standardize_ws_uri(self):
+        if not (self.ws_uri.startswith("ws://") or self.ws_uri.startswith("wss://")):
+            self.ws_uri = "ws://" + self.ws_uri
+        self.ws_host = urllib.parse.urlparse(self.ws_uri).hostname
+        self.ws_port = urllib.parse.urlparse(self.ws_uri).port
+
+    def _standardize_webui_uri(self):
+        if not (
+            self.webui_uri.startswith("http://")
+            or self.webui_uri.startswith("https://")
+        ):
+            self.webui_uri = "http://" + self.webui_uri
+        self.webui_host = urllib.parse.urlparse(self.webui_uri).hostname
+        self.webui_port = urllib.parse.urlparse(self.webui_uri).port
 
     def load_config(self, path):
         self._updated = True
@@ -56,37 +85,31 @@ class SetConfig:
             self.ws_port = parts[1]
             self.token = conf["token"]
             self.bt_uin = conf["bt_uin"]
-            self.standardize_uri()
+            self._standardize_ws_uri()
         except KeyError as e:
             raise KeyError(f"[setting] 缺少配置项，请检查！详情:{e}")
-
-    def standardize_uri(self):
-        if not (self.ws_uri.startswith("ws://") or self.ws_uri.startswith("wss://")):
-            self.ws_uri = "ws://" + self.ws_uri
 
     def set_root(self, root: str):
         self.root = root
 
     def set_ws_uri(self, ws_uri: str):
-        self._updated = True
         self.ws_uri = ws_uri
-        self.standardize_uri()
-        parts = self.ws_uri.split(":")
-        self.ws_ip = parts[0]
-        self.ws_port = parts[-1]
-        if not self.is_localhost():
+        self._standardize_ws_uri()
+        if not self._is_localhost():
             _log.info(
-                f'请注意, 当前配置的 ws_uri="{ws_uri}" 不是本地地址, 请确保远端 napcat 服务正确配置.'
+                "请注意, 当前配置的 NapCat 服务不是本地地址, 请确保远端 NapCat 服务正确配置."
             )
             time.sleep(1)
 
     def set_bot_uin(self, uin: str):
-        self._updated = True
         self.bt_uin = uin
 
     def set_token(self, token: str):
-        self._updated = True
         self.token = token
+
+    def set_webui_uri(self, webui_uri: str):
+        self.webui_uri = webui_uri
+        self._standardize_webui_uri()
 
 
 config = SetConfig()

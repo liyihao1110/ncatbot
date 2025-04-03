@@ -6,7 +6,12 @@ from ncatbot.core.api import BotAPI
 class BaseMessage:
     api_initialized = False
     api = None
-    __slots__ = ("self_id", "time", "post_type", "raw_message")
+    __slots__ = (
+        "self_id",
+        "time",
+        "post_type",
+        "raw_message",
+    )
 
     def __init__(self, message):
         if not BaseMessage.api_initialized:
@@ -15,9 +20,14 @@ class BaseMessage:
         self.self_id = message.get("self_id", None)
         self.time = message.get("time", None)
         self.post_type = message.get("post_type", None)
+        self.raw_message = message.get("raw_message", None)
 
     def __repr__(self):
         return str({items: str(getattr(self, items)) for items in self.__slots__})
+
+    def reply_text_sync(self, text: str = "", **kwargs):
+        """同步回复消息, 应该被子类重写"""
+        pass
 
     class _Sender:
         def __init__(self, message):

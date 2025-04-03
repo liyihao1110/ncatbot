@@ -1,25 +1,16 @@
-from ncatbot.utils.assets import *
-from ncatbot.utils.config import config
-from ncatbot.utils.file_io import (
-    UniversalLoader,
-    convert_uploadable_object,
-    read_file,
-    unzip_file,
-)
-from ncatbot.utils.logger import get_log
-from ncatbot.utils.network_io import download_file, get_proxy_url
-from ncatbot.utils.optional import *
+# 静态资源
+
+
+from ncatbot.utils.assets.color import Color
+from ncatbot.utils.assets.literals import *
+from ncatbot.utils.assets.plugin_custom_err import *
 
 __all__ = [
-    "SetConfig",
-    "get_log",
-    "get_proxy_url",
-    "download_file",
-    "UniversalLoader",
-    "read_file",
-    "convert_uploadable_object",
-    "unzip_file",
-    "config",
+    "PluginCircularDependencyError",
+    "PluginDependencyError",
+    "PluginNotFoundError",
+    "PluginVersionError",
+    "Color",
     # literals
     "WINDOWS_NAPCAT_DIR",
     "LINUX_NAPCAT_DIR",

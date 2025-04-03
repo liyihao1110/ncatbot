@@ -1,3 +1,5 @@
+# 插件发布脚本
+
 import os
 import shutil
 import stat
@@ -7,7 +9,8 @@ from pathlib import Path
 import requests
 from git import GitCommandError, Repo
 
-from ncatbot.plugin.loader import get_plugin_info
+from ncatbot.plugin import PluginLoader
+from ncatbot.utils import PLUGINS_DIR
 
 MAIN_REPO_OWNER = "ncatbot"
 MAIN_BRANCH_NAME = "main"
@@ -15,6 +18,27 @@ MAIN_REPO_NAME = "NcatBot-Plugins"
 
 github_token = None
 token_owner = None
+
+
+def get_plugin_info(path: str):
+    if os.path.exists(path):
+        return PluginLoader(None).get_plugin_info(path)
+    else:
+        raise FileNotFoundError(f"dir not found: {path}")
+
+
+def get_pulgin_info_by_name(name: str):
+    """
+    Args:
+        name (str): 插件名
+    Returns:
+        Tuple[bool, str]: 是否存在插件, 插件版本
+    """
+    plugin_path = os.path.join(PLUGINS_DIR, name)
+    if os.path.exists(plugin_path):
+        return True, get_plugin_info(plugin_path)[1]
+    else:
+        return False, "0.0.0"
 
 
 def get_github_token(token):
@@ -207,6 +231,7 @@ def sync_fork_with_source():
 
 
 def fork(owner, repo):
+    """fork 主仓库, 如果已经存在则尝试同步"""
     global github_token
     token_owner = get_token_owner(github_token)
     if has_existing_fork(token_owner, MAIN_REPO_NAME):
@@ -333,84 +358,99 @@ def do_version_change(target_base_folder, version):
 
 
 def main():
-    global github_token
+    def prepare():
+        """准备工作
+        1. 获取插件路径和插件基本信息
+        2. 获取并测试 github token
+        """
+        global plugin_name, version, path, github_token
+        path = get_plugin_path()
+        plugin_name, version = get_plugin_info(path)
+        if plugin_name is None:
+            print("获取插件信息失败, 请检查错误信息")
+            exit(0)
+        print(f"Plugin name: {plugin_name}, version: {version}")
+        github_token = get_github_token(github_token)
+        test_github_token(github_token)
+        return f"publish-{plugin_name}-{version}"
 
-    path = get_plugin_path()
+    def to_local():
+        """转移最新的远端仓库到本地"""
+        # Fork 主仓库
+        fork(MAIN_REPO_OWNER, MAIN_REPO_NAME)
+        fork_repo = (
+            f"https://github.com/{get_token_owner(github_token)}/{MAIN_REPO_NAME}.git"
+        )
+        print(f"Fork 完成: {fork_repo}")
 
-    plugin_name, version = get_plugin_info(path)
-    if plugin_name is None:
-        print("获取插件信息失败, 请检查错误信息")
-        exit(0)
-    print(f"Plugin name: {plugin_name}, version: {version}")
+        # 克隆 Fork 的仓库
+        try:
+            print("正在克隆远端仓库...")
+            repo = Repo.clone_from(fork_repo, f"temp_repo{time.time()}")
+        except GitCommandError as e:
+            print(f"Failed to clone repository: {e}")
+            return
 
-    github_token = get_github_token(github_token)
-    test_github_token(github_token)
+        print("克隆完成, 为插件发布创建新的分支...")
+        # 创建新分支
+        repo.git.checkout("-b", branch_name)
+        return repo, os.path.join(repo.working_dir, "plugins", plugin_name)
 
-    # Fork 主仓库
-    fork(MAIN_REPO_OWNER, MAIN_REPO_NAME)
-    fork_repo = (
-        f"https://github.com/{get_token_owner(github_token)}/{MAIN_REPO_NAME}.git"
-    )
-    print(f"Fork 完成: {fork_repo}")
+    def do_change(repo, target_base_folder):
+        """打包插件并创建更新"""
+        # 写版本
+        do_version_change(target_base_folder, version)
 
-    # 克隆 Fork 的仓库
-    try:
-        print("正在克隆远端仓库...")
-        repo = Repo.clone_from(fork_repo, f"temp_repo{time.time()}")
-    except GitCommandError as e:
-        print(f"Failed to clone repository: {e}")
-        return
+        # 打包插件并移动到对应文件夹(打包文件而非文件夹, 要解压到 plugins/plugin_name/)
+        archived_file = make_archive_with_gitignore(plugin_name, version, path)
 
-    print("克隆完成, 为插件发布创建新的分支...")
-    # 创建新分支
-    branch_name = f"publish-{plugin_name}-{version}"
-    repo.git.checkout("-b", branch_name)
-    target_base_folder = os.path.join(repo.working_dir, "plugins", plugin_name)
+        # 移动到 git 文件夹
+        shutil.move(archived_file, target_base_folder)
 
-    # 写版本
-    do_version_change(target_base_folder, version)
+        # 添加并提交更改
+        repo.git.add(all=True)
+        commit_message = f"Publish plugin {plugin_name} version {version}"
+        repo.git.commit("-m", commit_message)
 
-    # 打包插件并移动到对应文件夹(打包文件而非文件夹, 要解压到 plugins/plugin_name/)
-    archived_file = make_archive_with_gitignore(plugin_name, version, path)
+    def do_pull_request(repo, branch_name):
+        """推送更改并创建 PR"""
+        try:
+            print("推送更改...")
+            repo.git.push("--force", "origin", branch_name)
+        except GitCommandError as e:
+            print(f"Failed to push changes: {e}")
+            return
 
-    # 移动到 git 文件夹
-    shutil.move(archived_file, target_base_folder)
+        # 创建 Pull Request
+        create_pull_request(branch_name, plugin_name, version)
 
-    # 添加并提交更改
-    repo.git.add(all=True)
-    commit_message = f"Publish plugin {plugin_name} version {version}"
-    repo.git.commit("-m", commit_message)
+    def do_close(repo):
+        """完成发布工作后清理本地临时文件"""
+        # 删除临时文件夹
+        temp_repo_path = repo.working_dir
+        print(f"删除临时路径: {temp_repo_path}")
 
-    # 推送更改到 GitHub
-    try:
-        print("推送更改...")
-        repo.git.push("--force", "origin", branch_name)
-    except GitCommandError as e:
-        print(f"Failed to push changes: {e}")
-        return
+        # 首先关闭仓库对象以释放文件句柄
+        repo.close()
+        # 抽象repo关太慢了，不小睡一下会继续占用
+        time.sleep(2)
 
-    # 创建 Pull Request
-    create_pull_request(branch_name, plugin_name, version)
+        def on_rm_error(func, path, _):
+            # 去掉只读
+            os.chmod(path, stat.S_IWRITE)
+            func(path)
 
-    # 删除临时文件夹
-    temp_repo_path = repo.working_dir
-    print(f"删除临时路径: {temp_repo_path}")
+        try:
+            shutil.rmtree(temp_repo_path, onexc=on_rm_error)
+            print("成功删除临时路径.")
+        except Exception as e:
+            print(f"删除临时路径时出错: {e}")
 
-    # 首先关闭仓库对象以释放文件句柄
-    repo.close()
-    # 抽象repo关太慢了，不小睡一下会继续占用
-    time.sleep(2)
-
-    def on_rm_error(func, path, _):
-        # 去掉只读
-        os.chmod(path, stat.S_IWRITE)
-        func(path)
-
-    try:
-        shutil.rmtree(temp_repo_path, onexc=on_rm_error)
-        print("成功删除临时路径.")
-    except Exception as e:
-        print(f"删除临时路径时出错: {e}")
+    branch_name = prepare()
+    repo, target_base_folder = to_local()
+    do_change(repo, target_base_folder)
+    do_pull_request(repo, branch_name)
+    do_close(repo)
 
 
 main()

@@ -1,10 +1,15 @@
+# 检查本地 NcatBot 环境
+
 import os
 import site
 import subprocess
 import sys
+import urllib
+import urllib.parse
 
 import requests
 
+from ncatbot.utils.assets.literals import PYPI_URL
 from ncatbot.utils.logger import get_log
 
 _log = get_log()
@@ -41,7 +46,7 @@ def get_pypi_latest_version(package_name):
     :return: 最新版本（字符串）或 None（如果无法获取）
     """
     try:
-        url = f"https://pypi.org/pypi/{package_name}/json"
+        url = urllib.parse.urljoin(PYPI_URL, package_name + "/json")
         response = requests.get(url, timeout=3)
         response.raise_for_status()  # 如果请求失败会抛出异常
         data = response.json()
