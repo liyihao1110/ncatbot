@@ -8,14 +8,14 @@ import time
 
 import requests
 
-from ncatbot.utils.pip_tool import PipTool
+from ncatbot.plugin.loader.pip_tool import PipTool
 
 os.environ["LOG_FILE_PATH"] = "ncatbot/logs/"
 
 from ncatbot.core import BotClient
 from ncatbot.plugin.loader import get_pulgin_info_by_name
+from ncatbot.utils.assets.literals import PLUGIN_BROKEN_MARK
 from ncatbot.utils.config import config
-from ncatbot.utils.literals import PLUGIN_BROKEN_MARK
 from ncatbot.utils.logger import get_log
 from ncatbot.utils.tp_helper import get_proxy_url
 

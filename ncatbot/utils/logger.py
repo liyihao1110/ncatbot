@@ -3,7 +3,7 @@
 # @Date         : 2025-02-12 13:41:02
 # @LastEditors  : Fish-LP fish.zh@outlook.com
 # @LastEditTime : 2025-03-15 16:14:50
-# @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
+# @Description  : 日志类
 # @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议
 # -------------------------
 import ctypes
@@ -17,7 +17,7 @@ from logging.handlers import TimedRotatingFileHandler
 
 from tqdm import tqdm as tqdm_original
 
-from ncatbot.utils.Color import Color
+from ncatbot.utils.assets.color import Color
 
 
 def is_ansi_supported():
@@ -37,7 +37,7 @@ def is_ansi_supported():
         # 获取 Windows 版本信息
         version_info = sys.getwindowsversion()
         major_version = version_info[0]
-        build_number = version_info[3]
+        # build_number = version_info[3]
 
         # Windows 10 (major version 10) 或更高版本
         if major_version >= 10:

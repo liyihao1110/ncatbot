@@ -3,7 +3,7 @@ from typing import Union
 
 from deprecated import deprecated
 
-from ncatbot.utils.io import convert_uploadable_object
+from ncatbot.utils import convert_uploadable_object
 
 
 class MessageChain:
@@ -300,3 +300,22 @@ class File(Element):
 
     def to_dict(self) -> dict:
         return convert_uploadable_object(self.file, "file")
+
+
+__all__ = [
+    "MessageChain",
+    "Text",
+    "Image",
+    "Reply",
+    "At",
+    "AtAll",
+    "Face",
+    "Json",
+    "Record",
+    "Video",
+    "Dice",
+    "Rps",
+    "Music",
+    "CustomMusic",
+    "File",
+]

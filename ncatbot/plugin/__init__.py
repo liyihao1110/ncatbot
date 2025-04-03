@@ -7,15 +7,8 @@
 # @message: 喵喵喵?
 # @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议
 # -------------------------
-from .base_plugin import BasePlugin
-from .compatible import CompatibleEnrollment
-from .event import Event, EventBus
-from .loader import PluginLoader
+from ncatbot.plugin.base_plugin import *
+from ncatbot.plugin.event import *
+from ncatbot.plugin.loader import *
 
-__all__ = [
-    "BasePlugin",
-    "Event",
-    "EventBus",
-    "PluginLoader",
-    "CompatibleEnrollment",
-]
+__all__ = []
