@@ -1,5 +1,4 @@
 import argparse
-import importlib
 import os
 import shutil
 import subprocess
@@ -8,20 +7,16 @@ import time
 
 import requests
 
-from ncatbot.plugin.loader.pip_tool import PipTool
-
 os.environ["LOG_FILE_PATH"] = "ncatbot/logs/"
 
 from ncatbot.core import BotClient
-from ncatbot.plugin.loader import get_pulgin_info_by_name
-from ncatbot.utils.assets.literals import PLUGIN_BROKEN_MARK
-from ncatbot.utils.config import config
-from ncatbot.utils.logger import get_log
-from ncatbot.utils.tp_helper import get_proxy_url
+from ncatbot.plugin import install_plugin_dependecies
+from ncatbot.scripts import get_pulgin_info_by_name
+from ncatbot.utils import PLUGIN_BROKEN_MARK, config, get_log, get_proxy_url
 
 # TODO: 解决插件依赖安装问题
 
-_log = get_log()
+LOG = get_log("CLI")
 
 GITHUB_PROXY = get_proxy_url()
 PYPI_SOURCE = "https://mirrors.aliyun.com/pypi/simple/"
@@ -103,66 +98,7 @@ def install(plugin, *args):
         os.makedirs(directory_path, exist_ok=True)
         shutil.unpack_archive(f"{directory_path}.zip", directory_path)
         os.remove(f"{directory_path}.zip")
-        if os.path.exists(f"{directory_path}/requirements.txt"):
-            PM = PipTool()
-            original_sys_path = sys.path.copy()
-            all_install = {
-                pack["name"].strip().lower()
-                for pack in PM.list_installed()
-                if "name" in pack
-            }
-            download_new = False
-
-            try:
-                directory_path = os.path.abspath(directory_path)
-                sys.path.append(os.path.dirname(directory_path))
-
-                if os.path.isfile(os.path.join(directory_path, "requirements.txt")):
-                    requirements = set(
-                        [
-                            pack.strip().lower()
-                            for pack in open(
-                                os.path.join(directory_path, "requirements.txt")
-                            ).readlines()
-                        ]
-                    )
-                    download = requirements - all_install
-                    if download:
-                        download_new = True
-                        _log.warning(
-                            f'即将安装 {plugin} 中要求的库: {" ".join(download)}'
-                        )
-                        # if input("是否安装(Y/n):").lower() in ("y", ""):
-                        for pack in download:
-                            _log.info(f"开始安装库: {pack}")
-                            PM.install(pack)
-
-                    try:
-                        importlib.import_module(plugin)
-                    except ImportError as e:
-                        _log.error(f"导入模块 {plugin} 时出错: {e}")
-
-                if download_new:
-                    _log.warning(
-                        "在某些环境中, 动态安装的库可能不会立即生效, 需要重新启动。"
-                    )
-            finally:
-                sys.path = original_sys_path
-            # print("正在安装插件第三方依赖...")
-            # process = subprocess.Popen(
-            #     [
-            #         sys.executable,
-            #         "-m",
-            #         "pip",
-            #         "install",
-            #         "-r",
-            #         f"plugins/{plugin}/requirements.txt",
-            #         "-i",
-            #         PYPI_SOURCE,
-            #     ],
-            #     shell=True,
-            # )
-            # process.wait()
+        install_plugin_dependecies(plugin)
 
     fix = args[0] == "--fix" if len(args) else False
 
@@ -197,7 +133,7 @@ def start(*args, **kwargs):
         client = BotClient()
         client.run(debug=("-d" in args or "-D" in args or "--debug" in args))
     except Exception as e:
-        _log.error(e)
+        LOG.error(e)
 
 
 def update():
@@ -217,8 +153,10 @@ def update():
         shell=True,
         start_new_session=True,
     )
-    exit(0)
     print("Ncatbot 版本更新成功!")
+    print("请重新运行 NcatBotCLI 或者 main.exe")
+    time.sleep(1)
+    exit(0)
 
 
 def list_plugin(enable_print=True):
