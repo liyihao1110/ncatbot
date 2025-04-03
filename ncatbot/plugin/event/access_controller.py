@@ -19,13 +19,13 @@ class BaseRBACManager(RBACManager):
         self.is_group = is_group
 
     def role_exist(self, role_name):
-        return self.check_availability(role_name)
+        return self.check_availability(role_name=role_name)
 
     def user_exist(self, user_name: str):
-        return self.check_availability(self.user_prefix + user_name)
+        return self.check_availability(user_name=self.user_prefix + user_name)
 
     def permission_path_exist(self, path: str):
-        return self.check_availability(path)
+        return self.check_availability(permissions_path=path)
 
     def create_user(self, user_name, base_role=PermissionGroup.USER.value):
         """带前缀的创建用户"""
@@ -71,16 +71,7 @@ class RoleManagerMixin:
         mode: Literal["black", "white"],
         create_permission_path: bool = False,
     ):
-        if not self.ur.check_availability(path):
-            if create_permission_path:
-                self.ur.add_permissions(path)
-            else:
-                raise ValueError(f"权限路径 {path} 不存在")
-        if not self.gr.check_availability(path):
-            if create_permission_path:
-                self.gr.add_permissions(path)
-            else:
-                raise ValueError(f"权限路径 {path} 不存在")
+        self._create_permission_path_if_not_exist(path, create_permission_path)
         self.gr.assign_permissions_to_role(role_name, path, mode)
         self.ur.assign_permissions_to_role(role_name, path, mode)
 
@@ -91,16 +82,7 @@ class RoleManagerMixin:
         mode: Literal["black", "white"],
         create_permission_path: bool = False,
     ):
-        if not self.ur.check_availability(path):
-            if create_permission_path:
-                self.ur.add_permissions(path)
-            else:
-                raise ValueError(f"权限路径 {path} 不存在")
-        if not self.gr.check_availability(path):
-            if create_permission_path:
-                self.gr.add_permissions(path)
-            else:
-                raise ValueError(f"权限路径 {path} 不存在")
+        self._create_permission_path_if_not_exist(path, create_permission_path)
         self.gr.unassign_permissions_to_role(role_name, path, mode)
         self.ur.unassign_permissions_to_role(role_name, path, mode)
 
@@ -240,8 +222,8 @@ class PluginAccessController(RoleManagerMixin):
                 raise ValueError(f"权限路径 {path} 不存在")
 
     def permission_path_exist(self, path):
-        ure = self.ur.check_availability(path)
-        gre = self.gr.check_availability(path)
+        ure = self.ur.permission_path_exist(path)
+        gre = self.gr.permission_path_exist(path)
         if ure != gre:
             raise ValueError(f"权限路径 {path} 不同步")
         return ure

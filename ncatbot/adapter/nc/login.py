@@ -1,39 +1,81 @@
-import os
+import platform
 import time
 
 import qrcode
 import requests
+from requests.exceptions import ConnectionError
 
-from ncatbot.utils.config import config
-from ncatbot.utils.logger import get_log
+from ncatbot.utils import config, get_log
 
-_log = get_log()
+LOG = get_log("adapter.nc.login")
+main_handler = None
 
 
 def show_qrcode(barcode_url):
-    _log.info(f"二维码指代的 url 地址: {barcode_url}")
+    LOG.info(f"二维码指代的 url 地址: {barcode_url}")
     qr = qrcode.QRCode()
     qr.add_data(barcode_url)
     qr.print_ascii(invert=True)
 
 
+def get_handler():
+    global main_handler
+    if main_handler is None:
+        main_handler = LoginHandler()
+    return main_handler
+
+
+class BotUINError(Exception):
+    def __init__(self, uin):
+        super().__init__(
+            f"BotUINError: 已经在线的 QQ {uin} 不是设置的 bot 账号 {config.bt_uin}"
+        )
+
+
+class LoginError(Exception):
+    def __init__(self):
+        super().__init__("登录失败")
+
+
 class LoginHandler:
     # 登录处理器
     def __init__(self):
+        MAX_TIME_EXPIER = time.time() + 30
         self.base_uri = config.webui_uri
-        try:
-            content = requests.post(
-                self.base_uri + "/api/auth/login",
-                json={"token": config.webui_token},
-                timeout=5,
-            ).json()
-        except TimeoutError:
-            _log.error("连接 WebUI 失败")
-            _log.info("请开放 webui 端口 (默认 6099)")
-
-        self.header = {
-            "Authorization": "Bearer " + content["data"]["Credential"],
-        }
+        while True:
+            try:
+                content = requests.post(
+                    self.base_uri + "/api/auth/login",
+                    json={"token": config.webui_token},
+                    timeout=10,
+                ).json()
+                self.header = {
+                    "Authorization": "Bearer " + content["data"]["Credential"],
+                }
+                return
+            except TimeoutError:
+                LOG.error("连接 WebUI 失败, 以下给出几种可能的解决方案:")
+                if platform.system() == "Windows":
+                    LOG.info(
+                        "检查 Windows 安全中心, 查看是否有拦截了 NapCat 启动程序的日志"
+                    )
+                LOG.info("开放防火墙的 WebUI 端口 (默认 6099)")
+                exit(1)
+            except ConnectionError:
+                if platform.system() == "Windows":
+                    if time.time() > MAX_TIME_EXPIER:
+                        LOG.error("授权操作超时")
+                        LOG.info(
+                            "请检查 Windows 安全中心, 查看是否有拦截了 NapCat 启动程序的日志"
+                        )
+                        exit(1)
+                elif platform.system() == "Linux":
+                    LOG.error(
+                        "未知错误 LoginHandler.__init__ ConnectionError, 请保留日志并联系开发团队"
+                    )
+                    exit(1)
+                else:
+                    LOG.error("不支持的操作系统, 请自行检查并适配")
 
     def get_quick_login(self):
         # 获取快速登录列表
@@ -44,10 +86,10 @@ class LoginHandler:
                 timeout=5,
             ).json()["data"]
             list = [rec["uin"] for rec in data if rec["isQuickLogin"]]
-            _log.info("快速登录列表: " + str(list))
+            LOG.info("快速登录列表: " + str(list))
             return list
         except TimeoutError:
-            _log.warning("获取快速登录列表失败, 禁用快速登录")
+            LOG.warning("获取快速登录列表失败, 禁用快速登录")
             return []
 
     def check_login_statu(self):
@@ -59,34 +101,37 @@ class LoginHandler:
                 timeout=5,
             ).json()["data"]["isLogin"]
         except TimeoutError:
-            _log.warning("检查登录状态超时, 默认未登录")
+            LOG.warning("检查登录状态超时, 默认未登录")
             return False
 
-    def check_online_statu(self):
-        # 检查 QQ 是否在线
+    def get_online_qq(self):
+        """获取当前在线的 QQ 号, 如果无 QQ 在线, 则返回 None"""
         try:
             data = requests.post(
                 self.base_uri + "/api/QQLogin/GetQQLoginInfo",
                 headers=self.header,
                 timeout=5,
             ).json()["data"]
-            if data["online"] == False:
-                return False
-            if data["uin"] != config.bt_uin:
-                if data["uin"] == config.root:
-                    _log.warning("root 和 bot 账号互换, 已经自动纠正")
-                    config.bt_uin, config.root = config.root, config.bt_uin
-                    return True
-                else:
-                    _log.warning("有账号在线, 但不是 bot 账号, 进入登录流程")
-                    return False
+            offline = not data.get("online", False)
+            uin = data.get("uin", None)
+            return None if offline else str(uin)
         except TimeoutError:
-            _log.warning("检查在线状态超时, 默认不在线")
+            LOG.warning("检查在线状态超时, 默认不在线")
             return False
+
+    def check_online_statu(self):
+        # 检查 QQ 是否在线
+        online_qq = self.get_online_qq()
+        if online_qq is None:
+            return False
+        elif online_qq == config.bt_uin:
+            return True
+        else:
+            raise BotUINError(online_qq)
 
     def send_quick_login(self):
         # 发送快速登录请求
-        _log.info("正在发送快速登录请求...")
+        LOG.info("正在发送快速登录请求...")
         try:
             status = (
                 requests.post(
@@ -101,7 +146,7 @@ class LoginHandler:
             )
             return status
         except TimeoutError:
-            _log.warning("快速登录失败, 进行其它登录尝试")
+            LOG.warning("快速登录失败, 进行其它登录尝试")
             pass
 
     def reqeust_qrcode_url(self):
@@ -120,7 +165,7 @@ class LoginHandler:
             except TimeoutError:
                 pass
 
-        _log.error("获取二维码失败, 请执行 `napcat stop` 后重启引导程序.")
+        LOG.error("获取二维码失败, 请执行 `napcat stop` 后重启引导程序.")
         exit(1)
 
     def login(self):
@@ -129,10 +174,7 @@ class LoginHandler:
             if uin in self.get_quick_login() and self.send_quick_login():
                 return True
             else:
-                _log.warning("终端二维码登录为试验性功能, 如果失败请在 webui 登录")
-                # qrcode_path = os.path.join(LINUX_NAPCAT_DIR, "cache", "qrcode.png")
-                # os.system(f"feh {qrcode_path}")
-                # if os.path.exists(qrcode_path):
+                LOG.warning("终端二维码登录为试验性功能, 如果失败请在 webui 登录")
                 if True:
                     try:
                         show_qrcode(self.reqeust_qrcode_url())
@@ -140,33 +182,43 @@ class LoginHandler:
                         WARN_EXPIRE = time.time() + 30
                         while not self.check_online_statu():
                             if time.time() > TIMEOUT_EXPIRE:
-                                _log.error(
+                                LOG.error(
                                     "登录超时, 请重新操作, 如果无法扫码, 请在 webui 登录"
                                 )
                                 exit(0)
                             if time.time() > WARN_EXPIRE:
-                                _log.warning("二维码即将失效, 请尽快扫码登录")
+                                LOG.warning("二维码即将失效, 请尽快扫码登录")
                                 WARN_EXPIRE += 60
-                        _log.info("登录成功")
+                        LOG.info("登录成功")
                     except Exception as e:
-                        _log.error(f"生成 ASCII 二维码时出错: {e}")
+                        LOG.error(f"生成 ASCII 二维码时出错: {e}")
                         exit(1)
                 else:
-                    _log.error("未找到二维码图片, 请在 webui 尝试扫码登录")
+                    LOG.error("未找到二维码图片, 请在 webui 尝试扫码登录")
                     exit(1)
 
         if not self.check_online_statu():
-            _log.info("未登录 QQ, 尝试登录")
+            LOG.info("未登录 QQ, 尝试登录")
             return _login()
-        _log.info("napcat 已登录成功")
+        LOG.info("napcat 已登录成功")
         return True
 
 
+def login():
+    if main_handler is None and platform.system() == "Windows":
+        LOG.info("即将弹出权限请求, 请允许")
+
+    get_handler().login()
+
+
+def online_qq_is_bot():
+    online_qq = get_handler().get_online_qq()
+    if online_qq is not None and online_qq != config.bt_uin:
+        LOG.warning(
+            f"当前在线的 QQ 号为: {online_qq}, 而配置的 bot QQ 号为: {config.bt_uin}"
+        )
+    return online_qq is None or online_qq == config.bt_uin
+
+
 if __name__ == "__main__":
-    # config.set_bot_uin(os.getenv("BOT_UIN"))
-    config.set_bot_uin("3051561876")
-    config.set_root(os.getenv("ROOT_UIN"))
-    login = LoginHandler()
-    login.check_login_statu()
-    login.check_online_statu()
-    login.login()
+    pass

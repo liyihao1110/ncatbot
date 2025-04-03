@@ -1,5 +1,5 @@
 # NapCat 环境适配
 
-from ncatbot.adapter.nc.launcher import start_napcat_service
+from ncatbot.adapter.nc.launcher import launch_napcat_service
 
-__all__ = ["start_napcat_service"]
+__all__ = ["launch_napcat_service"]

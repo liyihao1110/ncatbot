@@ -1,122 +1,93 @@
-import atexit
-import os
+import asyncio
 import platform
-import subprocess
 import time
 
-from ncatbot.utils import LINUX_NAPCAT_DIR, WINDOWS_NAPCAT_DIR, config, get_log
+from ncatbot.adapter.nc.login import login, online_qq_is_bot
+from ncatbot.adapter.nc.start import start_napcat, stop_napcat
+from ncatbot.adapter.net import check_websocket
+from ncatbot.utils import config, get_log
 
-_log = get_log()
+LOG = get_log("adapter.nc.launcher")
 
 
-def get_launcher_name():
-    """获取对应系统的launcher名称"""
-    is_server = "Server" in platform.release()
-    if is_server:
-        version = platform.release()
-        if "2016" in version:
-            _log.info("当前操作系统为: Windows Server 2016")
-            return "launcher-win10.bat"
-        elif "2019" in version:
-            _log.info("当前操作系统为: Windows Server 2019")
-            return "launcher-win10.bat"
-        elif "2022" in version:
-            _log.info("当前操作系统为: Windows Server 2022")
-            return "launcher-win10.bat"
-        elif "2025" in version:
-            _log.info("当前操作系统为：Windows Server 2025")
-            return "launcher.bat"
+def napcat_service_ok():
+    return asyncio.run(check_websocket(config.ws_uri))
+
+
+def connect_napcat():
+    """启动并尝试连接 napcat 直到成功"""
+
+    def info_windows():
+        LOG.info("===请允许终端修改计算机, 并在弹出的另一个终端扫码登录===")
+        LOG.info(f"===确认 bot QQ 号 {config.bt_uin} 是否正确===")
+
+    def info(quit=False):
+        LOG.info("连接 napcat websocket 服务器超时, 请检查以下内容:")
+        if platform.system() == "Windows":
+            info_windows()
+        elif platform.system() == "Linux":
+            pass
         else:
-            _log.error(
-                f"不支持的的 Windows Server 版本: {version}，将按照 Windows 10 内核启动"
-            )
-            return "launcher-win10.bat"
+            pass
+        LOG.info(f"===websocket url 是否正确: {config.ws_uri}===")
+        if quit:
+            exit(1)
 
-    if platform.release() == "10":
-        _log.info("当前操作系统为: Windows 10")
-        return "launcher-win10.bat"
+    MAX_TIME_EXPIRE = time.time() + 60
+    # INFO_TIME_EXPIRE = time.time() + 20
+    LOG.info("正在连接 napcat websocket 服务器...")
+    while not napcat_service_ok():
+        time.sleep(1)
+        if time.time() > MAX_TIME_EXPIRE:
+            info(True)
 
-    if platform.release() == "11":
-        _log.info("当前操作系统为: Windows 11")
-        return "launcher.bat"
-
-    return "launcher-win10.bat"
-
-
-def check_napcat_statu_linux(qq):
-    process = subprocess.Popen(
-        ["bash", "napcat", "status", str(qq)], stdout=subprocess.PIPE
-    )
-    process.wait()
-    output = process.stdout.read().decode(encoding="utf-8")
-    return output.find(str(qq)) != -1
+    LOG.info("连接 napcat websocket 服务器成功!")
 
 
-def start_napcat_linux(qq):
-    process = subprocess.Popen(
-        ["sudo", "bash", "napcat", "start", str(qq)], stdout=subprocess.PIPE
-    )
-    process.wait()
-    if process.returncode != 0:
-        _log.error("启动 napcat 失败，请检查日志，ncatbot cli 可能没有被正确安装")
+def ncatbot_service_remote_start():
+    """尝试以远程模式连接到 NapCat 服务"""
+    if napcat_service_ok():
+        LOG.info(f"napcat 服务器 {config.ws_uri} 在线, 连接中...")
+        if not online_qq_is_bot():
+            if config._is_localhost():
+                # 如果账号不对并且在本地, 则停止 NapCat 服务后重新启动
+                stop_napcat()
+                return False
+            else:
+                LOG.error(
+                    "远端的 NapCat 服务 QQ 账号信息与本地 bot_uin 不匹配, 请检查远端 NapCat 配置"
+                )
+                exit(1)
+        return True
+    elif not config._is_localhost():
+        LOG.error("napcat 服务器没有配置在本地, 无法连接服务器, 自动退出")
+        LOG.error(f'服务器参数: uri="{config.ws_uri}", token="{config.token}"')
+        LOG.info(
+            """可能的错误原因:
+                    1. napcat webui 中服务器类型错误, 应该为 "WebSocket 服务器", 而非 "WebSocket 客户端"
+                    2. napcat webui 中服务器配置了但没有启用, 请确保勾选了启用服务器"
+                    3. napcat webui 中服务器 host 没有设置为监听全部地址, 应该将 host 改为 0.0.0.0
+                    4. 检查以上配置后, 在 webui 中使用 error 信息中的的服务器参数, \"接口调试\"选择\"WebSocket\"尝试连接.
+                    5. webui 中连接成功后再尝试启动 ncatbot
+                    """
+        )
+        exit(1)
+
+    LOG.info("NapCat 服务器离线, 启动本地 NapCat 服务中...")
 
 
-def stop_napcat_linux(qq):
-    process = subprocess.Popen(
-        ["bash", "napcat", "stop", str(qq)], stdout=subprocess.PIPE
-    )
-    process.wait()
-
-
-def start_napcat_service(*args, **kwargs):
+def launch_napcat_service(*args, **kwargs):
     """
     启动配置中 QQ 对应的 NapCat 服务, 保证 WebSocket 接口可用, 包括以下任务:
 
     1. 安装或者更新 NapCat
     2. 配置 NapCat
     3. 启动 NapCat 服务
-    4. 连接到 NapCat 服务并登录
+    4. NapCat 登录 QQ
+    5. 连接 NapCat 服务
     """
-    system_type = platform.system()
-    _log.info("正在启动 napcat 服务器")
-    if system_type == "Windows":
-        # Windows启动逻辑
-        launcher = get_launcher_name()
-        napcat_dir = os.path.abspath(WINDOWS_NAPCAT_DIR)
-        launcher_path = os.path.join(napcat_dir, launcher)
-
-        if not os.path.exists(launcher_path):
-            _log.error(f"找不到启动文件: {launcher_path}")
-            exit(1)
-
-        _log.info(f"正在启动QQ，启动器路径: {launcher_path}")
-        subprocess.Popen(
-            f'"{launcher_path}" {config_data.bt_uin}',
-            shell=True,
-            cwd=napcat_dir,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-    else:
-        # Linux启动逻辑
-        napcat_path = LINUX_NAPCAT_DIR
-        if not os.path.exists(napcat_path):
-            _log.error("未找到 napcat")
-            exit(1)
-
-        try:
-            # 启动并注册清理函数
-            start_napcat_linux(config_data.bt_uin)
-            if config.stop_napcat:
-                atexit.register(lambda: stop_napcat_linux(config_data.bt_uin))
-        except Exception as e:
-            _log.error(f"pgrep 命令执行失败, 无法判断 QQ 是否启动, 请检查错误: {e}")
-            exit(1)
-
-        if not check_napcat_statu_linux(config_data.bt_uin):
-            _log.error("napcat 启动失败，请检查日志")
-            exit(1)
-        else:
-            time.sleep(0.5)
-            _log.info("napcat 启动成功")
-    return
+    if ncatbot_service_remote_start():
+        return True
+    start_napcat()  # 安装更新、配置、启动 NapCat 服务
+    login()  # NapCat 登录 QQ
+    connect_napcat()  # 连接 NapCat 服务
