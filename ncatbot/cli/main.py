@@ -131,7 +131,12 @@ def start(*args, **kwargs):
     config.set_bot_uin(get_qq())
     try:
         client = BotClient()
-        client.run(debug=("-d" in args or "-D" in args or "--debug" in args))
+        client.run(
+            skip_ncatbot_install_check=(
+                "-d" in args or "-D" in args or "--debug" in args
+            )
+        )
+        # skip_ncatbot_install_check 是 NcatBot 本体开发者调试后门
     except Exception as e:
         LOG.error(e)
 

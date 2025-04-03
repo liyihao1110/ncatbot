@@ -29,6 +29,17 @@ class SetConfig:
         self.webui_token = self.default_webui_token  # webui 令牌
         self.ws_token = ""  # ws_uri 令牌
 
+        # 更新检查
+        self.check_napcat_update = False  # 是否检查 napcat 更新
+        self.check_ncatbot_update = True  # 是否检查 ncatbot 更新
+
+        # 开发者调试
+        self.debug = False  # 是否开启调试模式
+        self.skip_ncatbot_install_check = False  # 是否跳过 napcat 安装检查
+
+        # NapCat 行为
+        self.stop_napcat = False  # NcatBot 下线时是否停止 NapCat
+
         # 自动获取状态
         self.ws_host = None  # ws host
         self.webui_host = None  # webui host
@@ -36,7 +47,6 @@ class SetConfig:
         self.webui_port = None  # webui 端口
 
         # 暂不支持的状态
-        self.stop_napcat = False  # 结束时是否停止 napcat
 
     def __str__(self):
         return f"[BOTQQ]: {self.bt_uin} | [WSURI]: {self.ws_uri} | [TOKEN]: {self.token} | [ROOT]: {self.root} | [WEBUI]: {self.webui_uri}"

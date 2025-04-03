@@ -121,11 +121,11 @@ def compare_versions(package_name):
     return result
 
 
-def check_version():
+def check_self_package_version():
     """
-    检查包的版本，并输出比较结果。
+    检查文件所在包的版本.
     """
-    package_name = "ncatbot"
+    package_name = __package__
     result = compare_versions(package_name)
     if result["installed"]:
         if result["update_available"]:

@@ -1,7 +1,7 @@
 import asyncio
 import time
 
-from ncatbot.adapter import Websocket, check_websocket, start_napcat_service
+from ncatbot.adapter import Websocket, check_websocket, launch_napcat_service
 from ncatbot.core.api import BotAPI
 from ncatbot.core.message import GroupMessage, PrivateMessage
 from ncatbot.utils import (
@@ -163,9 +163,6 @@ class BotClient:
 
             _log.info("重连服务器成功")
 
-    def napcat_server_ok(self):
-        return asyncio.run(check_websocket(config.ws_uri))
-
     def start(self, *args, **kwargs):
         try:
             asyncio.run(self.run_async())
@@ -179,7 +176,10 @@ class BotClient:
             _log.info("正常退出")
             exit(0)
 
-    def run(self, debug=False, *args, **kwargs):
+    def run(self, *args, **kwargs):
         """启动"""
-        start_napcat_service(debug, *args, **kwargs)  # 保证 NapCat 正常启动
-        self.start(debug, *args, **kwargs)
+        for key in config.__dict__:
+            if key in kwargs:
+                config.__dict__[key] = kwargs[key]
+        launch_napcat_service(*args, **kwargs)  # 保证 NapCat 正常启动
+        self.start(*args, **kwargs)

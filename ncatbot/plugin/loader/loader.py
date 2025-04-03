@@ -21,7 +21,8 @@ from packaging.version import parse as parse_version
 
 from ncatbot.plugin.base_plugin import BasePlugin
 from ncatbot.plugin.event import EventBus
-from ncatbot.plugin.loader import CompatibleEnrollment, PipTool
+from ncatbot.plugin.loader.compatible import CompatibleEnrollment
+from ncatbot.plugin.loader.pip_tool import PipTool
 from ncatbot.utils import (
     META_CONFIG_PATH,
     PLUGINS_DIR,
