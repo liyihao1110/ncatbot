@@ -76,7 +76,6 @@ def get_proxy_url():
     except:
         pass
     if len(available_proxy) > 0:
-        print(available_proxy)
         return available_proxy[0]
     else:
         _log.warning("无法连接到任何 GitHub 代理, 将直接连接 GitHub")

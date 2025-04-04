@@ -418,7 +418,7 @@ class PluginLoader:
             try:
                 module = importlib.import_module(filename)
                 modules[filename] = module
-            except ImportError as e:
+            except Exception as e:
                 LOG.error(f"加载插件 {filename} 时出错: {e}")
                 LOG.error(traceback.format_exc())
                 continue

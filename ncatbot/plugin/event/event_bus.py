@@ -70,7 +70,8 @@ class EventBus:
 
     def load_builtin_funcs(self):
         self.access_controller.create_permission_path(
-            "ncatbot.cfg.main.placeholder"
+            "ncatbot.cfg.main.placeholder",
+            ignore_exist=True
         )  # 创建占位路径
         for func in builtin_functions:
             if func.name == "plg":  # 绑定 plg 的参数
