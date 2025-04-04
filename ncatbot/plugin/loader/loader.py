@@ -9,6 +9,7 @@
 import asyncio
 import importlib
 import os
+import re
 import sys
 import traceback
 from collections import defaultdict, deque
@@ -55,13 +56,35 @@ def install_plugin_dependecies(plugin_name, confirm=False, print_import_details=
         sys.path.append(os.path.dirname(directory_path))
 
         if os.path.isfile(os.path.join(directory_path, "requirements.txt")):
-            requirements = set(
-                [
+            requirements = [
                     pack.strip().lower()
                     for pack in open(
-                        os.path.join(directory_path, "requirements.txt")
+                        os.path.join(
+                            directory_path, filename, "requirements.txt"
+                        )
                     ).readlines()
                 ]
+            # 检查指定版本号的依赖是否需要安装
+            for pack in list(requirements):
+                # 处理GitHub包（方法待实现）
+                if pack.startswith(('git+', 'http://', 'https://', 'git://', 'ssh://')):
+                    continue
+                match = re.match(r'([^<>=~!]+)([<>=~!]=?|)(.+)', pack)
+                if match:
+                    pack_name = match.group(1).strip()
+                    operator = match.group(2)
+                    version = match.group(3).strip()
+                    
+                    pack_info = PM.show_info(pack_name)
+                    if pack_info:
+                        installed_version = pack_info["version"]
+                        LOG.info(f"检查依赖: {pack_name} 已安装版本: {installed_version}, 需求: {operator}{version}")
+                        
+                        if PM.compare_versions(installed_version, f"{operator}{version}"):
+                            requirements.remove(pack)
+                        
+            requirements = set(
+                requirements
             )
             download = requirements - all_install
             if download:
