@@ -56,6 +56,14 @@ def install_plugin_dependecies(plugin_name, confirm=False, print_import_details=
         sys.path.append(os.path.dirname(directory_path))
 
         if os.path.isfile(os.path.join(directory_path, "requirements.txt")):
+            requirements = [
+                    pack.strip().lower()
+                    for pack in open(
+                        os.path.join(
+                            directory_path, filename, "requirements.txt"
+                        )
+                    ).readlines()
+                ]
             # 检查指定版本号的依赖是否需要安装
             for pack in list(requirements):
                 # 处理GitHub包（方法待实现）
