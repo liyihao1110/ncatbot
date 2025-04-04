@@ -60,7 +60,8 @@ class LoginHandler:
                 LOG.error("连接 WebUI 失败, 以下给出几种可能的解决方案:")
                 if platform.system() == "Windows":
                     LOG.info(
-                        "检查 Windows 安全中心, 查看是否有拦截了 NapCat 启动程序的日志"
+                        "检查 Windows 安全中心, 查看是否有拦截了 NapCat 启动程序的日志。"
+                        "如果你修改了natcat的网页端开放端口（不是websocket），请修改启动参数：webui_uri='ws://xxxxx:xxxx'"
                     )
                 LOG.info("开放防火墙的 WebUI 端口 (默认 6099)")
                 exit(1)
