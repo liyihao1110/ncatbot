@@ -12,8 +12,10 @@ import subprocess
 import sys
 from typing import Any, Dict, List, Optional, Union
 
+from packaging import version
 from packaging.markers import UndefinedComparison
 from packaging.requirements import Requirement
+from packaging.specifiers import SpecifierSet
 
 
 class PipManagerException(Exception):
@@ -398,6 +400,24 @@ class PipTool:
         if not installed_info:
             return False
         return requirement.specifier.contains(installed_info["version"])
+        
+    def compare_versions(self, installed_version: str, required_version: str) -> bool:
+        """比较版本号是否满足"""
+        try:
+            # 如果是精确版本号比较（没有操作符）
+            if required_version.isdigit() or all(part.isdigit() for part in required_version.split('.')):
+                return installed_version == required_version
+            
+            if any(op in required_version for op in ['==', '>=', '<=', '>', '<', '~=']):
+                # 创建版本说明符
+                spec = SpecifierSet(required_version)
+                # 检查已安装版本是否满足版本说明符
+                return version.parse(installed_version) in spec
+            
+            # 默认情况下，假设需要完全匹配
+            return installed_version == required_version
+        except Exception as e:
+            return False
 
 
 if __name__ == "__main__":
