@@ -7,7 +7,27 @@ import time
 
 import requests
 
-os.environ["LOG_FILE_PATH"] = "ncatbot/logs/"
+
+def setup_work_directory():
+    parser = argparse.ArgumentParser(description="NcatBot CLI 参数表")
+    parser.add_argument(
+        "work_dir",
+        type=str,
+        nargs="?",
+        default=NCATBOT_PATH,
+        help="可选参数, 默认为 NcatBot 安装目录",
+    )
+    args = parser.parse_args()
+    if not os.path.isdir(args.work_dir):
+        print("工作目录参数不合法")
+        exit(1)
+    print("工作目录: ", os.path.abspath(args.work_dir))
+    os.chdir(args.work_dir)
+    os.environ["LOG_FILE_PATH"] = os.path.join(args.work_dir, "logs")
+
+
+setup_work_directory()
+
 
 from ncatbot.core import BotClient
 from ncatbot.plugin import install_plugin_dependecies
@@ -207,22 +227,7 @@ def help(qq):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="NcatBot CLI 参数表")
-    parser.add_argument(
-        "work_dir",
-        type=str,
-        nargs="?",
-        default=NCATBOT_PATH,
-        help="可选参数, 默认为 NcatBot 安装目录",
-    )
-    args = parser.parse_args()
-    if not os.path.isdir(args.work_dir):
-        print("工作目录参数不合法")
-        exit(1)
-    print("工作目录: ", os.path.abspath(args.work_dir))
-    os.chdir(args.work_dir)
     help(get_qq())
-
     while True:
         try:
             user_input = input("请输入命令: ").strip()
