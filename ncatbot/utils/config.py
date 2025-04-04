@@ -36,6 +36,8 @@ class SetConfig:
         # 开发者调试
         self.debug = False  # 是否开启调试模式
         self.skip_ncatbot_install_check = False  # 是否跳过 napcat 安装检查
+        self.skip_plugin_load = False  # 是否跳过插件加载
+        self.skip_account_check = False  # 是否跳过账号检查
 
         # NapCat 行为
         self.stop_napcat = False  # NcatBot 下线时是否停止 NapCat
@@ -120,6 +122,10 @@ class SetConfig:
     def set_webui_uri(self, webui_uri: str):
         self.webui_uri = webui_uri
         self._standardize_webui_uri()
+
+    def set_other_config(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
 
 
 config = SetConfig()

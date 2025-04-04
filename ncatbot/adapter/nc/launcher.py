@@ -49,6 +49,8 @@ def ncatbot_service_remote_start():
     """尝试以远程模式连接到 NapCat 服务"""
     if napcat_service_ok():
         LOG.info(f"napcat 服务器 {config.ws_uri} 在线, 连接中...")
+        if config.skip_account_check:
+            return True
         if not online_qq_is_bot():
             if config._is_localhost():
                 # 如果账号不对并且在本地, 则停止 NapCat 服务后重新启动

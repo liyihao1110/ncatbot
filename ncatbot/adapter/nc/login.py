@@ -45,7 +45,7 @@ class LoginHandler:
         self.base_uri = config.webui_uri
         while True:
             try:
-                time.sleep(1)
+                time.sleep(0.2)
                 content = requests.post(
                     self.base_uri + "/api/auth/login",
                     json={"token": config.webui_token},
@@ -54,6 +54,7 @@ class LoginHandler:
                 self.header = {
                     "Authorization": "Bearer " + content["data"]["Credential"],
                 }
+                LOG.debug("成功连接到 WEBUI")
                 return
             except TimeoutError:
                 LOG.error("连接 WebUI 失败, 以下给出几种可能的解决方案:")

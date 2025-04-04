@@ -145,7 +145,8 @@ class BotClient:
 
         info_subscribe_message_types()
         websocket_server = Websocket(self)
-        await self.plugin_sys.load_plugins(api=self.api)
+        if not config.skip_plugin_load:
+            await self.plugin_sys.load_plugins(api=self.api)
         while True:
             try:
                 asyncio.create_task(time_schedule_heartbeat())
@@ -183,4 +184,5 @@ class BotClient:
             if key in kwargs:
                 config.__dict__[key] = kwargs[key]
         launch_napcat_service(*args, **kwargs)  # 保证 NapCat 正常启动
+        _log.info("NapCat 服务启动登录完成")
         self.start(*args, **kwargs)
