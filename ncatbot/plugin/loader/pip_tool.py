@@ -115,7 +115,7 @@ class PipTool:
         version: Optional[str] = None,
         upgrade: bool = False,
         no_deps: bool = False,
-        index_url: Optional[str] = None,
+        index_url: Optional[str] = PYPI_URL,
         extra_args: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """安装Python包
