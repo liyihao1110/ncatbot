@@ -49,7 +49,7 @@ class SetConfig:
         # 暂不支持的状态
 
     def __str__(self):
-        return f"[BOTQQ]: {self.bt_uin} | [WSURI]: {self.ws_uri} | [TOKEN]: {self.token} | [ROOT]: {self.root} | [WEBUI]: {self.webui_uri}"
+        return f"[BOTQQ]: {self.bt_uin} | [WSURI]: {self.ws_uri} | [WS_TOKEN]: {self.ws_token} | [ROOT]: {self.root} | [WEBUI]: {self.webui_uri}"
 
     def _is_localhost(self):
         return (
@@ -115,7 +115,7 @@ class SetConfig:
         self.bt_uin = uin
 
     def set_token(self, token: str):
-        self.token = token
+        self.ws_token = token
 
     def set_webui_uri(self, webui_uri: str):
         self.webui_uri = webui_uri
