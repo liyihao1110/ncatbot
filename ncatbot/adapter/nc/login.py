@@ -19,9 +19,9 @@ def show_qrcode(barcode_url):
     qr.print_ascii(invert=True)
 
 
-def get_handler():
+def get_handler(reset=False):
     global main_handler
-    if main_handler is None:
+    if main_handler is None or reset:
         main_handler = LoginHandler()
     return main_handler
 
@@ -208,11 +208,11 @@ class LoginHandler:
         return True
 
 
-def login():
+def login(reset=False):
     if main_handler is None and platform.system() == "Windows":
         LOG.info("即将弹出权限请求, 请允许")
 
-    get_handler().login()
+    get_handler(reset=reset).login()
 
 
 def online_qq_is_bot():
