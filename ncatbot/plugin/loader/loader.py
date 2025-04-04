@@ -140,12 +140,15 @@ class PluginLoader:
         self._debug = debug
         LOG.warning("插件系统已切换为调试模式") if debug else None
 
-    def _validate_plugin(self, plugin_cls: Type[BasePlugin], with_dependencies: bool=True) -> bool:
+    def _validate_plugin(
+        self, plugin_cls: Type[BasePlugin], with_dependencies: bool = True
+    ) -> bool:
         """
         验证插件类是否符合规范
         """
         return all(
-            hasattr(plugin_cls, attr) for attr in ["name", "version"] 
+            hasattr(plugin_cls, attr)
+            for attr in ["name", "version"]
             + (["dependencies"] if with_dependencies else [])
         )
 
@@ -414,7 +417,7 @@ class PluginLoader:
         for filename in os.listdir(directory_path):
             if not os.path.isdir(os.path.join(directory_path, filename)):
                 continue
-            install_plugin_dependecies(directory_path, print_import_details=False)
+            install_plugin_dependecies(filename, print_import_details=False)
             try:
                 module = importlib.import_module(filename)
                 modules[filename] = module

@@ -10,7 +10,6 @@
 import inspect
 from functools import wraps
 
-from ncatbot.core import BaseMessage
 from ncatbot.plugin.event import Event
 from ncatbot.utils import (
     OFFICIAL_GROUP_MESSAGE_EVENT,
@@ -31,7 +30,6 @@ class CompatibleEnrollment:
     def __init__(self):
         raise ValueError("不需要实例化该类")  # 防止实例化该类
 
-    @staticmethod
     def event_decorator(event_type):
         """装饰器工厂，生成特定事件类型的装饰器"""
 
