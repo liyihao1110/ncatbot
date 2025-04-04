@@ -117,7 +117,14 @@ class SetConfig:
         self.bt_uin = uin
 
     def set_token(self, token: str):
+        # 即将弃用
         self.ws_token = token
+
+    def set_ws_token(self, token: str):
+        self.ws_token = token
+
+    def set_webui_token(self, token: str):
+        self.webui_token = token
 
     def set_webui_uri(self, webui_uri: str):
         self.webui_uri = webui_uri
