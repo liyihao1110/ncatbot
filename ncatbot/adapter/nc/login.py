@@ -44,6 +44,7 @@ class LoginHandler:
         self.base_uri = config.webui_uri
         while True:
             try:
+                time.sleep(1)
                 content = requests.post(
                     self.base_uri + "/api/auth/login",
                     json={"token": config.webui_token},
@@ -70,10 +71,11 @@ class LoginHandler:
                         )
                         exit(1)
                 elif platform.system() == "Linux":
-                    LOG.error(
-                        "未知错误 LoginHandler.__init__ ConnectionError, 请保留日志并联系开发团队"
-                    )
-                    exit(1)
+                    if time.time() > MAX_TIME_EXPIER:
+                        LOG.error(
+                            "未知错误 LoginHandler.__init__ ConnectionError, 请保留日志并联系开发团队"
+                        )
+                        exit(1)
                 else:
                     LOG.error("不支持的操作系统, 请自行检查并适配")
 
