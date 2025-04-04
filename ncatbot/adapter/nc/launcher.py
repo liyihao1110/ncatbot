@@ -61,7 +61,7 @@ def ncatbot_service_remote_start():
         return True
     elif not config._is_localhost():
         LOG.error("napcat 服务器没有配置在本地, 无法连接服务器, 自动退出")
-        LOG.error(f'服务器参数: uri="{config.ws_uri}", token="{config.token}"')
+        LOG.error(f'服务器参数: uri="{config.ws_uri}", token="{config.ws_token}"')
         LOG.info(
             """可能的错误原因:
                     1. napcat webui 中服务器类型错误, 应该为 "WebSocket 服务器", 而非 "WebSocket 客户端"
