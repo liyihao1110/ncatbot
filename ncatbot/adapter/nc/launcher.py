@@ -2,6 +2,7 @@ import asyncio
 import platform
 import time
 
+from ncatbot.adapter.nc.install import install_update_napcat
 from ncatbot.adapter.nc.login import login, online_qq_is_bot
 from ncatbot.adapter.nc.start import start_napcat, stop_napcat
 from ncatbot.adapter.net import check_websocket
@@ -88,6 +89,7 @@ def launch_napcat_service(*args, **kwargs):
     """
     if ncatbot_service_remote_start():
         return True
-    start_napcat()  # 安装更新、配置、启动 NapCat 服务
+    install_update_napcat()
+    start_napcat()  # 配置、启动 NapCat 服务
     login()  # NapCat 登录 QQ
     connect_napcat()  # 连接 NapCat 服务
