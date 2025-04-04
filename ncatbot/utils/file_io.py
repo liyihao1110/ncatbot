@@ -1,15 +1,13 @@
-# 常用的文件读写操作
-
+import ast
 import asyncio
 import base64
 import json
 import os
 import pickle
-import xml.etree.ElementTree as ET
+import warnings
 import zipfile
-from configparser import ConfigParser
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Callable, Dict, Literal, Optional, Union
 
 import httpx
 
@@ -68,19 +66,19 @@ def convert_uploadable_object(i, message_type):
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-13 21:47:01
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-03-17 21:44:50
-# @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
+# @LastEditTime : 2025-04-04 17:35:35
+# @Description  : 通用文件加载器，支持JSON/TOML/YAML/PICKLE格式的同步/异步读写
 # @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议
 # -------------------------
 """
 通用文件加载器
 
-支持格式: JSON/TOML/YAML/INI/XML/PROPERTIES(/PICKLE[需手动开启])
+支持格式: JSON/TOML/YAML(/PICKLE[需手动开启])
 支持同步/异步操作,自动检测文件类型,异步锁保护异步操作
 注意:
-    1.UniversalLoader 并不是一个专门用于处理纯列表的工具
-    2.读取未知来源的pickle文件可能导致任意代码执行漏洞请手动开启支持
-    3.创建UniversalLoader实例后不会立刻读取文件,请手动调用load或者aload读取文件
+    1. UniversalLoader 并不是一个专门用于处理纯列表的工具
+    2. 读取未知来源的pickle文件可能导致任意代码执行漏洞请手动开启支持
+    3. 创建UniversalLoader实例后不会立刻读取文件,请手动调用load或者aload读取文件
 
 Raises:
     FileTypeUnknownError:       当文件类型无法识别时抛出
@@ -90,11 +88,14 @@ Raises:
     ModuleNotInstalledError:    当所需模块未安装时抛出
     ValueError:                 当手动开启pickle支持时抛出
 """
+
+
 # ---------------------
 # region 模块可用性检测区块
 # ---------------------
 # PICKLE
-PICKLE_AVAILABLE = False
+PICKLE_AVAILABLE = False  # 安全警告：需手动审核来源可信的pickle文件
+# TODO 解决pickle异步加载的错误
 
 # TOML 模块检测
 TOML_AVAILABLE = False
@@ -114,7 +115,7 @@ try:
     _open_file = aiofiles.open  # type: ignore
 except ImportError:
     _open_file = open
-    pass
+    warnings.warn("aiofiles 模块未安装。异步功能将被禁用。", ImportWarning)
 
 # YAML 模块检测
 YAML_AVAILABLE = False
@@ -134,6 +135,11 @@ try:
 except ImportError:
     pass  # 回退到标准json模块
 # endregion
+
+JSON_TYPE = [bool, str, float, "None"]
+YAML_TYPE = [bool, str, int, float, "None"]
+TOML_TYPE = [str, float]
+PICKLE_TYPE = [bool, str, "None"]
 
 # ---------------------
 # region 异常类定义区块
@@ -177,25 +183,44 @@ class ModuleNotInstalledError(UniversalLoaderError):
 # ---------------------
 
 
-class UniversalLoader:
-    def __init__(
-        self,
-        file_path: Union[str, Path],
-        easy_mod: bool = True,
-        file_type: Optional[str] = None,
-    ):
+class UniversalLoader(dict):
+    _flag = "-"
+    _custom_type_handlers = {}
+
+    def __init__(self, file_path: Union[str, Path], file_type: Optional[str] = None):
         """
         初始化通用加载器
-        :param file_path: 文件路径
+
+        :param file_path: 文件路径，支持字符串或Path对象
         :param file_type: 可选参数,手动指定文件类型（覆盖自动检测）
-        :param easy_mod: 简易模式,当 修改｜读取 数据时尝试阻止错误
+                        支持类型：json/toml/yaml/pickle
+
+        示例：
+            >>> loader = UniversalLoader("data.json")
+            >>> loader.load()
         """
-        # 统一路径为 Path 类型
-        self.easy_mod = easy_mod
+        super().__init__()
         self.file_path: Path = Path(file_path).resolve()  # 获取绝对路径
-        self.data: Dict[str, Any] = {}
         self.file_type = file_type.lower() if file_type else self._detect_file_type()
-        self._async_lock = asyncio.Lock()
+        self._async_lock = asyncio.Lock()  # 异步操作锁
+
+    def __enter__(self) -> "UniversalLoader":
+        """上下文管理器入口: with instance as data"""
+        return self.load()
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        """上下文管理器退出时自动保存"""
+        if self:
+            self.save()
+
+    async def __aenter__(self) -> "UniversalLoader":
+        """上下文管理器入口: with instance as data"""
+        return await self.aload()
+
+    async def __aexit__(self, exc_type, exc_value, traceback) -> None:
+        """上下文管理器退出时自动保存"""
+        if self:
+            await self.asave()
 
     def _detect_file_type(self) -> str:
         """通过文件扩展名检测文件类型"""
@@ -204,21 +229,13 @@ class UniversalLoader:
             "toml": "toml",
             "yaml": "yaml",
             "yml": "yaml",
-            "ini": "ini",
-            "xml": "xml",
-            "properties": "properties",
             "pickle": "pickle",
         }
-        # 使用 Path 的 suffix 属性获取扩展名
-        ext = self.file_path.suffix.lower().lstrip(".") if self.file_path.suffix else ""
+        ext = self.file_path.suffix.lower().lstrip(".")
         file_type = file_type_map.get(ext, None)
         if not file_type:
             raise FileTypeUnknownError(f"无法识别的文件格式: {self.file_path}")
         return file_type
-
-    # ---------------------
-    # region文件存在性检查方法
-    # ---------------------
 
     def _check_file_exists(self) -> None:
         """同步检查文件是否存在"""
@@ -234,29 +251,48 @@ class UniversalLoader:
     # ---------------------
 
     def load(self) -> "UniversalLoader":
-        """同步加载数据"""
+        """
+        同步加载数据
+
+        :return: 自身实例，支持链式调用
+        :raises LoadError: 加载过程中发生错误时抛出
+
+        示例：
+            >>> data = UniversalLoader("data.toml").load()
+        """
         self._check_file_exists()
         try:
-            self.data = self._load_data_sync()
+            self.update(self._load_data_sync())
         except Exception as e:
             raise LoadError(f"加载文件时出错: {e}") from e
         return self
 
     async def aload(self) -> "UniversalLoader":
-        """异步加载数据（带锁保护）"""
+        """
+        异步加载数据（带锁保护）
+
+        :return: 自身实例，支持链式调用
+        :raises LoadError: 加载过程中发生错误时抛出
+        """
         await self._async_check_file_exists()
         async with self._async_lock:
             try:
-                self.data = await self._load_data_async()
+                self.update(await self._load_data_async())
             except Exception as e:
                 raise LoadError(f"异步加载文件时出错: {e}") from e
         return self
 
     def save(self, save_path: Optional[Union[str, Path]] = None) -> "UniversalLoader":
-        """同步保存数据"""
+        """
+        同步保存数据到文件
+
+        :param save_path: 可选保存路径，默认使用加载路径
+        :return: 自身实例
+        :raises SaveError: 保存过程中发生错误时抛出
+        """
         save_path = Path(save_path).resolve() if save_path else self.file_path
         try:
-            self._save_data_sync(str(save_path))  # 暂时传递字符串
+            self._save_data_sync(save_path)
         except Exception as e:
             raise SaveError(f"保存文件时出错: {e}") from e
         return self
@@ -264,404 +300,309 @@ class UniversalLoader:
     async def asave(
         self, save_path: Optional[Union[str, Path]] = None
     ) -> "UniversalLoader":
-        """异步保存数据（带锁保护）"""
+        """
+        异步保存数据到文件（带锁保护）
+
+        :param save_path: 可选保存路径，默认使用加载路径
+        :return: 自身实例
+        :raises SaveError: 保存过程中发生错误时抛出
+        """
         save_path = Path(save_path).resolve() if save_path else self.file_path
-        async with self._async_lock:
+        await self._save_data_async(save_path)
+        # async with self._async_lock:
+        #     try:
+        #         await self._save_data_async(save_path)
+        #     except Exception as e:
+        #         raise SaveError(f"异步保存文件时出错: {e}") from e
+        # return self
+
+    # endregion
+
+    # ---------------------
+    # region 类型转换相关方法
+    # ---------------------
+
+    @classmethod
+    def register_type_handler(
+        cls, type_name: str, serialize_func: Callable, deserialize_func: Callable
+    ):
+        """注册自定义类型的序列化与反序列化函数"""
+        cls._custom_type_handlers[type_name] = (serialize_func, deserialize_func)
+
+    def _type_convert(
+        self,
+        data: Any,
+        mode: Literal["restore", "preserve"] = "preserve",
+        exclude_types: list = [],
+        encode_keys: bool = True,
+        encode_values: bool = True,
+    ) -> Any:
+        """递归类型转换核心方法"""
+
+        if isinstance(data, dict):
+            return {
+                (
+                    self._type_convert(
+                        k, mode, exclude_types, encode_keys, encode_values
+                    )
+                    if encode_keys
+                    else k
+                ): (
+                    self._type_convert(
+                        v, mode, exclude_types, encode_keys, encode_values
+                    )
+                    if encode_values
+                    else v
+                )
+                for k, v in data.items()
+            }
+        elif isinstance(data, (list, tuple)):
+            converted = [
+                self._type_convert(
+                    item, mode, exclude_types, encode_keys, encode_values
+                )
+                for item in data
+            ]
+            rest = converted if isinstance(data, list) else tuple(converted)
+            if mode == "preserve":
+                if isinstance(data, tuple):
+                    return f"{data.__class__.__name__}{self._flag}{rest}"
+            return rest
+        else:
+            if mode == "preserve":
+                if type(data) in exclude_types or str(data) in exclude_types:
+                    return data  # 不标记在过滤器中的类型
+                return self._preserve_item(data)
+            else:
+                return self._restore_item(data)
+
+    def _preserve_item(self, item: Any) -> str:
+        """将数据转换为类型标记字符串"""
+        flag = self._flag
+
+        if item is None:
+            return f"NoneType{flag}None"
+
+        type_name = item.__class__.__name__
+
+        # 处理自定义类型
+        if type_name in self._custom_type_handlers:
+            serialize_func = self._custom_type_handlers[type_name][0]
+            return f"{type_name}{flag}{serialize_func(item)}"
+
+        # 处理基础类型
+        if isinstance(item, (int, float, str, bool)):
+            return f"{type_name}{flag}{item}"
+        elif isinstance(item, type(None)):
+            return f"NoneType{flag}None"
+
+        # 处理容器类型
+        elif isinstance(item, (list, tuple, dict)):
+            if isinstance(item, list):
+                preserved_list = [self._type_convert(i, "preserve") for i in item]
+                return f"list{flag}{json.dumps(preserved_list)}"
+            elif isinstance(item, tuple):
+                preserved_tuple = [self._type_convert(i, "preserve") for i in item]
+                return f"tuple{flag}{json.dumps(preserved_tuple)}"
+            else:  # dict
+                return self._type_convert(item, "preserve")
+
+        # 其他类型保持原样
+        return f"unknown{flag}{str(item)}"
+
+    def _restore_item(self, item: Any) -> Any:
+        """从类型标记字符串还原数据"""
+        flag = self._flag
+
+        if not isinstance(item, str) or flag not in item:
+            return item
+
+        type_str, value_str = item.split(flag, 1)
+
+        # 处理特殊值
+        if type_str == "NoneType":
+            return None
+
+        # 处理自定义类型
+        if type_str in self._custom_type_handlers:
             try:
-                await self._save_data_async(str(save_path))  # 异步保存时传递字符串
-            except Exception as e:
-                raise SaveError(f"异步保存文件时出错: {e}") from e
-        return self
+                deserialize_func = self._custom_type_handlers[type_str][1]
+                return deserialize_func(value_str)
+            except Exception:
+                return item
+
+        # 处理基础类型
+        basic_types = {
+            "int": int,
+            "float": float,
+            "str": str,
+            "bool": bool,
+            "NoneType": type(None),
+            "list": list,
+            "tuple": tuple,
+            "dict": dict,
+        }
+        if type_str in basic_types:
+            try:
+                if type_str == "bool":
+                    return value_str.lower() == "true"
+                elif type_str in ("list", "tuple"):
+                    parsed = ast.literal_eval(value_str)
+                    if type_str == "list":
+                        return [self._restore_item(i) for i in parsed]
+                    else:  # tuple
+                        return tuple(self._restore_item(i) for i in parsed)
+                elif type_str == "dict":
+                    parsed = json.loads(value_str)
+                    return {
+                        self._restore_item(k): self._restore_item(v)
+                        for k, v in parsed.items()
+                    }
+                else:
+                    return basic_types[type_str](value_str)
+            except (ValueError, json.JSONDecodeError):
+                return item
+
+        # 未知类型返回原始字符串
+        return item
 
     # endregion
 
     # ---------------------
-    # region 数据访问相关魔术方法
+    # region 数据加载实现
     # ---------------------
-
-    def __getitem__(self, key: str) -> Any:
-        """字典式数据访问"""
-        if self.easy_mod:
-            return self.data.get(str(key), None)
-        return self.data[key]
-
-    def __setitem__(self, key: str, value: Any) -> None:
-        """字典式数据设置"""
-        self.data[str(key)] = value
-
-    def __delitem__(self, key: str) -> None:
-        """字典式数据删除"""
-        if self.easy_mod and key in self.data:
-            del self.data[str(key)]
-        del self.data[str(key)]
-
-    def __str__(self) -> str:
-        """友好的字符串表示"""
-        return str(self.data)
-
-    def get(self, key: str, default=None):
-        """安全获取数据方法"""
-        return self.data.get(str(key), default)
-
-    def keys(self):
-        """获取所有键"""
-        return self.data.keys()
-
-    def values(self):
-        """获取所有值"""
-        return self.data.values()
-
-    def items(self):
-        """获取所有键值对"""
-        return self.data.items()
-
-    def update(self, *args, **kwargs):
-        """用给定的字典或键值对更新数据（类似 dict.update）"""
-        self.data.update(*args, **kwargs)
-
-    def pop(self, key: str, default=None):
-        """删除指定键并返回其对应的值；如果键不存在,则返回默认值"""
-        return self.data.pop(str(key), default)
-
-    def popitem(self):
-        """随机删除一个键值对并返回 (key, value) 元组"""
-        return self.data.popitem()
-
-    def clear(self):
-        """清空所有数据"""
-        self.data.clear()
-
-    def setdefault(self, key: str, default=None):
-        """如果键不存在,则将键的值设为default并返回该值,否则返回原有值"""
-        return self.data.setdefault(str(key), default)
-
-    def __contains__(self, key: str):
-        """判断数据中是否包含指定键"""
-        return str(key) in self.data
-
-    def __iter__(self):
-        """返回数据字典的迭代器"""
-        return iter(self.data)
-
-    def __len__(self):
-        """返回数据的键数目"""
-        return len(self.data)
-
-    def __enter__(self) -> "UniversalLoader":
-        """进入with环境"""
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        """退出with环境"""
-        if self.data:
-            self.save()
-
-    # endregion
-
-    # ---------------------
-    # region 数据加载实现（同步）
-    # ---------------------
-
-    def _stringify_keys(self, data):
-        """递归地将字典中的所有键转换为字符串类型"""
-        if not isinstance(data, dict):
-            return data
-        return {str(k): self._stringify_keys(v) for k, v in data.items()}
 
     def _load_data_sync(self) -> Dict[str, Any]:
-        """根据文件类型选择对应的同步加载方法"""
+        """同步加载数据核心逻辑"""
+        # JSON格式处理
         if self.file_type == "json":
-            with open(self.file_path, "r", encoding="utf-8") as f:
-                # 确保加载后的数据键都是字符串类型
-                return self._stringify_keys(
-                    ujson.load(f) if UJSON_AVAILABLE else json.load(f)
-                )
+            with self.file_path.open("r") as f:
+                raw_data = ujson.load(f) if UJSON_AVAILABLE else json.load(f)
+                return self._type_convert(raw_data, "restore")
 
+        # TOML格式处理
         elif self.file_type == "toml":
-            if not TOML_AVAILABLE:
-                raise ModuleNotInstalledError(
-                    "请安装 toml 模块以支持 TOML 文件（pip install toml）"
-                )
-            with open(self.file_path, "r") as f:
-                return toml.load(f)
+            with self.file_path.open("r") as f:
+                raw_data = toml.load(f)
+                return self._type_convert(raw_data, "restore")
 
+        # YAML格式处理
         elif self.file_type == "yaml":
             if not YAML_AVAILABLE:
-                raise ModuleNotInstalledError(
-                    "请安装 PyYAML 模块以支持 YAML 文件（pip install PyYAML）"
-                )
-            with open(self.file_path, "r") as f:
-                return yaml.safe_load(f) or {}  # 处理空文件情况
+                raise ModuleNotInstalledError("请安装 PyYAML 模块：pip install PyYAML")
+            with self.file_path.open("r") as f:
+                raw_data = yaml.safe_load(f) or {}
+                return self._type_convert(raw_data, "restore")
 
-        elif self.file_type == "ini":
-            config = ConfigParser()
-            # 保留键名原始大小写
-            config.optionxform = str  # type: ignore
-            config.read(self.file_path)
-            return {s: dict(config[s]) for s in config.sections()}
-
-        elif self.file_type == "xml":
-            tree = ET.parse(self.file_path)
-            return self._xml_to_dict(tree.getroot())
-
-        elif self.file_type == "properties":
-            return self._parse_properties()
-
+        # Pickle格式处理
         elif self.file_type == "pickle":
             if not PICKLE_AVAILABLE:
-                raise ValueError("请手动开启 pickle 支持以支持 PICKLE 文件")
-            with open(self.file_path, "rb") as f:
-                return pickle.load(f)
+                raise ValueError("请手动开启PICKLE支持")
+            with self.file_path.open("rb") as f:
+                raw_data = pickle.load(f)
+                return self._type_convert(raw_data, "restore")
 
         else:
             raise FileTypeUnknownError(f"不支持的文件类型: {self.file_type}")
-
-    # endregion
-
-    # ---------------------
-    # region 数据加载实现（异步）
-    # ---------------------
 
     async def _load_data_async(self) -> Dict[str, Any]:
         """异步加载数据核心逻辑"""
         if AIOFILES_AVAILABLE:
-            # 使用aiofiles进行真正的异步文件读取
-            async with aiofiles.open(self.file_path, "r", encoding="utf-8") as f:
+            async with aiofiles.open(self.file_path, "r") as f:
                 content = await f.read()
-
+                # JSON处理
                 if self.file_type == "json":
-                    data = (
-                        ujson.loads(content) if UJSON_AVAILABLE else json.loads(content)
+                    return self._type_convert(
+                        (
+                            ujson.loads(content)
+                            if UJSON_AVAILABLE
+                            else json.loads(content)
+                        ),
+                        "restore",
                     )
-                    return self._stringify_keys(data)
-
+                # TOML处理
                 elif self.file_type == "toml":
-                    if not TOML_AVAILABLE:
-                        raise ModuleNotInstalledError(
-                            "请安装 toml 模块以支持 TOML 文件"
-                        )
-                    return toml.loads(content)
+                    return self._type_convert(toml.loads(content), "restore")
 
+                # YAML处理
                 elif self.file_type == "yaml":
-                    if not YAML_AVAILABLE:
-                        raise ModuleNotInstalledError(
-                            "请安装 PyYAML 模块以支持 YAML 文件"
-                        )
-                    return yaml.safe_load(content) or {}
+                    return self._type_convert(yaml.safe_load(content) or {}, "restore")
 
-                else:
-                    # 其他格式回落到同步方法（使用线程池）
-                    return await asyncio.to_thread(self._load_data_sync)
-
-        else:
-            # 无aiofiles时回退到同步方法，但仍使用线程池避免阻塞
-            return await asyncio.to_thread(self._load_data_sync)
+                # pickle处理
+                elif self.file_type == "pickle":
+                    raise TypeError("pickle错误尚未解决")
+                    # 'utf-8' codec can't decode byte 0x80 in position 0: invalid start byte
 
     # endregion
 
     # ---------------------
-    # region 数据保存实现（同步）
+    # region 数据保存实现
     # ---------------------
 
-    def _save_data_sync(self, save_path: Optional[str] = None) -> None:
-        """同步保存数据到文件"""
-        save_path = save_path or str(self.file_path)
+    def _save_data_sync(self, save_path: Path) -> None:
+        """同步保存数据核心逻辑"""
 
+        # JSON格式保存
         if self.file_type == "json":
-            # 保存前确保所有键都是字符串类型
-            save_data = self._stringify_keys(self.data)
-            with open(save_path, "w", encoding="utf-8") as f:
+            converted_data = self._type_convert(self.copy(), "preserve", JSON_TYPE)
+            print(converted_data)
+            with save_path.open("w") as f:
                 if UJSON_AVAILABLE:
-                    ujson.dump(save_data, f, ensure_ascii=False, indent=4)
+                    ujson.dump(converted_data, f, ensure_ascii=False, indent=4)
                 else:
-                    json.dump(save_data, f, ensure_ascii=False, indent=4)
+                    json.dump(converted_data, f, ensure_ascii=False, indent=4)
 
+        # TOML格式保存
         elif self.file_type == "toml":
-            if not TOML_AVAILABLE:
-                raise ModuleNotInstalledError("请安装 toml 模块以支持 TOML 文件")
-            with open(save_path, "w") as f:
-                toml.dump(self.data, f)
+            converted_data = self._type_convert(self.copy(), "preserve", TOML_TYPE)
+            with save_path.open("w") as f:
+                toml.dump(converted_data, f)
 
+        # YAML格式保存
         elif self.file_type == "yaml":
-            if not YAML_AVAILABLE:
-                raise ModuleNotInstalledError("请安装 PyYAML 模块以支持 YAML 文件")
-            with open(save_path, "w") as f:
-                # 禁用默认的排序和流式风格,保持数据顺序
+            converted_data = self._type_convert(self.copy(), "preserve", YAML_TYPE)
+            with save_path.open("w") as f:
                 yaml.dump(
-                    self.data,
-                    f,
-                    allow_unicode=True,
-                    default_flow_style=False,
-                    sort_keys=False,
+                    converted_data, f, allow_unicode=True, default_flow_style=False
                 )
 
-        elif self.file_type == "ini":
-            config = ConfigParser()
-            config.optionxform = str  # 保留键名大小写
-            for section, items in self.data.items():
-                config[section] = items
-            with open(save_path, "w") as f:
-                config.write(f)
-
-        elif self.file_type == "xml":
-            root = ET.Element("root")
-            self._dict_to_xml(root, self.data)
-            ET.ElementTree(root).write(
-                save_path, encoding="utf-8", xml_declaration=True
-            )
-
-        elif self.file_type == "properties":
-            with open(save_path, "w") as f:
-                for k, v in self.data.items():
-                    f.write(f"{k}={v}\n")
-
+        # Pickle格式保存
         elif self.file_type == "pickle":
-            if not PICKLE_AVAILABLE:
-                raise ValueError("请手动开启 pickle 支持以支持 PICKLE 文件")
-            with open(save_path, "wb") as f:
-                pickle.dump(self.data, f)
+            converted_data = self._type_convert(self.copy(), "preserve", PICKLE_TYPE)
+            with save_path.open("wb") as f:
+                pickle.dump(converted_data, f)
 
         else:
             raise FileTypeUnknownError(f"不支持的文件类型: {self.file_type}")
 
-    # endregion
+    async def _save_data_async(self, save_path: Path) -> None:
+        """异步保存数据核心逻辑"""
 
-    # ---------------------
-    # region 数据保存实现（异步）
-    # ---------------------
-
-    async def _save_data_async(self, save_path: Optional[str] = None) -> None:
-        """异步保存数据到文件"""
-        save_path = save_path or str(self.file_path)
-
-        if self.file_type == "json":
-            # 确保所有键都是字符串类型
-            save_data = self._stringify_keys(self.data)
-            serialized = (
-                ujson.dumps(save_data, ensure_ascii=False, indent=4)
-                if UJSON_AVAILABLE
-                else json.dumps(save_data, ensure_ascii=False, indent=4)
-            )
-
-            if AIOFILES_AVAILABLE:
+        if AIOFILES_AVAILABLE:
+            # JSON异步保存
+            if self.file_type == "json":
+                converted_data = self._type_convert(self.copy(), "preserve", JSON_TYPE)
                 async with aiofiles.open(save_path, "w", encoding="utf-8") as f:
-                    await f.write(serialized)
-            else:
-                # 使用线程池执行同步写入
-                await asyncio.to_thread(self._save_data_sync, save_path)
-                return
+                    content = (
+                        ujson.dumps(converted_data)
+                        if UJSON_AVAILABLE
+                        else json.dumps(converted_data)
+                    )
+                    return await f.write(content)
 
-        elif self.file_type == "toml":
-            if not TOML_AVAILABLE:
-                raise ModuleNotInstalledError("请安装 toml 模块以支持 TOML 文件")
-            async with aiofiles.open(save_path, "w", encoding="utf-8") as f:
-                await f.write(toml.dumps(self.data))
+            # TOML异步保存
+            elif self.file_type == "toml":
+                converted_data = self._type_convert(self.copy(), "preserve", TOML_TYPE)
+                async with aiofiles.open(save_path, "w") as f:
+                    return await f.write(toml.dumps(converted_data))
 
-        elif self.file_type == "yaml":
-            if not YAML_AVAILABLE:
-                raise ModuleNotInstalledError("请安装 PyYAML 模块以支持 YAML 文件")
-            yaml_output = yaml.dump(
-                self.data, allow_unicode=True, default_flow_style=False, sort_keys=False
-            )
-            async with aiofiles.open(save_path, "w", encoding="utf-8") as f:
-                await f.write(yaml_output)
-
-        else:
-            # 其他格式回落到同步保存方法
-            await asyncio.to_thread(self._save_data_sync, save_path)
-
-    # endregion
-
-    # ---------------------
-    # region XML转换工具方法
-    # ---------------------
-
-    def _xml_to_dict(self, element: ET.Element) -> Dict:
-        """
-        将XML元素转换为字典
-        :param element: XML元素节点
-        :return: 包含节点信息和属性的字典
-        """
-        result = element.attrib.copy()
-
-        # 如果存在且非空
-        if element.text and element.text.strip():
-            result["#text"] = element.text.strip()
-
-        # 递归处理子元素
-        for child in element:
-            key = child.tag
-            child_dict = self._xml_to_dict(child)
-
-            # 处理重复标签的情况
-            if key in result:
-                # 如果已存在相同标签,转换为列表存储
-                if isinstance(result[key], list):
-                    result[key].append(child_dict)
-                else:
-                    result[key] = [result[key], child_dict]
-            else:
-                result[key] = child_dict
-
-        return result
-
-    def _dict_to_xml(self, parent: ET.Element, data: Dict) -> None:
-        """
-        将字典转换为XML元素
-        :param parent: 父XML元素
-        :param data: 要转换的字典数据
-        """
-        for key, value in data.items():
-            # 处理文本内容
-            if key == "#text":
-                parent.text = str(value)
-                continue
-
-            # 处理嵌套字典
-            if isinstance(value, dict):
-                child = ET.SubElement(parent, key)
-                self._dict_to_xml(child, value)
-
-            # 处理列表类型数据
-            elif isinstance(value, list):
-                for item in value:
-                    child = ET.SubElement(parent, key)
-                    self._dict_to_xml(child, item)
-
-            # 处理简单类型
-            else:
-                child = ET.SubElement(parent, key)
-                child.text = str(value)
-
-    # endregion
-
-    # ---------------------
-    # region Properties文件解析
-    # ---------------------
-
-    def _parse_properties(self) -> Dict[str, Any]:
-        """
-        解析Properties格式文件
-        :return: 键值对字典
-        """
-        data = {}
-        with open(self.file_path, "r") as f:
-            for line_num, line in enumerate(f, 1):
-                line = line.strip()
-                # 跳过空行和注释行（以#或!开头）
-                if not line or line.startswith("#") or line.startswith("!"):
-                    continue
-
-                # 分割键值对（最多分割一次）
-                parts = line.split("=", 1)
-                key = parts[0].strip()
-                value = parts[1].strip() if len(parts) > 1 else ""
-
-                # 处理重复键的情况（保留最后一次出现的值）
-                data[key] = value
-        return data
-
-    # endregion
+            # YAML异步保存
+            elif self.file_type == "yaml":
+                converted_data = self._type_convert(self.copy(), "preserve", YAML_TYPE)
+                async with aiofiles.open(save_path, "w") as f:
+                    return await f.write(yaml.dump(converted_data, allow_unicode=True))
+        # 其他格式回退同步保存
+        return self._save_data_sync(save_path)
 
 
 # endregion
