@@ -130,6 +130,7 @@ def is_napcat_running():
 
 def stop_napcat():
     """本地停止 NapCat 服务"""
+    LOG.info("正在停止 NapCat 服务")
     if platform.system() == "Linux":
         stop_napcat_linux()
     elif platform.system() == "Windows":

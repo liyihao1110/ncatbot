@@ -4,6 +4,7 @@ import time
 import qrcode
 import requests
 from requests.exceptions import ConnectionError
+from urllib3.exceptions import NewConnectionError
 
 from ncatbot.utils import config, get_log
 
@@ -62,7 +63,7 @@ class LoginHandler:
                     )
                 LOG.info("开放防火墙的 WebUI 端口 (默认 6099)")
                 exit(1)
-            except ConnectionError:
+            except (ConnectionError, NewConnectionError):
                 if platform.system() == "Windows":
                     if time.time() > MAX_TIME_EXPIER:
                         LOG.error("授权操作超时")
@@ -135,17 +136,12 @@ class LoginHandler:
         # 发送快速登录请求
         LOG.info("正在发送快速登录请求...")
         try:
-            status = (
-                requests.post(
-                    self.base_uri + "/api/QQLogin/SetQuickLogin",
-                    headers=self.header,
-                    json={"uin": config.bt_uin},
-                    timeout=5,
-                )
-                .json()
-                .get("message", "failed")
-                in ["success", "QQ Is Logined"]
-            )
+            status = requests.post(
+                self.base_uri + "/api/QQLogin/SetQuickLogin",
+                headers=self.header,
+                json={"uin": config.bt_uin},
+                timeout=5,
+            ).json().get("message", "failed") in ["success", "QQ Is Logined"]
             return status
         except TimeoutError:
             LOG.warning("快速登录失败, 进行其它登录尝试")
