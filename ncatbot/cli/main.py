@@ -14,7 +14,7 @@ def setup_work_directory():
         "work_dir",
         type=str,
         nargs="?",
-        default='ncatbot',
+        default="ncatbot",
         help="可选参数, 默认为 NcatBot 安装目录",
     )
     args = parser.parse_args()
@@ -23,7 +23,7 @@ def setup_work_directory():
         exit(1)
     print("工作目录: ", os.path.abspath(args.work_dir))
     os.chdir(args.work_dir)
-    os.environ["LOG_FILE_PATH"] = os.path.join(args.work_dir, "logs")
+    os.environ["LOG_FILE_PATH"] = os.path.join(os.getcwd(), "logs")
 
 
 setup_work_directory()
