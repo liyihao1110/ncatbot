@@ -140,12 +140,13 @@ class PluginLoader:
         self._debug = debug
         LOG.warning("插件系统已切换为调试模式") if debug else None
 
-    def _validate_plugin(self, plugin_cls: Type[BasePlugin]) -> bool:
+    def _validate_plugin(self, plugin_cls: Type[BasePlugin], with_dependencies: bool=True) -> bool:
         """
         验证插件类是否符合规范
         """
         return all(
-            hasattr(plugin_cls, attr) for attr in ("name", "version", "dependencies")
+            hasattr(plugin_cls, attr) for attr in ["name", "version"] 
+            + (["dependencies"] if with_dependencies else [])
         )
 
     def _build_dependency_graph(self, plugins: List[Type[BasePlugin]]):
@@ -222,7 +223,7 @@ class PluginLoader:
                     raise ValueError("Plugin __init__.py wrong format")
                 for plugin_class_name in module.__all__:
                     plugin_class = getattr(module, plugin_class_name)
-                    if not self._validate_plugin(plugin_class):
+                    if not self._validate_plugin(plugin_class, with_dependencies=False):
                         raise TypeError("Plugin Class is invalid")
                     name, version = plugin_class.name, plugin_class.version
                     break
