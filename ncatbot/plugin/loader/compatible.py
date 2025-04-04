@@ -44,16 +44,12 @@ class CompatibleEnrollment:
 
                         @wraps(func)
                         def wrapper(self, event: Event):
-                            if types != "all" and isinstance(event.data, BaseMessage):
-                                event.data.message.filter(types)
                             return func(self, event)
 
                     else:
 
                         @wraps(func)
                         def wrapper(self, event: Event):
-                            if types != "all" and isinstance(event.data, BaseMessage):
-                                event.data.message.filter(types)
                             return func(self, event.data)
 
                 else:
@@ -61,16 +57,12 @@ class CompatibleEnrollment:
 
                         @wraps(func)
                         def wrapper(event: Event):
-                            if types != "all" and isinstance(event.data, BaseMessage):
-                                event.data.message.filter(types)
                             return func(event)
 
                     else:
 
                         @wraps(func)
                         def wrapper(event: Event):
-                            if types != "all" and isinstance(event.data, BaseMessage):
-                                event.data.message.filter(types)
                             return func(event.data)
 
                 CompatibleEnrollment.events[event_type].append(
