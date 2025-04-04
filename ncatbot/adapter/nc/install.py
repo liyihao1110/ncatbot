@@ -176,7 +176,7 @@ def is_napcat_install():
 
 def install_update_napcat():
     """安装 napcat 或者检查 napcat 更新并重新安装"""
-    if is_napcat_install():
+    if not is_napcat_install():
         if not install_napcat("install"):
             LOG.error("NapCat 安装失败")
             exit(1)
