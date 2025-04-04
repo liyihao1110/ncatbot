@@ -3,7 +3,7 @@ import platform
 import time
 
 from ncatbot.adapter.nc.install import install_update_napcat
-from ncatbot.adapter.nc.login import login, online_qq_is_bot
+from ncatbot.adapter.nc.login import login, online_qq_is_bot, BotUINError
 from ncatbot.adapter.nc.start import start_napcat, stop_napcat
 from ncatbot.adapter.net import check_websocket
 from ncatbot.utils import config, get_log
@@ -95,5 +95,9 @@ def launch_napcat_service(*args, **kwargs):
         return True
     install_update_napcat()
     start_napcat()  # 配置、启动 NapCat 服务
-    login()  # NapCat 登录 QQ
+    try:
+        login()  # NapCat 登录 QQ
+    except BotUINError:
+        stop_napcat()
+        launch_napcat_service(*args, **kwargs)
     connect_napcat()  # 连接 NapCat 服务
