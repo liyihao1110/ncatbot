@@ -545,7 +545,7 @@ class UniversalLoader(dict):
         # JSON格式保存
         if self.file_type == "json":
             converted_data = self._type_convert(self.copy(), "preserve", JSON_TYPE)
-            print(converted_data)
+            # print(converted_data)
             with save_path.open("w") as f:
                 if UJSON_AVAILABLE:
                     ujson.dump(converted_data, f, ensure_ascii=False, indent=4)
