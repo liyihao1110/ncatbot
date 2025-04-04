@@ -3,7 +3,7 @@ import re
 from typing import Any, Callable, List
 
 from ncatbot.core import BaseMessage
-from ncatbot.plugin.event.access_controller import global_access_controller
+from ncatbot.plugin.event.access_controller import get_global_access_controller
 from ncatbot.plugin.event.event import Event, EventSource
 from ncatbot.utils import (
     PermissionGroup,
@@ -67,16 +67,17 @@ async def set_admin(message: BaseMessage):
     if len(args) != 1:
         message.reply_text_sync("参数个数错误, 命令格式(不含尖括号): /sm <qq_number>")
     else:
-        if not global_access_controller.user_has_role(
+        if not get_global_access_controller().user_has_role(
             args[0], PermissionGroup.ADMIN.value
         ):
-            global_access_controller.assign_role_to_user(
-                PermissionGroup.ADMIN.value, args[0]
+            get_global_access_controller().assign_role_to_user(
+                args[0], PermissionGroup.ADMIN.value
             )
             message.reply_text_sync(f"已经将用户 {args[0]} 设为管理员")
         else:
-            global_access_controller.unassign_role_to_user(
-                PermissionGroup.ADMIN.value, args[0]
+            get_global_access_controller().unassign_role_to_user(
+                args[0],
+                PermissionGroup.ADMIN.value,
             )
             message.reply_text_sync(f"已经将用户 {args[0]} 取消管理员")
 
@@ -131,22 +132,26 @@ async def access(message: BaseMessage):
         return
 
     # 禁止操作敏感权限路径
-    if access_fliter(path):
+    if not access_fliter(path):
         message.reply_text_sync("你个小机灵鬼要搞 SQL 注入？没想到吧，我没用 SQL")
         return
 
     # 检查权限路径是否存在
-    if not global_access_controller.permission_path_exist(path):
+    if not get_global_access_controller().permission_path_exist(path):
         message.reply_text_sync(f"权限 {path} 不存在")
         return
 
     # 检查目标是否具有 admin 角色
     if (
         is_group
-        and global_access_controller.group_has_role(number, PermissionGroup.ADMIN.value)
+        and get_global_access_controller().group_has_role(
+            number, PermissionGroup.ADMIN.value
+        )
     ) or (
         not is_group
-        and global_access_controller.user_has_role(number, PermissionGroup.ADMIN.value)
+        and get_global_access_controller().user_has_role(
+            number, PermissionGroup.ADMIN.value
+        )
     ):
         message.reply_text_sync(
             f"{'群组' if is_group else '用户'} 是管理员, 无法对他进行操作"
@@ -155,17 +160,17 @@ async def access(message: BaseMessage):
 
     if option == "ban":
         if is_group:
-            global_access_controller.add_black_list_to_group(number, path)
+            get_global_access_controller().add_black_list_to_group(number, path)
         else:
-            global_access_controller.add_black_list_to_user(number, path)
+            get_global_access_controller().add_black_list_to_user(number, path)
         message.reply_text_sync(
             f"{'群组' if is_group else '用户'} {number} 已经被禁止访问 {path}"
         )
     if option == "grant":
         if is_group:
-            global_access_controller.add_white_list_to_group(number, path)
+            get_global_access_controller().add_white_list_to_group(number, path)
         else:
-            global_access_controller.add_white_list_to_user(number, path)
+            get_global_access_controller().add_white_list_to_user(number, path)
         message.reply_text_sync(
             f"{'群组' if is_group else '用户'} {number} 已经被允许访问 {path}"
         )
@@ -191,12 +196,17 @@ async def set_config(configs: dict[str, Conf], message: BaseMessage):
     # 鉴权
     source = EventSource(
         message.sender.user_id,
-        message.__dict__.get("group_id", PermissionGroup.ROOT.value),
+        (
+            message.group_id
+            if hasattr(message, "group_id")
+            else PermissionGroup.ROOT.value
+        ),
     )
-    if not global_access_controller.with_permission(
-        path=full_key, source=source, permission_raise=True
+    if not get_global_access_controller().with_permission(
+        path=f"ncatbot.cfg.{full_key}", source=source, permission_raise=True
     ):
         message.reply_text_sync(f"你没有权限修改配置 {full_key}")
+        return
 
     # 修改
     try:
