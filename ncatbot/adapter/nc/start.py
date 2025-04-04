@@ -42,7 +42,7 @@ def start_napcat_linux():
         LOG.error(f"pgrep 命令执行失败, 无法判断 QQ 是否启动, 请检查错误: {e}")
         exit(1)
 
-    if not is_napcat_running_linux(config.bt_uin):
+    if not is_napcat_running_linux():
         LOG.error("napcat 启动失败，请检查日志")
         exit(1)
     else:
