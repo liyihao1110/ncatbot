@@ -20,9 +20,9 @@ async def check_websocket(uri):
             extra_headers=(
                 {
                     "Content-Type": "application/json",
-                    "Authorization": f"Bearer {config.token}",
+                    "Authorization": f"Bearer {config.ws_token}",
                 }
-                if config.token
+                if config.ws_token
                 else {"Content-Type": "application/json"}
             ),
         ):
@@ -43,9 +43,9 @@ class Route:
         self.headers = (
             {
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {config.token}",
+                "Authorization": f"Bearer {config.ws_token}",
             }
-            if config.token
+            if config.ws_token
             else {"Content-Type": "application/json"}
         )
 

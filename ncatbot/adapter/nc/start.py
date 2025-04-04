@@ -10,14 +10,9 @@ import time
 from urllib.parse import urlparse
 
 from ncatbot.adapter.nc.install import check_permission, get_napcat_dir
-from ncatbot.utils import config, get_log
+from ncatbot.utils import WINDOWS_NAPCAT_DIR, config, get_log
 
 LOG = get_log("adapter.nc.start")
-
-
-from ncatbot.utils import WINDOWS_NAPCAT_DIR, get_log
-
-LOG = get_log("adapter.nc.launcher")
 
 
 def is_napcat_running_linux():
@@ -170,7 +165,7 @@ def config_napcat():
                         "messagePostFormat": "array",
                         "reportSelfMessage": False,
                         "token": (
-                            str(config.token) if config.token is not None else ""
+                            str(config.ws_token) if config.ws_token is not None else ""
                         ),
                         "enableForcePushEvent": True,
                         "debug": False,
