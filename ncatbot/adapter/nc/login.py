@@ -79,6 +79,12 @@ class LoginHandler:
                         exit(1)
                 else:
                     LOG.error("不支持的操作系统, 请自行检查并适配")
+            except Exception as e:
+                if time.time() > MAX_TIME_EXPIER:
+                    LOG.error(
+                        f"未知错误 LoginHandler.__init__ {e}, 请保留日志并联系开发团队"
+                    )
+                    exit(1)
 
     def get_quick_login(self):
         # 获取快速登录列表
