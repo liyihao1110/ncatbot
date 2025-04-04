@@ -16,6 +16,14 @@ from ncatbot.utils import (
 _log = get_log()
 
 
+def report(func):
+    async def wrapper(*args, **kwargs):
+        result = await func(*args, **kwargs)
+        return check_and_log(result)
+
+    return wrapper
+
+
 def check_and_log(result):
     if result.get("status", None) == REQUEST_SUCCESS:
         _log.debug(result)
@@ -28,6 +36,84 @@ class BotAPI:
     def __init__(self):
         self._http = Route()
 
+    async def _get_forward_msgs(self, message: dict):
+        message_id = message["message_id"]
+        msg = await self.get_forward_msg(message_id)
+        if "messages" in msg["data"]:
+            return msg["data"]["messages"]
+        return message["message"][0]["data"]["content"]
+
+    async def _message_node_construct(self, record: dict):
+        data = {}
+
+        def wash_message(msg: dict):
+            # reply 报告原消息已过期是正常行为
+            # TODO: 实现视频转发
+            print("PROCESS:", msg)
+            if msg["type"] in ["text", "at", "reply", "file"]:
+                return msg
+            elif msg["type"] == "face":
+                return {
+                    "type": "face",
+                    "data": {
+                        "id": msg["data"]["id"],
+                    },
+                }
+            elif msg["type"] == "image":
+                return {
+                    "type": "image",
+                    "data": {
+                        "file": msg["data"]["url"],
+                        # "url": msg["data"]["url"],
+                        "summary": msg["data"].get("summary", "图片"),
+                    },
+                }
+            elif msg["type"] == "video":
+                return {"type": "text", "data": {"text": "视频"}}
+                # return {
+                #     "type": "video",
+                #     "data": {
+                #         "file": msg["data"]["file"],
+                #         # "url": msg["data"]["url"],
+                #         "summary": msg["data"].get("summary", "视频"),
+                #     }
+                # }
+            elif msg["type"] == "forward":
+                return None
+            else:
+                return None
+
+        if "forward" in [msg["type"] for msg in record["message"]]:
+            # 这应该才是正常实现, 实际上可能 NapCat 没人会写递归所以只能用下面的实现
+            # data["content"] = {
+            #     "type": "forward",
+            #     "data": {
+            #         "id": record['message'][0]['data']['content']
+            #     }
+            # }
+            result = await self._construct_forward_message(
+                (await self._get_forward_msgs(record))
+            )
+            data["content"] = result["messages"]
+            data["summary"] = result["summary"]
+            data["prompt"] = result["prompt"]
+            data["news"] = result["news"]
+            data["source"] = result["source"]
+        else:
+            data["content"] = [
+                wash_message(msg)
+                for msg in record["message"]
+                if wash_message(msg) is not None
+            ]
+
+        data["nickname"] = record["sender"]["nickname"]
+        data["user_id"] = record["sender"]["user_id"]
+        node = {
+            "type": "node",
+            "data": data,
+        }
+        return node
+
     async def _construct_forward_message(self, messages):
         """
         :param messages: 消息列表
@@ -38,14 +124,22 @@ class BotAPI:
             def decode_single_message(msg):
                 if msg["type"] == "text":
                     return msg["data"]["text"]
-
-                if msg["type"] == "image":
+                elif msg["type"] == "image":
                     if "summary" in msg["data"] and msg["data"]["summary"] != "":
                         return msg["data"]["summary"]
                     return "[图片]"
-
-                if msg["type"] == "forward":
+                elif msg["type"] == "video":
+                    if "summary" in msg["data"] and msg["data"]["summary"] != "":
+                        return msg["data"]["summary"]
+                    return "[视频]"
+                elif msg["type"] == "forward":
                     return "[聊天记录]"
+                elif msg["type"] == "face":
+                    return msg["data"]["raw"]["faceText"]
+                elif msg["type"] == "reply":
+                    return ""
+                elif msg["type"] == "file":
+                    return f"[文件] {msg['data']['file']}"
 
             result = ""
             for message in rpt["message"]:
@@ -53,19 +147,14 @@ class BotAPI:
             return result
 
         message_content, reports, news = [], [], []
-        for msg_id in messages:
-            report = await self.get_msg(msg_id)
-            report = report["data"]
+        for msg in messages:
+            report = (
+                (await self.get_msg(str(msg)))["data"] if isinstance(msg, str) else msg
+            )
             reports.append(report)
-            node = {
-                "type": "node",
-                "data": {
-                    "nickname": report["sender"]["nickname"],
-                    "user_id": report["user_id"],
-                    "id": msg_id,
-                },
-            }
-            message_content.append(node)
+            node = await self._message_node_construct(report)
+            if node is not None:
+                message_content.append(node)
             news.append(
                 {"text": report["sender"]["nickname"] + ": " + decode_summary(report)}
             )
@@ -77,6 +166,7 @@ class BotAPI:
                 "source": "空的聊天记录",
                 "summary": "没有可查看的转发消息",
                 "news": [],
+                "prompt": "聊天记录",
             }
 
         last_report = reports[-1]
@@ -96,16 +186,19 @@ class BotAPI:
                 assert len(participants) == 2
                 target = participants[0] + "和" + participants[1]
 
-        return {
+        result = {
             "messages": message_content,
             "source": f"{target}的聊天记录",
             "summary": f"查看{len(message_content)}条转发消息",
             "news": news,
+            "prompt": "聊天记录",
         }
+        return result
 
     # ---------------------
     # region 用户接口
     # ---------------------
+    @report
     async def set_qq_profile(self, nickname: str, personal_note: str, sex: str):
         """
         :param nickname: 昵称
@@ -118,6 +211,7 @@ class BotAPI:
             {"nickname": nickname, "personal_note": personal_note, "sex": sex},
         )
 
+    @report
     async def get_user_card(self, user_id: int, phone_number: str):
         """
         :param user_id: QQ号
@@ -128,6 +222,7 @@ class BotAPI:
             "/ArkSharePeer", {"user_id": user_id, "phoneNumber": phone_number}
         )
 
+    @report
     async def get_group_card(self, group_id: int, phone_number: str):
         """
         :param group_id: 群号
@@ -138,6 +233,7 @@ class BotAPI:
             "/ArkSharePeer", {"group_id": group_id, "phoneNumber": phone_number}
         )
 
+    @report
     async def get_share_group_card(self, group_id: str):
         """
         :param group_id: 群号
@@ -145,6 +241,7 @@ class BotAPI:
         """
         return await self._http.post("/ArkShareGroup", {"group_id": group_id})
 
+    @report
     async def set_online_status(self, status: str):
         """
         :param status: 在线状态
@@ -154,12 +251,14 @@ class BotAPI:
             status = getattr(Status, status)
         return await self._http.post("/set_online_status", params=dict(status))
 
+    @report
     async def get_friends_with_category(self):
         """
         :return: 获取好友列表
         """
         return await self._http.post("/get_friends_with_category", {})
 
+    @report
     async def set_qq_avatar(self, avatar: str):
         """
         :param avatar: 头像路径，支持本地路径和网络路径
@@ -167,6 +266,7 @@ class BotAPI:
         """
         return await self._http.post("/set_qq_avatar", {"file": avatar})
 
+    @report
     async def send_like(self, user_id: str, times: int):
         """
         :param user_id: QQ号
@@ -175,6 +275,7 @@ class BotAPI:
         """
         return await self._http.post("/send_like", {"user_id": user_id, "times": times})
 
+    @report
     async def create_collection(self, rawdata: str, brief: str):
         """
         :param rawdata: 内容
@@ -185,6 +286,7 @@ class BotAPI:
             "/create_collection", {"rawData": rawdata, "brief": brief}
         )
 
+    @report
     async def set_friend_add_request(self, flag: str, approve: bool, remark: str):
         """
         :param flag: 请求ID
@@ -197,6 +299,7 @@ class BotAPI:
             {"flag": flag, "approve": approve, "remark": remark},
         )
 
+    @report
     async def set_self_long_nick(self, longnick: str):
         """
         :param longnick: 个性签名内容
@@ -211,6 +314,7 @@ class BotAPI:
         """
         return await self._http.post("/get_stranger_info", {"user_id": user_id})
 
+    @report
     async def get_friend_list(self, cache: bool):
         """
         :param cache: 是否使用缓存
@@ -218,12 +322,14 @@ class BotAPI:
         """
         return await self._http.post("/get_friend_list", {"no_cache": cache})
 
+    @report
     async def get_profile_like(self):
         """
         :return: 获取个人资料卡点赞数
         """
         return await self._http.post("/get_profile_like", {})
 
+    @report
     async def fetch_custom_face(self, count: int):
         """
         :param count: 数量
@@ -231,6 +337,7 @@ class BotAPI:
         """
         return await self._http.post("/fetch_custom_face", {"count": count})
 
+    @report
     async def upload_private_file(self, user_id: Union[int, str], file: str, name: str):
         """
         :param user_id: QQ号
@@ -242,6 +349,7 @@ class BotAPI:
             "/upload_private_file", {"user_id": user_id, "file": file, "name": name}
         )
 
+    @report
     async def delete_friend(
         self,
         user_id: Union[int, str],
@@ -266,6 +374,7 @@ class BotAPI:
             },
         )
 
+    @report
     async def nc_get_user_status(self, user_id: Union[int, str]):
         """
         :param user_id: QQ号
@@ -273,6 +382,7 @@ class BotAPI:
         """
         return await self._http.post("/nc_get_user_status", {"user_id": user_id})
 
+    @report
     async def get_mini_app_ark(self, app_json: dict):
         """
         :param app_json: 小程序JSON
@@ -283,6 +393,8 @@ class BotAPI:
     # ---------------------
     # region 消息接口
     # ---------------------
+
+    @report
     async def mark_msg_as_read(
         self, group_id: Union[int, str] = None, user_id: Union[int, str] = None
     ):
@@ -296,6 +408,7 @@ class BotAPI:
         elif user_id:
             return await self._http.post("/mark_msg_as_read", {"user_id": user_id})
 
+    @report
     async def mark_group_msg_as_read(self, group_id: Union[int, str]):
         """
         :param group_id: 群号
@@ -303,6 +416,7 @@ class BotAPI:
         """
         return await self._http.post("/mark_group_msg_as_read", {"group_id": group_id})
 
+    @report
     async def mark_private_msg_as_read(self, user_id: Union[int, str]):
         """
         :param user_id: QQ号
@@ -310,12 +424,14 @@ class BotAPI:
         """
         return await self._http.post("/mark_private_msg_as_read", {"user_id": user_id})
 
+    @report
     async def mark_all_as_read(self):
         """
         :return: 设置所有消息已读
         """
         return await self._http.post("/_mark_all_as_read", {})
 
+    @report
     async def delete_msg(self, message_id: Union[int, str]):
         """
         :param message_id: 消息ID
@@ -323,6 +439,7 @@ class BotAPI:
         """
         return await self._http.post("/delete_msg", {"message_id": message_id})
 
+    @report
     async def get_msg(self, message_id: Union[int, str]):
         """
         :param message_id: 消息ID
@@ -330,6 +447,7 @@ class BotAPI:
         """
         return await self._http.post("/get_msg", {"message_id": message_id})
 
+    @report
     async def get_image(self, image_id: str):
         """
         :param image_id: 图片ID
@@ -337,6 +455,7 @@ class BotAPI:
         """
         return await self._http.post("/get_image", {"file_id": image_id})
 
+    @report
     async def get_record(self, record_id: str, output_type: str = "mp3"):
         """
         :param record_id: 语音ID
@@ -347,6 +466,7 @@ class BotAPI:
             "/get_record", {"file_id": record_id, "out_format": output_type}
         )
 
+    @report
     async def get_file(self, file_id: str):
         """
         :param file_id: 文件ID
@@ -354,6 +474,7 @@ class BotAPI:
         """
         return await self._http.post("/get_file", {"file_id": file_id})
 
+    @report
     async def get_group_msg_history(
         self,
         group_id: Union[int, str],
@@ -378,6 +499,7 @@ class BotAPI:
             },
         )
 
+    @report
     async def set_msg_emoji_like(
         self, message_id: Union[int, str], emoji_id: int, emoji_set: bool
     ):
@@ -392,6 +514,7 @@ class BotAPI:
             {"message_id": message_id, "emoji_id": emoji_id, "set": emoji_set},
         )
 
+    @report
     async def get_friend_msg_history(
         self,
         user_id: Union[int, str],
@@ -416,6 +539,7 @@ class BotAPI:
             },
         )
 
+    @report
     async def get_recent_contact(self, count: int):
         """
         获取的最新消息是每个会话最新的消息
@@ -424,6 +548,7 @@ class BotAPI:
         """
         return await self._http.post("/get_recent_contact", {"count": count})
 
+    @report
     async def fetch_emoji_like(
         self,
         message_id: Union[int, str],
@@ -487,6 +612,7 @@ class BotAPI:
                     },
                 )
 
+    @report
     async def get_forward_msg(self, message_id: str):
         """
         :param message_id: 消息ID
@@ -494,6 +620,7 @@ class BotAPI:
         """
         return await self._http.post("/get_forward_msg", {"message_id": message_id})
 
+    @report
     async def send_poke(
         self, user_id: Union[int, str], group_id: Union[int, str] = None
     ):
@@ -509,6 +636,7 @@ class BotAPI:
         else:
             return await self._http.post("/send_poke", {"user_id": user_id})
 
+    @report
     async def forward_friend_single_msg(
         self, message_id: str, user_id: Union[int, str]
     ):
@@ -521,6 +649,7 @@ class BotAPI:
             "/forward_friend_single_msg", {"user_id": user_id, "message_id": message_id}
         )
 
+    @report
     async def send_private_forward_msg(
         self, user_id: Union[int, str], messages: list[str]
     ):
@@ -536,6 +665,8 @@ class BotAPI:
     # ---------------------
     # region 群组接口
     # ---------------------
+
+    @report
     async def set_group_kick(
         self,
         group_id: Union[int, str],
@@ -557,6 +688,7 @@ class BotAPI:
             },
         )
 
+    @report
     async def set_group_ban(
         self, group_id: Union[int, str], user_id: Union[int, str], duration: int
     ):
@@ -571,6 +703,7 @@ class BotAPI:
             {"group_id": group_id, "user_id": user_id, "duration": duration},
         )
 
+    @report
     async def get_group_system_msg(self, group_id: Union[int, str]):
         """
         :param group_id: 群号
@@ -578,6 +711,7 @@ class BotAPI:
         """
         return await self._http.post("/get_group_system_msg", {"group_id": group_id})
 
+    @report
     async def get_essence_msg_list(self, group_id: Union[int, str]):
         """
         :param group_id: 群号
@@ -585,6 +719,7 @@ class BotAPI:
         """
         return await self._http.post("/get_essence_msg_list", {"group_id": group_id})
 
+    @report
     async def set_group_whole_ban(self, group_id: Union[int, str], enable: bool):
         """
         :param group_id: 群号
@@ -595,6 +730,7 @@ class BotAPI:
             "/set_group_whole_ban", {"group_id": group_id, "enable": enable}
         )
 
+    @report
     async def set_group_portrait(self, group_id: Union[int, str], file: str):
         """
         :param group_id: 群号
@@ -605,6 +741,7 @@ class BotAPI:
             "/set_group_portrait", {"group_id": group_id, "file": file}
         )
 
+    @report
     async def set_group_admin(
         self, group_id: Union[int, str], user_id: Union[int, str], enable: bool
     ):
@@ -619,6 +756,7 @@ class BotAPI:
             {"group_id": group_id, "user_id": user_id, "enable": enable},
         )
 
+    @report
     async def set_essence_msg(self, message_id: Union[int, str]):
         """
         :param message_id: 消息ID
@@ -626,6 +764,7 @@ class BotAPI:
         """
         return await self._http.post("/set_essence_msg", {"message_id": message_id})
 
+    @report
     async def set_group_card(
         self, group_id: Union[int, str], user_id: Union[int, str], card: str
     ):
@@ -639,6 +778,7 @@ class BotAPI:
             "/set_group_card", {"group_id": group_id, "user_id": user_id, "card": card}
         )
 
+    @report
     async def delete_essence_msg(self, message_id: Union[int, str]):
         """
         :param message_id: 消息ID
@@ -646,6 +786,7 @@ class BotAPI:
         """
         return await self._http.post("/delete_essence_msg", {"message_id": message_id})
 
+    @report
     async def set_group_name(self, group_id: Union[int, str], group_name: str):
         """
         :param group_id: 群号
@@ -656,6 +797,7 @@ class BotAPI:
             "/set_group_name", {"group_id": group_id, "group_name": group_name}
         )
 
+    @report
     async def set_group_leave(self, group_id: Union[int, str]):
         """
         :param group_id: 群号
@@ -663,6 +805,7 @@ class BotAPI:
         """
         return await self._http.post("/set_group_leave", {"group_id": group_id})
 
+    @report
     async def send_group_notice(
         self, group_id: Union[int, str], content: str, image: str = None
     ):
@@ -682,6 +825,7 @@ class BotAPI:
                 "/_send_group_notice", {"group_id": group_id, "content": content}
             )
 
+    @report
     async def get_group_notice(self, group_id: Union[int, str]):
         """
         :param group_id: 群号
@@ -689,6 +833,7 @@ class BotAPI:
         """
         return await self._http.post("/_get_group_notice", {"group_id": group_id})
 
+    @report
     async def set_group_special_title(
         self, group_id: Union[int, str], user_id: Union[int, str], special_title: str
     ):
@@ -703,6 +848,7 @@ class BotAPI:
             {"group_id": group_id, "user_id": user_id, "special_title": special_title},
         )
 
+    @report
     async def upload_group_file(
         self, group_id: Union[int, str], file: str, name: str, folder_id: str
     ):
@@ -718,6 +864,7 @@ class BotAPI:
             {"group_id": group_id, "file": file, "name": name, "folder_id": folder_id},
         )
 
+    @report
     async def set_group_add_request(self, flag: str, approve: bool, reason: str = None):
         """
         :param flag: 请求flag
@@ -735,6 +882,7 @@ class BotAPI:
                 {"flag": flag, "approve": approve, "reason": reason},
             )
 
+    @report
     async def get_group_info(self, group_id: Union[int, str]):
         """
         :param group_id: 群号
@@ -742,6 +890,7 @@ class BotAPI:
         """
         return await self._http.post("/get_group_info", {"group_id": group_id})
 
+    @report
     async def get_group_info_ex(self, group_id: Union[int, str]):
         """
         :param group_id: 群号
@@ -749,6 +898,7 @@ class BotAPI:
         """
         return await self._http.post("/get_group_info_ex", {"group_id": group_id})
 
+    @report
     async def create_group_file_folder(
         self, group_id: Union[int, str], folder_name: str
     ):
@@ -762,6 +912,7 @@ class BotAPI:
             {"group_id": group_id, "folder_name": folder_name},
         )
 
+    @report
     async def delete_group_file(self, group_id: Union[int, str], file_id: str):
         """
         :param group_id: 群号
@@ -772,6 +923,7 @@ class BotAPI:
             "/delete_group_file", {"group_id": group_id, "file_id": file_id}
         )
 
+    @report
     async def delete_group_folder(self, group_id: Union[int, str], folder_id: str):
         """
         :param group_id: 群号
@@ -782,6 +934,7 @@ class BotAPI:
             "/delete_group_folder", {"group_id": group_id, "folder_id": folder_id}
         )
 
+    @report
     async def get_group_file_system_info(self, group_id: Union[int, str]):
         """
         :param group_id: 群号
@@ -791,6 +944,7 @@ class BotAPI:
             "/get_group_file_system_info", {"group_id": group_id}
         )
 
+    @report
     async def get_group_root_files(self, group_id: Union[int, str]):
         """
         :param group_id: 群号
@@ -798,6 +952,7 @@ class BotAPI:
         """
         return await self._http.post("/get_group_root_files", {"group_id": group_id})
 
+    @report
     async def get_group_files_by_folder(
         self, group_id: Union[int, str], folder_id: str, file_count: int
     ):
@@ -812,6 +967,7 @@ class BotAPI:
             {"group_id": group_id, "folder_id": folder_id, "file_count": file_count},
         )
 
+    @report
     async def get_group_file_url(self, group_id: Union[int, str], file_id: str):
         """
         :param group_id: 群号
@@ -822,6 +978,7 @@ class BotAPI:
             "/get_group_file_url", {"group_id": group_id, "file_id": file_id}
         )
 
+    @report
     async def get_group_list(self, no_cache: bool = False):
         """
         :param no_cache: 不缓存，默认为false
@@ -829,6 +986,7 @@ class BotAPI:
         """
         return await self._http.post("/get_group_list", {"no_cache": no_cache})
 
+    @report
     async def get_group_member_info(
         self, group_id: Union[int, str], user_id: Union[int, str], no_cache: bool
     ):
@@ -843,6 +1001,7 @@ class BotAPI:
             {"group_id": group_id, "user_id": user_id, "no_cache": no_cache},
         )
 
+    @report
     async def get_group_member_list(
         self, group_id: Union[int, str], no_cache: bool = False
     ):
@@ -855,6 +1014,7 @@ class BotAPI:
             "/get_group_member_list", {"group_id": group_id, "no_cache": no_cache}
         )
 
+    @report
     async def get_group_honor_info(self, group_id: Union[int, str]):
         """
         :param group_id: 群号
@@ -862,6 +1022,7 @@ class BotAPI:
         """
         return await self._http.post("/get_group_honor_info", {"group_id": group_id})
 
+    @report
     async def get_group_at_all_remain(self, group_id: Union[int, str]):
         """
         :param group_id: 群号
@@ -869,6 +1030,7 @@ class BotAPI:
         """
         return await self._http.post("/get_group_at_all_remain", {"group_id": group_id})
 
+    @report
     async def get_group_ignored_notifies(self, group_id: Union[int, str]):
         """
         :param group_id: 群号
@@ -878,6 +1040,7 @@ class BotAPI:
             "/get_group_ignored_notifies", {"group_id": group_id}
         )
 
+    @report
     async def set_group_sign(self, group_id: Union[int, str]):
         """
         :param group_id: 群号
@@ -885,6 +1048,7 @@ class BotAPI:
         """
         return await self._http.post("/set_group_sign", {"group_id": group_id})
 
+    @report
     async def send_group_sign(self, group_id: Union[int, str]):
         """
         :param group_id: 群号
@@ -892,6 +1056,7 @@ class BotAPI:
         """
         return await self._http.post("/send_group_sign", {"group_id": group_id})
 
+    @report
     async def get_ai_characters(
         self, group_id: Union[int, str], chat_type: Union[int, str]
     ):
@@ -904,6 +1069,7 @@ class BotAPI:
             "/get_ai_characters", {"group_id": group_id, "chat_type": chat_type}
         )
 
+    @report
     async def send_group_ai_record(
         self, group_id: Union[int, str], character: str, text: str
     ):
@@ -918,6 +1084,7 @@ class BotAPI:
             {"group_id": group_id, "character": character, "text": text},
         )
 
+    @report
     async def get_ai_record(self, group_id: Union[int, str], character: str, text: str):
         """
         :param group_id: 群号
@@ -930,6 +1097,7 @@ class BotAPI:
             {"group_id": group_id, "character": character, "text": text},
         )
 
+    @report
     async def forward_group_single_msg(
         self, message_id: str, group_id: Union[int, str]
     ):
@@ -943,6 +1111,7 @@ class BotAPI:
             {"group_id": group_id, "message_id": message_id},
         )
 
+    @report
     async def send_group_forward_msg(
         self, group_id: Union[int, str], messages: list[str]
     ):
@@ -962,18 +1131,22 @@ class BotAPI:
     # ---------------------
     # region 系统接口
     # ---------------------
+
+    @report
     async def get_client_key(self):
         """
         :return: 获取client_key
         """
         return await self._http.post("/get_clientkey", {})
 
+    @report
     async def get_robot_uin_range(self):
         """
         :return: 获取机器人QQ号范围
         """
         return await self._http.post("/get_robot_uin_range", {})
 
+    @report
     async def ocr_image(self, image: str):
         """
         :param image: 图片路径，支持本地路径和网络路径
@@ -981,6 +1154,7 @@ class BotAPI:
         """
         return await self._http.post("/ocr_image", {"image": image})
 
+    @report
     async def ocr_image_new(self, image: str):
         """
         :param image: 图片路径，支持本地路径和网络路径
@@ -988,6 +1162,7 @@ class BotAPI:
         """
         return await self._http.post("/.ocr_image", {"image": image})
 
+    @report
     async def translate_en2zh(self, words: list):
         """
         :param words: 待翻译的单词列表
@@ -995,12 +1170,14 @@ class BotAPI:
         """
         return await self._http.post("/translate_en2zh", {"words": words})
 
+    @report
     async def get_login_info(self):
         """
         :return: 获取登录号信息
         """
         return await self._http.post("/get_login_info", {})
 
+    @report
     async def set_input_status(self, event_type: int, user_id: Union[int, str]):
         """
         :param event_type: 状态类型
@@ -1011,6 +1188,7 @@ class BotAPI:
             "/set_input_status", {"eventType": event_type, "user_id": user_id}
         )
 
+    @report
     async def download_file(
         self,
         thread_count: int,
@@ -1064,6 +1242,7 @@ class BotAPI:
                     {"thread_count": thread_count, "headers": headers, "url": url},
                 )
 
+    @report
     async def get_cookies(self, domain: str):
         """
         :param domain: 域名
@@ -1071,6 +1250,7 @@ class BotAPI:
         """
         return await self._http.post("/get_cookies", {"domain": domain})
 
+    @report
     async def handle_quick_operation(self, context: dict, operation: dict):
         """
         :param context: 事件数据对象
@@ -1081,12 +1261,14 @@ class BotAPI:
             "/.handle_quick_operation", {"context": context, "operation": operation}
         )
 
+    @report
     async def get_csrf_token(self):
         """
         :return: 获取 CSRF Token
         """
         return await self._http.post("/get_csrf_token", {})
 
+    @report
     async def del_group_notice(self, group_id: Union[int, str], notice_id: str):
         """
         :param group_id: 群号
@@ -1097,6 +1279,7 @@ class BotAPI:
             "/_del_group_notice", {"group_id": group_id, "notice_id": notice_id}
         )
 
+    @report
     async def get_credentials(self, domain: str):
         """
         :param domain: 域名
@@ -1104,6 +1287,7 @@ class BotAPI:
         """
         return await self._http.post("/get_credentials", {"domain": domain})
 
+    @report
     async def get_model_show(self, model: str):
         """
         :param model: 模型名
@@ -1111,42 +1295,49 @@ class BotAPI:
         """
         return await self._http.post("/_get_model_show", {"model": model})
 
+    @report
     async def can_send_image(self):
         """
         :return: 检查是否可以发送图片
         """
         return await self._http.post("/can_send_image", {})
 
+    @report
     async def nc_get_packet_status(self):
         """
         :return: 获取packet状态
         """
         return await self._http.post("/nc_get_packet_status", {})
 
+    @report
     async def can_send_record(self):
         """
         :return: 检查是否可以发送语音
         """
         return await self._http.post("/can_send_record", {})
 
+    @report
     async def get_status(self):
         """
         :return: 获取状态
         """
         return await self._http.post("/get_status", {})
 
+    @report
     async def nc_get_rkey(self):
         """
         :return: 获取rkey
         """
         return await self._http.post("/nc_get_rkey", {})
 
+    @report
     async def get_version_info(self):
         """
         :return: 获取版本信息
         """
         return await self._http.post("/get_version_info", {})
 
+    @report
     async def get_group_shut_list(self, group_id: Union[int, str]):
         """
         :param group_id: 群号
@@ -1154,6 +1345,7 @@ class BotAPI:
         """
         return await self._http.post("/get_group_shut_list", {"group_id": group_id})
 
+    @report
     async def post_group_msg(
         self,
         group_id: Union[int, str],
@@ -1235,8 +1427,9 @@ class BotAPI:
         if not message:
             return {"code": 0, "msg": "消息不能为空"}
         params = {"group_id": group_id, "message": message}
-        return check_and_log(await self._http.post("/send_group_msg", json=params))
+        return await self._http.post("/send_group_msg", json=params)
 
+    @report
     async def post_private_msg(
         self,
         user_id: Union[int, str],
@@ -1318,8 +1511,9 @@ class BotAPI:
         if not message:
             return {"code": 0, "msg": "消息不能为空"}
         params = {"user_id": user_id, "message": message}
-        return check_and_log(await self._http.post("/send_private_msg", json=params))
+        return await self._http.post("/send_private_msg", json=params)
 
+    @report
     async def post_group_file(
         self,
         group_id: Union[int, str],
@@ -1365,8 +1559,9 @@ class BotAPI:
             return {"code": 0, "msg": "请至少选择一种文件"}
 
         params = {"group_id": group_id, "message": message}
-        return check_and_log(await self._http.post("/send_group_msg", json=params))
+        return await self._http.post("/send_group_msg", json=params)
 
+    @report
     async def post_private_file(
         self,
         user_id: Union[int, str],
@@ -1412,12 +1607,13 @@ class BotAPI:
             return {"code": 0, "msg": "请至少选择一种文件"}
 
         params = {"user_id": user_id, "message": message}
-        return check_and_log(await self._http.post("/send_private_msg", json=params))
+        return await self._http.post("/send_private_msg", json=params)
 
     # ---------------------
     # region ncatbot扩展接口
     # ---------------------
 
+    @report
     async def send_qqmail_text(
         self,
         receiver: str,
