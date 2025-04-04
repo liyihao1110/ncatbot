@@ -142,7 +142,7 @@ class LoginHandler:
                 )
                 .json()
                 .get("message", "failed")
-                == "success"
+                in ["success", "QQ Is Logined"]
             )
             return status
         except TimeoutError:

@@ -52,6 +52,10 @@ def ncatbot_service_remote_start():
         if not online_qq_is_bot():
             if config._is_localhost():
                 # 如果账号不对并且在本地, 则停止 NapCat 服务后重新启动
+                if platform.system() == "Windows":
+                    LOG.error("Windows 系统未实现自动关闭 NapCat 服务")
+                    LOG.info("请手动关闭重复的 NapCat 服务")
+                    exit(1)
                 stop_napcat()
                 return False
             else:
