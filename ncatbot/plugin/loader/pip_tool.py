@@ -17,6 +17,8 @@ from packaging.markers import UndefinedComparison
 from packaging.requirements import Requirement
 from packaging.specifiers import SpecifierSet
 
+from ncatbot.utils import PYPI_URL
+
 
 class PipManagerException(Exception):
     """包管理器操作异常基类
@@ -65,7 +67,8 @@ class PipTool:
         # 初始化时自动安装必要依赖
         try:
             self._run_command(
-                ["pip", "install", "--upgrade", "setuptools", "wheel"], pip=False
+                ["pip", "install", "--upgrade", "setuptools", "wheel", "-i", PYPI_URL],
+                pip=False,
             )
         except subprocess.CalledProcessError as exc:
             raise PipManagerException("基础依赖安装失败") from exc
@@ -400,23 +403,25 @@ class PipTool:
         if not installed_info:
             return False
         return requirement.specifier.contains(installed_info["version"])
-        
+
     def compare_versions(self, installed_version: str, required_version: str) -> bool:
         """比较版本号是否满足"""
         try:
             # 如果是精确版本号比较（没有操作符）
-            if required_version.isdigit() or all(part.isdigit() for part in required_version.split('.')):
+            if required_version.isdigit() or all(
+                part.isdigit() for part in required_version.split(".")
+            ):
                 return installed_version == required_version
-            
-            if any(op in required_version for op in ['==', '>=', '<=', '>', '<', '~=']):
+
+            if any(op in required_version for op in ["==", ">=", "<=", ">", "<", "~="]):
                 # 创建版本说明符
                 spec = SpecifierSet(required_version)
                 # 检查已安装版本是否满足版本说明符
                 return version.parse(installed_version) in spec
-            
+
             # 默认情况下，假设需要完全匹配
             return installed_version == required_version
-        except Exception as e:
+        except Exception:
             return False
 
 
