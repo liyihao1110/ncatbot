@@ -14,7 +14,7 @@ def setup_work_directory():
         "work_dir",
         type=str,
         nargs="?",
-        default=NCATBOT_PATH,
+        default='ncatbot',
         help="可选参数, 默认为 NcatBot 安装目录",
     )
     args = parser.parse_args()
