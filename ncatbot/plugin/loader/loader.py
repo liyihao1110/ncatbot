@@ -39,7 +39,7 @@ PM = PipTool()
 LOG = get_log("PluginLoader")
 
 
-def install_plugin_dependecies(plugin_name, confirm=False):
+def install_plugin_dependecies(plugin_name, confirm=False, print_import_details=True):
     directory_path = os.path.join(PLUGINS_DIR, plugin_name)
     if not os.path.exists(f"{directory_path}/requirements.txt"):
         return
@@ -75,10 +75,15 @@ def install_plugin_dependecies(plugin_name, confirm=False):
             try:
                 importlib.import_module(plugin_name)
             except ImportError as e:
-                LOG.error(f"导入模块 {plugin_name} 时出错: {e}")
+                if print_import_details:
+                    LOG.error(f"导入模块 {plugin_name} 时出错: {e}")
+                    LOG.info(traceback.format_exc())
 
         if download_new:
             LOG.warning("在某些环境中, 动态安装的库可能不会立即生效, 需要重新启动。")
+    except Exception as e:
+        LOG.error(f"安装插件 {plugin_name} 时出错: {e}")
+        LOG.info(traceback.format_exc())
     finally:
         sys.path = original_sys_path
 
@@ -188,6 +193,7 @@ class PluginLoader:
             filename = Path(plugin_path).stem
             try:
                 # 动态导入模块
+                install_plugin_dependecies(filename)
                 module = importlib.import_module(filename)
                 if len(module.__all__) != 1:
                     raise ValueError("Plugin __init__.py wrong format")
@@ -384,7 +390,14 @@ class PluginLoader:
         for filename in os.listdir(directory_path):
             if not os.path.isdir(os.path.join(directory_path, filename)):
                 continue
-            install_plugin_dependecies(directory_path)
+            install_plugin_dependecies(directory_path, print_import_details=False)
+            try:
+                module = importlib.import_module(filename)
+                modules[filename] = module
+            except ImportError as e:
+                LOG.error(f"加载插件 {filename} 时出错: {e}")
+                LOG.error(traceback.format_exc())
+                continue
 
         return modules
 

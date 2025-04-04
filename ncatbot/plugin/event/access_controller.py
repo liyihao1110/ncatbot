@@ -8,7 +8,8 @@ from ncatbot.plugin.event.event import EventSource
 from ncatbot.plugin.RBACManager import RBACManager
 from ncatbot.utils import PermissionGroup, config, get_log
 
-_log = get_log()
+LOG = get_log("AccessController")
+global_access_controller = None
 
 
 class BaseRBACManager(RBACManager):
@@ -36,7 +37,8 @@ class BaseRBACManager(RBACManager):
         return super().check_permission(self.user_prefix + user_name, path)
 
     def assign_role_to_user(self, role_name, user_name):
-        return super().assign_role_to_user(role_name, self.user_prefix + user_name)
+        if not self.user_has_role(user_name, role_name):
+            return super().assign_role_to_user(role_name, self.user_prefix + user_name)
 
     def unassign_role_to_user(self, role_name, user_name):
         return super().unassign_role_to_user(role_name, self.user_prefix + user_name)
@@ -107,9 +109,11 @@ class RoleManagerMixin:
         )
 
     def user_has_role(self, user_id, role_name):
+        self._create_user_if_not_exist(user_id, True)
         return self.ur.user_has_role(user_id, role_name)
 
     def group_has_role(self, group_id, role_name):
+        self._create_group_if_not_exist(group_id, True)
         return self.gr.user_has_role(group_id, role_name)
 
     def role_exist(self, role_name):
@@ -142,9 +146,9 @@ class RoleManagerMixin:
 
     def _create_basic_roles(self):
         """创建基本角色, 并给 root 添加权限"""
-        self.create_role(PermissionGroup.ROOT.value)
-        self.create_role(PermissionGroup.ADMIN.value)
-        self.create_role(PermissionGroup.USER.value)
+        self.create_role(PermissionGroup.ROOT.value, ignore_exist=True)
+        self.create_role(PermissionGroup.ADMIN.value, ignore_exist=True)
+        self.create_role(PermissionGroup.USER.value, ignore_exist=True)
         self.set_role_inheritance(
             PermissionGroup.ROOT.value, PermissionGroup.ADMIN.value
         )
@@ -159,59 +163,61 @@ class PluginAccessController(RoleManagerMixin):
     def __init__(self):
         self.ur = BaseRBACManager()
         self.gr = BaseRBACManager(is_group=True)
+        self._load_access()
         self._create_basic_roles()
         self._create_root_user()
+        pass
 
     def _load_access(self):
-        _log.debug("加载权限")
+        LOG.debug("加载权限")
         try:
             if os.path.exists("data/U_access.json"):
                 with open("data/U_access.json", "r", encoding="utf-8") as f:
                     self.ur.from_dict(json.JSONDecoder().decode(f.read()))
             else:
-                _log.warning("权限文件不存在, 将创建新的权限文件")
+                LOG.warning("权限文件不存在, 将创建新的权限文件")
             if os.path.exists("data/G_access.json"):
                 with open("data/G_access.json", "r", encoding="utf-8") as f:
                     self.gr.from_dict(json.JSONDecoder().decode(f.read()))
             else:
-                _log.warning("权限文件不存在, 将创建新的权限文件")
+                LOG.warning("权限文件不存在, 将创建新的权限文件")
         except Exception as e:
-            _log.error(f"加载权限时出错: {e}")
+            LOG.error(f"加载权限时出错: {e}")
 
     def _save_access(self):
-        _log.debug("保存权限")
+        LOG.debug("保存权限")
         try:
             with open("data/U_access.json", "w", encoding="utf-8") as f:
                 f.write(json.JSONEncoder().encode(self.ur.to_dict()))
             with open("data/G_access.json", "w", encoding="utf-8") as f:
                 f.write(json.JSONEncoder().encode(self.gr.to_dict()))
         except Exception as e:
-            _log.error(f"保存权限时出错: {e}")
+            LOG.error(f"保存权限时出错: {e}")
 
     def _create_root_user(self):
         """创建 root 级别的用户和群组"""
         self.create_group(PermissionGroup.ROOT.value)
         self.create_user(config.root)
-        self.assign_role_to_user(PermissionGroup.ROOT.value, config.root)
+        self.assign_role_to_user(config.root, PermissionGroup.ROOT.value)
         self.assign_role_to_group(
             PermissionGroup.ROOT.value, PermissionGroup.ROOT.value
         )
 
-    def _create_id_if_not_exist(self, id, is_group, craete: bool = True):
+    def _create_id_if_not_exist(self, id, is_group, create: bool = True):
         manager = self.gr if is_group else self.ur
         if not manager.user_exist(id):
-            if craete:
+            if create:
                 manager.create_user(id)
             else:
                 raise ValueError(f"{'群组' if is_group else '用户'} {id} 不存在")
 
-    def _create_user_if_not_exist(self, user_id, craete: bool = True):
+    def _create_user_if_not_exist(self, user_id, create: bool = True):
         """如果用户不存在, 根据配置创建或者报错"""
-        self._create_id_if_not_exist(user_id, False, craete)
+        self._create_id_if_not_exist(user_id, False, create)
 
-    def _create_group_if_not_exist(self, group_id, craete: bool = True):
+    def _create_group_if_not_exist(self, group_id, create: bool = True):
         """如果群聊不存在, 根据配置创建或者报错"""
-        self._create_id_if_not_exist(group_id, True, craete)
+        self._create_id_if_not_exist(group_id, True, create)
 
     def _create_permission_path_if_not_exist(self, path, create: bool = False):
         """如果权限路径不存在, 根据配置创建或者报错"""
@@ -384,19 +390,11 @@ class PluginAccessController(RoleManagerMixin):
         )
 
     def with_user_permission(self, path, user_id, create_user: bool = True):
-        if not self.ur.has_user(user_id):
-            if create_user:
-                self.ur.create_user(user_id)
-            else:
-                raise ValueError(f"用户 {user_id} 不存在")
+        self._create_user_if_not_exist(user_id, create_user)
         return self.ur.check_permission(user_id, path)
 
     def with_group_permission(self, path, group_id, create_user: bool = True):
-        if not self.gr.has_user(group_id):
-            if create_user:
-                self.gr.create_user(group_id)
-            else:
-                raise ValueError(f"群聊 {group_id} 不存在")
+        self._create_group_if_not_exist(group_id, create_user)
         return self.gr.check_permission(group_id, path)
 
     def with_permission(
@@ -419,4 +417,8 @@ class PluginAccessController(RoleManagerMixin):
         return self.gr.user_exist(group_id)
 
 
-global_access_controller = PluginAccessController()
+def get_global_access_controller() -> PluginAccessController:
+    global global_access_controller
+    if global_access_controller is None:
+        global_access_controller = PluginAccessController()
+    return global_access_controller

@@ -284,7 +284,7 @@ class RBACManager:
 
         # 检查继承链上的所有角色
         for parent in self.role_inheritance.get(inherited_role, []):
-            if self._check_circular_inheritance(role, parent, visited.copy()):
+            if self._check_circular_inheritance(inherited_role, parent, visited.copy()):
                 return True
         return False
 

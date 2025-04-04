@@ -1,5 +1,6 @@
 import asyncio
 import time
+import traceback
 
 from ncatbot.adapter import Websocket, check_websocket, launch_napcat_service
 from ncatbot.core.api import BotAPI
@@ -169,7 +170,7 @@ class BotClient:
         except asyncio.CancelledError:
             pass
         except Exception:
-            pass
+            _log.error(traceback.format_exc())
         finally:
             _log.info("插件卸载中...")
             self.plugin_sys.unload_all()

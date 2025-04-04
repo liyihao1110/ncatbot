@@ -1,11 +1,12 @@
 import asyncio
+import copy
 import inspect
 import re
 import uuid
 from typing import Any, Callable, List
 
 from ncatbot.core import BaseMessage
-from ncatbot.plugin.event.access_controller import global_access_controller
+from ncatbot.plugin.event.access_controller import get_global_access_controller
 from ncatbot.plugin.event.event import Event, EventType
 from ncatbot.plugin.event.function import Conf, Func, builtin_functions
 from ncatbot.utils import (
@@ -29,7 +30,7 @@ class EventBus:
         """
         self._exact_handlers = {}
         self._regex_handlers = []
-        self.access_controller = global_access_controller
+        self.access_controller = get_global_access_controller()
         self.funcs: List[Func] = []
         self.configs: dict[str, Conf] = {}
         self.plugins: List = []  # List[BasePlugin]
@@ -68,20 +69,29 @@ class EventBus:
                     message.reply_text_sync("权限不足")
 
     def load_builtin_funcs(self):
+        self.access_controller.create_permission_path(
+            "ncatbot.cfg.main.placeholder"
+        )  # 创建占位路径
         for func in builtin_functions:
             if func.name == "plg":  # 绑定 plg 的参数
-                func.func = lambda message, plugins=self.plugins: func.func(
+                temp = copy.copy(func.func)
+                func.func = lambda message, plugins=self.plugins, temp=temp: temp(
                     plugins, message
                 )
             if func.name == "cfg":  # 绑定 cfg 的参数
-                func.func = lambda message, configs=self.configs: func.func(
+                temp = copy.copy(func.func)
+                func.func = lambda message, configs=self.configs, temp=temp: temp(
                     configs, message
                 )
 
             self.funcs.append(func)
             self.access_controller.assign_permissions_to_role(
                 role_name=func.permission,
-                path=f"{func.plugin_name}.{func.name}",
+                path=(
+                    f"{func.plugin_name}.{func.name}"
+                    if func.name != "cfg"
+                    else "ncatbot.cfg.**"
+                ),
                 mode="white",
                 create_permission_path=True,
             )
