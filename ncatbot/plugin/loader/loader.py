@@ -59,7 +59,7 @@ def install_plugin_dependecies(plugin_name, confirm=False, print_import_details=
             requirements = [
                 pack.strip().lower()
                 for pack in open(
-                    os.path.join(directory_path, plugin_name, "requirements.txt")
+                    os.path.join(directory_path, "requirements.txt")
                 ).readlines()
             ]
             # 检查指定版本号的依赖是否需要安装
