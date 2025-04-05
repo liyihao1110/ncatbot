@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import time
 import traceback
 
@@ -17,17 +18,28 @@ from ncatbot.utils import (
 _log = get_log()
 
 
+async def _run_func(func, *args, **kwargs):
+    try:
+        if inspect.iscoroutinefunction(func):
+            return await func(*args, **kwargs)
+        else:
+            if config.__dict__.get("blocking_sync", False):
+                return func(*args, **kwargs)
+            else:
+                import threading
+
+                threading.Thread(
+                    target=func, args=args, kwargs=kwargs, daemon=True
+                ).start()
+    except Exception as e:
+        _log.error(f"函数 {func.__name__} 执行失败: {e}")
+        traceback.print_exc()
+
+
 class BotClient:
     registered = False
 
     def __init__(self, plugins_path="plugins"):
-        def check_config():
-            if config.bt_uin is config.default_bt_uin:
-                _log.warning("配置项中没有设置 QQ 号")
-                config.set_bot_uin(input("请输入你的 QQ 号:"))
-            if config.root is config.default_root:
-                _log.warning("建议设置好 root 账号保证权限功能能够正常使用")
-            _log.info(config)
 
         def check_duplicate_register():
             if BotClient.registered:
@@ -38,7 +50,6 @@ class BotClient:
             BotClient.registered = True
 
         check_duplicate_register()
-        check_config()
         self.api = BotAPI()
         self._subscribe_group_message_types = []
         self._subscribe_private_message_types = []
@@ -46,6 +57,7 @@ class BotClient:
         self._private_event_handlers = []
         self._notice_event_handlers = []
         self._request_event_handlers = []
+        self._startup_event_handlers = []
         self.plugins_path = plugins_path
         from ncatbot.plugin import EventBus, PluginLoader
 
@@ -56,7 +68,7 @@ class BotClient:
         _log.debug(msg)
         for handler, types in self._group_event_handlers:
             if types is None or any(i["type"] in types for i in msg.message):
-                await handler(msg)
+                await _run_func(handler, msg)
         from ncatbot.plugin.event.event import Event, EventSource
 
         await self.plugin_sys.event_bus.publish_async(
@@ -72,7 +84,7 @@ class BotClient:
         _log.debug(msg)
         for handler, types in self._private_event_handlers:
             if types is None or any(i["type"] in types for i in msg.message):
-                await handler(msg)
+                await _run_func(handler, msg)
         from ncatbot.plugin.event.event import Event, EventSource
 
         await self.plugin_sys.event_bus.publish_async(
@@ -82,7 +94,7 @@ class BotClient:
     async def handle_notice_event(self, msg: dict):
         _log.debug(msg)
         for handler in self._notice_event_handlers:
-            await handler(msg)
+            await _run_func(handler, msg)
         from ncatbot.plugin import Event
 
         await self.plugin_sys.event_bus.publish_async(Event(OFFICIAL_NOTICE_EVENT, msg))
@@ -90,12 +102,16 @@ class BotClient:
     async def handle_request_event(self, msg: dict):
         _log.debug(msg)
         for handler in self._request_event_handlers:
-            await handler(msg)
+            await _run_func(handler, msg)
         from ncatbot.plugin import Event
 
         await self.plugin_sys.event_bus.publish_async(
             Event(OFFICIAL_REQUEST_EVENT, msg)
         )
+
+    async def handle_startup_event(self):
+        for handler in self._startup_event_handlers:
+            await _run_func(handler)
 
     def group_event(self, types=None):
         self._subscribe_group_message_types = types
@@ -123,6 +139,21 @@ class BotClient:
         self._request_event_handlers.append(func)
         return func
 
+    def add_startup_handler(self, func):
+        self._startup_event_handlers.append(func)
+
+    def add_group_event_handler(self, func):
+        self._group_event_handlers.append((func, None))
+
+    def add_private_event_handler(self, func):
+        self._private_event_handlers.append((func, None))
+
+    def add_notice_event_handler(self, func):
+        self._notice_event_handlers.append(func)
+
+    def add_request_event_handler(self, func):
+        self._request_event_handlers.append(func)
+
     async def run_async(self):
         def info_subscribe_message_types():
             subsribe_group_message_types = (
@@ -140,13 +171,15 @@ class BotClient:
 
         async def time_schedule_heartbeat():
             while True:
-                await asyncio.sleep(5)
+                await asyncio.sleep(1)
                 self.plugin_sys.time_task_scheduler.step()
 
         info_subscribe_message_types()
         websocket_server = Websocket(self)
         if not config.skip_plugin_load:
             await self.plugin_sys.load_plugins(api=self.api)
+        else:
+            _log.warning("插件加载被跳过")
         while True:
             try:
                 asyncio.create_task(time_schedule_heartbeat())
@@ -183,6 +216,7 @@ class BotClient:
         for key in config.__dict__:
             if key in kwargs:
                 config.__dict__[key] = kwargs[key]
+        config.check_config()
         launch_napcat_service(*args, **kwargs)  # 保证 NapCat 正常启动
         _log.info("NapCat 服务启动登录完成")
         self.start(*args, **kwargs)

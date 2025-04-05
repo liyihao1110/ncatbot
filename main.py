@@ -21,10 +21,10 @@ async def on_group_message(msg: GroupMessage):
 
 
 @bot.private_event()
-async def on_private_message(msg: PrivateMessage):
+def on_private_message(msg: PrivateMessage):
     _log.info(msg)
     if msg.raw_message == "测试":
-        await bot.api.post_private_msg(msg.user_id, text="NcatBot 测试成功喵~")
+        bot.api.post_private_msg_sync(msg.user_id, text="NcatBot 测试成功喵~")
 
 
 if __name__ == "__main__":

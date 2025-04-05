@@ -37,6 +37,7 @@ class Websocket:
             asyncio.create_task(self.client.handle_request_event(message))
         elif message["post_type"] == "meta_event":
             if message["meta_event_type"] == "lifecycle":
+                asyncio.create_task(self.client.handle_startup_event())
                 _log.info(f"机器人 {message.get('self_id')} 成功启动")
             else:
                 _log.debug(message)

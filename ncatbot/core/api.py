@@ -3,6 +3,7 @@ from typing import Union
 
 from ncatbot.adapter import Route
 from ncatbot.core.element import *
+from ncatbot.core.sync_api import SYNC_API_MIXIN, add_sync_methods
 from ncatbot.utils import (
     REQUEST_SUCCESS,
     Status,
@@ -32,7 +33,8 @@ def check_and_log(result):
     return result
 
 
-class BotAPI:
+@add_sync_methods
+class BotAPI(SYNC_API_MIXIN):
     def __init__(self):
         self._http = Route()
 
@@ -1651,3 +1653,6 @@ class BotAPI:
         finally:
             if server:  # 只有server存在时才调用quit方法
                 server.quit()
+
+
+# type: ignore[attr-defined]
