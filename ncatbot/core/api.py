@@ -1,5 +1,6 @@
 import os
 from typing import Union
+from functools import wraps
 
 from ncatbot.adapter import Route
 from ncatbot.core.element import *
@@ -18,6 +19,7 @@ _log = get_log()
 
 
 def report(func):
+    @wraps(func)
     async def wrapper(*args, **kwargs):
         result = await func(*args, **kwargs)
         return check_and_log(result)
