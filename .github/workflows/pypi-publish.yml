@@ -1,48 +1,100 @@
-# This workflow will upload a Python Package using Twine when a release is created
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python#publishing-to-package-registries
+# 定义 GitHub Actions 工作流的名称
+name: Publish Python Package
 
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-name: Upload Python Package
-
+# 定义触发工作流的事件
 on:
+  # 当有新的标签推送到仓库时触发
   push:
-    branches:
-      - main  # 指定触发的分支，根据实际情况修改
-    paths:
-      - "ncatbot/__init__.py"  # 只有当 __init__.py 文件发生变化时触发
-  workflow_dispatch:  # 允许手动触发
+    tags:
+      # 只匹配以 v 开头的标签
+      - v*
 
-permissions:
-  contents: read
-
+# 定义工作流中的任务
 jobs:
-  build-and-publish:
+  # 定义一个名为 deploy 的任务
+  deploy:
+    # 指定任务运行的环境
     runs-on: ubuntu-latest
+    # 定义任务所需的权限
+    permissions:
+      # 允许读取仓库内容
+      contents: read
 
+    # 定义任务的步骤
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    # 使用 actions/checkout 动作来检出代码
+    - uses: actions/checkout@v4
+      with:
+        # 拉取所有历史记录
+        fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.x'  # 可以根据需要修改为具体的 Python 版本
+    # 设置 Python 环境
+    - name: Set up Python
+      # 使用 actions/setup-python 动作来设置 Python 环境
+      uses: actions/setup-python@v5
+      with:
+        # 使用 Python 3.x 版本
+        python-version: '3.x'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install setuptools wheel twine  # 安装打包和发布工具
+    # 提取并验证版本号
+    - name: Extract and Validate Version
+      run: |
+        # 从 GITHUB_REF 环境变量中提取标签名
+        TAG_NAME=${GITHUB_REF#refs/tags/}
+        # 去掉标签名前面的 v 字符
+        VERSION=${TAG_NAME#v}
+        # 验证版本号是否符合 X.Y.Z 格式
+        if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          # 若不符合格式，输出错误信息
+          echo "::error::Invalid version format: $VERSION. Use X.Y.Z"
+          # 退出脚本并返回错误码 1
+          exit 1
+        fi
+        # 将版本号添加到 GITHUB_ENV 环境变量中
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: Build the package
-        run: |
-          python setup.py sdist bdist_wheel  # 创建包
+    # 安装构建工具
+    - name: Install Build Tools
+      run: |
+        # 升级 pip 到最新版本
+        python -m pip install --upgrade pip
+        # 安装 setuptools、build 和 twine 工具
+        pip install "setuptools>=61.0" build twine
 
-      - name: Upload the package to PyPI
-        env:
-          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
-        run: |
-          twine upload dist/* -u __token__ -p $PYPI_TOKEN  # 使用 Twine 发布包
+    # 验证 pyproject.toml 文件
+    - name: Validate pyproject.toml
+      run: |
+        # 检查 pyproject.toml 文件中是否包含指定的构建后端配置
+        if ! grep -q 'build-backend = "setuptools.build_meta"' pyproject.toml; then
+          # 若不包含，输出错误信息
+          echo "::error::Invalid build-backend configuration"
+          # 退出脚本并返回错误码 1
+          exit 1
+        fi
+
+    # 清理之前的构建产物
+    - name: Clean previous builds
+      run: |
+        # 删除 dist 目录下的所有文件
+        rm -rf dist/*
+        # 删除 build 目录下的所有文件
+        rm -rf build/*
+
+    # 更新包的版本号
+    - name: Update package version
+      run: |
+        # 使用 sed 命令替换 src/ncatbot/__init__.py 文件中的版本号
+        sed -i "s/^__version__ = .*/__version__ = \"${{ env.VERSION }}\"/" src/ncatbot/__init__.py
+
+    # 构建 Python 包
+    - name: Build Package
+      run: python -m build --sdist --wheel --outdir dist/
+
+    # 发布包到 PyPI
+    - name: Publish to PyPI
+      env:
+        # 从 GitHub 仓库的 secrets 中获取 PyPI API 令牌
+        PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+      run: |
+        # 使用 twine 工具将构建好的包上传到 PyPI
+        twine upload --username __token__ --password "$PYPI_TOKEN" dist/*
