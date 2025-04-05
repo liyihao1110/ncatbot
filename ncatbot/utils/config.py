@@ -134,5 +134,13 @@ class SetConfig:
         for k, v in kwargs.items():
             setattr(self, k, v)
 
+    def check_config(self):
+        if self.bt_uin is self.default_bt_uin:
+            _log.warning("配置项中没有设置 QQ 号")
+            self.set_bot_uin(input("请输入你的 QQ 号:"))
+        if self.root is self.default_root:
+            _log.warning("建议设置好 root 账号保证权限功能能够正常使用")
+        _log.info(self)
+
 
 config = SetConfig()

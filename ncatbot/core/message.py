@@ -25,9 +25,33 @@ class BaseMessage:
     def __repr__(self):
         return str({items: str(getattr(self, items)) for items in self.__slots__})
 
+    def reply(self, is_file: bool = False, **kwargs):
+        raise NotImplementedError
+
     def reply_text_sync(self, text: str = "", **kwargs):
-        """同步回复消息, 应该被子类重写"""
-        pass
+        """同步回复, 文字信息特化"""
+        # 检查是否有正在运行的事件循环
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # 如果没有运行的事件循环，创建一个新的事件循环并运行协程
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(self.reply(text=text, **kwargs))
+        else:
+            # 如果有运行的事件循环，直接创建任务
+            asyncio.create_task(self.reply(text=text, **kwargs))
+
+    def reply_sync(self, is_file: bool = False, **kwargs):
+        """同步回复"""
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(self.reply(is_file=is_file, **kwargs))
+        else:
+            asyncio.create_task(self.reply(is_file=is_file, **kwargs))
 
     class _Sender:
         def __init__(self, message):
@@ -82,9 +106,6 @@ class GroupMessage(BaseMessage):
                 self.group_id, reply=self.message_id, **kwargs
             )
 
-    def reply_text_sync(self, text: str = "", **kwargs):
-        return asyncio.create_task(self.reply(text=text, **kwargs))
-
 
 class PrivateMessage(BaseMessage):
     __slots__ = (
@@ -128,6 +149,3 @@ class PrivateMessage(BaseMessage):
             return await self.api.post_private_file(self.user_id, **kwargs)
         else:
             return await self.api.post_private_msg(self.user_id, **kwargs)
-
-    def reply_text_sync(self, text: str = "", **kwargs):
-        return asyncio.create_task(self.reply(text=text, **kwargs))
