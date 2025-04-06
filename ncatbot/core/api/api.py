@@ -1,10 +1,10 @@
 import os
-from typing import Union
 from functools import wraps
+from typing import Literal, Union
 
 from ncatbot.adapter import Route
+from ncatbot.core.api.sync_api import SYNC_API_MIXIN, add_sync_methods
 from ncatbot.core.element import *
-from ncatbot.core.sync_api import SYNC_API_MIXIN, add_sync_methods
 from ncatbot.utils import (
     REQUEST_SUCCESS,
     Status,
@@ -53,7 +53,7 @@ class BotAPI(SYNC_API_MIXIN):
         def wash_message(msg: dict):
             # reply 报告原消息已过期是正常行为
             # TODO: 实现视频转发
-            print("PROCESS:", msg)
+            # print("PROCESS:", msg)
             if msg["type"] in ["text", "at", "reply", "file"]:
                 return msg
             elif msg["type"] == "face":
@@ -203,7 +203,9 @@ class BotAPI(SYNC_API_MIXIN):
     # region 用户接口
     # ---------------------
     @report
-    async def set_qq_profile(self, nickname: str, personal_note: str, sex: str):
+    async def set_qq_profile(
+        self, nickname: str, personal_note: str, sex: Literal["男", "女"]
+    ):
         """
         :param nickname: 昵称
         :param personal_note: 个性签名
@@ -216,14 +218,16 @@ class BotAPI(SYNC_API_MIXIN):
         )
 
     @report
-    async def get_user_card(self, user_id: int, phone_number: str):
+    async def get_user_card(
+        self, user_id: Union[int, str], phone_number: Union[int, str] = ""
+    ):
         """
         :param user_id: QQ号
         :param phone_number: 手机号
         :return: 获取用户名片
         """
         return await self._http.post(
-            "/ArkSharePeer", {"user_id": user_id, "phoneNumber": phone_number}
+            "/ArkSharePeer", {"user_id": str(user_id), "phoneNumber": str(phone_number)}
         )
 
     @report
@@ -248,7 +252,7 @@ class BotAPI(SYNC_API_MIXIN):
     @report
     async def set_online_status(self, status: str):
         """
-        :param status: 在线状态
+        :param status: 在线状态, 参考 ncatbot.utils.assets.literals
         :return: 设置在线状态
         """
         if hasattr(Status, status):
@@ -256,11 +260,12 @@ class BotAPI(SYNC_API_MIXIN):
         return await self._http.post("/set_online_status", params=dict(status))
 
     @report
-    async def get_friends_with_category(self):
+    async def get_friend_list(self, cache: bool = True):
         """
+        :param cache: 是否缓存
         :return: 获取好友列表
         """
-        return await self._http.post("/get_friends_with_category", {})
+        return await self._http.post("/get_friend_list", {"cache": cache})
 
     @report
     async def set_qq_avatar(self, avatar: str):
@@ -473,7 +478,7 @@ class BotAPI(SYNC_API_MIXIN):
     @report
     async def get_file(self, file_id: str):
         """
-        :param file_id: 文件ID
+        :param file_id: 文件 ID
         :return: 获取文件消息详情
         """
         return await self._http.post("/get_file", {"file_id": file_id})
@@ -488,7 +493,7 @@ class BotAPI(SYNC_API_MIXIN):
     ):
         """
         :param group_id: 群号
-        :param message_seq: 消息序号
+        :param message_seq: 消息序号, 从哪一条开始倒序获取, 0 为最新
         :param count: 数量
         :param reverse_order: 是否倒序
         :return: 获取群消息历史记录
@@ -528,7 +533,7 @@ class BotAPI(SYNC_API_MIXIN):
     ):
         """
         :param user_id: QQ号
-        :param message_seq: 消息序号
+        :param message_seq: 消息序号, 从哪一条开始倒序获取, 0 为最新
         :param count: 数量
         :param reverse_order: 是否倒序
         :return: 获取好友消息历史记录
@@ -1184,7 +1189,7 @@ class BotAPI(SYNC_API_MIXIN):
     @report
     async def set_input_status(self, event_type: int, user_id: Union[int, str]):
         """
-        :param event_type: 状态类型
+        :param event_type: 状态类型 0: 正在说话, 1: 正在输入
         :param user_id: QQ号
         :return: 设置输入状态
         """

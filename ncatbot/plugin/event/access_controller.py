@@ -187,6 +187,8 @@ class PluginAccessController(RoleManagerMixin):
     def _save_access(self):
         LOG.debug("保存权限")
         try:
+            if not os.path.exists("data"):
+                os.mkdir("data")
             with open("data/U_access.json", "w", encoding="utf-8") as f:
                 f.write(json.JSONEncoder().encode(self.ur.to_dict()))
             with open("data/G_access.json", "w", encoding="utf-8") as f:

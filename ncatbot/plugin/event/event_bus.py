@@ -8,7 +8,7 @@ from typing import Any, Callable, List
 
 from ncatbot.core import BaseMessage
 from ncatbot.plugin.event.access_controller import get_global_access_controller
-from ncatbot.plugin.event.event import Event, EventType
+from ncatbot.plugin.event.event import Event
 from ncatbot.plugin.event.function import Conf, Func, builtin_functions
 from ncatbot.utils import (
     OFFICIAL_GROUP_MESSAGE_EVENT,
@@ -159,7 +159,7 @@ class EventBus:
             self.funcs.append(func)
 
     def subscribe(
-        self, event_type: EventType, handler: Callable[[Event], Any], priority: int = 0
+        self, event_type: str, handler: Callable[[Event], Any], priority: int = 0
     ) -> uuid.UUID:
         """
         订阅事件处理器，并返回处理器的唯一 ID

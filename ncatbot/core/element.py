@@ -203,11 +203,15 @@ class Video(Element):
 
     type = "video"
 
-    def __init__(self, file: str):
+    def __init__(self, file: str, url: str = None):
         self.file = file
+        self.url = url
+        if not file.endswith(".mp4"):
+            self.url = self.file
+            self.file = self.file + ".mp4"
 
     def to_dict(self) -> dict:
-        return {"type": "video", "data": {"file": self.file}}
+        return {"type": "video", "data": {"file": self.file, "url": self.url}}
 
 
 class Dice(Element):

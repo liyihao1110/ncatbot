@@ -6,11 +6,13 @@ import traceback
 from ncatbot.adapter import Websocket, check_websocket, launch_napcat_service
 from ncatbot.core.api import BotAPI
 from ncatbot.core.message import GroupMessage, PrivateMessage
+from ncatbot.core.request import Request
 from ncatbot.utils import (
     OFFICIAL_GROUP_MESSAGE_EVENT,
     OFFICIAL_NOTICE_EVENT,
     OFFICIAL_PRIVATE_MESSAGE_EVENT,
     OFFICIAL_REQUEST_EVENT,
+    OFFICIAL_STARTUP_EVENT,
     config,
     get_log,
 )
@@ -100,6 +102,7 @@ class BotClient:
         await self.plugin_sys.event_bus.publish_async(Event(OFFICIAL_NOTICE_EVENT, msg))
 
     async def handle_request_event(self, msg: dict):
+        msg = Request(msg)
         _log.debug(msg)
         for handler in self._request_event_handlers:
             await _run_func(handler, msg)
@@ -112,6 +115,11 @@ class BotClient:
     async def handle_startup_event(self):
         for handler in self._startup_event_handlers:
             await _run_func(handler)
+        from ncatbot.plugin import Event
+
+        await self.plugin_sys.event_bus.publish_async(
+            Event(OFFICIAL_STARTUP_EVENT, None)
+        )
 
     def group_event(self, types=None):
         self._subscribe_group_message_types = types
@@ -206,6 +214,7 @@ class BotClient:
         except Exception:
             _log.error(traceback.format_exc())
         finally:
+            # TODO 非正常退出时不会正常保存
             _log.info("插件卸载中...")
             self.plugin_sys.unload_all()
             _log.info("正常退出")
@@ -220,3 +229,9 @@ class BotClient:
         launch_napcat_service(*args, **kwargs)  # 保证 NapCat 正常启动
         _log.info("NapCat 服务启动登录完成")
         self.start(*args, **kwargs)
+
+    def run_none_blocking(self, *args, **kwargs):
+        """非阻塞启动"""
+        import threading
+
+        threading.Thread(target=self.run, args=args, kwargs=kwargs, daemon=True).start()
