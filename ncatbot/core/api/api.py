@@ -3,7 +3,7 @@ from functools import wraps
 from typing import Literal, Union
 
 from ncatbot.adapter import Route
-from ncatbot.core.api.sync_api import SYNC_API_MIXIN, add_sync_methods
+from ncatbot.core.api.sync_api import SYNC_API_MIXIN
 from ncatbot.core.element import *
 from ncatbot.utils import (
     REQUEST_SUCCESS,
@@ -35,7 +35,7 @@ def check_and_log(result):
     return result
 
 
-@add_sync_methods
+# @add_sync_methods 还是得完整实现, 放弃了....
 class BotAPI(SYNC_API_MIXIN):
     def __init__(self):
         self._http = Route()

@@ -139,13 +139,19 @@ class BotClient:
 
         return decorator
 
-    def notice_event(self, func):
-        self._notice_event_handlers.append(func)
-        return func
+    def notice_event(self):
+        def decorator(func):
+            self._notice_event_handlers.append(func)
+            return func
 
-    def request_event(self, func):
-        self._request_event_handlers.append(func)
-        return func
+        return decorator
+
+    def request_event(self):
+        def decorator(func):
+            self._request_event_handlers.append(func)
+            return func
+
+        return decorator
 
     def add_startup_handler(self, func):
         self._startup_event_handlers.append(func)
