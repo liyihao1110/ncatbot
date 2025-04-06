@@ -20,13 +20,13 @@ class Request:
     def __init__(self, msg: dict):
         if not self.api_initialized:
             Request.api_initialized = True
-            Request.api = BotAPI
+            Request.api = BotAPI()
 
         self.time = msg["time"]
         self.self_id = msg["self_id"]
         self.post_type = msg["post_type"]
         self.request_type = msg["request_type"]
-        self.sub_type = msg["sub_type"]
+        self.sub_type = msg.get("sub_type", None)
         self.user_id = msg["user_id"]
         self.comment = msg["comment"]
         self.flag = msg["flag"]
