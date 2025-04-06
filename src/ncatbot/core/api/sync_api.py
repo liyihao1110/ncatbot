@@ -16,9 +16,14 @@ def async_to_sync(async_func):
 
     @functools.wraps(async_func)  # 保留原始函数的文档信息
     def sync_func(*args, **kwargs):
-        loop = asyncio.new_event_loop()  # 创建一个新的事件循环
-        asyncio.set_event_loop(loop)  # 设置为当前线程的事件循环
         try:
+            loop = asyncio.get_running_loop()
+            return asyncio.run_coroutine_threadsafe(async_func(*args, **kwargs), loop)
+        except RuntimeError:
+            pass
+        try:
+            loop = asyncio.new_event_loop()  # 创建一个新的事件循环
+            asyncio.set_event_loop(loop)  # 设置为当前线程的事件循环
             return loop.run_until_complete(async_func(*args, **kwargs))
         finally:
             loop.close()  # 关闭事件循环
