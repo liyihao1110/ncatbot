@@ -7,6 +7,7 @@ from threading import Lock, Thread
 from ncatbot.adapter import Websocket, check_websocket, launch_napcat_service
 from ncatbot.core.api import BotAPI
 from ncatbot.core.message import GroupMessage, PrivateMessage
+from ncatbot.core.notice import NoticeMessage, RequestMessage
 from ncatbot.core.request import Request
 from ncatbot.utils import (
     OFFICIAL_GROUP_MESSAGE_EVENT,
@@ -95,6 +96,7 @@ class BotClient:
         )
 
     async def _handle_notice_event(self, msg: dict):
+        msg: NoticeMessage = NoticeMessage(msg)
         _log.debug(msg)
         for handler in self._notice_event_handlers:
             await _run_func(handler, msg)
@@ -181,8 +183,8 @@ class BotClient:
                 if self._subscribe_private_message_types is None
                 else self._subscribe_private_message_types
             )
-            _log.info(f"已订阅消息类型:[群聊]->{subsribe_group_message_types}")
-            _log.info(f"已订阅消息类型:[私聊]->{subsribe_private_message_types}")
+            _log.info(f"已订阅消息类型:[群聊]{subsribe_group_message_types}")
+            _log.info(f"已订阅消息类型:[私聊]{subsribe_private_message_types}")
 
         async def time_schedule_heartbeat():
             while True:
