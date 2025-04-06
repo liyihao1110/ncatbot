@@ -11,12 +11,22 @@ from typing import Any, List, Union
 
 
 class EventType:
+    # 暂时不启用
     def __init__(self, plugin_name: str, event_name: str):
         self.plugin_name = plugin_name
         self.event_name = event_name
 
+    def __repr__(self):
+        return f"{self.plugin_name}.{self.event_name}"
+
     def __str__(self):
         return f"{self.plugin_name}.{self.event_name}"
+
+    def __eq__(self, other):
+        return str(self) == str(other)
+
+    def __ne__(self, other):
+        return str(self) != str(other)
 
 
 class EventSource:
@@ -30,7 +40,7 @@ class Event:
     事件类，用于封装事件的类型和数据
     """
 
-    def __init__(self, type: EventType, data: Any, source: EventSource = None):
+    def __init__(self, type: str, data: Any, source: EventSource = None):
         """
         初始化事件
 

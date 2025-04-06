@@ -20,6 +20,7 @@ OFFICIAL_GROUP_MESSAGE_EVENT = "ncatbot.group_message_event"
 OFFICIAL_PRIVATE_MESSAGE_EVENT = "ncatbot.private_message_event"
 OFFICIAL_REQUEST_EVENT = "ncatbot.request_event"
 OFFICIAL_NOTICE_EVENT = "ncatbot.notice_event"
+OFFICIAL_STARTUP_EVENT = "ncatbot.startup_event"
 
 PLUGIN_BROKEN_MARK = "插件已损坏"
 
@@ -108,6 +109,7 @@ __all__ = [
     "OFFICIAL_PRIVATE_MESSAGE_EVENT",
     "OFFICIAL_REQUEST_EVENT",
     "OFFICIAL_NOTICE_EVENT",
+    "OFFICIAL_STARTUP_EVENT",
     "PLUGIN_BROKEN_MARK",
     "STATUS_ONLINE",
     "STATUS_Q_ME",
