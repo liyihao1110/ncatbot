@@ -24,20 +24,20 @@ class Websocket:
     def on_message(self, message: dict):
         if message["post_type"] == "message" or message["post_type"] == "message_sent":
             if message["message_type"] == "group":
-                asyncio.create_task(self.client.handle_group_event(message))
+                asyncio.create_task(self.client._handle_group_event(message))
             elif message["message_type"] == "private":
-                asyncio.create_task(self.client.handle_private_event(message))
+                asyncio.create_task(self.client._handle_private_event(message))
             else:
                 _log.error(
                     "Unknown error: Unrecognized message type!Please check log info!"
                 ) and _log.debug(message)
         elif message["post_type"] == "notice":
-            asyncio.create_task(self.client.handle_notice_event(message))
+            asyncio.create_task(self.client._handle_notice_event(message))
         elif message["post_type"] == "request":
-            asyncio.create_task(self.client.handle_request_event(message))
+            asyncio.create_task(self.client._handle_request_event(message))
         elif message["post_type"] == "meta_event":
             if message["meta_event_type"] == "lifecycle":
-                asyncio.create_task(self.client.handle_startup_event())
+                asyncio.create_task(self.client._handle_startup_event())
                 _log.info(f"机器人 {message.get('self_id')} 成功启动")
             else:
                 _log.debug(message)
