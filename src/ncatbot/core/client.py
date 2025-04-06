@@ -2,6 +2,7 @@ import asyncio
 import inspect
 import time
 import traceback
+from threading import Lock, Thread
 
 from ncatbot.adapter import Websocket, check_websocket, launch_napcat_service
 from ncatbot.core.api import BotAPI
@@ -65,7 +66,7 @@ class BotClient:
 
         self.plugin_sys = PluginLoader(EventBus())
 
-    async def handle_group_event(self, msg: dict):
+    async def _handle_group_event(self, msg: dict):
         msg: GroupMessage = GroupMessage(msg)
         _log.debug(msg)
         for handler, types in self._group_event_handlers:
@@ -81,7 +82,7 @@ class BotClient:
             )
         )
 
-    async def handle_private_event(self, msg: dict):
+    async def _handle_private_event(self, msg: dict):
         msg: PrivateMessage = PrivateMessage(msg)
         _log.debug(msg)
         for handler, types in self._private_event_handlers:
@@ -93,7 +94,7 @@ class BotClient:
             Event(OFFICIAL_PRIVATE_MESSAGE_EVENT, msg, EventSource(msg.user_id, "root"))
         )
 
-    async def handle_notice_event(self, msg: dict):
+    async def _handle_notice_event(self, msg: dict):
         _log.debug(msg)
         for handler in self._notice_event_handlers:
             await _run_func(handler, msg)
@@ -101,7 +102,7 @@ class BotClient:
 
         await self.plugin_sys.event_bus.publish_async(Event(OFFICIAL_NOTICE_EVENT, msg))
 
-    async def handle_request_event(self, msg: dict):
+    async def _handle_request_event(self, msg: dict):
         msg = Request(msg)
         _log.debug(msg)
         for handler in self._request_event_handlers:
@@ -112,7 +113,7 @@ class BotClient:
             Event(OFFICIAL_REQUEST_EVENT, msg)
         )
 
-    async def handle_startup_event(self):
+    async def _handle_startup_event(self):
         for handler in self._startup_event_handlers:
             await _run_func(handler)
         from ncatbot.plugin import Event
@@ -168,7 +169,7 @@ class BotClient:
     def add_request_event_handler(self, func):
         self._request_event_handlers.append(func)
 
-    async def run_async(self):
+    async def _run_async(self):
         def info_subscribe_message_types():
             subsribe_group_message_types = (
                 "全部消息类型"
@@ -212,19 +213,16 @@ class BotClient:
 
             _log.info("重连服务器成功")
 
-    def start(self, *args, **kwargs):
+    def _start(self, *args, **kwargs):
         try:
-            asyncio.run(self.run_async())
+            asyncio.run(self._run_async())
         except asyncio.CancelledError:
             pass
         except Exception:
             _log.error(traceback.format_exc())
         finally:
             # TODO 非正常退出时不会正常保存
-            _log.info("插件卸载中...")
-            self.plugin_sys.unload_all()
-            _log.info("正常退出")
-            exit(0)
+            self.exit(exit_process=True)
 
     def run(self, *args, **kwargs):
         """启动"""
@@ -234,10 +232,39 @@ class BotClient:
         config.check_config()
         launch_napcat_service(*args, **kwargs)  # 保证 NapCat 正常启动
         _log.info("NapCat 服务启动登录完成")
-        self.start(*args, **kwargs)
+        self._start(*args, **kwargs)
 
     def run_none_blocking(self, *args, **kwargs):
         """非阻塞启动"""
-        import threading
+        Thread(target=self.run, args=args, kwargs=kwargs, daemon=True).start()
+        return self.api
 
-        threading.Thread(target=self.run, args=args, kwargs=kwargs, daemon=True).start()
+    def run_blocking(self, *args, **kwargs):
+        """阻塞启动"""
+        lock = Lock()
+        lock.acquire()  # 全局加锁
+        self.add_startup_handler(
+            lambda: lock.release()
+        )  # 在 NcatBot 接口可用时, 释放全局锁
+        self.run_none_blocking(*args, **kwargs)
+        lock.acquire()  # 等待 NcatBot 启动完成
+        return self.api
+
+    def exit(self, exit_process=False):
+        """嵌入模式中主动触发退出"""
+        try:
+            _log.info("插件卸载中...")
+            self.plugin_sys.unload_all()
+            _log.info("清理回调函数...")
+            self._group_event_handlers.clear()
+            self._private_event_handlers.clear()
+            self._notice_event_handlers.clear()
+            self._request_event_handlers.clear()
+            _log.info("清理工作结束, NcatBot 已经正常退出")
+        except Exception:
+            _log.error("清理工作失败, 报错如下:")
+            _log.error(traceback.format_exc())
+            return False
+        if exit_process:
+            exit(0)
+        return True
