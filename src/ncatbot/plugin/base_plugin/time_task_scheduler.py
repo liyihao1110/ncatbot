@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, final
 
-from ncatbot.utils import TimeTaskScheduler
+from ncatbot.utils import TimeTaskScheduler, to_sync
 
 
 class SchedulerMixin:
@@ -51,6 +51,8 @@ class SchedulerMixin:
         Returns:
             bool: 如果任务添加成功返回True，否则返回False。
         """
+        job_func = to_sync(job_func)
+
         job_info = {
             "name": name,
             "job_func": job_func,

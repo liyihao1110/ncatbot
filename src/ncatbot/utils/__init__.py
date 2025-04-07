@@ -6,6 +6,14 @@ from ncatbot.utils.file_io import (
     read_file,
     unzip_file,
 )
+from ncatbot.utils.function_enhance import (
+    add_sync_methods,
+    report,
+    run_func_async,
+    run_func_sync,
+    to_async,
+    to_sync,
+)
 from ncatbot.utils.logger import get_log
 from ncatbot.utils.network_io import download_file, get_proxy_url
 from ncatbot.utils.optional import *
@@ -20,6 +28,12 @@ __all__ = [
     "convert_uploadable_object",
     "unzip_file",
     "config",
+    "report",
+    "to_sync",
+    "to_async",
+    "run_func_sync",
+    "run_func_async",
+    "add_sync_methods",
     # literals
     "WINDOWS_NAPCAT_DIR",
     "LINUX_NAPCAT_DIR",

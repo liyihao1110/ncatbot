@@ -1,61 +1,8 @@
 import asyncio
-import functools
-import inspect
-from typing import Type, TypeVar, Union
+from typing import Union
 
 from ncatbot.core.element import MessageChain
 from ncatbot.utils import config
-
-T = TypeVar("T")
-
-
-def async_to_sync(async_func):
-    """
-    装饰器：将异步函数转换为同步函数
-    """
-
-    @functools.wraps(async_func)  # 保留原始函数的文档信息
-    def sync_func(*args, **kwargs):
-        try:
-            loop = asyncio.get_running_loop()
-            return asyncio.run_coroutine_threadsafe(async_func(*args, **kwargs), loop)
-        except RuntimeError:
-            pass
-        try:
-            loop = asyncio.new_event_loop()  # 创建一个新的事件循环
-            asyncio.set_event_loop(loop)  # 设置为当前线程的事件循环
-            return loop.run_until_complete(async_func(*args, **kwargs))
-        finally:
-            loop.close()  # 关闭事件循环
-
-    return sync_func
-
-
-def add_sync_methods(cls: Type[T]) -> Type[T]:
-    """
-    类装饰器：为类动态添加同步版本的方法
-    """
-
-    for name, method in inspect.getmembers(cls, predicate=inspect.iscoroutinefunction):
-        if name.startswith("_"):  # 跳过私有方法
-            continue
-        sync_method_name = f"{name}_sync"
-
-        # 获取原始方法的签名
-        signature = inspect.signature(method)
-        # 生成同步方法的文档字符串
-        doc = f"""
-        同步版本的 {method.__name__}
-        {method.__doc__}
-        """
-
-        # 动态生成同步方法
-        sync_method = async_to_sync(method)
-        sync_method.__signature__ = signature  # 设置方法签名
-        sync_method.__doc__ = doc  # 设置文档字符串
-
-        setattr(cls, sync_method_name, sync_method)
-    return cls
 
 
 class SYNC_API_MIXIN:

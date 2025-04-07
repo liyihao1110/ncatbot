@@ -1,5 +1,4 @@
 import asyncio
-import inspect
 import time
 import traceback
 from threading import Lock, Thread
@@ -7,7 +6,7 @@ from threading import Lock, Thread
 from ncatbot.adapter import Websocket, check_websocket, launch_napcat_service
 from ncatbot.core.api import BotAPI
 from ncatbot.core.message import GroupMessage, PrivateMessage
-from ncatbot.core.notice import NoticeMessage, RequestMessage
+from ncatbot.core.notice import NoticeMessage
 from ncatbot.core.request import Request
 from ncatbot.utils import (
     OFFICIAL_GROUP_MESSAGE_EVENT,
@@ -17,27 +16,10 @@ from ncatbot.utils import (
     OFFICIAL_STARTUP_EVENT,
     config,
     get_log,
+    run_func_async,
 )
 
 _log = get_log()
-
-
-async def _run_func(func, *args, **kwargs):
-    try:
-        if inspect.iscoroutinefunction(func):
-            return await func(*args, **kwargs)
-        else:
-            if config.__dict__.get("blocking_sync", False):
-                return func(*args, **kwargs)
-            else:
-                import threading
-
-                threading.Thread(
-                    target=func, args=args, kwargs=kwargs, daemon=True
-                ).start()
-    except Exception as e:
-        _log.error(f"函数 {func.__name__} 执行失败: {e}")
-        traceback.print_exc()
 
 
 class BotClient:
@@ -72,7 +54,7 @@ class BotClient:
         _log.debug(msg)
         for handler, types in self._group_event_handlers:
             if types is None or any(i["type"] in types for i in msg.message):
-                await _run_func(handler, msg)
+                await run_func_async(handler, msg)
         from ncatbot.plugin.event.event import Event, EventSource
 
         await self.plugin_sys.event_bus.publish_async(
@@ -88,7 +70,7 @@ class BotClient:
         _log.debug(msg)
         for handler, types in self._private_event_handlers:
             if types is None or any(i["type"] in types for i in msg.message):
-                await _run_func(handler, msg)
+                await run_func_async(handler, msg)
         from ncatbot.plugin.event.event import Event, EventSource
 
         await self.plugin_sys.event_bus.publish_async(
@@ -99,7 +81,7 @@ class BotClient:
         msg: NoticeMessage = NoticeMessage(msg)
         _log.debug(msg)
         for handler in self._notice_event_handlers:
-            await _run_func(handler, msg)
+            await run_func_async(handler, msg)
         from ncatbot.plugin import Event
 
         await self.plugin_sys.event_bus.publish_async(Event(OFFICIAL_NOTICE_EVENT, msg))
@@ -108,7 +90,7 @@ class BotClient:
         msg = Request(msg)
         _log.debug(msg)
         for handler in self._request_event_handlers:
-            await _run_func(handler, msg)
+            await run_func_async(handler, msg)
         from ncatbot.plugin import Event
 
         await self.plugin_sys.event_bus.publish_async(
@@ -117,7 +99,7 @@ class BotClient:
 
     async def _handle_startup_event(self):
         for handler in self._startup_event_handlers:
-            await _run_func(handler)
+            await run_func_async(handler)
         from ncatbot.plugin import Event
 
         await self.plugin_sys.event_bus.publish_async(
