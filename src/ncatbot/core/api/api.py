@@ -1,38 +1,18 @@
 import os
-from functools import wraps
 from typing import Literal, Union
 
 from ncatbot.adapter import Route
-from ncatbot.core.api.sync_api import SYNC_API_MIXIN, add_sync_methods
+from ncatbot.core.api.sync_api import SYNC_API_MIXIN
 from ncatbot.core.element import *
 from ncatbot.utils import (
-    REQUEST_SUCCESS,
     Status,
+    add_sync_methods,
     config,
     convert_uploadable_object,
-    get_log,
     md_maker,
     read_file,
+    report,
 )
-
-_log = get_log()
-
-
-def report(func):
-    @wraps(func)
-    async def wrapper(*args, **kwargs):
-        result = await func(*args, **kwargs)
-        return check_and_log(result)
-
-    return wrapper
-
-
-def check_and_log(result):
-    if result.get("status", None) == REQUEST_SUCCESS:
-        _log.debug(result)
-    else:
-        _log.warning(result)
-    return result
 
 
 @add_sync_methods

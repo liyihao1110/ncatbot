@@ -2,7 +2,6 @@ import asyncio
 import copy
 import inspect
 import re
-import traceback
 import uuid
 from typing import Any, Callable, List
 
@@ -14,29 +13,11 @@ from ncatbot.utils import (
     OFFICIAL_GROUP_MESSAGE_EVENT,
     OFFICIAL_PRIVATE_MESSAGE_EVENT,
     PermissionGroup,
-    config,
     get_log,
+    run_func_async,
 )
 
 _log = get_log()
-
-
-async def _run_func(func, *args, **kwargs):
-    try:
-        if inspect.iscoroutinefunction(func):
-            return await func(*args, **kwargs)
-        else:
-            if config.__dict__.get("blocking_sync", False):
-                return func(*args, **kwargs)
-            else:
-                import threading
-
-                threading.Thread(
-                    target=func, args=args, kwargs=kwargs, daemon=True
-                ).start()
-    except Exception as e:
-        _log.error(f"函数 {func.__name__} 执行失败: {e}")
-        traceback.print_exc()
 
 
 class EventBus:
@@ -81,11 +62,11 @@ class EventBus:
                                 for n in (func.plugin_name, "ncatbot")
                             ]
                         ):
-                            await _run_func(func.func, message)
+                            await run_func_async(func.func, message)
                             # await func.func(message)
                     else:
                         activate_plugin_func.append(func.plugin_name)
-                        await _run_func(func.func, message)
+                        await run_func_async(func.func, message)
                 elif func.reply:
                     message.reply_text_sync("权限不足")
 
