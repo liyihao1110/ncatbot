@@ -1340,7 +1340,7 @@ class BotAPI(SYNC_API_MIXIN):
         group_id: Union[int, str],
         text: str = None,
         face: int = None,
-        jsond: str = None,
+        json: str = None,
         markdown: str = None,
         at: Union[int, str] = None,
         reply: Union[int, str] = None,
@@ -1365,55 +1365,20 @@ class BotAPI(SYNC_API_MIXIN):
         :param rtf: 富文本(消息链)
         :return: 发送群消息
         """
-        message: list = []
-        if text:
-            message.append(Text(text))
-        if face:
-            message.append(Face(face))
-        if jsond:
-            message.append(Json(jsond))
-        if markdown:
-            message.append(convert_uploadable_object(await md_maker(markdown), "image"))
-        if at:
-            message.append(At(at))
-        if reply:
-            message.insert(0, Reply(reply))
-        if music:
-            if isinstance(music, list):
-                message.append(Music(music[0], music[1]))
-            elif isinstance(music, dict):
-                message.append(CustomMusic(**music))
-        if dice:
-            message.append(Dice())
-        if rps:
-            message.append(Rps())
-        if image:
-            message.append(Image(image))
-        if rtf:
-            # 首先检查是否有 reply，只取第一个
-            reply_elem = None
-            for elem in rtf.elements:
-                if elem["type"] == "reply":
-                    reply_elem = Reply(elem["data"]["id"])
-                    break
-
-            # 如果有 reply，插入到消息开头
-            if reply_elem:
-                message.insert(0, reply_elem)
-
-            # 检查是否包含基本元素(at/图片/文本/表情/猜拳/骰子)
-            basic_types = {"at", "image", "text", "face", "dice", "rps"}
-            basic_elems = [elem for elem in rtf.elements if elem["type"] in basic_types]
-
-            if basic_elems:  # 如果存在基本元素
-                # 只添加基本元素
-                message.extend(basic_elems)
-            else:
-                # 如果没有基本元素，才使用所有非reply元素
-                message.extend(
-                    [elem for elem in rtf.elements if elem["type"] != "reply"]
-                )
-        if not message:
+        message = decode_message_sent(
+            text=text,
+            face=face,
+            json=json,
+            markdown=markdown,
+            at=at,
+            reply=reply,
+            music=music,
+            dice=dice,
+            rps=rps,
+            image=image,
+            rtf=rtf,
+        )
+        if len(message) == 0:
             return {"code": 0, "msg": "消息不能为空"}
         params = {"group_id": group_id, "message": message}
         return await self._http.post("/send_group_msg", json=params)
@@ -1447,57 +1412,19 @@ class BotAPI(SYNC_API_MIXIN):
         :param rtf: 富文本(消息链)
         :return: 发送私聊消息
         """
-        message: list = []
-        if text:
-            message.append(Text(text))
-        if face:
-            message.append(Face(face))
-        if json:
-            message.append(Json(json))
-        if markdown:
-            message.append(convert_uploadable_object(await md_maker(markdown), "image"))
-        if reply:
-            message.insert(0, Reply(reply))
-        if music:
-            if isinstance(music, list):
-                message.append(Music(music[0], music[1]))
-            elif isinstance(music, dict):
-                message.append(CustomMusic(**music))
-        if dice:
-            message.append(Dice())
-        if rps:
-            message.append(Rps())
-        if image:
-            message.append(Image(image))
-        if rtf:
-            # 首先检查是否有 reply，只取第一个
-            reply_elem = None
-            for elem in rtf.elements:
-                if elem["type"] == "reply":
-                    reply_elem = Reply(elem["data"]["id"])
-                    break
-
-            # 如果有 reply，插入到消息开头
-            if reply_elem:
-                message.insert(0, reply_elem)
-
-            # 检查是否包含基本元素(图片/文本/表情/猜拳/骰子)
-            basic_types = {"image", "text", "face", "dice", "rps"}
-            basic_elems = [elem for elem in rtf.elements if elem["type"] in basic_types]
-
-            if basic_elems:  # 如果存在基本元素
-                # 只添加基本元素
-                message.extend(basic_elems)
-            else:
-                # 如果没有基本元素，才使用所有非reply/at元素
-                message.extend(
-                    [
-                        elem
-                        for elem in rtf.elements
-                        if elem["type"] != "reply" or elem["type"] != "at"
-                    ]
-                )
-        if not message:
+        message = decode_message_sent(
+            text,
+            face,
+            json,
+            markdown=markdown,
+            reply=reply,
+            music=music,
+            dice=dice,
+            rps=rps,
+            image=image,
+            rtf=rtf,
+        )
+        if len(message) == 0:
             return {"code": 0, "msg": "消息不能为空"}
         params = {"user_id": user_id, "message": message}
         return await self._http.post("/send_private_msg", json=params)

@@ -1,9 +1,12 @@
 import json
+import re
 from typing import Iterable, Union
 
 from deprecated import deprecated
 
-from ncatbot.utils import convert_uploadable_object
+from ncatbot.utils import convert_uploadable_object, get_log
+
+LOG = get_log("Element")
 
 
 class MessageChain:
@@ -88,12 +91,12 @@ class Element:
 
 
 class Text(Element):
-    """文本消息元素"""
+    """文本消息元素, 支持 CQ 码"""
 
     type = "text"
 
     def __init__(self, text: str):
-        self.text = text
+        self.text = str(text)
 
     def to_dict(self) -> dict:
         if self.text:
@@ -108,7 +111,7 @@ class At(Element):
     type = "at"
 
     def __init__(self, qq: Union[int, str]):
-        self.qq = qq
+        self.qq = str(qq)
 
     def to_dict(self) -> dict:
         return {"type": "at", "data": {"qq": self.qq}}
@@ -141,7 +144,7 @@ class Face(Element):
     type = "face"
 
     def __init__(self, face_id: int):
-        self.id = face_id
+        self.id = str(face_id)
 
     def to_dict(self) -> dict:
         return {"type": "face", "data": {"id": self.id}}
@@ -291,6 +294,140 @@ class File(Element):
         return convert_uploadable_object(self.file, "file")
 
 
+def decode_message_sent(
+    text: str = None,
+    face: int = None,
+    json: str = None,
+    markdown: str = None,
+    at: str = None,
+    reply: Union[int, str] = None,
+    music: Union[list, dict] = None,
+    dice: bool = False,
+    rps: bool = False,
+    image: str = None,
+    rtf: MessageChain = None,
+):
+    message: list = []
+    if text:
+        message.append(Text(text))
+    if face:
+        message.append(Face(face))
+    if json:
+        message.append(Json(json))
+    if markdown:
+        raise NotImplementedError("Markdown is not implemented yet")
+        # message.append(convert_uploadable_object(await md_maker(markdown), "image"))
+    if reply:
+        message.insert(0, Reply(reply))
+    if music:
+        if isinstance(music, list):
+            message.append(Music(music[0], music[1]))
+        elif isinstance(music, dict):
+            message.append(CustomMusic(**music))
+    if dice:
+        message.append(Dice())
+    if rps:
+        message.append(Rps())
+    if image:
+        message.append(Image(image))
+    if rtf:
+        message.extend(rtf.elements)
+
+    new_message = []
+    # 解析 CQ 码
+    for elem in message:
+        if elem["type"] == "text":
+
+            def extract_unmatched(text: str, matches):
+                """
+                提取未被正则捕获的部分，并构造为 Text 对象。
+                """
+                # 获取所有已匹配的跨度
+                matched_spans = [span for _, span in matches]
+                matched_spans.sort()  # 按跨度排序
+
+                # 提取未匹配的部分
+                unmatched_parts = []
+                current_pos = 0
+
+                for span in matched_spans:
+                    start, end = span
+                    if current_pos < start:
+                        # 当前位置到匹配跨度的起始位置之间的部分是未匹配的
+                        unmatched_text = text[current_pos:start]
+                        if unmatched_text.strip():  # 如果未匹配部分不是空字符串
+                            unmatched_parts.append(
+                                (Text(unmatched_text), (current_pos, start))
+                            )
+                    current_pos = end
+
+                # 检查文本末尾是否有未匹配的部分
+                if current_pos < len(text):
+                    unmatched_text = text[current_pos:]
+                    if unmatched_text.strip():
+                        unmatched_parts.append(
+                            (Text(unmatched_text), (current_pos, len(text)))
+                        )
+
+                return unmatched_parts
+
+            raw = elem["data"]["text"]
+            ats: list[re.Match] = re.finditer(r"\[CQ:at,qq=(\d+|all)\]", raw)
+            faces: list[re.Match] = re.finditer(r"\[CQ:face,id=(\d+).*?\]", raw)
+            images: list[re.Match] = re.finditer(
+                r"\[CQ:image,(summary=(.+?),)?(file=(.+?),)?(sub_type=(.+?),)?(url=(.+?),?)?(file_size=(\d+),?)?\]",
+                raw,
+            )
+            replys: list[re.Match] = re.finditer(r"\[CQ:reply,id=(\d+)\]", raw)
+            l = []
+            for _at in ats:
+                l.append((At(_at.group(1)), _at.span()))
+            for _face in faces:
+                l.append((Face(_face.group(1)), _face.span()))
+            for _image in images:
+                l.append((Image(_image.group(8)), _image.span()))
+            for _reply in replys:
+                l.append((Reply(_reply.group(1)), _reply.span()))
+            # 提取未匹配的部分并加入到 l 中
+            unmatched_parts = extract_unmatched(text, l)
+            l.extend(unmatched_parts)
+
+            # 按跨度排序
+            l.sort(key=lambda x: x[1][0])
+            for elem, span in l:
+                new_message.append(elem)
+        else:
+            new_message.append(elem)
+    message = new_message
+
+    # 首先检查是否有 reply，只取第一个
+    reply_elem = None
+    for elem in message:
+        if elem["type"] == "reply":
+            reply_elem = Reply(elem["data"]["id"])
+            break
+
+    message = [msg for msg in message if msg["type"] != "reply"]
+    if reply_elem:
+        message.insert(0, reply_elem)
+
+    # 检查是否包含非基本元素(音乐卡片等)
+    basic_types = {"image", "text", "face", "reply", "at", "atall"}
+    has_none_basic_elem = (
+        len([elem for elem in message if elem["type"] not in basic_types]) != 0
+    )
+
+    if has_none_basic_elem:  # 如果存在非基本元素
+        # 只添加第一个非基本元素
+        none_basic_elem = [elem for elem in message if elem["type"] not in basic_types]
+        if len(none_basic_elem) == 2:
+            LOG.warning("存在多个非基本元素，只添加第一个非基本元素")
+        return none_basic_elem[0]
+    else:
+        # 返回基本元素消息链
+        return message
+
+
 __all__ = [
     "MessageChain",
     "Text",
@@ -307,4 +444,5 @@ __all__ = [
     "Music",
     "CustomMusic",
     "File",
+    "decode_message_sent",
 ]
