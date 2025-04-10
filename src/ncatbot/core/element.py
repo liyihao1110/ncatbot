@@ -389,7 +389,7 @@ def decode_message_sent(
             for _reply in replys:
                 l.append((Reply(_reply.group(1)), _reply.span()))
             # 提取未匹配的部分并加入到 l 中
-            unmatched_parts = extract_unmatched(text, l)
+            unmatched_parts = extract_unmatched(raw, l)
             l.extend(unmatched_parts)
 
             # 按跨度排序
