@@ -219,7 +219,7 @@ def login(reset=False):
 
 def online_qq_is_bot():
     online_qq = get_handler().get_online_qq()
-    if online_qq is not None and online_qq != config.bt_uin:
+    if online_qq is not None and str(online_qq) != str(config.bt_uin):
         LOG.warning(
             f"当前在线的 QQ 号为: {online_qq}, 而配置的 bot QQ 号为: {config.bt_uin}"
         )

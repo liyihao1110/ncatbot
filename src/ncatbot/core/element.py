@@ -372,8 +372,8 @@ def decode_message_sent(
                 return unmatched_parts
 
             raw = elem["data"]["text"]
-            ats: list[re.Match] = re.finditer(r"\[CQ:at,qq=(\d+|all)\]", raw)
-            faces: list[re.Match] = re.finditer(r"\[CQ:face,id=(\d+).*?\]", raw)
+            ats: list[re.Match] = re.finditer(r"\[CQ:at,\s?qq=(\d+|all)\]", raw)
+            faces: list[re.Match] = re.finditer(r"\[CQ:face,\s?id=(\d+).*?\]", raw)
             images: list[re.Match] = re.finditer(
                 r"\[CQ:image,(summary=(.+?),)?(file=(.+?),)?(sub_type=(.+?),)?(url=(.+?),?)?(file_size=(\d+),?)?\]",
                 raw,
