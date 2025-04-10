@@ -50,7 +50,7 @@ def run_func_sync(func, *args, **kwargs):
 
 
 def to_sync(func):
-    return lambda *args, **kwargs: run_func_sync(func)(*args, **kwargs)
+    return lambda *args, **kwargs: run_func_sync(func, *args, **kwargs)
 
 
 def to_async(func):
