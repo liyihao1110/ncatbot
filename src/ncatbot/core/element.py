@@ -1,5 +1,5 @@
 import json
-from typing import Union
+from typing import Iterable, Union
 
 from deprecated import deprecated
 
@@ -9,35 +9,20 @@ from ncatbot.utils import convert_uploadable_object
 class MessageChain:
     """消息链"""
 
-    def __init__(self, chain=None):
-        self.chain = []
-        if chain is None:
-            return
+    def __init__(self, chain=None, *args):
+        def decode_message(message_list):
+            if isinstance(message_list, str):
+                return [Text(message_list)]
+            elif isinstance(message_list, (Element, dict)):
+                return [message_list]
+            elif isinstance(message_list, Iterable):
+                return sum([decode_message(item) for item in message_list], [])
+            elif message_list is None:
+                return []
+            else:
+                return [Text(str(message_list))]
 
-        if isinstance(chain, str):
-            self.chain = [Text(chain)]
-        elif isinstance(chain, list):
-            # 处理列表输入
-            for item in chain:
-                if isinstance(item, dict):
-                    self.chain.append(item)
-                elif isinstance(item, Element):
-                    self.chain.append(item)
-                elif isinstance(item, list):
-                    # 处理嵌套列表
-                    for sub_item in item:
-                        if isinstance(sub_item, dict):
-                            self.chain.append(sub_item)
-                        elif isinstance(sub_item, Element):
-                            self.chain.append(sub_item)
-                        else:
-                            self.chain.append(Text(str(sub_item)))
-                else:
-                    self.chain.append(Text(str(item)))
-        elif isinstance(chain, Element):
-            self.chain = [chain]
-        else:
-            self.chain = [Text(str(chain))]
+        self.chain = decode_message([chain, *args])
 
     def __str__(self):
         """确保字符串表示时保持顺序"""

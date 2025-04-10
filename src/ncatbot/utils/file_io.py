@@ -4,6 +4,7 @@ import base64
 import json
 import os
 import pickle
+import re
 import warnings
 import zipfile
 from pathlib import Path
@@ -35,6 +36,30 @@ def read_file(file_path) -> any:
 
 def convert_uploadable_object(i, message_type):
     """将可上传对象转换为标准格式"""
+
+    def is_base64(s: str):
+        if s.startswith("base64://"):
+            return True
+        if re.match(
+            r"data:image/(jpg|jpeg|png|gif|bmp|webp|tiff|svg|mp4|avi|mov|wmv|flv|mkv|mpg|mpeg|m4v);base64,",
+            s,
+        ):
+            return True
+        return False
+
+    def to_base64(s: str):
+        if s.startswith("base64://"):
+            return s
+        if re.match(
+            r"data:image/(jpg|jpeg|png|gif|bmp|webp|tiff|svg|mp4|avi|mov|wmv|flv|mkv|mpg|mpeg|m4v);base64,",
+            s,
+        ):
+            m = re.match(
+                r"data:image/(jpg|jpeg|png|gif|bmp|webp|tiff|svg|mp4|avi|mov|wmv|flv|mkv|mpg|mpeg|m4v);base64,(.*)",
+                s,
+            )
+            return f"base64://{m.group(2)}"
+
     if i.startswith("http"):
         if message_type == "image":
             try:
@@ -48,8 +73,8 @@ def convert_uploadable_object(i, message_type):
             except Exception as e:
                 return {"type": "text", "data": {"text": f"图片转换失败: {e}"}}
         return {"type": message_type, "data": {"file": i}}
-    elif i.startswith("base64://"):
-        return {"type": message_type, "data": {"file": i}}
+    elif is_base64(i):
+        return {"type": message_type, "data": {"file": to_base64(i)}}
     elif os.path.exists(i):
         if message_type == "image":
             with open(i, "rb") as f:

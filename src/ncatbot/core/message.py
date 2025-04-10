@@ -44,6 +44,9 @@ class BaseMessage:
 
     def reply_sync(self, is_file: bool = False, **kwargs):
         """同步回复"""
+        if not isinstance(is_file, bool):
+            kwargs["rtf"] = is_file
+            is_file = False
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
