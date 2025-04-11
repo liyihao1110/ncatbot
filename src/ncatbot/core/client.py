@@ -6,7 +6,6 @@ from threading import Lock, Thread
 from ncatbot.adapter import Websocket, check_websocket, launch_napcat_service
 from ncatbot.core.api import BotAPI
 from ncatbot.core.message import GroupMessage, PrivateMessage
-from ncatbot.core.notice import NoticeMessage
 from ncatbot.core.request import Request
 from ncatbot.utils import (
     OFFICIAL_GROUP_MESSAGE_EVENT,
@@ -78,7 +77,7 @@ class BotClient:
         )
 
     async def _handle_notice_event(self, msg: dict):
-        msg: NoticeMessage = NoticeMessage(msg)
+        # msg: NoticeMessage = NoticeMessage(msg)
         _log.debug(msg)
         for handler in self._notice_event_handlers:
             await run_func_async(handler, msg)
