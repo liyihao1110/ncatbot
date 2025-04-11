@@ -137,7 +137,7 @@ class LoginHandler:
         online_qq = self.get_online_qq()
         if online_qq is None:
             return False
-        elif str(online_qq) == str(config.bt_uin):
+        elif is_qq_equal(online_qq, config.bt_uin):
             return True
         else:
             raise BotUINError(online_qq)
@@ -149,7 +149,7 @@ class LoginHandler:
             status = requests.post(
                 self.base_uri + "/api/QQLogin/SetQuickLogin",
                 headers=self.header,
-                json={"uin": config.bt_uin},
+                json={"uin": str(config.bt_uin)},
                 timeout=5,
             ).json().get("message", "failed") in ["success", "QQ Is Logined"]
             return status
@@ -178,7 +178,7 @@ class LoginHandler:
 
     def login(self):
         def _login():
-            uin = config.bt_uin
+            uin = str(config.bt_uin)
             if uin in self.get_quick_login() and self.send_quick_login():
                 return True
             else:
@@ -219,13 +219,19 @@ def login(reset=False):
     get_handler(reset=reset).login()
 
 
+def is_qq_equal(uin, other):
+    """判断 QQ 号是否相等"""
+    return str(uin) == str(other)
+
+
 def online_qq_is_bot():
     online_qq = get_handler().get_online_qq()
-    if online_qq is not None and str(online_qq) != str(config.bt_uin):
+
+    if online_qq is not None and not is_qq_equal(online_qq, config.bt_uin):
         LOG.warning(
             f"当前在线的 QQ 号为: {online_qq}, 而配置的 bot QQ 号为: {config.bt_uin}"
         )
-    return online_qq is None or online_qq == config.bt_uin
+    return online_qq is None or is_qq_equal(online_qq, config.bt_uin)
 
 
 if __name__ == "__main__":
