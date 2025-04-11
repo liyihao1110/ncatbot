@@ -137,7 +137,7 @@ class LoginHandler:
         online_qq = self.get_online_qq()
         if online_qq is None:
             return False
-        elif online_qq == config.bt_uin:
+        elif str(online_qq) == str(config.bt_uin):
             return True
         else:
             raise BotUINError(online_qq)
