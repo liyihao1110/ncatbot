@@ -13,6 +13,7 @@ class Request:
         "request_type",
         "sub_type",
         "user_id",
+        "group_id",
         "comment",
         "flag",
     )
