@@ -1,5 +1,6 @@
 import platform
 import time
+import traceback
 
 import qrcode
 import requests
@@ -76,7 +77,7 @@ class LoginHandler:
                 elif platform.system() == "Linux":
                     if time.time() > MAX_TIME_EXPIER:
                         LOG.error(
-                            "未知错误 LoginHandler.__init__ ConnectionError, 请保留日志并联系开发团队"
+                            "错误 LoginHandler.__init__ ConnectionError, 请保留日志并联系开发团队"
                         )
                         exit(1)
                 else:
@@ -86,6 +87,7 @@ class LoginHandler:
                     LOG.error(
                         f"未知错误 LoginHandler.__init__ {e}, 请保留日志并联系开发团队"
                     )
+                    LOG.info(traceback.format_exc())
                     exit(1)
 
     def get_quick_login(self):
