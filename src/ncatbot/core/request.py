@@ -28,6 +28,7 @@ class Request:
         self.request_type = msg["request_type"]
         self.sub_type = msg.get("sub_type", None)
         self.user_id = msg["user_id"]
+        self.group_id = msg.get("group_id", None)
         self.comment = msg["comment"]
         self.flag = msg["flag"]
 
