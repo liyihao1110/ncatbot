@@ -309,16 +309,20 @@ def decode_message_sent(
 ):
     message: list = []
     if text:
-        message.append(Text(text))
+        message.append(
+            text if isinstance(text, dict) else Text(text)
+        )  # dict 是兼容不符合要求的构造. 唉...
     if face:
-        message.append(Face(face))
+        message.append(face if isinstance(face, dict) else Face(face))
     if json:
         message.append(Json(json))
     if markdown:
         raise NotImplementedError("Markdown is not implemented yet")
         # message.append(convert_uploadable_object(await md_maker(markdown), "image"))
+    if at:
+        message.append(at if isinstance(at, dict) else At(at))
     if reply:
-        message.insert(0, Reply(reply))
+        message.insert(0, reply if isinstance(reply, dict) else Reply(reply))
     if music:
         if isinstance(music, list):
             message.append(Music(music[0], music[1]))
@@ -329,7 +333,7 @@ def decode_message_sent(
     if rps:
         message.append(Rps())
     if image:
-        message.append(Image(image))
+        message.append(image if isinstance(image, dict) else Image(image))
     if rtf:
         message.extend(rtf.elements)
 
