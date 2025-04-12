@@ -41,6 +41,9 @@ class SetConfig:
 
         # NapCat 行为
         self.stop_napcat = False  # NcatBot 下线时是否停止 NapCat
+        self.remote_login = (
+            False  # 是否在 NapCat 服务中登录, 如果为 True, NcatBot 将不会提供登录引导
+        )
 
         # 自动获取状态
         self.ws_host = None  # ws host

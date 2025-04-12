@@ -98,7 +98,8 @@ def launch_napcat_service(*args, **kwargs):
     install_update_napcat()
     start_napcat()  # 配置、启动 NapCat 服务
     try:
-        login(reset=True)  # NapCat 登录 QQ
+        if not config.remote_login:
+            login(reset=True)  # NapCat 登录 QQ
     except BotUINError:
         stop_napcat()
         launch_napcat_service(*args, **kwargs)
