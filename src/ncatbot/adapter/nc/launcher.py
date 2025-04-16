@@ -49,7 +49,9 @@ def ncatbot_service_remote_start():
     """尝试以远程模式连接到 NapCat 服务"""
     if napcat_service_ok():
         LOG.info(f"napcat 服务器 {config.ws_uri} 在线, 连接中...")
-        if config.skip_account_check:
+        if (
+            config.skip_account_check or config.remote_login
+        ):  # 如果跳过账号检查或者使用 NapCat 的登录方式登录, 需要自行确保账号正确
             return True
         if not online_qq_is_bot():
             if config._is_localhost():
@@ -98,7 +100,7 @@ def launch_napcat_service(*args, **kwargs):
     install_update_napcat()
     start_napcat()  # 配置、启动 NapCat 服务
     try:
-        if not config.remote_login:
+        if not config.remote_login:  # 如果设置使用远程登录, 则 Ncatbot 不引导登录操作
             login(reset=True)  # NapCat 登录 QQ
     except BotUINError:
         stop_napcat()

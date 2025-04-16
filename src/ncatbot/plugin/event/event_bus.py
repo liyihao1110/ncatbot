@@ -77,14 +77,19 @@ class EventBus:
         for func in builtin_functions:
             if func.name == "plg":  # 绑定 plg 的参数
                 temp = copy.copy(func.func)
-                func.func = lambda message, plugins=self.plugins, temp=temp: temp(
-                    plugins, message
-                )
+
+                async def async_func(message, plugins=self.plugins, temp=temp):
+                    return await temp(plugins, message)
+
+                func.func = async_func
+
             if func.name == "cfg":  # 绑定 cfg 的参数
                 temp = copy.copy(func.func)
-                func.func = lambda message, configs=self.configs, temp=temp: temp(
-                    configs, message
-                )
+
+                async def async_func(message, configs=self.configs, temp=temp):
+                    return await temp(configs, message)
+
+                func.func = async_func
 
             self.funcs.append(func)
             self.access_controller.assign_permissions_to_role(
