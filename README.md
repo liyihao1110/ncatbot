@@ -69,7 +69,7 @@ NcatBot 是基于 onebot11协议 的 Python SDK, 它提供了一套方便易用�
 
 感谢 [NapCat](https://github.com/NapNeko/NapCatQQ) 提供底层接口 | [IppClub](https://github.com/IppClub) 的宣传支持 | [Fcatbot](https://github.com/Fish-LP/Fcatbot) 提供代码和灵感.
 
-感谢 [扶摇互联](https://v10.fyyun.net/) | [林枫云](www.dkdun.cn) 提供服务器支持.
+感谢 [扶摇互联](https://v10.fyyun.net/) | [林枫云](https://www.dkdun.cn/) 提供服务器支持.
 
 ## 参与贡献
 欢迎通过 Issue 或 Pull Request 参与项目开发！请先阅读 [贡献指南](CONTRIBUTING.md)。
