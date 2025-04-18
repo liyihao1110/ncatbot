@@ -119,18 +119,22 @@ class LoginHandler:
 
     def get_online_qq(self):
         """获取当前在线的 QQ 号, 如果无 QQ 在线, 则返回 None"""
-        try:
-            data = requests.post(
-                self.base_uri + "/api/QQLogin/GetQQLoginInfo",
-                headers=self.header,
-                timeout=5,
-            ).json()["data"]
-            offline = not data.get("online", False)
-            uin = data.get("uin", None)
-            return None if offline else str(uin)
-        except TimeoutError:
-            LOG.warning("检查在线状态超时, 默认不在线")
-            return False
+        for _ in range(5):
+            try:
+                data = requests.post(
+                    self.base_uri + "/api/QQLogin/GetQQLoginInfo",
+                    headers=self.header,
+                    timeout=5,
+                ).json()["data"]
+                offline = not data.get("online", False)
+                uin = data.get("uin", None)
+                if not offline:
+                    return str(uin)
+            except TimeoutError:
+                LOG.warning("检查在线状态超时, 默认不在线")
+                return False
+            time.sleep(0.5)
+        return None
 
     def check_online_statu(self):
         # 检查 QQ 是否在线
