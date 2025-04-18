@@ -49,17 +49,14 @@ def ncatbot_service_remote_start():
     """尝试以远程模式连接到 NapCat 服务"""
     if napcat_service_ok():
         LOG.info(f"napcat 服务器 {config.ws_uri} 在线, 连接中...")
-        if (
-            config.skip_account_check or config.remote_login
-        ):  # 如果跳过账号检查或者使用 NapCat 的登录方式登录, 需要自行确保账号正确
+        if not config.enable_webui_interaction:  # 跳过基于 WebUI 交互的检查
+            LOG.warning(
+                f"跳过基于 WebUI 交互的检查, 请自行确保 NapCat 已经登录了正确的 QQ {config.bt_uin}"
+            )
             return True
         if not online_qq_is_bot():
-            if config._is_localhost():
-                # 如果账号不对并且在本地, 则停止 NapCat 服务后重新启动
-                if platform.system() == "Windows":
-                    LOG.error("Windows 系统未实现自动关闭 NapCat 服务")
-                    LOG.info("请手动关闭重复的 NapCat 服务")
-                    exit(1)
+            if not config.remote_mode:
+                # 如果账号不对并且是本地模式, 则停止 NapCat 服务后重新启动
                 stop_napcat()
                 return False
             else:
@@ -68,21 +65,22 @@ def ncatbot_service_remote_start():
                 )
                 exit(1)
         return True
-    elif not config._is_localhost():
-        LOG.error("napcat 服务器没有配置在本地, 无法连接服务器, 自动退出")
+    elif config.remote_mode:
+        LOG.error("远程模式已经启用, 无法到连接远程 NapCat 服务器, 将自动退出")
         LOG.error(f'服务器参数: uri="{config.ws_uri}", token="{config.ws_token}"')
         LOG.info(
             """可能的错误原因:
                     1. napcat webui 中服务器类型错误, 应该为 "WebSocket 服务器", 而非 "WebSocket 客户端"
                     2. napcat webui 中服务器配置了但没有启用, 请确保勾选了启用服务器"
                     3. napcat webui 中服务器 host 没有设置为监听全部地址, 应该将 host 改为 0.0.0.0
-                    4. 检查以上配置后, 在 webui 中使用 error 信息中的的服务器参数, \"接口调试\"选择\"WebSocket\"尝试连接.
+                    4. 检查以上配置后, 在本机尝试连接远程的 webui ,使用 error 信息中的的服务器参数, \"接口调试\"选择\"WebSocket\"尝试连接.
                     5. webui 中连接成功后再尝试启动 ncatbot
                     """
         )
         exit(1)
 
     LOG.info("NapCat 服务器离线, 启动本地 NapCat 服务中...")
+    return False
 
 
 def launch_napcat_service(*args, **kwargs):
@@ -97,12 +95,15 @@ def launch_napcat_service(*args, **kwargs):
     """
     if ncatbot_service_remote_start():
         return True
+
     install_update_napcat()
     start_napcat()  # 配置、启动 NapCat 服务
     try:
-        if not config.remote_login:  # 如果设置使用远程登录, 则 Ncatbot 不引导登录操作
+        if config.enable_webui_interaction:  # 如果允许 webui 交互, 则做登录引导
             login(reset=True)  # NapCat 登录 QQ
-    except BotUINError:
-        stop_napcat()
-        launch_napcat_service(*args, **kwargs)
+    except BotUINError:  # 我也不知道, 后面可能会把这玩意删了
+        LOG.error("我觉得这个错误不该有, 如果遇到了请联系开发者")
+        exit(1)
+        # stop_napcat()
+        # launch_napcat_service(*args, **kwargs)
     connect_napcat()  # 连接 NapCat 服务

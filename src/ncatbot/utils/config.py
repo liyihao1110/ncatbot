@@ -8,7 +8,7 @@ import yaml
 
 from ncatbot.utils.logger import get_log
 
-_log = get_log()
+LOG = get_log()
 
 
 class SetConfig:
@@ -28,6 +28,13 @@ class SetConfig:
         self.webui_uri = self.default_webui_uri  # webui 地址
         self.webui_token = self.default_webui_token  # webui 令牌
         self.ws_token = ""  # ws_uri 令牌
+        self.ws_listen_ip = "localhost"  # ws 监听 ip, 默认只监听本机
+        self.remote_mode = False  # 是否远程模式, 即 NapCat 服务不在本机运行
+
+        """
+        如果纯远程模式, 则 NcatBot 不对 NapCat 的行为做任何管理.
+        只使用 ws_uri 和 webui_uri 和 NapCat 进行交互, 不会配置启动 NapCat
+        """
 
         # 更新检查
         self.check_napcat_update = False  # 是否检查 napcat 更新
@@ -37,11 +44,15 @@ class SetConfig:
         self.debug = False  # 是否开启调试模式
         self.skip_ncatbot_install_check = False  # 是否跳过 napcat 安装检查
         self.skip_plugin_load = False  # 是否跳过插件加载
-        self.skip_account_check = False  # 是否跳过账号检查
 
         # NapCat 行为
         self.stop_napcat = False  # NcatBot 下线时是否停止 NapCat
-        self.remote_login = False  # 是否在 NapCat 服务中登录, 如果为 True, NcatBot 将不会提供登录引导
+        self.enable_webui_interaction = True  # 是否允许 NcatBot 与 NapCat webui 交互
+
+        """
+        如果 enable_webui_interaction 为 False, 则 NcatBot 不会与 NapCat webui 交互
+        账号检查, 引导登录等行为均不会发生, 只使用 ws_uri 与 NapCat 交互
+        """
 
         # 自动获取状态
         self.ws_host = None  # ws host
@@ -75,30 +86,18 @@ class SetConfig:
         self.webui_port = urllib.parse.urlparse(self.webui_uri).port
 
     def load_config(self, path):
-        self._updated = True
         try:
             with open(path, "r", encoding="utf-8") as f:
                 conf = yaml.safe_load(f)
         except FileNotFoundError:
-            _log.warning("未找到配置文件")
+            LOG.warning("未找到配置文件")
             raise ValueError("[setting] 配置文件不存在，请检查！")
         except yaml.YAMLError:
             raise ValueError("[setting] 配置文件格式错误，请检查！")
         except Exception as e:
             raise ValueError(f"[setting] 未知错误：{e}")
         try:
-            self.ws_uri = conf["ws_uri"]
-            location = (
-                self.ws_uri.replace("ws://", "")
-                if self.ws_uri.startswith("ws://")
-                else self.ws_uri.replace("wss://", "")
-            )
-            parts = location.split(":")
-            self.ws_ip = parts[0]
-            self.ws_port = parts[1]
-            self.token = conf["token"]
-            self.bt_uin = conf["bt_uin"]
-            self._standardize_ws_uri()
+            self.__dict__.update(conf)
         except KeyError as e:
             raise KeyError(f"[setting] 缺少配置项，请检查！详情:{e}")
 
@@ -108,11 +107,6 @@ class SetConfig:
     def set_ws_uri(self, ws_uri: str):
         self.ws_uri = ws_uri
         self._standardize_ws_uri()
-        if not self._is_localhost():
-            _log.info(
-                "请注意, 当前配置的 NapCat 服务不是本地地址, 请确保远端 NapCat 服务正确配置."
-            )
-            time.sleep(1)
 
     def set_bot_uin(self, uin: str):
         self.bt_uin = uin
@@ -135,13 +129,30 @@ class SetConfig:
         for k, v in kwargs.items():
             setattr(self, k, v)
 
-    def check_config(self):
+    def validate_config(self):
+        # 检查 bot_uin 和 root
         if self.bt_uin is self.default_bt_uin:
-            _log.warning("配置项中没有设置 QQ 号")
+            LOG.warning("配置项中没有设置 QQ 号")
             self.set_bot_uin(input("请输入你的 QQ 号:"))
         if self.root is self.default_root:
-            _log.warning("建议设置好 root 账号保证权限功能能够正常使用")
-        _log.info(self)
+            LOG.warning("建议设置好 root 账号保证权限功能能够正常使用")
+        LOG.info(self)
+
+        # 检验 ws_uri
+        if not self._is_localhost():
+            LOG.info(
+                "请注意, 当前配置的 NapCat 服务不是本地地址, 请确保远端 NapCat 服务正确配置."
+            )
+            time.sleep(1)
+        self._standardize_ws_uri()
+
+        # 检验 ws_listen_ip
+        if self.ws_listen_ip != "0.0.0.0":
+            if self.ws_listen_ip != self.ws_host:
+                LOG.warning("当前的 ws 监听地址与 ws 地址不一致, 可能无法正确连接")
+
+        # 检验 webui_uri
+        self._standardize_webui_uri()
 
 
 config = SetConfig()

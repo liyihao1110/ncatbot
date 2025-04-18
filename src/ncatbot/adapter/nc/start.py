@@ -29,13 +29,19 @@ def start_napcat_linux():
     # Linux启动逻辑
     try:
         # 启动并注册清理函数
+        if os.path.exists("napcat"):
+            LOG.error(
+                "工作目录下存在 napcat 目录, Linux 启动时不应该在工作目录下存在 napcat 目录"
+            )
+            exit(1)
         process = subprocess.Popen(
             ["sudo", "bash", "napcat", "start", str(config.bt_uin)],
             stdout=subprocess.PIPE,
         )
         process.wait()
         if process.returncode != 0:
-            LOG.error("启动 napcat 失败，请检查日志，ncatbot cli 可能没有被正确安装")
+            LOG.error("启动 napcat 失败，请检查日志，napcat cli 可能没有被正确安装")
+            exit(1)
         if config.stop_napcat:
             atexit.register(lambda: stop_napcat_linux(config.bt_uin))
     except Exception as e:
@@ -115,7 +121,8 @@ def start_napcat_windows():
 
 def stop_napcat_windows():
     """暂未实现"""
-    pass
+    LOG.error("暂未实现 Windows 停止 NapCat 服务, 请手动关闭 NapCat 服务")
+    exit(1)
 
 
 def is_napcat_running():
@@ -161,7 +168,7 @@ def config_napcat():
                     {
                         "name": "WsServer",
                         "enable": True,
-                        "host": str(urlparse(config.ws_uri).hostname),
+                        "host": config.ws_listen_ip,
                         "port": int(urlparse(config.ws_uri).port),
                         "messagePostFormat": "array",
                         "reportSelfMessage": False,

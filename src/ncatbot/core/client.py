@@ -212,7 +212,7 @@ class BotClient:
         for key in config.__dict__:
             if key in kwargs:
                 config.__dict__[key] = kwargs[key]
-        config.check_config()
+        config.validate_config()
         launch_napcat_service(*args, **kwargs)  # 保证 NapCat 正常启动
         _log.info("NapCat 服务启动登录完成")
         self._start(*args, **kwargs)
