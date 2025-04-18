@@ -359,19 +359,17 @@ def decode_message_sent(
                     if current_pos < start:
                         # 当前位置到匹配跨度的起始位置之间的部分是未匹配的
                         unmatched_text = text[current_pos:start]
-                        if unmatched_text.strip():  # 如果未匹配部分不是空字符串
-                            unmatched_parts.append(
-                                (Text(unmatched_text), (current_pos, start))
-                            )
+                        unmatched_parts.append(
+                            (Text(unmatched_text), (current_pos, start))
+                        )
                     current_pos = end
 
                 # 检查文本末尾是否有未匹配的部分
                 if current_pos < len(text):
                     unmatched_text = text[current_pos:]
-                    if unmatched_text.strip():
-                        unmatched_parts.append(
-                            (Text(unmatched_text), (current_pos, len(text)))
-                        )
+                    unmatched_parts.append(
+                        (Text(unmatched_text), (current_pos, len(text)))
+                    )
 
                 return unmatched_parts
 
