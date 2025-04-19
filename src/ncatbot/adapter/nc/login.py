@@ -52,6 +52,7 @@ class LoginHandler:
                     json={"token": config.webui_token},
                     timeout=10,
                 ).json()
+                time.sleep(0.2)
                 self.header = {
                     "Authorization": "Bearer " + content["data"]["Credential"],
                 }
@@ -66,6 +67,10 @@ class LoginHandler:
                     )
                 LOG.info("开放防火墙的 WebUI 端口 (默认 6099)")
                 exit(1)
+            except KeyError:
+                if time.time() > MAX_TIME_EXPIER:
+                    LOG.error("授权操作超时, 连接 WebUI 成功但无法获取授权信息")
+                pass
             except (ConnectionError, NewConnectionError):
                 if platform.system() == "Windows":
                     if time.time() > MAX_TIME_EXPIER:
