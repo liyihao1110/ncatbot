@@ -35,6 +35,7 @@ __all__ = [
     "run_func_async",
     "add_sync_methods",
     # literals
+    "NAPCAT_WEBUI_SALT",
     "WINDOWS_NAPCAT_DIR",
     "LINUX_NAPCAT_DIR",
     "INSTALL_SCRIPT_URL",
