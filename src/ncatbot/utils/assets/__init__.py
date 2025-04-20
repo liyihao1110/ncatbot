@@ -12,6 +12,7 @@ __all__ = [
     "PluginVersionError",
     "Color",
     # literals
+    "NAPCAT_WEBUI_SALT",
     "WINDOWS_NAPCAT_DIR",
     "LINUX_NAPCAT_DIR",
     "INSTALL_SCRIPT_URL",

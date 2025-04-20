@@ -1,3 +1,4 @@
+import hashlib
 import platform
 import time
 import traceback
@@ -7,7 +8,7 @@ import requests
 from requests.exceptions import ConnectionError
 from urllib3.exceptions import NewConnectionError
 
-from ncatbot.utils import config, get_log
+from ncatbot.utils import NAPCAT_WEBUI_SALT, config, get_log
 
 LOG = get_log("adapter.nc.login")
 main_handler = None
@@ -42,15 +43,18 @@ class LoginError(Exception):
 class LoginHandler:
     # 登录处理器
     def __init__(self):
-        MAX_TIME_EXPIER = time.time() + 30
+        MAX_TIME_EXPIER = time.time() + 15
         self.base_uri = config.webui_uri
         while True:
             try:
                 time.sleep(0.2)
+                hashed_token = hashlib.sha256(
+                    f"{config.webui_token}.{NAPCAT_WEBUI_SALT}".encode()
+                ).hexdigest()
                 content = requests.post(
                     self.base_uri + "/api/auth/login",
-                    json={"token": config.webui_token},
-                    timeout=10,
+                    json={"hash": hashed_token},
+                    timeout=5,
                 ).json()
                 time.sleep(0.2)
                 self.header = {
@@ -70,7 +74,7 @@ class LoginHandler:
             except KeyError:
                 if time.time() > MAX_TIME_EXPIER:
                     LOG.error("授权操作超时, 连接 WebUI 成功但无法获取授权信息")
-                pass
+                    exit(0)
             except (ConnectionError, NewConnectionError):
                 if platform.system() == "Windows":
                     if time.time() > MAX_TIME_EXPIER:
@@ -234,7 +238,7 @@ def is_qq_equal(uin, other):
 
 
 def online_qq_is_bot():
-    online_qq = get_handler().get_online_qq()
+    online_qq = get_handler(reset=True).get_online_qq()
 
     if online_qq is not None and not is_qq_equal(online_qq, config.bt_uin):
         LOG.warning(
