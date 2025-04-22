@@ -74,7 +74,7 @@ class GroupMessage(BaseMessage):
         "sub_type",
         "font",
         "sender",
-        "raw_message"，
+        "raw_message",
         "message_id",
         "message_seq",
         "real_id",
