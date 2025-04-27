@@ -24,7 +24,7 @@ _log = get_log()
 class BotClient:
     registered = False
 
-    def __init__(self, plugins_path="plugins"):
+    def __init__(self, plugins_path="plugins", *args, **kwargs):
 
         def check_duplicate_register():
             if BotClient.registered:

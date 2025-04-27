@@ -10,8 +10,6 @@ import zipfile
 from pathlib import Path
 from typing import Any, Callable, Dict, Literal, Optional, Union
 
-import httpx
-
 from ncatbot.utils.logger import get_log
 
 _log = get_log()
@@ -61,17 +59,18 @@ def convert_uploadable_object(i, message_type):
             return f"base64://{m.group(2)}"
 
     if i.startswith("http"):
-        if message_type == "image":
-            try:
-                with httpx.Client() as client:
-                    response = client.get(i)
-                    response.raise_for_status()
-                    image_data = response.content
-                    i = f"base64://{base64.b64encode(image_data).decode('utf-8')}"
-            except httpx.HTTPError as e:
-                return {"type": "text", "data": {"text": f"URL请求失败: {e}"}}
-            except Exception as e:
-                return {"type": "text", "data": {"text": f"图片转换失败: {e}"}}
+        # TODO: 优化图片请求
+        # if message_type == "image":
+        #     try:
+        #         with httpx.Client() as client:
+        #             response = client.get(i)
+        #             response.raise_for_status()
+        #             image_data = response.content
+        #             i = f"base64://{base64.b64encode(image_data).decode('utf-8')}"
+        #     except httpx.HTTPError as e:
+        #         return {"type": "text", "data": {"text": f"URL请求失败: {e}"}}
+        #     except Exception as e:
+        #         return {"type": "text", "data": {"text": f"图片转换失败: {e}"}}
         return {"type": message_type, "data": {"file": i}}
     elif is_base64(i):
         return {"type": message_type, "data": {"file": to_base64(i)}}
