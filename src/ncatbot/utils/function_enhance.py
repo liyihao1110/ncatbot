@@ -35,8 +35,21 @@ def run_func_sync(func, *args, **kwargs):
     if inspect.iscoroutinefunction(func):
         # 同步运行一个异步或者同步的函数
         try:
+            from threading import Thread
+
             loop = asyncio.get_running_loop()
-            return asyncio.run_coroutine_threadsafe(func(*args, **kwargs), loop)
+            result = []
+
+            def task():
+                result.append(asyncio.run(func(*args, **kwargs)))
+
+            t = Thread(target=task)
+            t.start()
+            t.join(timeout=5)
+            if len(result) == 0:
+                raise TimeoutError("异步函数执行超时")
+            else:
+                return result[0]
         except RuntimeError:
             pass
         try:
