@@ -7,6 +7,8 @@ import time
 
 import requests
 
+from ncatbot.adapter.nc.install import install_napcat
+
 
 def setup_work_directory():
     parser = argparse.ArgumentParser(description="NcatBot CLI 参数表")
@@ -162,6 +164,8 @@ def start(*args, **kwargs):
 
 
 def update():
+    print("正在更新 NapCat 版本")
+    install_napcat("update")
     print("正在更新 Ncatbot 版本, 更新后请重新运行 NcatBotCLI 或者 main.exe")
     time.sleep(1)
     subprocess.Popen(
@@ -178,9 +182,9 @@ def update():
         shell=True,
         start_new_session=True,
     )
-    print("Ncatbot 版本更新成功!")
-    print("请重新运行 NcatBotCLI 或者 main.exe")
-    time.sleep(1)
+    print("Ncatbot 正在更新...")
+    time.sleep(10)
+    print("更新成功, 请重新运行 NcatBotCLI 或者 main.exe")
     exit(0)
 
 
@@ -220,7 +224,7 @@ def help(qq):
     print("1. 'install <插件名> [--fix]' - 安装插件")
     print("2. 'setqq' - 重新设置 QQ 号")
     print("3. 'start' - 启动 NcatBot")
-    print("4. 'update' - 更新 NcatBot")
+    print("4. 'update' - 更新 NcatBot 和 NapCat")
     print("5. 'remove <插件名> ' - 卸载插件")
     print("6. 'list' - 列出已安装插件")
     print("7. 'exit' - 退出 CLI 工具")
