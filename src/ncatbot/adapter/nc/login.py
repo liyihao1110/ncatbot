@@ -73,8 +73,23 @@ class LoginHandler:
                 exit(1)
             except KeyError:
                 if time.time() > MAX_TIME_EXPIER:
-                    LOG.error("授权操作超时, 连接 WebUI 成功但无法获取授权信息")
-                    exit(0)
+                    try:
+                        content = requests.post(
+                            self.base_uri + "/api/auth/login",
+                            json={"token": config.webui_token},
+                            timeout=5,
+                        ).json()
+                        time.sleep(0.2)
+                        self.header = {
+                            "Authorization": "Bearer " + content["data"]["Credential"],
+                        }
+                        LOG.debug("成功连接到 WEBUI")
+                        return
+                    except:
+                        LOG.error(
+                            "授权操作超时, 连接 WebUI 成功但无法获取授权信息, 可以使用 bot.run(enable_webui_interaction=False) 跳过鉴权"
+                        )
+                        exit(0)
             except (ConnectionError, NewConnectionError):
                 if platform.system() == "Windows":
                     if time.time() > MAX_TIME_EXPIER:
