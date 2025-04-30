@@ -245,6 +245,7 @@ class BotClient:
             self._notice_event_handlers.clear()
             self._request_event_handlers.clear()
             _log.info("清理工作结束, NcatBot 已经正常退出")
+            time.sleep(0.2)
         except Exception:
             _log.error("清理工作失败, 报错如下:")
             _log.error(traceback.format_exc())

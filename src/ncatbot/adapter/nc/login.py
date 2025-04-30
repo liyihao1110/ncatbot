@@ -202,7 +202,9 @@ class LoginHandler:
             except TimeoutError:
                 pass
 
-        LOG.error("获取二维码失败, 请执行 `napcat stop` 后重启引导程序.")
+        LOG.error(
+            f"获取二维码失败, 请执行 `napcat stop; napcat start {config.bt_uin}` 后重启引导程序."
+        )
         exit(1)
 
     def login(self):
