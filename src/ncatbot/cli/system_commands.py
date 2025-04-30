@@ -4,11 +4,11 @@ import subprocess
 import sys
 import time
 
+from ncatbot.adapter.nc.install import install_napcat
 from ncatbot.cli.registry import registry
 from ncatbot.cli.utils import (
     NUMBER_SAVE,
     PYPI_SOURCE,
-    install_napcat,
 )
 
 

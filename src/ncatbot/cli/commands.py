@@ -7,26 +7,17 @@ import sys
 import time
 from typing import Any, Callable, Dict, List, Optional
 
+from ncatbot.adapter.nc.install import install_napcat
 from ncatbot.cli.registry import registry
-from ncatbot.cli.utils import (
-    LOG,
-    NUMBER_SAVE,
-    PLUGIN_BROKEN_MARK,
-    PYPI_SOURCE,
-    BotClient,
-    config,
-    get_log,
-    get_plugin_info_by_name,
-    get_proxy_url,
-    install_plugin_dependencies,
-)
+from ncatbot.core import BotClient
+from ncatbot.scripts import get_plugin_info_by_name
+from ncatbot.utils import PLUGIN_BROKEN_MARK, PYPI_URL, config, get_log
 
 try:
     from ncatbot.adapter.nc.install import install_napcat
     from ncatbot.core import BotClient
-    from ncatbot.plugin import install_plugin_dependencies
     from ncatbot.scripts import get_plugin_info_by_name
-    from ncatbot.utils import PLUGIN_BROKEN_MARK, config, get_log, get_proxy_url
+    from ncatbot.utils import PLUGIN_BROKEN_MARK, config, get_log
 except ImportError:
     # For development without ncatbot installed
     print("警告: ncatbot 模块未安装，部分功能可能无法使用")
@@ -38,6 +29,8 @@ except ImportError:
     # config = type("Config", (), {"set_bot_uin": lambda *args: None})()
     # get_log = lambda *args: type("Logger", (), {"error": print})()
     # get_proxy_url = lambda: "https://ghproxy.com"
+LOG = get_log("CLI")
+NUMBER_SAVE = "number.txt"
 
 
 class Command:
@@ -168,7 +161,7 @@ def update() -> None:
             "--upgrade",
             "ncatbot",
             "-i",
-            PYPI_SOURCE,
+            PYPI_URL,
         ],
         shell=True,
         start_new_session=True,
