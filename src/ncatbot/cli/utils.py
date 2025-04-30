@@ -2,7 +2,21 @@
 
 import os
 
-from ncatbot.utils import get_log
+from ncatbot.plugin import PluginLoader
+from ncatbot.utils import PLUGINS_DIR, get_log
+
+# LOG,
+# NUMBER_SAVE,
+# PLUGIN_BROKEN_MARK,
+# PLUGIN_DOWNLOAD_REPO,
+# PYPI_SOURCE,
+# BotClient,
+# config,
+# get_log,
+# get_plugin_info_by_name,
+# get_proxy_url,
+# install_plugin_dependencies,
+
 
 # Constants
 PYPI_SOURCE = "https://mirrors.aliyun.com/pypi/simple/"
@@ -26,3 +40,24 @@ def get_qq() -> str:
     print("第一次运行, 即将安装测试插件, 若不需要测试插件, 稍后可以删除...")
     install("TestPlugin")
     return set_qq()
+
+
+def get_plugin_info(path: str):
+    if os.path.exists(path):
+        return PluginLoader(None).get_plugin_info(path)
+    else:
+        raise FileNotFoundError(f"dir not found: {path}")
+
+
+def get_plugin_info_by_name(name: str):
+    """
+    Args:
+        name (str): 插件名
+    Returns:
+        Tuple[bool, str]: 是否存在插件, 插件版本
+    """
+    plugin_path = os.path.join(PLUGINS_DIR, name)
+    if os.path.exists(plugin_path):
+        return True, get_plugin_info(plugin_path)[1]
+    else:
+        return False, "0.0.0"

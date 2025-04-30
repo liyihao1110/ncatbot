@@ -11,7 +11,7 @@ def get_plugin_info(path: str):
         raise FileNotFoundError(f"dir not found: {path}")
 
 
-def get_pulgin_info_by_name(name: str):
+def get_plugin_info_by_name(name: str):
     """
     Args:
         name (str): 插件名

@@ -6,12 +6,12 @@ prerequisite:
 - minizip && zlib installed
 
 1. build package.zip to package.o:
-windres cli/resource.rc resource.o
+windres src/deploy/resource.rc resource.o
 
 2. static compile with mingw64:
-g++ -o main.exe cli/main.cpp resource.o -I "path/to/minizip/include" -I "path/to/zlib/include" -L "path/to/minizip/lib" -L "path/to/zlib/lib" -lminizip -lzlibstatic -fpermissive --static
+g++ -o main.exe src/deploy/main.cpp resource.o -I "path/to/minizip/include" -I "path/to/zlib/include" -L "path/to/minizip/lib" -L "path/to/zlib/lib" -lminizip -lzlibstatic -fpermissive --static
 
-g++ -o main.exe cli/main.cpp resource.o -I "C:\Users\huany\Desktop\work_space\ziptools-install\minizip-install\include" -I "C:\Users\huany\Desktop\work_space\ziptools-install\zlib-install\include" -L "C:\Users\huany\Desktop\work_space\ziptools-install\minizip-install\lib\" -L "C:\Users\huany\Desktop\work_space\ziptools-install\zlib-install\lib\" -lminizip -lzlibstatic -fpermissive --static
+g++ -o main.exe src/deploy/main.cpp resource.o -I "C:\Users\huany\Desktop\work_space\ziptools-install\minizip-install\include" -I "C:\Users\huany\Desktop\work_space\ziptools-install\zlib-install\include" -L "C:\Users\huany\Desktop\work_space\ziptools-install\minizip-install\lib\" -L "C:\Users\huany\Desktop\work_space\ziptools-install\zlib-install\lib\" -lminizip -lzlibstatic -fpermissive --static
 
 
 
@@ -348,7 +348,8 @@ void setup_env() {
 }
 
 void start_cli(){
-    string python_path = target_dir + "\\python\\python.exe";
+    system("cd ncatbot");
+    string python_path =  "python\\python.exe";
     string cmd = python_path + " -m ncatbot.cli.main";
     // cerr << "exec:" << cmd << endl;
     cerr << "正在启动 NcatBot CLI...\n";

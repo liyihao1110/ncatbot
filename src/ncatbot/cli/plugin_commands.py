@@ -7,12 +7,14 @@ from typing import Dict, Optional
 
 import requests
 
-from ncatbot.cli.registry import registry
-from ncatbot.cli.utils import (
+from ncatbot.cli.commands import (
     PLUGIN_BROKEN_MARK,
-    get_plugin_info_by_name,
     get_proxy_url,
     install_plugin_dependencies,
+)
+from ncatbot.cli.registry import registry
+from ncatbot.cli.utils import (
+    get_plugin_info_by_name,
 )
 
 

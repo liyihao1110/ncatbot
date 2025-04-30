@@ -7,15 +7,11 @@ import sys
 import time
 from typing import Any, Callable, Dict, List, Optional
 
-import requests
-
-from ncatbot.adapter.nc.install import install_napcat
 from ncatbot.cli.registry import registry
 from ncatbot.cli.utils import (
     LOG,
     NUMBER_SAVE,
     PLUGIN_BROKEN_MARK,
-    PLUGIN_DOWNLOAD_REPO,
     PYPI_SOURCE,
     BotClient,
     config,
@@ -29,19 +25,19 @@ try:
     from ncatbot.adapter.nc.install import install_napcat
     from ncatbot.core import BotClient
     from ncatbot.plugin import install_plugin_dependencies
-    from ncatbot.scripts import get_pulgin_info_by_name
+    from ncatbot.scripts import get_plugin_info_by_name
     from ncatbot.utils import PLUGIN_BROKEN_MARK, config, get_log, get_proxy_url
 except ImportError:
     # For development without ncatbot installed
     print("警告: ncatbot 模块未安装，部分功能可能无法使用")
-    install_napcat = lambda *args: None
-    BotClient = object
-    install_plugin_dependencies = lambda *args: None
-    get_pulgin_info_by_name = lambda *args: (True, "0.0.1")
-    PLUGIN_BROKEN_MARK = "BROKEN"
-    config = type("Config", (), {"set_bot_uin": lambda *args: None})()
-    get_log = lambda *args: type("Logger", (), {"error": print})()
-    get_proxy_url = lambda: "https://ghproxy.com"
+    # install_napcat = lambda *args: None
+    # BotClient = object
+    # install_plugin_dependencies = lambda *args: None
+    # get_plugin_info_by_name = lambda *args: (True, "0.0.1")
+    # PLUGIN_BROKEN_MARK = "BROKEN"
+    # config = type("Config", (), {"set_bot_uin": lambda *args: None})()
+    # get_log = lambda *args: type("Logger", (), {"error": print})()
+    # get_proxy_url = lambda: "https://ghproxy.com"
 
 
 class Command:
@@ -116,72 +112,6 @@ class CommandRegistry:
         return "\n".join(help_lines)
 
 
-# Create a global command registry
-registry = CommandRegistry()
-
-
-# Command implementations
-@registry.register("install", "安装插件", "install <插件名> [--fix]", aliases=["i"])
-def install(plugin: str, *args: str) -> bool:
-    def get_versions():
-        def remove_empty_values(values):
-            return [v for v in values if v != ""]
-
-        version_url = gen_plugin_version_url(plugin)
-        print(f"正在获取插件版本信息 {version_url}...")
-
-        response = requests.get(version_url)
-        if response.status_code != 200:
-            print(f"获取版本信息失败: {response.status_code}, 请检查是否存在该插件")
-            return False, []
-        return True, remove_empty_values(response.content.decode("utf-8").split("\n"))
-
-    def install_plugin(version):
-        def download_file(url, file_name):
-            print("Downloading file:", url)
-            response = requests.get(url)
-            if response.status_code != 200:
-                print(f"下载插件包失败: {response.status_code}")
-                return False
-            with open(file_name, "wb") as f:
-                f.write(response.content)
-            return True
-
-        print("正在下载插件包...")
-        print(os.path.abspath(f"plugins/{plugin}.zip"))
-        download_file(gen_plugin_download_url(plugin, version), f"plugins/{plugin}.zip")
-        print("正在解压插件包...")
-        directory_path = f"plugins/{plugin}"
-        os.makedirs(directory_path, exist_ok=True)
-        shutil.unpack_archive(f"{directory_path}.zip", directory_path)
-        os.remove(f"{directory_path}.zip")
-        install_plugin_dependencies(plugin)
-
-    fix = args[0] == "--fix" if len(args) else False
-
-    os.makedirs("plugins", exist_ok=True)
-    print(f"正在尝试安装插件: {plugin}")
-    status, versions = get_versions()
-    if not status:
-        return False
-
-    latest_version = versions[-1]
-    exist, current_version = get_plugin_info_by_name(plugin)
-    if exist and not fix:
-        if current_version == latest_version:
-            print(f"插件 {plugin} 已经是最新版本: {current_version}")
-            return
-        print(
-            f"插件 {plugin} 已经安装, 当前版本: {current_version}, 最新版本: {latest_version}"
-        )
-        if input(f"是否更新插件 {plugin} (y/n): ").lower() not in ["y", "yes"]:
-            return
-        shutil.rmtree(f"plugins/{plugin}")
-    print(f"正在安装插件 {plugin}-{latest_version}...")
-    install_plugin(latest_version)
-    print(f"插件 {plugin}-{latest_version} 安装成功!")
-
-
 @registry.register("setqq", "重新设置 QQ 号", "setqq", aliases=["qq"])
 def set_qq() -> str:
     # 提示输入, 确认输入, 保存到文件
@@ -206,6 +136,8 @@ def set_qq() -> str:
 def start(*args: str) -> None:
     print("正在启动 NcatBot...")
     print("按下 Ctrl + C 可以正常退出程序")
+    from ncatbot.cli.utils import get_qq
+
     config.set_bot_uin(get_qq())
     try:
         client = BotClient()
@@ -289,6 +221,8 @@ def show_command_help(command_name: Optional[str] = None) -> None:
     """Show detailed help for a specific command or all commands"""
     if command_name is None:
         # Show general help
+        from ncatbot.cli.utils import get_qq
+
         qq = get_qq()
         show_help(qq)
         return
@@ -479,25 +413,6 @@ Thumbs.db
     print(f"插件模板 '{plugin_name}' 创建成功!")
     print(f"插件目录: {os.path.abspath(plugin_dir)}")
     print("请编辑 main.py 文件来实现插件功能。")
-
-
-# Helper functions
-def gen_plugin_version_url(plugin: str) -> str:
-    return f"{get_proxy_url()}/{PLUGIN_DOWNLOAD_REPO}/{plugin}/version.txt"
-
-
-def gen_plugin_download_url(plugin: str, version: str) -> str:
-    return f"{get_proxy_url()}/{PLUGIN_DOWNLOAD_REPO}/{plugin}/{plugin}-{version.strip()}.zip"
-
-
-def get_qq() -> str:
-    if os.path.exists(NUMBER_SAVE):
-        with open(NUMBER_SAVE, "r") as f:
-            return f.read()
-    print("第一次运行, 即将安装测试插件, 若不需要测试插件, 稍后可以删除...")
-    time.sleep(1)
-    install("TestPlugin")
-    return set_qq()
 
 
 def show_help(qq: str) -> None:
