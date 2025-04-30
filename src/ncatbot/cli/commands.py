@@ -1,3 +1,5 @@
+"""Plugin management commands for NcatBot CLI."""
+
 import os
 import shutil
 import subprocess
@@ -7,10 +9,26 @@ from typing import Any, Callable, Dict, List, Optional
 
 import requests
 
+from ncatbot.adapter.nc.install import install_napcat
+from ncatbot.cli.registry import registry
+from ncatbot.cli.utils import (
+    LOG,
+    NUMBER_SAVE,
+    PLUGIN_BROKEN_MARK,
+    PLUGIN_DOWNLOAD_REPO,
+    PYPI_SOURCE,
+    BotClient,
+    config,
+    get_log,
+    get_plugin_info_by_name,
+    get_proxy_url,
+    install_plugin_dependencies,
+)
+
 try:
     from ncatbot.adapter.nc.install import install_napcat
     from ncatbot.core import BotClient
-    from ncatbot.plugin import install_plugin_dependecies
+    from ncatbot.plugin import install_plugin_dependencies
     from ncatbot.scripts import get_pulgin_info_by_name
     from ncatbot.utils import PLUGIN_BROKEN_MARK, config, get_log, get_proxy_url
 except ImportError:
@@ -18,23 +36,12 @@ except ImportError:
     print("警告: ncatbot 模块未安装，部分功能可能无法使用")
     install_napcat = lambda *args: None
     BotClient = object
-    install_plugin_dependecies = lambda *args: None
+    install_plugin_dependencies = lambda *args: None
     get_pulgin_info_by_name = lambda *args: (True, "0.0.1")
     PLUGIN_BROKEN_MARK = "BROKEN"
     config = type("Config", (), {"set_bot_uin": lambda *args: None})()
     get_log = lambda *args: type("Logger", (), {"error": print})()
     get_proxy_url = lambda: "https://ghproxy.com"
-
-LOG = get_log("CLI")
-
-GITHUB_PROXY = get_proxy_url()
-PYPI_SOURCE = "https://mirrors.aliyun.com/pypi/simple/"
-NCATBOT_PATH = "ncatbot"
-TEST_PLUGIN = "TestPlugin"
-NUMBER_SAVE = "number.txt"
-PLUGIN_DOWNLOAD_REPO = (
-    "https://raw.githubusercontent.com/ncatbot/NcatBot-Plugins/refs/heads/main/plugins"
-)
 
 
 class Command:
@@ -148,7 +155,7 @@ def install(plugin: str, *args: str) -> bool:
         os.makedirs(directory_path, exist_ok=True)
         shutil.unpack_archive(f"{directory_path}.zip", directory_path)
         os.remove(f"{directory_path}.zip")
-        install_plugin_dependecies(plugin)
+        install_plugin_dependencies(plugin)
 
     fix = args[0] == "--fix" if len(args) else False
 
@@ -159,7 +166,7 @@ def install(plugin: str, *args: str) -> bool:
         return False
 
     latest_version = versions[-1]
-    exist, current_version = get_pulgin_info_by_name(plugin)
+    exist, current_version = get_plugin_info_by_name(plugin)
     if exist and not fix:
         if current_version == latest_version:
             print(f"插件 {plugin} 已经是最新版本: {current_version}")
@@ -256,7 +263,7 @@ def list_plugin(enable_print: bool = True) -> Dict[str, str]:
     plugins = {}
     for dir in dirs:
         try:
-            version = get_pulgin_info_by_name(dir)[1]
+            version = get_plugin_info_by_name(dir)[1]
             plugins[dir] = version
         except Exception:
             plugins[dir] = PLUGIN_BROKEN_MARK
@@ -357,7 +364,7 @@ __all__ = ["{plugin_name}"]
             f"""import os
 
 from ncatbot.plugin import BasePlugin, CompatibleEnrollment
-from ncatbot.core import GroupMessage, FriendMessage
+from ncatbot.core import BaseMessage, GroupMessage, PrivateMessage
 
 bot = CompatibleEnrollment  # 兼容回调函数注册器
 
@@ -372,8 +379,8 @@ class {plugin_name}(BasePlugin):
         if msg.raw_message == "测试":
             await self.api.post_group_msg(msg.group_id, text="{plugin_name} 插件测试成功喵")
 
-    @bot.friend_event()
-    async def on_friend_event(self, msg: FriendMessage):
+    @bot.private_event()
+    async def on_private_event(self, msg: PrivateMessage):
         # 好友消息事件处理
         if msg.raw_message == "测试":
             await self.api.post_friend_msg(msg.user_id, text="{plugin_name} 插件测试成功喵")
@@ -476,13 +483,11 @@ Thumbs.db
 
 # Helper functions
 def gen_plugin_version_url(plugin: str) -> str:
-    return f"{GITHUB_PROXY}/{PLUGIN_DOWNLOAD_REPO}/{plugin}/version.txt"
+    return f"{get_proxy_url()}/{PLUGIN_DOWNLOAD_REPO}/{plugin}/version.txt"
 
 
 def gen_plugin_download_url(plugin: str, version: str) -> str:
-    return (
-        f"{GITHUB_PROXY}/{PLUGIN_DOWNLOAD_REPO}/{plugin}/{plugin}-{version.strip()}.zip"
-    )
+    return f"{get_proxy_url()}/{PLUGIN_DOWNLOAD_REPO}/{plugin}/{plugin}-{version.strip()}.zip"
 
 
 def get_qq() -> str:

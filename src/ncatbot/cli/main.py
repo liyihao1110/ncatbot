@@ -5,9 +5,7 @@ import os
 import sys
 from typing import Optional
 
-from . import system_commands
-from .registry import registry
-from .utils import NCATBOT_PATH, get_qq
+from ncatbot.cli import NCATBOT_PATH, get_qq, registry, system_commands
 
 
 def setup_work_directory(work_dir: Optional[str] = None) -> None:

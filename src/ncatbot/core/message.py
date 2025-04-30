@@ -28,6 +28,10 @@ class BaseMessage:
     def reply(self, is_file: bool = False, **kwargs):
         raise NotImplementedError
 
+    async def reply_text(self, text: str = "", **kwargs):
+        """回复, 文字信息特化"""
+        return await self.reply(text=text, **kwargs)
+
     def reply_text_sync(self, text: str = "", **kwargs):
         """同步回复, 文字信息特化"""
         # 检查是否有正在运行的事件循环

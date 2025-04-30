@@ -41,7 +41,7 @@ PM = PipTool()
 LOG = get_log("PluginLoader")
 
 
-def install_plugin_dependecies(plugin_name, confirm=False, print_import_details=True):
+def install_plugin_dependencies(plugin_name, confirm=False, print_import_details=True):
     directory_path = os.path.join(PLUGINS_DIR, plugin_name)
     if not os.path.exists(f"{directory_path}/requirements.txt"):
         return
@@ -56,8 +56,9 @@ def install_plugin_dependecies(plugin_name, confirm=False, print_import_details=
             requirements = [
                 pack.strip().lower()
                 for pack in open(
-                    os.path.join(directory_path, "requirements.txt")
+                    os.path.join(directory_path, "requirements.txt"), encoding="utf-8"
                 ).readlines()
+                if not pack.strip().startswith("#")
             ]
             # 检查指定版本号的依赖是否需要安装
             for pack in list(requirements):
@@ -239,7 +240,10 @@ class PluginLoader:
             - funcs: 插件命令列表
             - configs: 插件配置项列表
         """
+        import logging
+
         original_sys_path = sys.path.copy()
+        logging.getLogger().setLevel(logging.WARNING)
         try:
             # 临时插入目录到 sys.path，用于加载模块
             directory_path = os.path.abspath(plugin_path)
@@ -248,7 +252,7 @@ class PluginLoader:
 
             try:
                 # 动态导入模块
-                install_plugin_dependecies(filename)
+                install_plugin_dependencies(filename)
                 module = importlib.import_module(filename)
 
                 if len(module.__all__) != 1:
@@ -301,7 +305,7 @@ class PluginLoader:
 
                         # 创建一个简单的调度器模拟对象
                         class DummyScheduler:
-                            def add_task(self, *args, **kwargs):
+                            def add_job(self, *args, **kwargs):
                                 pass
 
                         # 实例化插件
@@ -371,6 +375,7 @@ class PluginLoader:
 
         finally:
             sys.path = original_sys_path
+            logging.getLogger().setLevel(logging.DEBUG)
 
         return name, version, meta
 
@@ -617,7 +622,7 @@ class PluginLoader:
                 LOG.info(f"插件 {filename} 被白名单/黑名单过滤，跳过加载")
                 continue
             if config.check_plugin_dependecies:
-                install_plugin_dependecies(filename, print_import_details=False)
+                install_plugin_dependencies(filename, print_import_details=False)
             try:
                 module = importlib.import_module(filename)
                 modules[filename] = module
