@@ -1,19 +1,7 @@
 from ncatbot.utils.assets import *
 from ncatbot.utils.config import config
-from ncatbot.utils.file_io import (
-    UniversalLoader,
-    convert_uploadable_object,
-    read_file,
-    unzip_file,
-)
-from ncatbot.utils.function_enhance import (
-    add_sync_methods,
-    report,
-    run_func_async,
-    run_func_sync,
-    to_async,
-    to_sync,
-)
+from ncatbot.utils.file_io import UniversalLoader, convert_uploadable_object, read_file, unzip_file
+from ncatbot.utils.function_enhance import add_sync_methods, report, run_func_async, run_func_sync, to_async, to_sync
 from ncatbot.utils.logger import get_log
 from ncatbot.utils.network_io import download_file, get_proxy_url
 from ncatbot.utils.optional import *
@@ -48,6 +36,8 @@ __all__ = [
     "OFFICIAL_REQUEST_EVENT",
     "OFFICIAL_NOTICE_EVENT",
     "OFFICIAL_STARTUP_EVENT",
+    "OFFICIAL_SHUTDOWN_EVENT",
+    "OFFICIAL_HEARTBEAT_EVENT",
     "PLUGIN_BROKEN_MARK",
     "STATUS_ONLINE",
     "STATUS_Q_ME",
