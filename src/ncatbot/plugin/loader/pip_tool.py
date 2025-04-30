@@ -51,6 +51,8 @@ class PipTool:
         base_cmd (List[str]): 基础命令前缀
     """
 
+    installed_packages = None
+
     def __init__(self, python_path: str = sys.executable):
         """初始化包管理器
 
@@ -66,10 +68,12 @@ class PipTool:
 
         # 初始化时自动安装必要依赖
         try:
-            self._run_command(
-                ["pip", "install", "--upgrade", "setuptools", "wheel", "-i", PYPI_URL],
-                pip=False,
-            )
+            # 我觉得肯定是安装了的
+            pass
+            # self._run_command(
+            #     ["pip", "install", "--upgrade", "setuptools", "wheel", "-i", PYPI_URL],
+            #     pip=False,
+            # )
         except subprocess.CalledProcessError as exc:
             raise PipManagerException("基础依赖安装失败") from exc
 
@@ -142,6 +146,7 @@ class PipTool:
             >>> pm.install("requests", version="2.25.1", upgrade=True)
             {'status': 'success', 'package': 'requests==2.25.1'}
         """
+        PipTool.installed_packages = None  # 清空缓存
         args = ["install"]
         if upgrade:
             args.append("--upgrade")
@@ -187,6 +192,7 @@ class PipTool:
         """
         args = ["uninstall", "-y"] if confirm else ["uninstall"]
         args.append(package)
+        PipTool.installed_packages = None
 
         try:
             self._run_command(args)
@@ -210,6 +216,8 @@ class PipTool:
             >>> pm.list_installed()
             [{'name': 'requests', 'version': '2.26.0'}, ...]
         """
+        if PipTool.installed_packages:
+            return PipTool.installed_packages
         try:
             result = self._run_command(["list", "--format=columns"])
             packages = []
@@ -226,8 +234,8 @@ class PipTool:
                         "location": " ".join(parts[2:]) if len(parts) > 2 else "",
                     }
                 )
-
-            return self._format_output(packages, format)
+            PipTool.installed_packages = self._format_output(packages, format)
+            return PipTool.installed_packages
         except PipManagerException:
             return None
 

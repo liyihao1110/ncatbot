@@ -1,7 +1,7 @@
 from ncatbot.plugin.event.access_controller import get_global_access_controller
 from ncatbot.plugin.event.event import Event
 from ncatbot.plugin.event.event_bus import EventBus
-from ncatbot.plugin.event.function import Conf, Func, builtin_functions
+from ncatbot.plugin.event.function import BUILT_IN_FUNCTIONS, Conf, Func
 
 __all__ = [
     "EventBus",
@@ -9,5 +9,5 @@ __all__ = [
     "Func",
     "Conf",
     "get_global_access_controller",
-    "builtin_functions",
+    "BUILT_IN_FUNCTIONS",
 ]

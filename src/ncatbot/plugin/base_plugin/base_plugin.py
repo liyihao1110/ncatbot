@@ -162,9 +162,9 @@ class BasePlugin(EventHandlerMixin, SchedulerMixin, BuiltinFuncMixin):
         self.this_file_path = plugin_file
         # 使用插件文件所在目录作为self_path
         self.self_path = plugin_file.parent
-        self.lock = asyncio.Lock()  # 创建一个异步锁对象
-        self.funcs: list[Func] = []
-        self.configs: list[Conf] = []
+        self._lock = asyncio.Lock()  # 创建一个异步锁对象
+        self._funcs: list[Func] = []  # 功能列表元数据
+        self._configs: list[Conf] = []  # 配置项列表元数据
 
         # 隐藏属性
         self._debug = debug
@@ -188,6 +188,7 @@ class BasePlugin(EventHandlerMixin, SchedulerMixin, BuiltinFuncMixin):
             raise PluginLoadError(self.name, f"{self._work_path} 不是目录文件夹")
 
         self.data = UniversalLoader(self._data_path, self.save_type)
+        self.data["config"] = {}
         self.work_space = ChangeDir(self._work_path)
         self.self_space = ChangeDir(self.self_path)
 
@@ -195,6 +196,10 @@ class BasePlugin(EventHandlerMixin, SchedulerMixin, BuiltinFuncMixin):
     def debug(self) -> bool:
         """是否处于调试模式"""
         return self._debug
+
+    @property
+    def config(self) -> dict:
+        return self.data["config"]
 
     @final
     async def __unload__(self, *arg, **kwd):
@@ -234,8 +239,8 @@ class BasePlugin(EventHandlerMixin, SchedulerMixin, BuiltinFuncMixin):
         """
         # load时传入的参数作为属性被保存在self中
         if isinstance(self.data, (dict, list)):
-            self.data = UniversalLoader(self._data_path, self.save_type)
-            self.data.data = self.data
+            pass
+            # data_loader = UniversalLoader(self._data_path, self.save_type)
         try:
             self.data.load()
         except (FileTypeUnknownError, LoadError, FileNotFoundError):

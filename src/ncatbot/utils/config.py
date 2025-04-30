@@ -1,5 +1,4 @@
 # 配置文件
-
 import os
 import time
 import urllib
@@ -49,6 +48,7 @@ class SetConfig:
         # 插件加载控制
         self.plugin_whitelist = []  # 插件白名单，为空表示不启用白名单
         self.plugin_blacklist = []  # 插件黑名单，为空表示不启用黑名单
+        self.check_plugin_dependecies = False  # 加载时不检查插件 Python 第三方依赖
 
         # NapCat 行为
         self.stop_napcat = False  # NcatBot 下线时是否停止 NapCat

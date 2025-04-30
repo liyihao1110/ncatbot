@@ -22,9 +22,9 @@ skip_plugin_load: false  # 是否跳过插件加载
 # 插件加载控制
 # 白名单和黑名单互斥，只能设置其中一个
 # 如果都不设置，则加载所有插件
-plugin_whitelist:  # 插件白名单，为空表示不启用白名单
-  - "plugin1"
-  - "plugin2"
+# plugin_whitelist:  # 插件白名单，为空表示不启用白名单
+#   - "plugin1"
+#   - "plugin2"
 # plugin_blacklist:  # 插件黑名单，为空表示不启用黑名单
 #   - "plugin3"
 #   - "plugin4"
