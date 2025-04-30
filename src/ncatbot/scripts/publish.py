@@ -531,6 +531,13 @@ def main():
         commit_message = f"Release version {version}"
         repo.git.commit("-m", commit_message)
 
+        try:
+            print("推送插件仓库更改...")
+            repo.git.push("--force", "origin", f"v{version}")
+        except GitCommandError as e:
+            print(f"Failed to push plugin changes: {e}")
+            exit(1)
+
     def do_main_changes(repo: Repo):
         """处理主仓库的更改
         1. 添加 submodule
@@ -578,13 +585,6 @@ def main():
         1. 推送插件仓库更改
         2. 推送主仓库更改并创建 PR
         """
-        try:
-            print("推送插件仓库更改...")
-            plugin_repo.git.push("--force", "origin", f"v{version}")
-        except GitCommandError as e:
-            print(f"Failed to push plugin changes: {e}")
-            exit(1)
-
         try:
             print("推送主仓库更改...")
             # 确保我们在正确的分支上
