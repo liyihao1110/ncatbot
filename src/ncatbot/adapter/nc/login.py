@@ -73,6 +73,7 @@ class LoginHandler:
                 exit(1)
             except KeyError:
                 if time.time() > MAX_TIME_EXPIER:
+                    # 尝试老版本 NapCat 登录
                     try:
                         content = requests.post(
                             self.base_uri + "/api/auth/login",

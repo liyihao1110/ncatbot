@@ -1,9 +1,32 @@
-import re
-from typing import Any, Callable, Union, final
+import warnings
+from functools import wraps
+from typing import Any, Callable, Dict, List, final
 
 from ncatbot.core import BaseMessage
 from ncatbot.plugin.event import Conf, Func
 from ncatbot.utils import PermissionGroup
+
+
+def deprecated(message: str = None):
+    """标记函数为弃用
+
+    Args:
+        message: 弃用说明
+    """
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            warnings.warn(
+                f"{func.__name__} is deprecated. {message or ''}",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 class BuiltinFuncMixin:
@@ -19,43 +42,83 @@ class BuiltinFuncMixin:
         name: str,
         handler: Callable[[BaseMessage], Any],
         filter: Callable = None,
-        raw_message_filter: Union[str, re.Pattern] = None,
+        prefix: str = None,
+        regex: str = None,
         permission: PermissionGroup = PermissionGroup.USER.value,
         permission_raise: bool = False,
+        description: str = "",
+        usage: str = "",
+        examples: List[str] = None,
+        tags: List[str] = None,
+        metadata: Dict[str, Any] = None,
     ):
         if all([name != var.name for var in self.funcs]):
+            # 如果没有指定任何过滤器，使用功能名作为默认前缀
+            if filter is None and prefix is None and regex is None:
+                prefix = f"/{name}"
+
             self.funcs.append(
                 Func(
                     name,
                     self.name,
                     handler,
-                    filter,
-                    raw_message_filter,
-                    permission,
-                    permission_raise,
+                    filter=filter,
+                    prefix=prefix,
+                    regex=regex,
+                    permission=permission,
+                    permission_raise=permission_raise,
+                    description=description,
+                    usage=usage,
+                    examples=examples,
+                    tags=tags,
+                    metadata=metadata,
                 )
             )
         else:
             raise ValueError(f"插件 {self.name} 已存在功能 {name}")
-        # self.
 
     def register_user_func(
         self,
         name: str,
         handler: Callable[[BaseMessage], Any],
         filter: Callable = None,
-        raw_message_filter: Union[str, re.Pattern] = None,
+        prefix: str = None,
+        regex: str = None,
         permission_raise: bool = False,
+        description: str = "",
+        usage: str = "",
+        examples: List[str] = None,
+        tags: List[str] = None,
+        metadata: Dict[str, Any] = None,
     ):
-        if filter is None and raw_message_filter is None:
-            raise ValueError("普通功能至少添加一个过滤器")
+        """注册普通用户功能
+
+        Args:
+            name: 功能名
+            handler: 处理函数
+            filter: 自定义过滤器
+            prefix: 前缀匹配
+            regex: 正则匹配
+            permission_raise: 是否提权
+            description: 功能描述
+            usage: 使用说明
+            examples: 使用示例
+            tags: 功能标签
+            metadata: 额外元数据
+        """
         self._register_func(
             name,
             handler,
             filter,
-            raw_message_filter,
+            prefix,
+            regex,
             PermissionGroup.USER.value,
             permission_raise,
+            description,
+            usage,
+            examples,
+            tags,
+            metadata,
         )
 
     def register_admin_func(
@@ -63,38 +126,105 @@ class BuiltinFuncMixin:
         name: str,
         handler: Callable[[BaseMessage], Any],
         filter: Callable = None,
-        raw_message_filter: Union[str, re.Pattern] = None,
-        permission_raise: bool = False,
+        prefix: str = None,
+        regex: str = None,
+        permission_raise: bool = True,
+        description: str = "",
+        usage: str = "",
+        examples: List[str] = None,
+        tags: List[str] = None,
+        metadata: Dict[str, Any] = None,
     ):
-        if filter is None and raw_message_filter is None:
-            raise ValueError("普通功能至少添加一个过滤器")
+        """注册管理员功能
+
+        Args:
+            name: 功能名
+            handler: 处理函数
+            filter: 自定义过滤器
+            prefix: 前缀匹配
+            regex: 正则匹配
+            permission_raise: 是否提权
+            description: 功能描述
+            usage: 使用说明
+            examples: 使用示例
+            tags: 功能标签
+            metadata: 额外元数据
+        """
         self._register_func(
             name,
             handler,
             filter,
-            raw_message_filter,
+            prefix,
+            regex,
             PermissionGroup.ADMIN.value,
             permission_raise,
+            description,
+            usage,
+            examples,
+            tags,
+            metadata,
         )
 
+    @deprecated("请使用 register_user_func 或 register_admin_func 替代")
     def register_default_func(
         self,
         handler: Callable[[BaseMessage], Any],
         permission: PermissionGroup = PermissionGroup.USER.value,
+        description: str = "",
+        usage: str = "",
+        examples: List[str] = None,
+        tags: List[str] = None,
+        metadata: Dict[str, Any] = None,
     ):
-        """默认处理功能
+        """默认处理功能 (已弃用)
 
         如果没能触发其它功能, 则触发默认功能.
+        请使用 register_user_func 或 register_admin_func 替代.
         """
-        self._register_func("default", handler, None, None, permission, False)
+        self._register_func(
+            "default",
+            handler,
+            None,
+            None,
+            None,
+            permission,
+            False,
+            description,
+            usage,
+            examples,
+            tags,
+            metadata,
+        )
 
     def register_config(
-        self, key: str, default: Any, rptr: Callable[[str], Any] = None
+        self,
+        key: str,
+        default: Any,
+        on_change: Callable[[str, BaseMessage], Any] = None,
+        description: str = "",
+        value_type: str = "",
+        allowed_values: List[Any] = None,
+        metadata: Dict[str, Any] = None,
     ):
         """注册配置项
         Args:
             key (str): 配置项键名
             default (Any): 默认值
-            rptr (Callable[[str], Any], optional): 值转换函数. 默认使用直接转换.
+            on_change (Callable[[str, BaseMessage], Any], optional): 配置变更回调函数. 接收新值和触发修改的消息对象.
+            description (str, optional): 配置项描述
+            value_type (str, optional): 值类型描述
+            allowed_values (List[Any], optional): 允许的值列表
+            metadata (Dict[str, Any], optional): 额外元数据
         """
-        self.configs.append(Conf(self, key, rptr, default))
+        self.configs.append(
+            Conf(
+                self,
+                key,
+                on_change,
+                default,
+                description,
+                value_type,
+                allowed_values,
+                metadata,
+            )
+        )

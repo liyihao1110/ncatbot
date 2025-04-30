@@ -1,0 +1,322 @@
+"""Plugin management commands for NcatBot CLI."""
+
+import os
+import re
+import shutil
+from typing import Dict
+
+import requests
+
+from .registry import registry
+from .utils import (
+    PLUGIN_BROKEN_MARK,
+    PLUGIN_DOWNLOAD_REPO,
+    get_plugin_info_by_name,
+    get_proxy_url,
+    install_plugin_dependencies,
+)
+
+GITHUB_PROXY = get_proxy_url()
+
+
+def gen_plugin_version_url(plugin: str) -> str:
+    return f"{GITHUB_PROXY}/{PLUGIN_DOWNLOAD_REPO}/{plugin}/version.txt"
+
+
+def gen_plugin_download_url(plugin: str, version: str) -> str:
+    return (
+        f"{GITHUB_PROXY}/{PLUGIN_DOWNLOAD_REPO}/{plugin}/{plugin}-{version.strip()}.zip"
+    )
+
+
+@registry.register("install", "安装插件", "install <插件名> [--fix]", aliases=["i"])
+def install(plugin: str, *args: str) -> bool:
+    """Install or update a plugin."""
+
+    def get_versions():
+        def remove_empty_values(values):
+            return [v for v in values if v != ""]
+
+        version_url = gen_plugin_version_url(plugin)
+        print(f"正在获取插件版本信息 {version_url}...")
+
+        response = requests.get(version_url)
+        if response.status_code != 200:
+            print(f"获取版本信息失败: {response.status_code}, 请检查是否存在该插件")
+            return False, []
+        return True, remove_empty_values(response.content.decode("utf-8").split("\n"))
+
+    def install_plugin(version):
+        def download_file(url, file_name):
+            print("Downloading file:", url)
+            response = requests.get(url)
+            if response.status_code != 200:
+                print(f"下载插件包失败: {response.status_code}")
+                return False
+            with open(file_name, "wb") as f:
+                f.write(response.content)
+            return True
+
+        print("正在下载插件包...")
+        print(os.path.abspath(f"plugins/{plugin}.zip"))
+        download_file(gen_plugin_download_url(plugin, version), f"plugins/{plugin}.zip")
+        print("正在解压插件包...")
+        directory_path = f"plugins/{plugin}"
+        os.makedirs(directory_path, exist_ok=True)
+        shutil.unpack_archive(f"{directory_path}.zip", directory_path)
+        os.remove(f"{directory_path}.zip")
+        install_plugin_dependencies(plugin)
+
+    fix = args[0] == "--fix" if len(args) else False
+
+    os.makedirs("plugins", exist_ok=True)
+    print(f"正在尝试安装插件: {plugin}")
+    status, versions = get_versions()
+    if not status:
+        return False
+
+    latest_version = versions[-1]
+    exist, current_version = get_plugin_info_by_name(plugin)
+    if exist and not fix:
+        if current_version == latest_version:
+            print(f"插件 {plugin} 已经是最新版本: {current_version}")
+            return
+        print(
+            f"插件 {plugin} 已经安装, 当前版本: {current_version}, 最新版本: {latest_version}"
+        )
+        if input(f"是否更新插件 {plugin} (y/n): ").lower() not in ["y", "yes"]:
+            return
+        shutil.rmtree(f"plugins/{plugin}")
+    print(f"正在安装插件 {plugin}-{latest_version}...")
+    install_plugin(latest_version)
+    print(f"插件 {plugin}-{latest_version} 安装成功!")
+
+
+@registry.register(
+    "create", "创建插件模板", "create <插件名>", aliases=["new", "template"]
+)
+def create_plugin_template(plugin_name: str) -> None:
+    """Create a new plugin template with the given name."""
+    # Validate plugin name
+    if not re.match(r"^[A-Za-z][A-Za-z0-9_]*$", plugin_name):
+        print(
+            f"插件名 '{plugin_name}' 不合法! 插件名必须以字母开头，只能包含字母、数字和下划线。"
+        )
+        return
+
+    # Create plugins directory if it doesn't exist
+    os.makedirs("plugins", exist_ok=True)
+
+    # Create plugin directory
+    plugin_dir = os.path.join("plugins", plugin_name)
+    if os.path.exists(plugin_dir):
+        print(f"插件目录 '{plugin_dir}' 已存在!")
+        if input("是否覆盖? (y/n): ").lower() not in ["y", "yes"]:
+            return
+        # Remove existing directory
+        shutil.rmtree(plugin_dir)
+
+    os.makedirs(plugin_dir)
+
+    # Create __init__.py
+    with open(os.path.join(plugin_dir, "__init__.py"), "w", encoding="utf-8") as f:
+        f.write(
+            f"""from .main import {plugin_name}
+
+__all__ = ["{plugin_name}"]
+"""
+        )
+
+    # Create main.py
+    with open(os.path.join(plugin_dir, "main.py"), "w", encoding="utf-8") as f:
+        f.write(
+            f"""import os
+
+from ncatbot.plugin import BasePlugin, CompatibleEnrollment
+from ncatbot.core import GroupMessage, FriendMessage
+
+bot = CompatibleEnrollment  # 兼容回调函数注册器
+
+
+class {plugin_name}(BasePlugin):
+    name = "{plugin_name}"  # 插件名称
+    version = "0.0.1"  # 插件版本
+    author = "Your Name"  # 插件作者
+    info = "这是一个示例插件，用于演示插件系统的基本功能"  # 插件描述
+    dependencies = {{}}  # 插件依赖，格式: {{"插件名": "版本要求"}}
+
+    @bot.group_event()
+    async def on_group_event(self, msg: GroupMessage):
+        # 群消息事件处理
+        if msg.raw_message == "测试":
+            await self.api.post_group_msg(msg.group_id, text="{plugin_name} 插件测试成功喵")
+
+    @bot.friend_event()
+    async def on_friend_event(self, msg: FriendMessage):
+        # 好友消息事件处理
+        if msg.raw_message == "测试":
+            await self.api.post_friend_msg(msg.user_id, text="{plugin_name} 插件测试成功喵")
+
+    async def on_load(self):
+        # 插件加载时执行的操作
+        print(f"{{self.name}} 插件已加载")
+        print(f"插件版本: {{self.version}}")
+
+        # 注册功能示例
+        self.register_user_func(
+            name="test",
+            handler=self.test_handler,
+            raw_message_filter="/test",
+            description="测试功能",
+            usage="/test",
+            examples=["/test"],
+            tags=["test", "example"],
+            metadata={{"category": "utility"}}
+        )
+
+        # 注册配置项示例
+        self.register_config(
+            key="greeting",
+            default="你好",
+            on_change=self.on_greeting_change,
+            description="问候语",
+            value_type="string",
+            allowed_values=["你好", "Hello", "Hi"],
+            metadata={{"category": "greeting", "max_length": 20}}
+        )
+
+    async def test_handler(self, msg):
+        # 测试功能处理函数
+        await msg.reply_text(f"测试功能调用成功！当前问候语: {{self.configs[0].default}}")
+
+    async def on_greeting_change(self, value, message):
+        # 配置变更回调函数
+        await message.reply_text(f"问候语已修改为: {{value}}")
+"""
+        )
+
+    # Create README.md
+    with open(os.path.join(plugin_dir, "README.md"), "w", encoding="utf-8") as f:
+        f.write(
+            f"""# {plugin_name} 插件
+
+## 简介
+
+这是一个 NcatBot 插件模板。
+
+## 功能
+
+- 群消息事件处理
+- 好友消息事件处理
+- 测试功能 (/test)
+
+## 使用方法
+
+1. 在群聊中发送 "测试" 消息
+2. 在私聊中发送 "测试" 消息
+3. 使用 `/test` 命令测试功能
+
+## 配置项
+
+- `greeting`: 问候语，默认值为 "你好"，可选值: ["你好", "Hello", "Hi"]
+
+## 依赖
+
+- NcatBot
+
+## 作者
+
+Your Name
+
+## 许可证
+
+MIT
+"""
+        )
+
+    # Create .gitignore
+    with open(os.path.join(plugin_dir, ".gitignore"), "w", encoding="utf-8") as f:
+        f.write(
+            """# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+"""
+        )
+
+    # Create requirements.txt
+    with open(os.path.join(plugin_dir, "requirements.txt"), "w", encoding="utf-8") as f:
+        f.write(
+            """# 插件依赖项
+# 例如: requests==2.28.1
+"""
+        )
+
+    print(f"插件模板 '{plugin_name}' 创建成功!")
+    print(f"插件目录: {os.path.abspath(plugin_dir)}")
+    print("请编辑 main.py 文件来实现插件功能。")
+
+
+@registry.register("remove", "卸载插件", "remove <插件名>", aliases=["r", "uninstall"])
+def remove_plugin(plugin: str) -> None:
+    """Remove a plugin."""
+    plugins = list_plugin(False)
+    if plugins.get(plugin, PLUGIN_BROKEN_MARK) == PLUGIN_BROKEN_MARK:
+        print(f"插件 {plugin} 不存在!")
+        return
+
+    shutil.rmtree(f"plugins/{plugin}")
+    print(f"插件 {plugin} 卸载成功!")
+
+
+@registry.register("list", "列出已安装插件", "list", aliases=["l", "ls"])
+def list_plugin(enable_print: bool = True) -> Dict[str, str]:
+    """List all installed plugins."""
+    dirs = os.listdir("plugins")
+    plugins = {}
+    for dir in dirs:
+        try:
+            version = get_plugin_info_by_name(dir)[1]
+            plugins[dir] = version
+        except Exception:
+            plugins[dir] = PLUGIN_BROKEN_MARK
+    if enable_print:
+        if len(plugins) > 0:
+            max_dir_length = max([len(dir) for dir in plugins.keys()])
+            print(f"插件目录{' ' * (max_dir_length - 3)}\t版本")
+            for dir, version in plugins.items():
+                print(f"{dir.ljust(max_dir_length)}\t{version}")
+        else:
+            print("没有安装任何插件!\n\n")
+    return plugins

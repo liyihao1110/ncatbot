@@ -9,6 +9,7 @@
 # -------------------------
 import inspect
 from functools import wraps
+from weakref import WeakValueDictionary
 
 from ncatbot.plugin.event import Event
 from ncatbot.utils import (
@@ -16,18 +17,23 @@ from ncatbot.utils import (
     OFFICIAL_NOTICE_EVENT,
     OFFICIAL_PRIVATE_MESSAGE_EVENT,
     OFFICIAL_REQUEST_EVENT,
+    OFFICIAL_STARTUP_EVENT,
 )
 
 
 class CompatibleEnrollment:
+    """兼容注册器"""
+
     events = {
         OFFICIAL_PRIVATE_MESSAGE_EVENT: [],
         OFFICIAL_GROUP_MESSAGE_EVENT: [],
         OFFICIAL_REQUEST_EVENT: [],
         OFFICIAL_NOTICE_EVENT: [],
+        OFFICIAL_STARTUP_EVENT: [],
     }
 
     def __init__(self):
+        self.plugins: WeakValueDictionary = WeakValueDictionary()
         raise ValueError("不需要实例化该类")  # 防止实例化该类
 
     def event_decorator(event_type):
@@ -81,3 +87,4 @@ class CompatibleEnrollment:
     private_event = event_decorator(OFFICIAL_PRIVATE_MESSAGE_EVENT)
     notice_event = event_decorator(OFFICIAL_NOTICE_EVENT)
     request_event = event_decorator(OFFICIAL_REQUEST_EVENT)
+    startup = event_decorator(OFFICIAL_STARTUP_EVENT)
