@@ -42,7 +42,10 @@ class CompatibleEnrollment:
         def decorator_generator(types="all", row_event=False):
             def decorator(func):
                 signature = inspect.signature(func)
-                in_class = len(signature.parameters) > 1
+                in_class = (
+                    len(signature.parameters) > 1
+                    or signature.parameters.get("self") is not None
+                )
                 if in_class:
                     if row_event:
 
@@ -54,7 +57,10 @@ class CompatibleEnrollment:
 
                         @wraps(func)
                         def wrapper(self, event: Event):
-                            return func(self, event.data)
+                            if len(signature.parameters) > 1:
+                                return func(self, event.data)
+                            else:
+                                return func(self)
 
                 else:
                     if row_event:
@@ -67,7 +73,10 @@ class CompatibleEnrollment:
 
                         @wraps(func)
                         def wrapper(event: Event):
-                            return func(event.data)
+                            if len(signature.parameters) > 0:
+                                return func(event.data)
+                            else:
+                                return func()
 
                 CompatibleEnrollment.events[event_type].append(
                     (
@@ -87,4 +96,4 @@ class CompatibleEnrollment:
     private_event = event_decorator(OFFICIAL_PRIVATE_MESSAGE_EVENT)
     notice_event = event_decorator(OFFICIAL_NOTICE_EVENT)
     request_event = event_decorator(OFFICIAL_REQUEST_EVENT)
-    startup = event_decorator(OFFICIAL_STARTUP_EVENT)
+    startup_event = event_decorator(OFFICIAL_STARTUP_EVENT)

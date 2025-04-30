@@ -36,7 +36,7 @@ class PrefixFilter(Filter):
         self.prefix = prefix
 
     def _check(self, event: Event) -> bool:
-        message = event.get_message()
+        message = event.data.raw_message
         if not message:
             return False
         return message.startswith(self.prefix)
@@ -50,7 +50,7 @@ class RegexFilter(Filter):
         self.pattern = re.compile(pattern)
 
     def _check(self, event: Event) -> bool:
-        message = event.get_message()
+        message = event.data.raw_message
         if not message:
             return False
         return bool(self.pattern.match(message))

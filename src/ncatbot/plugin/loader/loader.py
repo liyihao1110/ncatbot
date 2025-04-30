@@ -47,11 +47,7 @@ def install_plugin_dependecies(plugin_name, confirm=False, print_import_details=
         return
 
     original_sys_path = sys.path.copy()
-    all_install = {
-        pack["name"].strip().lower() for pack in PM.list_installed() if "name" in pack
-    }
     download_new = False
-
     try:
         directory_path = os.path.abspath(directory_path)
         sys.path.append(os.path.dirname(directory_path))
@@ -87,6 +83,11 @@ def install_plugin_dependecies(plugin_name, confirm=False, print_import_details=
                             requirements.remove(pack)
 
             requirements = set(requirements)
+            all_install = {
+                pack["name"].strip().lower()
+                for pack in PM.list_installed()
+                if "name" in pack
+            }
             download = requirements - all_install
             if download:
                 download_new = True
@@ -312,7 +313,7 @@ class PluginLoader:
                         asyncio.run(plugin.__onload__())
 
                         # 获取功能列表
-                        if hasattr(plugin, "funcs"):
+                        if hasattr(plugin, "_funcs"):
                             meta["funcs"] = [
                                 {
                                     "name": func.name,
@@ -328,11 +329,11 @@ class PluginLoader:
                                     "reply": func.reply,
                                     "metadata": getattr(func, "metadata", {}),
                                 }
-                                for func in plugin.funcs
+                                for func in plugin._funcs
                             ]
 
                         # 获取配置项列表
-                        if hasattr(plugin, "configs"):
+                        if hasattr(plugin, "_configs"):
                             meta["configs"] = [
                                 {
                                     "name": conf.key,
@@ -344,7 +345,7 @@ class PluginLoader:
                                         else "Any"
                                     ),
                                 }
-                                for conf in plugin.configs
+                                for conf in plugin._configs
                             ]
 
                         # 清理插件
@@ -421,6 +422,7 @@ class PluginLoader:
 
             except Exception as e:
                 LOG.error(f"加载插件 {name} 时出错: {e}")
+                LOG.info(traceback.format_exc())
 
         self.plugins = temp_plugins
         self._validate_dependencies()
@@ -453,11 +455,11 @@ class PluginLoader:
                 LOG.info(f"准备加载插件 [{len(plugins)}]......")
                 await self.from_class_load_plugins(plugins, **kwargs)
                 LOG.info(f"已加载插件数 [{len(self.plugins)}]")
-                LOG.info("准备加载兼容内容......")
+                LOG.debug("准备加载兼容内容......")
                 self.load_compatible_data()
-                LOG.info("兼容内容加载成功")
+                LOG.debug("兼容内容加载成功")
             except Exception as e:
-                LOG.error(f"加载插件时出错: {e}")
+                LOG.error(f"加载插件 {plugin.__name__} 时出错: {e}")
                 LOG.error(traceback.format_exc())
         else:
             LOG.info(
@@ -478,9 +480,10 @@ class PluginLoader:
                             == func.__qualname__.split(".")[0]
                         ):
                             func = MethodType(func, plugin)
-                            self.event_bus.subscribe(event_type, func, priority)
+                            plugin.register_handler(event_type, func, priority)
                             break
                 else:
+                    LOG.warning("该方法即将弃用...")
                     self.event_bus.subscribe(event_type, func, priority)
 
     async def unload_plugin(self, plugin_name: str, *arg, **kwd):
@@ -490,6 +493,15 @@ class PluginLoader:
         """
         if plugin_name not in self.plugins:
             return
+
+        for cfg in self.plugins[plugin_name]._configs:
+            self.event_bus.configs.pop(cfg.full_key)
+
+        for func in self.plugins[plugin_name]._funcs:
+            for i, _ in enumerate(self.event_bus.funcs):
+                if self.event_bus.funcs[i].name == func.name:
+                    self.event_bus.funcs.pop(i)
+                    break
 
         await self.plugins[plugin_name].__unload__(*arg, **kwd)
         del self.plugins[plugin_name]
@@ -502,41 +514,82 @@ class PluginLoader:
         if plugin_name not in self.plugins:
             raise ValueError(f"插件 '{plugin_name}' 未加载")
 
+        LOG.info(f"开始重载插件: {plugin_name}")
+
+        # 保存旧插件实例
         old_plugin = self.plugins[plugin_name]
-        await self.unload_plugin(plugin_name)
 
         # 获取插件模块路径
         module_path = old_plugin.__class__.__module__
-        module = importlib.import_module(module_path)
 
-        # 强制重新加载
-        importlib.reload(module)
+        try:
+            # 卸载插件
+            LOG.debug(f"卸载插件: {plugin_name}")
+            await self.unload_plugin(plugin_name)
 
-        # 获取插件类
-        plugin_class = None
-        for item_name in dir(module):
-            item = getattr(module, item_name)
-            if (
-                isinstance(item, type)
-                and issubclass(item, BasePlugin)
-                and hasattr(item, "name")
-                and item.name == plugin_name
-            ):
-                plugin_class = item
-                break
+            # 导入模块
+            LOG.debug(f"导入模块: {module_path}")
+            module = importlib.import_module(module_path)
 
-        if not plugin_class:
-            raise ValueError(f"无法在模块中找到插件类 '{plugin_name}'")
+            # 强制重新加载
+            LOG.debug(f"重新加载模块: {module_path}")
+            importlib.reload(module)
 
-        # 创建新的插件实例
-        new_plugin = plugin_class(
-            self.event_bus,
-            debug=self._debug,
-            meta_data=self.meta_data.copy(),
-            api=old_plugin.api,
-        )
-        await new_plugin.__onload__()
-        self.plugins[plugin_name] = new_plugin
+            # 获取插件类
+            plugin_class = None
+            for item_name in dir(module):
+                item = getattr(module, item_name)
+                if (
+                    isinstance(item, type)
+                    and issubclass(item, BasePlugin)
+                    and hasattr(item, "name")
+                    and item.name == plugin_name
+                ):
+                    plugin_class = item
+                    break
+
+            if not plugin_class:
+                raise ValueError(f"无法在模块中找到插件类 '{plugin_name}'")
+
+            # 验证插件类
+            if not self._validate_plugin(plugin_class):
+                raise ValueError(f"插件类 '{plugin_name}' 验证失败")
+
+            # 创建新的插件实例
+            LOG.debug(f"创建新插件实例: {plugin_name}")
+            new_plugin = plugin_class(
+                event_bus=self.event_bus,
+                time_task_scheduler=self.time_task_scheduler,
+                debug=self._debug,
+                meta_data=self.meta_data.copy(),
+                api=old_plugin.api,
+            )
+
+            # 加载插件
+            LOG.debug(f"加载插件: {plugin_name}")
+            await new_plugin.__onload__()
+
+            # 添加到插件列表
+            self.plugins[plugin_name] = new_plugin
+            self.event_bus.add_plugin(new_plugin)
+
+            LOG.info(f"插件 {plugin_name} 重载成功")
+            return True
+
+        except Exception as e:
+            LOG.error(f"重载插件 {plugin_name} 时出错: {e}")
+            LOG.error(traceback.format_exc())
+
+            # 尝试恢复旧插件
+            try:
+                if plugin_name not in self.plugins:
+                    self.plugins[plugin_name] = old_plugin
+                    self.event_bus.add_plugin(old_plugin)
+                    LOG.info(f"已恢复旧插件: {plugin_name}")
+            except Exception as recovery_error:
+                LOG.error(f"恢复旧插件 {plugin_name} 时出错: {recovery_error}")
+
+            raise
 
     def _load_modules_from_directory(
         self, directory_path: str
@@ -560,8 +613,8 @@ class PluginLoader:
             if not config.is_plugin_enabled(filename):
                 LOG.info(f"插件 {filename} 被白名单/黑名单过滤，跳过加载")
                 continue
-
-            install_plugin_dependecies(filename, print_import_details=False)
+            if config.check_plugin_dependecies:
+                install_plugin_dependecies(filename, print_import_details=False)
             try:
                 module = importlib.import_module(filename)
                 modules[filename] = module

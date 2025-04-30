@@ -1,4 +1,5 @@
 # 插件功能
+import os
 from typing import Any, Callable, Dict, List
 
 from ncatbot.core import BaseMessage
@@ -241,6 +242,63 @@ async def set_config(configs: dict[str, Conf], message: BaseMessage):
         message.reply_text_sync(f"配置 {full_key} 修改失败: {e}")
 
 
+async def reload_plugin_command(message: BaseMessage, event_bus=None):
+    """
+    热重载插件命令
+    命令格式: /reload [-f] <plugin_name>
+    -f: 强制加载，即使插件未加载也会尝试加载
+    """
+    args = message.raw_message.split(" ")[1:]
+    if len(args) < 1 or len(args) > 2:
+        message.reply_text_sync(
+            "参数个数错误, 命令格式(不含尖括号): /reload [-f] <plugin_name>"
+        )
+        return
+
+    # 解析参数
+    force_load = False
+    plugin_name = args[-1]  # 最后一个参数总是插件名
+
+    # 检查是否有 -f 参数
+    if len(args) == 2 and args[0] == "-f":
+        force_load = True
+
+    # 检查插件是否存在
+    if not force_load and plugin_name not in [
+        plugin.name for plugin in event_bus.plugins
+    ]:
+        message.reply_text_sync(f"插件 {plugin_name} 未加载，使用 -f 参数可强制加载")
+        return
+
+    try:
+        if force_load and plugin_name not in [
+            plugin.name for plugin in event_bus.plugins
+        ]:
+            # 强制加载插件
+            plugin_loader = event_bus.plugin_loader
+
+            # 获取插件路径
+            from ncatbot.utils import PLUGINS_DIR
+
+            plugin_path = os.path.join(PLUGINS_DIR, plugin_name)
+
+            if not os.path.exists(plugin_path):
+                message.reply_text_sync(f"插件 {plugin_name} 不存在")
+                return
+
+            # 加载插件
+            await plugin_loader.load_plugins(plugin_path, api=event_bus.api)
+            message.reply_text_sync(f"插件 {plugin_name} 已成功加载")
+        else:
+            # 重载插件
+            await event_bus.plugin_loader.reload_plugin(plugin_name)
+            message.reply_text_sync(f"插件 {plugin_name} 已成功重载")
+    except Exception as e:
+        message.reply_text_sync(
+            f"插件 {plugin_name} {'加载' if force_load else '重载'}失败: {e}"
+        )
+
+
 # 更新内置函数定义，使用新的过滤机制
 BUILT_IN_FUNCTIONS = [
     Func(
@@ -279,5 +337,18 @@ BUILT_IN_FUNCTIONS = [
         permission=PermissionGroup.ADMIN.value,
         permission_raise=True,
         reply=True,
+    ),
+    Func(
+        name="reload",
+        plugin_name="ncatbot",
+        func=reload_plugin_command,
+        prefix="/reload",  # 使用前缀匹配
+        permission_raise=True,
+        reply=True,
+        permission=PermissionGroup.ADMIN.value,
+        description="热重载插件",
+        usage="/reload [-f] <plugin_name>",
+        examples=["/reload example_plugin", "/reload -f example_plugin"],
+        tags=["admin", "plugin", "reload"],
     ),
 ]

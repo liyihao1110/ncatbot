@@ -52,12 +52,12 @@ class BuiltinFuncMixin:
         tags: List[str] = None,
         metadata: Dict[str, Any] = None,
     ):
-        if all([name != var.name for var in self.funcs]):
+        if all([name != var.name for var in self._funcs]):
             # 如果没有指定任何过滤器，使用功能名作为默认前缀
             if filter is None and prefix is None and regex is None:
                 prefix = f"/{name}"
 
-            self.funcs.append(
+            self._funcs.append(
                 Func(
                     name,
                     self.name,
@@ -216,7 +216,7 @@ class BuiltinFuncMixin:
             allowed_values (List[Any], optional): 允许的值列表
             metadata (Dict[str, Any], optional): 额外元数据
         """
-        self.configs.append(
+        self._configs.append(
             Conf(
                 self,
                 key,

@@ -46,7 +46,8 @@ class BotClient:
         self.plugins_path = plugins_path
         from ncatbot.plugin import EventBus, PluginLoader
 
-        self.plugin_sys = PluginLoader(EventBus())
+        self.plugin_sys = PluginLoader(None)
+        self.plugin_sys.event_bus = EventBus(plugin_loader=self.plugin_sys)
 
     async def _handle_group_event(self, msg: dict):
         msg: GroupMessage = GroupMessage(msg)
@@ -164,8 +165,8 @@ class BotClient:
                 if self._subscribe_private_message_types is None
                 else self._subscribe_private_message_types
             )
-            _log.info(f"已订阅消息类型:[群聊]{subsribe_group_message_types}")
-            _log.info(f"已订阅消息类型:[私聊]{subsribe_private_message_types}")
+            _log.debug(f"已订阅消息类型:[群聊]{subsribe_group_message_types}")
+            _log.debug(f"已订阅消息类型:[私聊]{subsribe_private_message_types}")
 
         async def time_schedule_heartbeat():
             while True:
