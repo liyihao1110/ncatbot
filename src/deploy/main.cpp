@@ -348,7 +348,7 @@ void setup_env() {
 }
 
 void start_cli(){
-    system("cd ncatbot");
+    chdir(target_dir.c_str());
     string python_path =  "python\\python.exe";
     string cmd = python_path + " -m ncatbot.cli.main";
     // cerr << "exec:" << cmd << endl;
