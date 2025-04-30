@@ -446,6 +446,7 @@ class PluginLoader:
         """
         if "api" not in kwargs:
             raise ValueError("缺少参数: api")
+        self.event_bus.api = kwargs["api"]
 
         if not plugins_path:
             plugins_path = PLUGINS_DIR
