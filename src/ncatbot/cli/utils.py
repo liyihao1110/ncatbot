@@ -5,19 +5,6 @@ import os
 from ncatbot.plugin import PluginLoader
 from ncatbot.utils import PLUGINS_DIR, get_log
 
-# LOG,
-# NUMBER_SAVE,
-# PLUGIN_BROKEN_MARK,
-# PLUGIN_DOWNLOAD_REPO,
-# PYPI_SOURCE,
-# BotClient,
-# config,
-# get_log,
-# get_plugin_info_by_name,
-# get_proxy_url,
-# install_plugin_dependencies,
-
-
 # Constants
 PYPI_SOURCE = "https://mirrors.aliyun.com/pypi/simple/"
 NCATBOT_PATH = "ncatbot"

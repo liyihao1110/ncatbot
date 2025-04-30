@@ -37,6 +37,8 @@ def main() -> None:
 
     if args.command is None:
         # Interactive mode
+        print("输入 help 查看帮助")
+        print("输入 s 启动 NcatBot, 输入 q 退出 CLI")
         while True:
             try:
                 cmd = input(f"NcatBot ({get_qq()})> ").strip()

@@ -101,7 +101,7 @@ def install(plugin: str, *args: str) -> bool:
     if not status:
         return False
 
-    latest_version = versions[-1]
+    latest_version = versions[0]
     exist, current_version = get_plugin_info_by_name(plugin)
     if exist and not fix:
         if current_version == latest_version:
