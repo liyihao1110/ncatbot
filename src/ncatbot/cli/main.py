@@ -5,7 +5,7 @@ import os
 import sys
 from typing import Optional
 
-from ncatbot.cli import NCATBOT_PATH, get_qq, registry, system_commands
+from ncatbot.cli import get_qq, registry, system_commands
 
 
 def setup_work_directory(work_dir: Optional[str] = None) -> None:
@@ -18,8 +18,6 @@ def setup_work_directory(work_dir: Optional[str] = None) -> None:
         sys.exit(1)
 
     os.chdir(work_dir)
-    if not os.path.exists(NCATBOT_PATH):
-        os.makedirs(NCATBOT_PATH)
 
 
 def parse_args() -> argparse.Namespace:
