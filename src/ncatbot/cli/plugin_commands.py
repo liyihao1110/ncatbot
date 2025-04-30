@@ -3,30 +3,45 @@
 import os
 import re
 import shutil
-from typing import Dict
+from typing import Dict, Optional
 
 import requests
 
-from .registry import registry
-from .utils import (
+from ncatbot.cli.registry import registry
+from ncatbot.cli.utils import (
     PLUGIN_BROKEN_MARK,
-    PLUGIN_DOWNLOAD_REPO,
     get_plugin_info_by_name,
     get_proxy_url,
     install_plugin_dependencies,
 )
 
-GITHUB_PROXY = get_proxy_url()
+
+def get_plugin_index() -> Optional[Dict]:
+    """Get the plugin index from the official repository."""
+    try:
+        index_url = f"{get_proxy_url()}/https://raw.githubusercontent.com/ncatbot/NcatBot-Plugins/main/index.json"
+        response = requests.get(index_url)
+        if response.status_code != 200:
+            print(f"获取插件索引失败: {response.status_code}")
+            return None
+        return response.json()
+    except Exception as e:
+        print(f"获取插件索引时出错: {e}")
+        return None
 
 
-def gen_plugin_version_url(plugin: str) -> str:
-    return f"{GITHUB_PROXY}/{PLUGIN_DOWNLOAD_REPO}/{plugin}/version.txt"
+def gen_plugin_download_url(plugin: str, version: str, repository: str) -> str:
+    """Generate the download URL for a plugin version.
 
-
-def gen_plugin_download_url(plugin: str, version: str) -> str:
-    return (
-        f"{GITHUB_PROXY}/{PLUGIN_DOWNLOAD_REPO}/{plugin}/{plugin}-{version.strip()}.zip"
-    )
+    Args:
+        plugin: Plugin name
+        version: Plugin version
+        repository: Plugin repository URL
+    """
+    # Extract repository owner and name from the repository URL
+    # Example: https://github.com/huan-yp/TestPlugin -> huan-yp/TestPlugin
+    repo_path = repository.replace("https://github.com/", "")
+    return f"{get_proxy_url()}/https://github.com/{repo_path}/blob/v{version}/release/{plugin}-{version}.zip"
 
 
 @registry.register("install", "安装插件", "install <插件名> [--fix]", aliases=["i"])
@@ -34,19 +49,25 @@ def install(plugin: str, *args: str) -> bool:
     """Install or update a plugin."""
 
     def get_versions():
-        def remove_empty_values(values):
-            return [v for v in values if v != ""]
-
-        version_url = gen_plugin_version_url(plugin)
-        print(f"正在获取插件版本信息 {version_url}...")
-
-        response = requests.get(version_url)
-        if response.status_code != 200:
-            print(f"获取版本信息失败: {response.status_code}, 请检查是否存在该插件")
+        index = get_plugin_index()
+        if not index:
             return False, []
-        return True, remove_empty_values(response.content.decode("utf-8").split("\n"))
 
-    def install_plugin(version):
+        plugins = index.get("plugins", {})
+        if plugin not in plugins:
+            print(f"插件 {plugin} 不存在于官方仓库中")
+            return False, []
+
+        plugin_info = plugins[plugin]
+        versions = plugin_info.get("versions", [])
+        repository = plugin_info.get("repository", "")
+        if not versions:
+            print(f"插件 {plugin} 没有可用的版本")
+            return False, []
+
+        return True, versions, repository
+
+    def install_plugin(version, repository):
         def download_file(url, file_name):
             print("Downloading file:", url)
             response = requests.get(url)
@@ -59,7 +80,10 @@ def install(plugin: str, *args: str) -> bool:
 
         print("正在下载插件包...")
         print(os.path.abspath(f"plugins/{plugin}.zip"))
-        download_file(gen_plugin_download_url(plugin, version), f"plugins/{plugin}.zip")
+        download_file(
+            gen_plugin_download_url(plugin, version, repository),
+            f"plugins/{plugin}.zip",
+        )
         print("正在解压插件包...")
         directory_path = f"plugins/{plugin}"
         os.makedirs(directory_path, exist_ok=True)
@@ -71,7 +95,7 @@ def install(plugin: str, *args: str) -> bool:
 
     os.makedirs("plugins", exist_ok=True)
     print(f"正在尝试安装插件: {plugin}")
-    status, versions = get_versions()
+    status, versions, repository = get_versions()
     if not status:
         return False
 
@@ -88,7 +112,7 @@ def install(plugin: str, *args: str) -> bool:
             return
         shutil.rmtree(f"plugins/{plugin}")
     print(f"正在安装插件 {plugin}-{latest_version}...")
-    install_plugin(latest_version)
+    install_plugin(latest_version, repository)
     print(f"插件 {plugin}-{latest_version} 安装成功!")
 
 
@@ -133,7 +157,7 @@ __all__ = ["{plugin_name}"]
             f"""import os
 
 from ncatbot.plugin import BasePlugin, CompatibleEnrollment
-from ncatbot.core import GroupMessage, FriendMessage
+from ncatbot.core import GroupMessage, PrivateMessage, BaseMessage
 
 bot = CompatibleEnrollment  # 兼容回调函数注册器
 
@@ -151,11 +175,11 @@ class {plugin_name}(BasePlugin):
         if msg.raw_message == "测试":
             await self.api.post_group_msg(msg.group_id, text="{plugin_name} 插件测试成功喵")
 
-    @bot.friend_event()
-    async def on_friend_event(self, msg: FriendMessage):
+    @bot.private_event()
+    async def on_private_event(self, msg: PrivateMessage):
         # 好友消息事件处理
         if msg.raw_message == "测试":
-            await self.api.post_friend_msg(msg.user_id, text="{plugin_name} 插件测试成功喵")
+            await self.api.post_private_msg(msg.user_id, text="{plugin_name} 插件测试成功喵")
 
     async def on_load(self):
         # 插件加载时执行的操作
@@ -166,7 +190,7 @@ class {plugin_name}(BasePlugin):
         self.register_user_func(
             name="test",
             handler=self.test_handler,
-            raw_message_filter="/test",
+            prefix="/test",
             description="测试功能",
             usage="/test",
             examples=["/test"],
@@ -185,13 +209,13 @@ class {plugin_name}(BasePlugin):
             metadata={{"category": "greeting", "max_length": 20}}
         )
 
-    async def test_handler(self, msg):
+    async def test_handler(self, msg: BaseMessage):
         # 测试功能处理函数
-        await msg.reply_text(f"测试功能调用成功！当前问候语: {{self.configs[0].default}}")
+        await msg.reply_text(f"测试功能调用成功！当前问候语: {{self.config["greeting"]}}")
 
-    async def on_greeting_change(self, value, message):
+    async def on_greeting_change(self, value, msg: BaseMessage):
         # 配置变更回调函数
-        await message.reply_text(f"问候语已修改为: {{value}}")
+        await msg.reply_text(f"问候语已修改为: {{value}}")
 """
         )
 
@@ -320,3 +344,45 @@ def list_plugin(enable_print: bool = True) -> Dict[str, str]:
         else:
             print("没有安装任何插件!\n\n")
     return plugins
+
+
+@registry.register("list_remote", "列出远程可用插件", "list_remote", aliases=["lr"])
+def list_remote_plugins() -> None:
+    """List available plugins from the official repository."""
+    try:
+        # 获取插件索引
+        index_url = f"{get_proxy_url()}/https://raw.githubusercontent.com/ncatbot/NcatBot-Plugins/main/index.json"
+        response = requests.get(index_url)
+        if response.status_code != 200:
+            print(f"获取插件列表失败: {response.status_code}")
+            return
+
+        index_data = response.json()
+        plugins = index_data.get("plugins", {})
+
+        if not plugins:
+            print("没有找到可用的插件")
+            return
+
+        # 计算最大长度用于对齐
+        max_name_length = max(len(name) for name in plugins.keys())
+        max_author_length = max(
+            len(plugin.get("author", "")) for plugin in plugins.values()
+        )
+
+        # 打印表头
+        print(
+            f"{'插件名'.ljust(max_name_length)}\t{'作者'.ljust(max_author_length)}\t描述"
+        )
+        print("-" * (max_name_length + max_author_length + 50))
+
+        # 打印每个插件的信息
+        for name, plugin in sorted(plugins.items()):
+            author = plugin.get("author", "未知")
+            description = plugin.get("description", "无描述")
+            print(
+                f"{name.ljust(max_name_length)}\t{author.ljust(max_author_length)}\t{description}"
+            )
+
+    except Exception as e:
+        print(f"获取插件列表时出错: {e}")

@@ -8,6 +8,7 @@ from ncatbot.plugin.event.event import Event, EventSource
 from ncatbot.plugin.event.filter import create_filter
 from ncatbot.utils import (
     PermissionGroup,
+    run_func_sync,
 )
 
 
@@ -84,7 +85,7 @@ class Conf:
         """
         self.plugin.data["config"][self.key] = value
         if self.on_change and message:
-            self.on_change(value, message)
+            run_func_sync(self.on_change, value, message)
 
 
 async def set_admin(message: BaseMessage):

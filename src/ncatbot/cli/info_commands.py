@@ -2,8 +2,8 @@
 
 from typing import Optional
 
-from .registry import registry
-from .utils import get_qq
+from ncatbot.cli.registry import registry
+from ncatbot.cli.utils import get_qq
 
 
 @registry.register("help", "显示命令帮助信息", "help [命令名]", aliases=["h", "?"])

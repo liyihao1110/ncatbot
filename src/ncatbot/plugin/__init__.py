@@ -18,7 +18,7 @@ from ncatbot.plugin.event import (
 from ncatbot.plugin.loader import (
     CompatibleEnrollment,
     PluginLoader,
-    install_plugin_dependecies,
+    install_plugin_dependencies,
 )
 from ncatbot.plugin.RBACManager import RBACManager
 
@@ -31,6 +31,6 @@ __all__ = [
     "get_global_access_controller",
     "CompatibleEnrollment",
     "PluginLoader",
-    "install_plugin_dependecies",
+    "install_plugin_dependencies",
     "RBACManager",
 ]

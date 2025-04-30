@@ -4,8 +4,8 @@ import subprocess
 import sys
 import time
 
-from .registry import registry
-from .utils import (
+from ncatbot.cli.registry import registry
+from ncatbot.cli.utils import (
     NUMBER_SAVE,
     PYPI_SOURCE,
     install_napcat,
@@ -36,7 +36,7 @@ def set_qq() -> str:
 )
 def start(*args: str) -> None:
     """Start the NcatBot client."""
-    from .utils import LOG, BotClient, config, get_qq
+    from ncatbot.cli.utils import LOG, BotClient, config, get_qq
 
     print("正在启动 NcatBot...")
     print("按下 Ctrl + C 可以正常退出程序")
