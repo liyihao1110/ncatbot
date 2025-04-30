@@ -53,6 +53,7 @@ class SetConfig:
         # NapCat 行为
         self.stop_napcat = False  # NcatBot 下线时是否停止 NapCat
         self.enable_webui_interaction = True  # 是否允许 NcatBot 与 NapCat webui 交互
+        self.report_self_message = False  # 是否报告 Bot 自己的消息
 
         """
         如果 enable_webui_interaction 为 False, 则 NcatBot 不会与 NapCat webui 交互

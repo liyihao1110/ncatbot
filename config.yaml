@@ -32,3 +32,4 @@ skip_plugin_load: false  # 是否跳过插件加载
 # NapCat 行为
 stop_napcat: false  # NcatBot 下线时是否停止 NapCat
 enable_webui_interaction: true  # 是否允许 NcatBot 与 NapCat webui 交互
+report_self_message: false  # 是否报告 Bot 自己的消息
