@@ -2,8 +2,49 @@
 
 
 from ncatbot.utils.assets.color import Color
-from ncatbot.utils.assets.literals import *
-from ncatbot.utils.assets.plugin_custom_err import *
+from ncatbot.utils.assets.literals import (
+    EVENT_QUEUE_MAX_SIZE,
+    INSTALL_SCRIPT_URL,
+    LINUX_NAPCAT_DIR,
+    META_CONFIG_PATH,
+    NAPCAT_CLI_PATH,
+    NAPCAT_CLI_URL,
+    NAPCAT_WEBUI_SALT,
+    OFFICIAL_GROUP_MESSAGE_EVENT,
+    OFFICIAL_HEARTBEAT_EVENT,
+    OFFICIAL_NOTICE_EVENT,
+    OFFICIAL_PRIVATE_MESSAGE_EVENT,
+    OFFICIAL_REQUEST_EVENT,
+    OFFICIAL_SHUTDOWN_EVENT,
+    OFFICIAL_STARTUP_EVENT,
+    PERSISTENT_DIR,
+    PLUGIN_BROKEN_MARK,
+    PLUGINS_DIR,
+    PYPI_URL,
+    REQUEST_SUCCESS,
+    STATUS_BUSY,
+    STATUS_DND,
+    STATUS_HIDDEN,
+    STATUS_LEARNING,
+    STATUS_LEAVE,
+    STATUS_LISTENING,
+    STATUS_LOVE_YOU,
+    STATUS_ONLINE,
+    STATUS_Q_ME,
+    WINDOWS_NAPCAT_DIR,
+    DefaultPermission,
+    PermissionGroup,
+    Status,
+)
+from ncatbot.utils.assets.plugin_custom_err import (
+    InvalidPluginStateError,
+    PluginCircularDependencyError,
+    PluginDependencyError,
+    PluginLoadError,
+    PluginNotFoundError,
+    PluginUnloadError,
+    PluginVersionError,
+)
 
 __all__ = [
     "PluginCircularDependencyError",
@@ -25,6 +66,8 @@ __all__ = [
     "OFFICIAL_REQUEST_EVENT",
     "OFFICIAL_NOTICE_EVENT",
     "OFFICIAL_STARTUP_EVENT",
+    "OFFICIAL_SHUTDOWN_EVENT",
+    "OFFICIAL_HEARTBEAT_EVENT",
     "PLUGIN_BROKEN_MARK",
     "STATUS_ONLINE",
     "STATUS_Q_ME",
