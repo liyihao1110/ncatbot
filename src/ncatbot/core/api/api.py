@@ -152,7 +152,7 @@ class BotAPI(SYNC_API_MIXIN):
                 "source": "空的聊天记录",
                 "summary": "没有可查看的转发消息",
                 "news": [],
-                "prompt": "聊天记录",
+                "prompt": "[聊天记录]",
             }
 
         last_report = reports[-1]
@@ -177,7 +177,7 @@ class BotAPI(SYNC_API_MIXIN):
             "source": f"{target}的聊天记录",
             "summary": f"查看{len(message_content)}条转发消息",
             "news": news,
-            "prompt": "聊天记录",
+            "prompt": "[聊天记录]",
         }
         return result
 

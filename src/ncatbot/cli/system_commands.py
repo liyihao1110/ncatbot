@@ -10,6 +10,8 @@ from ncatbot.cli.utils import (
     NUMBER_SAVE,
     PYPI_SOURCE,
 )
+from ncatbot.core import BotClient
+from ncatbot.utils import config
 
 
 @registry.register("setqq", "重新设置 QQ 号", "setqq", aliases=["qq"])
@@ -36,7 +38,7 @@ def set_qq() -> str:
 )
 def start(*args: str) -> None:
     """Start the NcatBot client."""
-    from ncatbot.cli.utils import LOG, BotClient, config, get_qq
+    from ncatbot.cli.utils import LOG, get_qq
 
     print("正在启动 NcatBot...")
     print("按下 Ctrl + C 可以正常退出程序")

@@ -7,15 +7,12 @@ from typing import Dict, Optional
 
 import requests
 
-from ncatbot.cli.commands import (
-    PLUGIN_BROKEN_MARK,
-)
 from ncatbot.cli.registry import registry
 from ncatbot.cli.utils import (
     get_plugin_info_by_name,
 )
 from ncatbot.plugin import install_plugin_dependencies
-from ncatbot.utils import get_proxy_url
+from ncatbot.utils import PLUGIN_BROKEN_MARK, get_proxy_url
 
 
 def get_plugin_index() -> Optional[Dict]:
