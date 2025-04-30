@@ -133,7 +133,9 @@ class BotAPI(SYNC_API_MIXIN):
         message_content, reports, news = [], [], []
         for msg in messages:
             report = (
-                (await self.get_msg(str(msg)))["data"] if isinstance(msg, str) else msg
+                (await self.get_msg(str(msg)))["data"]
+                if isinstance(msg, (str, int))
+                else msg
             )
             reports.append(report)
             node = await self._message_node_construct(report)
