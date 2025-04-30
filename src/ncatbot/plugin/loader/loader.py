@@ -296,6 +296,9 @@ class PluginLoader:
                             def access_controller(self):
                                 pass
 
+                            def unsubscribe(self, handler_id):
+                                pass
+
                         # 创建一个简单的调度器模拟对象
                         class DummyScheduler:
                             def add_task(self, *args, **kwargs):
