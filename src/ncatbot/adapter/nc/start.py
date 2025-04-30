@@ -220,7 +220,7 @@ def config_napcat():
             LOG.info("Token: " + token + ", Webui port: " + str(port))
 
         except FileNotFoundError:
-            LOG.error("无法读取 WebUI 配置, 将使用默认配置")
+            LOG.warning("无法读取 WebUI 配置, 将使用默认配置")
 
     config_onebot11()
     config_quick_login()
