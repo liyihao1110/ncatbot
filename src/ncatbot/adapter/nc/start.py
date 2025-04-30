@@ -171,7 +171,7 @@ def config_napcat():
                         "host": config.ws_listen_ip,
                         "port": int(urlparse(config.ws_uri).port),
                         "messagePostFormat": "array",
-                        "reportSelfMessage": False,
+                        "reportSelfMessage": config.report_self_message,
                         "token": (
                             str(config.ws_token) if config.ws_token is not None else ""
                         ),
