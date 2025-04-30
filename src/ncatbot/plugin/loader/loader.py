@@ -274,7 +274,7 @@ class PluginLoader:
                         ),
                         "description": getattr(
                             plugin_class,
-                            "info",
+                            "description",
                             "这个作者很懒且神秘,没有写一点点描述,真是一个神秘的插件",
                         ),
                         "author": getattr(plugin_class, "author", "Unknown"),
@@ -305,7 +305,7 @@ class PluginLoader:
                         plugin = plugin_class(
                             event_bus=DummyEventBus(),
                             time_task_scheduler=DummyScheduler(),
-                            debug=True,
+                            debug=False,
                             meta_data={},
                         )
 
@@ -320,7 +320,7 @@ class PluginLoader:
                                     "plugin_name": func.plugin_name,
                                     "description": getattr(func, "description", ""),
                                     "usage": getattr(
-                                        func, "usage", func.raw_message_filter or ""
+                                        func, "usage", f"/{func.name}" or ""
                                     ),
                                     "examples": getattr(func, "examples", []),
                                     "tags": getattr(func, "tags", []),

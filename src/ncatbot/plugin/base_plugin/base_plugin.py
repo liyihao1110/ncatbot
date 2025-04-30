@@ -220,7 +220,7 @@ class BasePlugin(EventHandlerMixin, SchedulerMixin, BuiltinFuncMixin):
                 )
                 print(
                     f"{Color.GRAY}{self.name}\n",
-                    "\n".join(visualize_tree(self.data.data)),
+                    "\n".join(visualize_tree(self.data)),
                     sep="",
                 )
             else:

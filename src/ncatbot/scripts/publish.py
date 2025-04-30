@@ -6,7 +6,7 @@ import shutil
 import stat
 import time
 from pathlib import Path
-from typing import Dict, List
+from typing import List, Tuple
 
 import requests
 from git import GitCommandError, Repo
@@ -65,24 +65,34 @@ def get_token_owner(token):
         return None
 
 
+def verify_branch_exists(owner: str, repo: str, branch: str) -> bool:
+    """验证分支是否存在"""
+    global github_token
+    url = f"https://api.github.com/repos/{owner}/{repo}/branches/{branch}"
+    headers = {
+        "Authorization": f"token {github_token}",
+        "Accept": "application/vnd.github.v3+json",
+    }
+    response = requests.get(url, headers=headers)
+    return response.status_code == 200
+
+
 def create_pull_request(local_branch_name, plugin_name, version):
     print("正在创建插件推送请求...")
     global github_token
-    # 获取主仓库的 owner 和 repo 名称
-    owner = MAIN_REPO_OWNER
-    repo = MAIN_REPO_NAME
+    token_owner = get_token_owner(github_token)
 
-    # GitHub API URL
-    api_url = f"https://api.github.com/repos/{owner}/{repo}/pulls"
+    # GitHub API URL for the official repository
+    api_url = f"https://api.github.com/repos/{MAIN_REPO_OWNER}/{MAIN_REPO_NAME}/pulls"
     headers = {
         "Authorization": f"token {github_token}",
         "Accept": "application/vnd.github.v3+json",
     }
     data = {
-        "title": f"Publish plugin {plugin_name} version {version}",
-        "head": f"{get_token_owner(github_token)}:{local_branch_name}",
+        "title": f"Update plugin {plugin_name} to version {version}",
+        "head": f"{token_owner}:{local_branch_name}",
         "base": MAIN_BRANCH_NAME,
-        "body": f"Publish plugin {plugin_name} version {version}",
+        "body": f"Update plugin {plugin_name} to version {version}\n\nChanges:\n- Added/Updated submodule for {plugin_name}\n- Updated plugin index",
     }
 
     response = requests.post(api_url, json=data, headers=headers)
@@ -90,145 +100,45 @@ def create_pull_request(local_branch_name, plugin_name, version):
         print("成功发起请求!")
     else:
         print(f"发起请求失败: {response.text}")
+        if response.status_code == 422:
+            print("请检查:")
+            print(
+                "1. 如果仍然使用老版本的插件仓库，请删除自己 fork 的 ncatbot/Ncatbot-Plugins"
+            )
+        exit(1)
 
 
-# 检查是否已经存在 Fork
-def has_existing_fork(user_name, repo_name):
+def has_existing_repo(owner: str, repo: str) -> bool:
+    """检查仓库是否存在"""
     global github_token
-    fork_url = f"https://api.github.com/repos/{user_name}/{repo_name}"
+    url = f"https://api.github.com/repos/{owner}/{repo}"
     headers = {
         "Authorization": f"token {github_token}",
         "Accept": "application/vnd.github.v3+json",
     }
-    response = requests.get(fork_url, headers=headers)
+    response = requests.get(url, headers=headers)
     return response.status_code == 200
 
 
-def create_pull_request_to_fork(
-    fork_owner, fork_repo_name, source_owner, source_repo_name, base_branch, head_branch
-):
-    """创建拉取请求到 fork 仓库"""
-    url = f"https://api.github.com/repos/{fork_owner}/{fork_repo_name}/pulls"
+def create_repo(name: str, description: str) -> str:
+    """创建新的 GitHub 仓库"""
+    global github_token
+    url = "https://api.github.com/user/repos"
     headers = {
         "Authorization": f"token {github_token}",
         "Accept": "application/vnd.github.v3+json",
     }
     data = {
-        "title": "Sync with upstream",
-        "body": "Automatically sync with the upstream repository",
-        "head": f"{source_owner}:{head_branch}",
-        "base": base_branch,
+        "name": name,
+        "description": description,
+        "private": False,
+        "auto_init": True,
     }
     response = requests.post(url, headers=headers, json=data)
     if response.status_code == 201:
-        return response.json()["number"]
+        return response.json()["clone_url"]
     else:
-        raise Exception(
-            f"Failed to create pull request: {response.status_code} - {response.text}"
-        )
-
-
-def merge_pull_request(fork_owner, fork_repo_name, pull_number):
-    """合并拉取请求"""
-    url = f"https://api.github.com/repos/{fork_owner}/{fork_repo_name}/pulls/{pull_number}/merge"
-    headers = {
-        "Authorization": f"token {github_token}",
-        "Accept": "application/vnd.github.v3+json",
-    }
-    response = requests.put(url, headers=headers)
-    if response.status_code in [200, 201]:
-        print(f"Pull request #{pull_number} merged successfully!")
-    else:
-        raise Exception(
-            f"Failed to merge pull request: {response.status_code} - {response.text}"
-        )
-
-
-def check_branch_diff(
-    source_owner, source_repo, source_branch, fork_owner, fork_repo, fork_branch
-):
-    """检查分支差异"""
-    url = f"https://api.github.com/repos/{fork_owner}/{fork_repo}/compare/{source_owner}:{source_branch}...{fork_owner}:{fork_branch}"
-    headers = {
-        "Authorization": f"token {github_token}",
-        "Accept": "application/vnd.github+json",
-    }
-    response = requests.get(url, headers=headers)
-    try:
-        response.raise_for_status()
-        compare_data = response.json()
-        behind_by = compare_data.get("behind_by", 0)
-        return behind_by > 0
-    except requests.exceptions.HTTPError as e:
-        print(f"Error checking branch diff: {e}")
-        return False
-
-
-def sync_fork_with_source():
-    try:
-        # 获取 source 仓库的默认分支
-        source_default_branch = MAIN_BRANCH_NAME
-        # print(f"Source repository default branch: {source_default_branch}")
-
-        # 获取 fork 仓库的默认分支
-        fork_default_branch = MAIN_BRANCH_NAME
-        # print(f"Fork repository default branch: {fork_default_branch}")
-
-        # 解构 fork 和 source 的路径
-        fork_owner, fork_repo_name = get_token_owner(github_token), MAIN_REPO_NAME
-        source_owner, source_repo_name = MAIN_REPO_OWNER, MAIN_REPO_NAME
-
-        # 检查是否已经最新
-        has_diff = check_branch_diff(
-            source_owner,
-            source_repo_name,
-            source_default_branch,
-            fork_owner,
-            fork_repo_name,
-            fork_default_branch,
-        )
-        if not has_diff:
-            print("已 Fork 的仓库和官方无差异")
-            return
-
-        # 创建拉取请求
-        pr_number = create_pull_request_to_fork(
-            fork_owner,
-            fork_repo_name,
-            source_owner,
-            source_repo_name,
-            fork_default_branch,
-            source_default_branch,
-        )
-        print(f"Pull request #{pr_number} created.")
-
-        # 合并拉取请求
-        merge_pull_request(fork_owner, fork_repo_name, pr_number)
-        print(f"成功同步 fork {fork_owner}/{fork_repo_name}!")
-
-    except Exception as e:
-        print(f"Error occurred during synchronization: {e}")
-
-
-def fork(owner, repo):
-    """fork 主仓库, 如果已经存在则尝试同步"""
-    global github_token
-    token_owner = get_token_owner(github_token)
-    if has_existing_fork(token_owner, MAIN_REPO_NAME):
-        print("已经存在 Fork, 尝试同步")
-        return sync_fork_with_source()
-    else:
-        # Fork 主仓库
-        fork_url = f"https://api.github.com/repos/{owner}/{repo}/forks"
-        headers = {
-            "Authorization": f"token {github_token}",
-            "Accept": "application/vnd.github.v3+json",
-        }
-        response = requests.post(fork_url, headers=headers)
-        if response.status_code != 202:
-            print(f"Failed to fork repository: {response.text}")
-            return None
-        return response.json()["html_url"]
+        raise Exception(f"Failed to create repository: {response.text}")
 
 
 def get_plugin_path():
@@ -247,52 +157,41 @@ def make_archive_with_gitignore(plugin_name, version, path):
         """
         ignore_patterns = [".git"]
         gitignore_path = Path(path) / ".gitignore"
-
         if gitignore_path.exists():
-            with open(gitignore_path, "r") as f:
+            with open(gitignore_path, "r", encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
-                    if not line or line.startswith("#"):
-                        continue
-                    ignore_patterns.append(line)
+                    if line and not line.startswith("#"):
+                        ignore_patterns.append(line)
         return ignore_patterns
 
     def should_ignore(file_path, ignore_patterns):
         """
-        判断文件是否应该被忽略
+        检查文件是否应该被忽略
         """
         for pattern in ignore_patterns:
-            if file_path.match(pattern):
+            if pattern in str(file_path):
                 return True
         return False
 
     def remove_read_only_files(temp_dir):
         """
-        遍历并修改临时目录中文件和目录的权限，确保能够删除
+        移除临时目录中的只读文件
         """
-        for root, dirs, files in os.walk(temp_dir, topdown=False):
+        for root, dirs, files in os.walk(temp_dir):
             for name in files:
-                file_path = os.path.join(root, name)
-                try:
-                    os.chmod(file_path, 0o777)  # 修改文件权限为可写
-                    os.remove(file_path)
-                except PermissionError:
-                    print(f"无法删除文件: {file_path}")
+                file_path = Path(root) / name
+                if file_path.exists():
+                    os.chmod(file_path, stat.S_IWRITE)
 
-            for name in dirs:
-                dir_path = os.path.join(root, name)
-                try:
-                    os.chmod(dir_path, 0o777)  # 修改目录权限为可写
-                    os.rmdir(dir_path)
-                except PermissionError:
-                    print(f"无法删除目录: {dir_path}")
+    # 创建临时目录
+    temp_dir = Path("temp")
+    if temp_dir.exists():
+        shutil.rmtree(temp_dir)
+    temp_dir.mkdir()
 
-    # 解析 .gitignore 文件
+    # 读取 .gitignore 文件
     ignore_patterns = read_gitignore(path)
-
-    # 创建一个临时目录用于存放需要打包的文件
-    temp_dir = Path(path) / "temp_pack"
-    temp_dir.mkdir(exist_ok=True)
 
     # 遍历根目录下的所有文件和文件夹
     for root, dirs, files in os.walk(path):
@@ -309,16 +208,15 @@ def make_archive_with_gitignore(plugin_name, version, path):
             target_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(file_path, target_path)
 
-    # 使用 shutil.make_archive 打包临时目录
-    archive_name = f"{plugin_name}-{version}"
-    shutil.make_archive(archive_name, "zip", temp_dir)
+    # 创建压缩包
+    archive_name = f"{plugin_name}-{version}.zip"
+    shutil.make_archive(archive_name[:-4], "zip", temp_dir)
 
-    # 删除临时目录，并确保有权限删除
+    # 清理临时目录
     remove_read_only_files(temp_dir)
     shutil.rmtree(temp_dir)
 
-    print(f"打包完成：{archive_name}.zip")
-    return archive_name + ".zip"
+    return archive_name
 
 
 def do_version_change(target_base_folder, version):
@@ -356,52 +254,17 @@ def get_plugin_versions(version_file: str) -> List[str]:
         return [v.strip() for v in f.readlines() if v.strip()]
 
 
-def generate_plugin_index(repo_dir: str) -> Dict:
-    """生成插件索引数据"""
-    plugins_dir = os.path.join(repo_dir, "plugins")
-    index_data = {
-        "plugins": {},
-        "last_update": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-    }
+def update_plugin_index(
+    repo: Repo, plugin_name: str, version: str, plugin_meta: dict
+) -> None:
+    """更新插件索引
 
-    if not os.path.exists(plugins_dir):
-        return index_data
-
-    for plugin_name in os.listdir(plugins_dir):
-        plugin_dir = os.path.join(plugins_dir, plugin_name)
-        if not os.path.isdir(plugin_dir):
-            continue
-
-        # 获取插件信息
-        name, version, meta = get_plugin_info(plugin_dir)
-        if name is None:
-            continue
-
-        # 读取版本文件
-        version_file = os.path.join(plugin_dir, "version.txt")
-        versions = get_plugin_versions(version_file)
-
-        # 构建插件数据
-        plugin_data = {
-            "name": name,
-            "versions": versions,
-            "latest_version": versions[-1] if versions else None,
-            "description": meta.get("description", ""),
-            "author": meta.get("author", ""),
-            "plugin_dependencies": meta.get("plugin_dependencies", {}),
-            "tags": meta.get("tags", []),
-            "homepage": meta.get("homepage", ""),
-            "commands": meta.get("commands", []),
-            "configs": meta.get("configs", []),
-        }
-
-        index_data["plugins"][plugin_name] = plugin_data
-
-    return index_data
-
-
-def update_plugin_index(repo: Repo, plugin_name: str, version: str) -> None:
-    """更新插件索引"""
+    Args:
+        repo: Git repository object
+        plugin_name: Name of the plugin being published
+        version: Version of the plugin being published
+        plugin_meta: Plugin metadata
+    """
     index_file = os.path.join(repo.working_dir, "index.json")
 
     # 读取现有索引或创建新索引
@@ -410,9 +273,38 @@ def update_plugin_index(repo: Repo, plugin_name: str, version: str) -> None:
             with open(index_file, "r", encoding="utf-8") as f:
                 index_data = json.load(f)
         except:
-            index_data = generate_plugin_index(repo.working_dir)
+            index_data = {
+                "plugins": {},
+                "last_update": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+            }
     else:
-        index_data = generate_plugin_index(repo.working_dir)
+        index_data = {
+            "plugins": {},
+            "last_update": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+        }
+
+    # 获取现有版本列表
+    existing_versions = []
+    if plugin_name in index_data["plugins"]:
+        existing_versions = index_data["plugins"][plugin_name].get("versions", [])
+
+    # 更新当前插件的索引信息
+    plugin_data = {
+        "name": plugin_name,
+        "versions": sorted(
+            list(set(existing_versions + [version])), reverse=True
+        ),  # 保留所有版本并按降序排序
+        "latest_version": version,
+        "description": plugin_meta.get("description", ""),
+        "author": plugin_meta.get("author", ""),
+        "plugin_dependencies": plugin_meta.get("plugin_dependencies", {}),
+        "tags": plugin_meta.get("tags", []),
+        "homepage": plugin_meta.get("homepage", ""),
+        "funcs": plugin_meta.get("funcs", []),
+        "configs": plugin_meta.get("configs", []),
+        "repository": f"https://github.com/{get_token_owner(github_token)}/{plugin_name}",
+    }
+    index_data["plugins"][plugin_name] = plugin_data
 
     # 更新时间戳
     index_data["last_update"] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
@@ -423,7 +315,64 @@ def update_plugin_index(repo: Repo, plugin_name: str, version: str) -> None:
 
     # 提交更改
     repo.index.add([index_file])
-    repo.index.commit(f"Update plugin index for {plugin_name} version {version}")
+    commit_message = f"Update plugin index for {plugin_name} version {version}"
+    repo.index.commit(commit_message)
+
+
+def sync_with_official_repo(repo: Repo, force_sync: bool = True) -> None:
+    """同步用户的主仓库与官方仓库。
+
+    参数:
+        repo: 本地仓库的 GitPython Repo 对象。
+        force_sync: 如果为 True，允许合并无关的历史记录。
+
+    步骤:
+        1. 添加官方仓库为远程源。
+        2. 获取最新更改。
+        3. 合并更改到主分支，冲突时优先使用上游更改。
+        4. 强制推送更改到用户仓库。
+    """
+    try:
+        print("正在同步官方仓库...")
+
+        # 添加或更新上游远程源
+        try:
+            repo.create_remote(
+                "upstream", f"https://github.com/{MAIN_REPO_OWNER}/{MAIN_REPO_NAME}.git"
+            )
+        except GitCommandError:
+            # 如果远程源已存在，则更新 URL
+            repo.git.remote(
+                "set-url",
+                "upstream",
+                f"https://github.com/{MAIN_REPO_OWNER}/{MAIN_REPO_NAME}.git",
+            )
+
+        # 获取上游的最新更改
+        repo.git.fetch("upstream")
+
+        # 确保在主分支上
+        repo.git.checkout(MAIN_BRANCH_NAME)
+
+        # 合并上游更改，冲突时优先使用上游版本
+        merge_args = [f"upstream/{MAIN_BRANCH_NAME}", "-X", "theirs"]
+        if force_sync:
+            merge_args.append("--allow-unrelated-histories")
+
+        repo.git.merge(*merge_args)
+
+        # 强制推送更改到用户仓库
+        repo.git.push("origin", MAIN_BRANCH_NAME, "--force")
+
+        print("成功同步官方仓库！")
+
+    except GitCommandError as e:
+        print(f"同步官方仓库失败: {e}")
+        if "unrelated histories" in str(e) and not force_sync:
+            print("仓库历史记录无关。若要强制同步，请设置 force_sync=True。")
+        else:
+            print("请检查错误信息并手动同步仓库后重试。")
+        exit(1)
 
 
 def main():
@@ -432,101 +381,276 @@ def main():
         1. 获取插件路径和插件基本信息
         2. 获取并测试 github token
         """
-        global plugin_name, version, path, github_token
+        global plugin_name, version, path, github_token, plugin_meta
         path = get_plugin_path()
-        plugin_name, version, meta = get_plugin_info(path)
+        plugin_name, version, plugin_meta = get_plugin_info(path)
         if plugin_name is None:
             print("获取插件信息失败, 请检查错误信息")
             exit(0)
         print(f"Plugin name: {plugin_name}, version: {version}")
-        if meta.get("description"):
-            print(f"Description: {meta['description']}")
-        if meta.get("author"):
-            print(f"Author: {meta['author']}")
-        if meta.get("plugin_dependencies"):
-            print(f"Dependencies: {meta['plugin_dependencies']}")
+        if plugin_meta.get("description"):
+            print(f"Description: {plugin_meta['description']}")
+        if plugin_meta.get("author"):
+            print(f"Author: {plugin_meta['author']}")
+        if plugin_meta.get("plugin_dependencies"):
+            print(f"Dependencies: {plugin_meta['plugin_dependencies']}")
         github_token = get_github_token(github_token)
         test_github_token(github_token)
-        return f"publish-{plugin_name}-{version}"
+        return f"update-{plugin_name}-{version}"
 
-    def to_local():
-        """转移最新的远端仓库到本地"""
-        # Fork 主仓库
-        fork(MAIN_REPO_OWNER, MAIN_REPO_NAME)
-        fork_repo = (
-            f"https://github.com/{get_token_owner(github_token)}/{MAIN_REPO_NAME}.git"
-        )
-        print(f"Fork 完成: {fork_repo}")
+    def setup_plugin_repo() -> Tuple[Repo, str]:
+        """设置插件仓库
+        1. 检查插件仓库是否存在
+        2. 如果不存在则创建
+        3. 克隆仓库并创建新版本分支
+        """
+        global github_token
+        token_owner = get_token_owner(github_token)
 
-        # 克隆 Fork 的仓库
+        # 检查插件仓库是否存在
+        if not has_existing_repo(token_owner, plugin_name):
+            print(f"插件仓库 {plugin_name} 不存在，正在创建...")
+            repo_url = create_repo(plugin_name, plugin_meta.get("description", ""))
+        else:
+            repo_url = f"https://github.com/{token_owner}/{plugin_name}.git"
+
+        # 克隆仓库
         try:
-            print("正在克隆远端仓库...")
-            repo = Repo.clone_from(fork_repo, f"temp_repo{time.time()}")
+            print("正在克隆插件仓库...")
+            repo = Repo.clone_from(repo_url, f"temp_repo{time.time()}")
         except GitCommandError as e:
             print(f"Failed to clone repository: {e}")
-            return
+            exit(1)
 
-        print("克隆完成, 为插件发布创建新的分支...")
+        # 创建新版本分支
+        branch_name = f"v{version}"
+        try:
+            # 确保我们在主分支上
+            repo.git.checkout(MAIN_BRANCH_NAME)
+            # 创建并切换到新分支
+            repo.git.checkout("-b", branch_name)
+            print(f"Created and switched to branch: {branch_name}")
+        except GitCommandError as e:
+            print(f"Failed to create branch: {e}")
+            exit(1)
+
+        return repo, os.path.join(repo.working_dir)
+
+    def setup_main_repo() -> Repo:
+        """设置主仓库
+        1. 检查主仓库是否存在
+        2. 如果不存在则从官方仓库 fork
+        3. 克隆仓库并创建新分支
+        """
+        global github_token
+        token_owner = get_token_owner(github_token)
+
+        # 检查主仓库是否存在
+        if not has_existing_repo(token_owner, MAIN_REPO_NAME):
+            print(f"主仓库 {MAIN_REPO_NAME} 不存在，正在从官方仓库 fork...")
+            # Fork 官方仓库
+            api_url = (
+                f"https://api.github.com/repos/{MAIN_REPO_OWNER}/{MAIN_REPO_NAME}/forks"
+            )
+            headers = {
+                "Authorization": f"token {github_token}",
+                "Accept": "application/vnd.github.v3+json",
+            }
+            response = requests.post(api_url, headers=headers)
+            if response.status_code != 202:
+                print(f"Fork 官方仓库失败: {response.text}")
+                exit(1)
+            print("Fork 成功，等待 GitHub 处理...")
+            time.sleep(2)  # 等待 GitHub 处理 fork 请求
+
+        # 克隆仓库
+        try:
+            print("正在克隆主仓库...")
+            repo_url = f"https://github.com/{token_owner}/{MAIN_REPO_NAME}.git"
+            repo = Repo.clone_from(repo_url, f"temp_main_repo{time.time()}")
+        except GitCommandError as e:
+            print(f"Failed to clone repository: {e}")
+            exit(1)
+
+        # 同步官方仓库
+        sync_with_official_repo(repo)
+
         # 创建新分支
-        repo.git.checkout("-b", branch_name)
-        return repo, os.path.join(repo.working_dir, "plugins", plugin_name)
+        branch_name = f"update-{plugin_name}-{version}"
+        try:
+            # 确保我们在主分支上
+            repo.git.checkout(MAIN_BRANCH_NAME)
+            # 创建并切换到新分支
+            repo.git.checkout("-b", branch_name)
+            print(f"Created and switched to branch: {branch_name}")
+        except GitCommandError as e:
+            print(f"Failed to create branch: {e}")
+            exit(1)
 
-    def do_change(repo, target_base_folder):
-        """打包插件并创建更新"""
-        # 写版本
-        do_version_change(target_base_folder, version)
+        return repo
 
-        # 打包插件并移动到对应文件夹
+    def do_plugin_changes(repo: Repo, target_dir: str):
+        """处理插件仓库的更改
+        1. 创建版本文件
+        2. 复制源代码
+        3. 打包插件文件到 release/ 目录
+        4. 提交更改
+        """
+        # 创建版本文件
+        version_file = os.path.join(target_dir, "version.txt")
+        do_version_change(target_dir, version)
+
+        # 创建 release 目录
+        release_dir = os.path.join(target_dir, "release")
+        os.makedirs(release_dir, exist_ok=True)
+
+        # 打包插件文件到 release 目录
         archived_file = make_archive_with_gitignore(plugin_name, version, path)
-        shutil.move(archived_file, target_base_folder)
+        shutil.move(archived_file, release_dir)
 
-        # 更新插件索引
-        update_plugin_index(repo, plugin_name, version)
+        # 复制源代码
+        def copy_source_files(source_path, target_path):
+            """递归复制源代码文件，忽略 .git 目录"""
+            for item in os.listdir(source_path):
+                source_item = os.path.join(source_path, item)
+                target_item = os.path.join(target_path, item)
 
-        # 添加并提交更改
+                if item == ".git":
+                    continue
+
+                if os.path.isdir(source_item):
+                    shutil.copytree(source_item, target_item, dirs_exist_ok=True)
+                else:
+                    shutil.copy2(source_item, target_item)
+
+        # 复制源代码到插件仓库
+        copy_source_files(path, target_dir)
+
+        # 提交更改
         repo.git.add(all=True)
-        commit_message = f"Publish plugin {plugin_name} version {version}"
+        commit_message = f"Release version {version}"
         repo.git.commit("-m", commit_message)
 
-    def do_pull_request(repo, branch_name):
-        """推送更改并创建 PR"""
+    def do_main_changes(repo: Repo):
+        """处理主仓库的更改
+        1. 添加 submodule
+        2. 更新插件索引
+        3. 提交更改
+        """
+        # 添加或更新 submodule
+        plugin_repo_url = (
+            f"https://github.com/{get_token_owner(github_token)}/{plugin_name}.git"
+        )
+        plugin_dir = os.path.join("plugins", plugin_name)
+        version_branch = f"v{version}"
+
         try:
-            print("推送更改...")
-            repo.git.push("--force", "origin", branch_name)
+            # 检查 submodule 是否已经在 git 索引中
+            try:
+                repo.git.submodule("status", plugin_dir)
+                print(f"更新插件 {plugin_name} 的 submodule...")
+                # 先删除旧的 submodule
+                repo.git.submodule("deinit", "-f", plugin_dir)
+                repo.git.rm("-f", plugin_dir)
+                # 重新添加 submodule 并指定分支
+                repo.git.submodule(
+                    "add", "-b", version_branch, plugin_repo_url, plugin_dir
+                )
+            except GitCommandError:
+                # 如果 submodule 不在索引中，则添加新的 submodule
+                print(f"添加插件 {plugin_name} 作为 submodule...")
+                repo.git.submodule(
+                    "add", "-b", version_branch, plugin_repo_url, plugin_dir
+                )
+
+            # 初始化并更新 submodule
+            repo.git.submodule("update", "--init", "--recursive")
+
         except GitCommandError as e:
-            print(f"Failed to push changes: {e}")
-            return
+            print(f"Failed to add/update submodule: {e}")
+            exit(1)
+
+        # 更新主索引
+        update_plugin_index(repo, plugin_name, version, plugin_meta)
+
+    def do_pull_requests(plugin_repo: Repo, main_repo: Repo, branch_name: str):
+        """推送更改并创建 PR
+        1. 推送插件仓库更改
+        2. 推送主仓库更改并创建 PR
+        """
+        try:
+            print("推送插件仓库更改...")
+            plugin_repo.git.push("--force", "origin", f"v{version}")
+        except GitCommandError as e:
+            print(f"Failed to push plugin changes: {e}")
+            exit(1)
+
+        try:
+            print("推送主仓库更改...")
+            # 确保我们在正确的分支上
+            main_repo.git.checkout(branch_name)
+            # 推送更改
+            main_repo.git.push("--force", "origin", branch_name)
+            # 等待 GitHub 处理推送
+            time.sleep(5)  # 增加等待时间
+        except GitCommandError as e:
+            print(f"Failed to push main repository changes: {e}")
+            exit(1)
 
         # 创建 Pull Request
         create_pull_request(branch_name, plugin_name, version)
 
-    def do_close(repo):
-        """完成发布工作后清理本地临时文件"""
-        # 删除临时文件夹
-        temp_repo_path = repo.working_dir
-        print(f"删除临时路径: {temp_repo_path}")
+    def cleanup(repos: List[Repo]):
+        """清理临时文件
+        1. 关闭所有仓库对象
+        2. 删除所有临时目录
+        """
+        # 首先关闭所有仓库对象
+        for repo in repos:
+            try:
+                repo.close()
+            except Exception as e:
+                print(f"Error closing repository: {e}")
 
-        # 首先关闭仓库对象以释放文件句柄
-        repo.close()
-        # 抽象repo关太慢了，不小睡一下会继续占用
+        # 等待文件句柄释放
         time.sleep(2)
 
         def on_rm_error(func, path, _):
-            # 去掉只读
+            """处理删除错误，移除只读属性后重试"""
             os.chmod(path, stat.S_IWRITE)
             func(path)
 
-        try:
-            shutil.rmtree(temp_repo_path, onexc=on_rm_error)
-            print("成功删除临时路径.")
-        except Exception as e:
-            print(f"删除临时路径时出错: {e}")
+        # 删除所有临时目录
+        for repo in repos:
+            temp_repo_path = repo.working_dir
+            print(f"删除临时路径: {temp_repo_path}")
+            try:
+                shutil.rmtree(temp_repo_path, onexc=on_rm_error)
+                print("成功删除临时路径.")
+            except Exception as e:
+                print(f"删除临时路径时出错: {e}")
 
+        # 删除临时打包目录
+        temp_dir = Path("temp")
+        if temp_dir.exists():
+            try:
+                shutil.rmtree(temp_dir, onexc=on_rm_error)
+                print("成功删除临时打包目录.")
+            except Exception as e:
+                print(f"删除临时打包目录时出错: {e}")
+
+    # 执行发布流程
     branch_name = prepare()
-    repo, target_base_folder = to_local()
-    do_change(repo, target_base_folder)
-    do_pull_request(repo, branch_name)
-    do_close(repo)
+    plugin_repo, plugin_dir = setup_plugin_repo()
+    main_repo = setup_main_repo()
+
+    do_plugin_changes(plugin_repo, plugin_dir)
+    do_main_changes(main_repo)
+    do_pull_requests(plugin_repo, main_repo, branch_name)
+    cleanup([plugin_repo, main_repo])
 
 
+# if __name__ == "__main__":
+#     github_token = get_github_token(github_token)
+#     create_pull_request("update-TestPlugin-0.0.5", "TestPlugin", "0.0.5")
 main()

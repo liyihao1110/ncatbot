@@ -228,3 +228,5 @@ class BuiltinFuncMixin:
                 metadata,
             )
         )
+        if key not in self.data["config"]:
+            self.data["config"][key] = default
