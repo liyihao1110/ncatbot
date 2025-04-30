@@ -3,6 +3,7 @@
 import time
 import urllib
 import urllib.parse
+from ipaddress import ip_address
 
 import yaml
 
@@ -48,6 +49,7 @@ class SetConfig:
         # NapCat 行为
         self.stop_napcat = False  # NcatBot 下线时是否停止 NapCat
         self.enable_webui_interaction = True  # 是否允许 NcatBot 与 NapCat webui 交互
+        self.suppress_client_initial_error = False  # 是否屏蔽实例化BotClient时的RuntimeError
 
         """
         如果 enable_webui_interaction 为 False, 则 NcatBot 不会与 NapCat webui 交互
@@ -63,43 +65,25 @@ class SetConfig:
         # 暂不支持的状态
 
     def __str__(self):
-        return f"[BOTQQ]: {self.bt_uin} | [WSURI]: {self.ws_uri} | [WS_TOKEN]: {self.ws_token} | [ROOT]: {self.root} | [WEBUI]: {self.webui_uri}"
-
-    def _is_localhost(self):
         return (
-            self.ws_uri.find("localhost") != -1 or self.ws_uri.find("127.0.0.1") != -1
+            f"[BOTQQ]: {self.bt_uin} | [WSURI]: {self.ws_uri} | [WS_TOKEN]: {self.ws_token} | [ROOT]: {self.root} | [WEBUI]: {self.webui_uri}"
         )
-
-    def _standardize_ws_uri(self):
-        if not (self.ws_uri.startswith("ws://") or self.ws_uri.startswith("wss://")):
-            self.ws_uri = "ws://" + self.ws_uri
-        self.ws_host = urllib.parse.urlparse(self.ws_uri).hostname
-        self.ws_port = urllib.parse.urlparse(self.ws_uri).port
-
-    def _standardize_webui_uri(self):
-        if not (
-            self.webui_uri.startswith("http://")
-            or self.webui_uri.startswith("https://")
-        ):
-            self.webui_uri = "http://" + self.webui_uri
-        self.webui_host = urllib.parse.urlparse(self.webui_uri).hostname
-        self.webui_port = urllib.parse.urlparse(self.webui_uri).port
 
     def load_config(self, path):
         try:
             with open(path, "r", encoding="utf-8") as f:
                 conf = yaml.safe_load(f)
-        except FileNotFoundError:
+        except FileNotFoundError as e:
             LOG.warning("未找到配置文件")
-            raise ValueError("[setting] 配置文件不存在，请检查！")
-        except yaml.YAMLError:
-            raise ValueError("[setting] 配置文件格式错误，请检查！")
+            raise ValueError("[setting] 配置文件不存在，请检查！") from e
+        except yaml.YAMLError as e:
+            raise ValueError("[setting] 配置文件格式错误，请检查！") from e
         except Exception as e:
-            raise ValueError(f"[setting] 未知错误：{e}")
+            raise ValueError(f"[setting] 未知错误：{e}") from e
         try:
             self.__dict__.update(conf)
         except KeyError as e:
-            raise KeyError(f"[setting] 缺少配置项，请检查！详情:{e}")
+            raise KeyError(f"[setting] 缺少配置项，请检查！详情:{e}") from e
 
     def set_root(self, root: str):
         self.root = root
@@ -133,26 +117,35 @@ class SetConfig:
         # 检查 bot_uin 和 root
         if self.bt_uin is self.default_bt_uin:
             LOG.warning("配置项中没有设置 QQ 号")
-            self.set_bot_uin(input("请输入你的 QQ 号:"))
+            self.set_bot_uin(input("请输入 bot 的 QQ 号:"))
         if self.root is self.default_root:
             LOG.warning("建议设置好 root 账号保证权限功能能够正常使用")
         LOG.info(self)
 
         # 检验 ws_uri
-        if not self._is_localhost():
-            LOG.info(
-                "请注意, 当前配置的 NapCat 服务不是本地地址, 请确保远端 NapCat 服务正确配置."
-            )
+        if not ip_address(self.ws_uri).is_loopback:
+            LOG.info("请注意, 当前配置的 NapCat 服务不是本地地址, 请确保远端 NapCat 服务正确配置.")
             time.sleep(1)
         self._standardize_ws_uri()
 
         # 检验 ws_listen_ip
-        if self.ws_listen_ip != "0.0.0.0":
-            if self.ws_listen_ip != self.ws_host:
-                LOG.warning("当前的 ws 监听地址与 ws 地址不一致, 可能无法正确连接")
+        if self.ws_listen_ip not in {"0.0.0.0", self.ws_host}:
+            LOG.warning("当前的 ws 监听地址与 ws 地址不一致, 可能无法正确连接")
 
         # 检验 webui_uri
         self._standardize_webui_uri()
+
+    def _standardize_ws_uri(self):
+        if not (self.ws_uri.startswith("ws://") or self.ws_uri.startswith("wss://")):
+            self.ws_uri = f"ws://{self.ws_uri}"
+        self.ws_host = urllib.parse.urlparse(self.ws_uri).hostname
+        self.ws_port = urllib.parse.urlparse(self.ws_uri).port
+
+    def _standardize_webui_uri(self):
+        if not (self.webui_uri.startswith("http://") or self.webui_uri.startswith("https://")):
+            self.webui_uri = f"http://{self.webui_uri}"
+        self.webui_host = urllib.parse.urlparse(self.webui_uri).hostname
+        self.webui_port = urllib.parse.urlparse(self.webui_uri).port
 
 
 config = SetConfig()
