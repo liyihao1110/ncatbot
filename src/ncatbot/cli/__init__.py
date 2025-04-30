@@ -8,16 +8,11 @@ from ncatbot.cli.utils import (
     LOG,
     NCATBOT_PATH,
     NUMBER_SAVE,
-    PLUGIN_BROKEN_MARK,
     PYPI_SOURCE,
     TEST_PLUGIN,
-    BotClient,
-    config,
     get_log,
     get_plugin_info_by_name,
-    get_proxy_url,
     get_qq,
-    install_plugin_dependencies,
 )
 
 __all__ = [
