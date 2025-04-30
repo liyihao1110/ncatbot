@@ -1,5 +1,6 @@
 # 配置文件
 
+import os
 import time
 import urllib
 import urllib.parse
@@ -45,6 +46,10 @@ class SetConfig:
         self.skip_ncatbot_install_check = False  # 是否跳过 napcat 安装检查
         self.skip_plugin_load = False  # 是否跳过插件加载
 
+        # 插件加载控制
+        self.plugin_whitelist = []  # 插件白名单，为空表示不启用白名单
+        self.plugin_blacklist = []  # 插件黑名单，为空表示不启用黑名单
+
         # NapCat 行为
         self.stop_napcat = False  # NcatBot 下线时是否停止 NapCat
         self.enable_webui_interaction = True  # 是否允许 NcatBot 与 NapCat webui 交互
@@ -61,6 +66,19 @@ class SetConfig:
         self.webui_port = None  # webui 端口
 
         # 暂不支持的状态
+
+        # 尝试从默认配置文件加载
+        self._load_default_config()
+
+    def _load_default_config(self):
+        """尝试从默认配置文件加载配置"""
+        default_config_path = "config.yaml"
+        if os.path.exists(default_config_path):
+            try:
+                LOG.info(f"从默认配置文件 {default_config_path} 加载配置")
+                self.load_config(default_config_path)
+            except Exception as e:
+                LOG.error(f"加载默认配置文件失败: {e}")
 
     def __str__(self):
         return f"[BOTQQ]: {self.bt_uin} | [WSURI]: {self.ws_uri} | [WS_TOKEN]: {self.ws_token} | [ROOT]: {self.root} | [WEBUI]: {self.webui_uri}"
@@ -129,6 +147,30 @@ class SetConfig:
         for k, v in kwargs.items():
             setattr(self, k, v)
 
+    def is_plugin_enabled(self, plugin_name: str) -> bool:
+        """检查插件是否应该被加载
+
+        Args:
+            plugin_name: 插件名称
+
+        Returns:
+            bool: 如果插件应该被加载则返回True，否则返回False
+        """
+        # 如果白名单和黑名单都为空，则加载所有插件
+        if not self.plugin_whitelist and not self.plugin_blacklist:
+            return True
+
+        # 如果白名单不为空，则只加载白名单中的插件
+        if self.plugin_whitelist:
+            return plugin_name in self.plugin_whitelist
+
+        # 如果黑名单不为空，则不加载黑名单中的插件
+        if self.plugin_blacklist:
+            return plugin_name not in self.plugin_blacklist
+
+        # 默认加载所有插件
+        return True
+
     def validate_config(self):
         # 检查 bot_uin 和 root
         if self.bt_uin is self.default_bt_uin:
@@ -153,6 +195,19 @@ class SetConfig:
 
         # 检验 webui_uri
         self._standardize_webui_uri()
+
+        # 检验插件白名单和黑名单
+        if self.plugin_whitelist and self.plugin_blacklist:
+            LOG.error("插件白名单和黑名单不能同时设置，请检查配置")
+            exit(1)
+            raise ValueError("插件白名单和黑名单不能同时设置，请检查配置")
+
+        if self.plugin_whitelist:
+            LOG.info(f"已启用插件白名单: {', '.join(self.plugin_whitelist)}")
+        elif self.plugin_blacklist:
+            LOG.info(f"已启用插件黑名单: {', '.join(self.plugin_blacklist)}")
+        else:
+            LOG.info("未启用插件白名单或黑名单，将加载所有插件")
 
 
 config = SetConfig()

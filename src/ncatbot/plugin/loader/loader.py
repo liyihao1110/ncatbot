@@ -35,6 +35,7 @@ from ncatbot.utils import (
     UniversalLoader,
     get_log,
 )
+from ncatbot.utils.config import config
 
 PM = PipTool()
 LOG = get_log("PluginLoader")
@@ -146,11 +147,20 @@ class PluginLoader:
         """
         验证插件类是否符合规范
         """
-        return all(
-            hasattr(plugin_cls, attr)
-            for attr in ["name", "version"]
-            + (["dependencies"] if with_dependencies else [])
-        )
+        # 检查基本属性
+        if not all(hasattr(plugin_cls, attr) for attr in ["name", "version"]):
+            return False
+
+        # 检查依赖项属性
+        if with_dependencies:
+            if not hasattr(plugin_cls, "dependencies"):
+                # 向后兼容：如果没有 dependencies 属性，添加一个空字典
+                plugin_cls.dependencies = {}
+            elif hasattr(plugin_cls, "requirements"):
+                # 向后兼容：如果有 requirements 属性，将其复制到 dependencies
+                plugin_cls.dependencies = plugin_cls.requirements
+
+        return True
 
     def _build_dependency_graph(self, plugins: List[Type[BasePlugin]]):
         """
@@ -211,37 +221,154 @@ class PluginLoader:
         return load_order
 
     def get_plugin_info(self, plugin_path):
-        """单纯查找模块信息, 不做实例化"""
+        """获取插件的元信息
+
+        Args:
+            plugin_path: 插件路径
+
+        Returns:
+            tuple: (plugin_name, plugin_version, plugin_meta)
+            plugin_meta 包含以下字段:
+            - name: 插件名称
+            - version: 插件版本
+            - plugin_dependencies: 插件依赖的其他插件
+            - description: 插件描述
+            - author: 插件作者
+            - info: 插件详细信息
+            - funcs: 插件命令列表
+            - configs: 插件配置项列表
+        """
         original_sys_path = sys.path.copy()
         try:
             # 临时插入目录到 sys.path，用于加载模块
             directory_path = os.path.abspath(plugin_path)
             sys.path.append(os.path.dirname(directory_path))
             filename = Path(plugin_path).stem
+
             try:
                 # 动态导入模块
                 install_plugin_dependecies(filename)
                 module = importlib.import_module(filename)
+
                 if len(module.__all__) != 1:
                     raise ValueError("Plugin __init__.py wrong format")
+
                 for plugin_class_name in module.__all__:
                     plugin_class = getattr(module, plugin_class_name)
                     if not self._validate_plugin(plugin_class, with_dependencies=False):
                         raise TypeError("Plugin Class is invalid")
-                    name, version = plugin_class.name, plugin_class.version
+
+                    # 获取基本信息
+                    name = plugin_class.name
+                    version = plugin_class.version
+
+                    # 构建元信息
+                    meta = {
+                        "name": name,
+                        "version": version,
+                        "plugin_dependencies": (
+                            plugin_class.dependencies
+                            if hasattr(plugin_class, "dependencies")
+                            else {}
+                        ),
+                        "description": getattr(
+                            plugin_class,
+                            "info",
+                            "这个作者很懒且神秘,没有写一点点描述,真是一个神秘的插件",
+                        ),
+                        "author": getattr(plugin_class, "author", "Unknown"),
+                        "info": getattr(plugin_class, "info", ""),
+                        "funcs": [],
+                        "configs": [],
+                    }
+
+                    # 尝试实例化插件以获取更多信息
+                    try:
+                        # 创建一个简单的事件总线模拟对象
+                        class DummyEventBus:
+                            def add_plugin(self, plugin):
+                                pass
+
+                            def subscribe(self, event_type, handler, priority=0):
+                                pass
+
+                            def access_controller(self):
+                                pass
+
+                        # 创建一个简单的调度器模拟对象
+                        class DummyScheduler:
+                            def add_task(self, *args, **kwargs):
+                                pass
+
+                        # 实例化插件
+                        plugin = plugin_class(
+                            event_bus=DummyEventBus(),
+                            time_task_scheduler=DummyScheduler(),
+                            debug=True,
+                            meta_data={},
+                        )
+
+                        # 执行 on_load
+                        asyncio.run(plugin.__onload__())
+
+                        # 获取功能列表
+                        if hasattr(plugin, "funcs"):
+                            meta["funcs"] = [
+                                {
+                                    "name": func.name,
+                                    "plugin_name": func.plugin_name,
+                                    "description": getattr(func, "description", ""),
+                                    "usage": getattr(
+                                        func, "usage", func.raw_message_filter or ""
+                                    ),
+                                    "examples": getattr(func, "examples", []),
+                                    "tags": getattr(func, "tags", []),
+                                    "permission": func.permission,
+                                    "permission_raise": func.permission_raise,
+                                    "reply": func.reply,
+                                    "metadata": getattr(func, "metadata", {}),
+                                }
+                                for func in plugin.funcs
+                            ]
+
+                        # 获取配置项列表
+                        if hasattr(plugin, "configs"):
+                            meta["configs"] = [
+                                {
+                                    "name": conf.key,
+                                    "full_key": conf.full_key,
+                                    "default": conf.default,
+                                    "type": (
+                                        type(conf.default).__name__
+                                        if conf.default is not None
+                                        else "Any"
+                                    ),
+                                }
+                                for conf in plugin.configs
+                            ]
+
+                        # 清理插件
+                        asyncio.run(plugin.__unload__())
+
+                    except Exception as e:
+                        LOG.warning(f"无法加载插件 {name} 的完整信息: {e}")
+                        LOG.warning("将只返回基本信息")
+
                     break
+
                 if plugin_class_name != name or plugin_class_name != filename:
                     raise ValueError(
                         f"插件文件夹名 {filename}, 插件类名 {plugin_class_name}, 插件名 {name} 不匹配."
                     )
+
             except BaseException as e:
                 LOG.error(f"查找模块 {filename} 时出错: {e}")
-                return None, None
+                return None, None, None
 
         finally:
             sys.path = original_sys_path
 
-        return name, version
+        return name, version, meta
 
     async def from_class_load_plugins(self, plugins: List[Type[BasePlugin]], **kwargs):
         """
@@ -260,8 +387,19 @@ class PluginLoader:
             fix_plugin_dependencies()
             LOG.debug("正在检查插件合法性")
             valid_plugins = [p for p in plugins if self._validate_plugin(p)]
+
+            # 过滤掉不在白名单或黑名单中的插件
+            filtered_plugins = []
+            for plugin in valid_plugins:
+                if config.is_plugin_enabled(plugin.name):
+                    filtered_plugins.append(plugin)
+                else:
+                    LOG.info(f"插件 {plugin.name} 被白名单/黑名单过滤，跳过加载")
+
+            valid_plugins = filtered_plugins
+
             LOG.debug("正在构建插件依赖图")
-            self._build_dependency_graph(plugins)
+            self._build_dependency_graph(valid_plugins)
             load_order = self._resolve_load_order()
         except Exception as e:
             LOG.error(f"构造插件依赖图时出错: {e}")
@@ -417,6 +555,12 @@ class PluginLoader:
         for filename in os.listdir(directory_path):
             if not os.path.isdir(os.path.join(directory_path, filename)):
                 continue
+
+            # 检查插件是否应该被加载
+            if not config.is_plugin_enabled(filename):
+                LOG.info(f"插件 {filename} 被白名单/黑名单过滤，跳过加载")
+                continue
+
             install_plugin_dependecies(filename, print_import_details=False)
             try:
                 module = importlib.import_module(filename)

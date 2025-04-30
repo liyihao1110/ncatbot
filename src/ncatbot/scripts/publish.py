@@ -1,10 +1,12 @@
 # 插件发布脚本
 
+import json
 import os
 import shutil
 import stat
 import time
 from pathlib import Path
+from typing import Dict, List
 
 import requests
 from git import GitCommandError, Repo
@@ -322,17 +324,106 @@ def make_archive_with_gitignore(plugin_name, version, path):
 def do_version_change(target_base_folder, version):
     version_list = os.path.join(target_base_folder, "version.txt")
     os.makedirs(target_base_folder, exist_ok=True)
+
+    # Normalize version string to ensure consistent format
+    version = version.strip()
+
     if not os.path.exists(version_list):
-        with open(version_list, "w") as f:
+        # Create new version.txt with proper newline
+        with open(version_list, "w", newline="\n") as f:
             f.write(version + "\n")
     else:
-        with open(version_list, "r") as f:
-            versions = f.readlines()
+        # Read existing versions and clean up the file
+        with open(version_list, "r", newline="\n") as f:
+            versions = [v.strip() for v in f.readlines()]
+            # Remove empty lines and duplicates while preserving order
+            versions = [v for v in versions if v]
+
         if version in versions:
             print(f"版本 {version} 已存在, 请更改版本号后再使用自动发布功能")
             exit(1)
-        with open(version_list, "a") as f:
-            f.write(version + "\n")
+
+        # Write back cleaned up versions plus new version
+        with open(version_list, "w", newline="\n") as f:
+            f.write("\n".join(versions) + "\n" + version + "\n")
+
+
+def get_plugin_versions(version_file: str) -> List[str]:
+    """获取插件的所有版本"""
+    if not os.path.exists(version_file):
+        return []
+    with open(version_file, "r", newline="\n") as f:
+        return [v.strip() for v in f.readlines() if v.strip()]
+
+
+def generate_plugin_index(repo_dir: str) -> Dict:
+    """生成插件索引数据"""
+    plugins_dir = os.path.join(repo_dir, "plugins")
+    index_data = {
+        "plugins": {},
+        "last_update": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+    }
+
+    if not os.path.exists(plugins_dir):
+        return index_data
+
+    for plugin_name in os.listdir(plugins_dir):
+        plugin_dir = os.path.join(plugins_dir, plugin_name)
+        if not os.path.isdir(plugin_dir):
+            continue
+
+        # 获取插件信息
+        name, version, meta = get_plugin_info(plugin_dir)
+        if name is None:
+            continue
+
+        # 读取版本文件
+        version_file = os.path.join(plugin_dir, "version.txt")
+        versions = get_plugin_versions(version_file)
+
+        # 构建插件数据
+        plugin_data = {
+            "name": name,
+            "versions": versions,
+            "latest_version": versions[-1] if versions else None,
+            "description": meta.get("description", ""),
+            "author": meta.get("author", ""),
+            "plugin_dependencies": meta.get("plugin_dependencies", {}),
+            "tags": meta.get("tags", []),
+            "homepage": meta.get("homepage", ""),
+            "commands": meta.get("commands", []),
+            "configs": meta.get("configs", []),
+        }
+
+        index_data["plugins"][plugin_name] = plugin_data
+
+    return index_data
+
+
+def update_plugin_index(repo: Repo, plugin_name: str, version: str) -> None:
+    """更新插件索引"""
+    index_file = os.path.join(repo.working_dir, "index.json")
+
+    # 读取现有索引或创建新索引
+    if os.path.exists(index_file):
+        try:
+            with open(index_file, "r", encoding="utf-8") as f:
+                index_data = json.load(f)
+        except:
+            index_data = generate_plugin_index(repo.working_dir)
+    else:
+        index_data = generate_plugin_index(repo.working_dir)
+
+    # 更新时间戳
+    index_data["last_update"] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+
+    # 写入索引文件
+    with open(index_file, "w", encoding="utf-8") as f:
+        json.dump(index_data, f, ensure_ascii=False, indent=2)
+
+    # 提交更改
+    repo.index.add([index_file])
+    repo.index.commit(f"Update plugin index for {plugin_name} version {version}")
 
 
 def main():
@@ -343,11 +434,17 @@ def main():
         """
         global plugin_name, version, path, github_token
         path = get_plugin_path()
-        plugin_name, version = get_plugin_info(path)
+        plugin_name, version, meta = get_plugin_info(path)
         if plugin_name is None:
             print("获取插件信息失败, 请检查错误信息")
             exit(0)
         print(f"Plugin name: {plugin_name}, version: {version}")
+        if meta.get("description"):
+            print(f"Description: {meta['description']}")
+        if meta.get("author"):
+            print(f"Author: {meta['author']}")
+        if meta.get("plugin_dependencies"):
+            print(f"Dependencies: {meta['plugin_dependencies']}")
         github_token = get_github_token(github_token)
         test_github_token(github_token)
         return f"publish-{plugin_name}-{version}"
@@ -379,11 +476,12 @@ def main():
         # 写版本
         do_version_change(target_base_folder, version)
 
-        # 打包插件并移动到对应文件夹(打包文件而非文件夹, 要解压到 plugins/plugin_name/)
+        # 打包插件并移动到对应文件夹
         archived_file = make_archive_with_gitignore(plugin_name, version, path)
-
-        # 移动到 git 文件夹
         shutil.move(archived_file, target_base_folder)
+
+        # 更新插件索引
+        update_plugin_index(repo, plugin_name, version)
 
         # 添加并提交更改
         repo.git.add(all=True)
