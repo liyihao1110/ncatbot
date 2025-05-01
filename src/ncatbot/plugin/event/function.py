@@ -308,7 +308,7 @@ BUILT_IN_FUNCTIONS = [
         func=set_admin,
         prefix="/sm",  # 使用前缀匹配替代raw_message_filter
         permission_raise=True,
-        reply=True,
+        reply=False,
         permission=PermissionGroup.ROOT.value,
     ),
     Func(
@@ -317,7 +317,7 @@ BUILT_IN_FUNCTIONS = [
         func=show_plugin,
         prefix="/plg",  # 使用前缀匹配替代raw_message_filter
         permission_raise=True,
-        reply=True,
+        reply=False,
         permission=PermissionGroup.ADMIN.value,
     ),
     Func(
@@ -326,7 +326,7 @@ BUILT_IN_FUNCTIONS = [
         func=access,
         prefix="/acs",  # 使用前缀匹配替代raw_message_filter
         permission_raise=True,
-        reply=True,
+        reply=False,
         permission=PermissionGroup.ADMIN.value,
     ),
     Func(
@@ -337,7 +337,7 @@ BUILT_IN_FUNCTIONS = [
         prefix="/cfg",  # 使用前缀匹配替代raw_message_filter
         permission=PermissionGroup.ADMIN.value,
         permission_raise=True,
-        reply=True,
+        reply=False,
     ),
     Func(
         name="reload",
@@ -345,7 +345,7 @@ BUILT_IN_FUNCTIONS = [
         func=reload_plugin_command,
         prefix="/reload",  # 使用前缀匹配
         permission_raise=True,
-        reply=True,
+        reply=False,
         permission=PermissionGroup.ADMIN.value,
         description="热重载插件",
         usage="/reload [-f] <plugin_name>",
