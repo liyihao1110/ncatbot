@@ -52,7 +52,8 @@ class BotClient:
         self.plugins_path = plugins_path
         from ncatbot.plugin import EventBus, PluginLoader
 
-        self.plugin_sys = PluginLoader(EventBus())
+        self.plugin_sys = PluginLoader(None)
+        self.plugin_sys.event_bus = EventBus(plugin_loader=self.plugin_sys)
 
     def group_event(self, types=None):
         self._subscribe_group_message_types = types
@@ -134,7 +135,7 @@ class BotClient:
         return self.api
 
     def exit_(self, retcode=0):
-        """嵌入模式中主动触发退出"""
+        """主动模式中手动触发退出"""
         try:
             self.clean_up()
         except Exception:
@@ -250,8 +251,8 @@ class BotClient:
                 if self._subscribe_private_message_types is None
                 else self._subscribe_private_message_types
             )
-            _log.info(f"已订阅消息类型:[群聊]{subsribe_group_message_types}")
-            _log.info(f"已订阅消息类型:[私聊]{subsribe_private_message_types}")
+            _log.debug(f"已订阅消息类型:[群聊]{subsribe_group_message_types}")
+            _log.debug(f"已订阅消息类型:[私聊]{subsribe_private_message_types}")
 
         async def time_schedule_heartbeat():
             while True:
@@ -299,3 +300,51 @@ class BotClient:
         finally:
             # TODO 非正常退出时不会正常保存
             self.exit_(retcode)
+            self.exit(exit_process=True)
+
+    def run(self, *args, **kwargs):
+        """启动"""
+        for key in config.__dict__:
+            if key in kwargs:
+                config.__dict__[key] = kwargs[key]
+        config.validate_config()
+        launch_napcat_service(*args, **kwargs)  # 保证 NapCat 正常启动
+        _log.info("NapCat 服务启动登录完成")
+        self._start(*args, **kwargs)
+
+    def run_none_blocking(self, *args, **kwargs):
+        """非阻塞启动"""
+        Thread(target=self.run, args=args, kwargs=kwargs, daemon=True).start()
+        return self.api
+
+    def run_blocking(self, *args, **kwargs):
+        """阻塞启动"""
+        lock = Lock()
+        lock.acquire()  # 全局加锁
+        self.add_startup_handler(
+            lambda: lock.release()
+        )  # 在 NcatBot 接口可用时, 释放全局锁
+        self.run_none_blocking(*args, **kwargs)
+        lock.acquire()  # 等待 NcatBot 启动完成
+        return self.api
+
+    def exit(self, exit_process=False):
+        """嵌入模式中主动触发退出"""
+        try:
+            _log.info("插件卸载中...")
+            self.plugin_sys.unload_all()
+            _log.info("清理回调函数...")
+            self._group_event_handlers.clear()
+            self._private_event_handlers.clear()
+            self._notice_event_handlers.clear()
+            self._request_event_handlers.clear()
+            _log.info("清理工作结束, NcatBot 已经正常退出")
+            time.sleep(0.2)
+        except Exception:
+            _log.error("清理工作失败, 报错如下:")
+            _log.error(traceback.format_exc())
+            return False
+        if exit_process:
+            exit(0)
+        return True
+

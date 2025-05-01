@@ -1,12 +1,14 @@
 # 插件功能
-import re
-from typing import Any, Callable, List
+import os
+from typing import Any, Callable, Dict, List
 
 from ncatbot.core import BaseMessage
 from ncatbot.plugin.event.access_controller import get_global_access_controller
 from ncatbot.plugin.event.event import Event, EventSource
+from ncatbot.plugin.event.filter import create_filter
 from ncatbot.utils import (
     PermissionGroup,
+    run_func_sync,
 )
 
 
@@ -19,47 +21,71 @@ class Func:
         plugin_name,  # 插件名, 构造权限路径时使用
         func: Callable[[BaseMessage], None],
         filter: Callable[[Event], bool] = None,
-        raw_message_filter: str = None,
+        prefix: str = None,  # 新增: 前缀匹配
+        regex: str = None,  # 新增: 正则匹配
         permission: PermissionGroup = PermissionGroup.USER.value,  # 向事件总线传递默认权限设置
         permission_raise: bool = False,  # 是否提权, 判断是否有权限执行时使用
         reply: bool = False,
+        description: str = "",  # 功能描述
+        usage: str = "",  # 使用说明
+        examples: List[str] = None,  # 使用示例
+        tags: List[str] = None,  # 功能标签
+        metadata: Dict[str, Any] = None,  # 额外元数据
     ):
         self.name = name
         self.plugin_name = plugin_name
         self.func = func
-        self.filter = filter
-        self.raw_message_filter = raw_message_filter
+        self.filter_chain = create_filter(
+            prefix=prefix, regex=regex, custom_filter=filter
+        )
         self.permission = permission
         self.permission_raise = permission_raise
-        self.reply = reply  # 权限不足是否回复
+        self.reply = reply
+        self.description = description
+        self.usage = usage
+        self.examples = examples or []
+        self.tags = tags or []
+        self.metadata = metadata or {}
 
     def is_activate(self, event: Event) -> bool:
         """判断是否应该激活功能"""
-        if self.filter and not self.filter(event):
-            return False
-        elif isinstance(event.data, BaseMessage):
-            if self.raw_message_filter and not re.match(
-                self.raw_message_filter, event.data.raw_message
-            ):
-                return False
-        return True
+        if self.filter_chain is None:
+            return True
+        return self.filter_chain.check(event)
 
 
 class Conf:
     def __init__(
-        self, plugin, key, rptr: Callable[[str], Any] = None, default: Any = None
+        self,
+        plugin,
+        key,
+        on_change: Callable[[str, BaseMessage], Any] = None,
+        default: Any = None,
+        description: str = "",  # 配置项描述
+        value_type: str = "",  # 值类型描述
+        allowed_values: List[Any] = None,  # 允许的值列表
+        metadata: Dict[str, Any] = None,  # 额外元数据
     ):
         self.full_key = f"{plugin.name}.{key}"  # 全限定名 {plugin_name}.{key}
         self.key = key
-        self.rptr = rptr
+        self.on_change = on_change
         self.plugin = plugin
         self.default = default
+        self.description = description
+        self.value_type = value_type
+        self.allowed_values = allowed_values or []
+        self.metadata = metadata or {}
 
-    def modify(self, value):
-        # try:
-        value = self.rptr(value) if self.rptr else value
+    def modify(self, value, message: BaseMessage = None):
+        """修改配置值
+
+        Args:
+            value: 新的配置值
+            message: 触发修改的消息对象，如果为None则只修改配置不触发回调
+        """
         self.plugin.data["config"][self.key] = value
-        # except Exception as e:
+        if self.on_change and message:
+            run_func_sync(self.on_change, value, message)
 
 
 async def set_admin(message: BaseMessage):
@@ -186,6 +212,7 @@ async def set_config(configs: dict[str, Conf], message: BaseMessage):
         message.reply_text_sync(
             "参数个数错误, 命令格式(不含尖括号): /cfg <plugin_name>.<key> <value>"
         )
+        return
     full_key, value = tuple(args)
 
     # 检查配置项是否存在
@@ -210,38 +237,96 @@ async def set_config(configs: dict[str, Conf], message: BaseMessage):
 
     # 修改
     try:
-        configs[full_key].modify(value)
+        configs[full_key].modify(value, message)
         message.reply_text_sync(f"配置 {full_key} 已经修改为 {value}")
     except Exception as e:
         message.reply_text_sync(f"配置 {full_key} 修改失败: {e}")
 
 
-builtin_functions: List[Func] = [
+async def reload_plugin_command(message: BaseMessage, event_bus=None):
+    """
+    热重载插件命令
+    命令格式: /reload [-f] <plugin_name>
+    -f: 强制加载，即使插件未加载也会尝试加载
+    """
+    args = message.raw_message.split(" ")[1:]
+    if len(args) < 1 or len(args) > 2:
+        message.reply_text_sync(
+            "参数个数错误, 命令格式(不含尖括号): /reload [-f] <plugin_name>"
+        )
+        return
+
+    # 解析参数
+    force_load = False
+    plugin_name = args[-1]  # 最后一个参数总是插件名
+
+    # 检查是否有 -f 参数
+    if len(args) == 2 and args[0] == "-f":
+        force_load = True
+
+    # 检查插件是否存在
+    if not force_load and plugin_name not in [
+        plugin.name for plugin in event_bus.plugins
+    ]:
+        message.reply_text_sync(f"插件 {plugin_name} 未加载，使用 -f 参数可强制加载")
+        return
+
+    try:
+        if force_load and plugin_name not in [
+            plugin.name for plugin in event_bus.plugins
+        ]:
+            # 强制加载插件
+            plugin_loader = event_bus.plugin_loader
+
+            # 获取插件路径
+            from ncatbot.utils import PLUGINS_DIR
+
+            plugin_path = os.path.join(PLUGINS_DIR, plugin_name)
+
+            if not os.path.exists(plugin_path):
+                message.reply_text_sync(f"插件 {plugin_name} 不存在")
+                return
+
+            # 加载插件
+            await plugin_loader.load_plugins(plugin_path, api=event_bus.api)
+            message.reply_text_sync(f"插件 {plugin_name} 已成功加载")
+        else:
+            # 重载插件
+            await event_bus.plugin_loader.reload_plugin(plugin_name)
+            message.reply_text_sync(f"插件 {plugin_name} 已成功重载")
+    except Exception as e:
+        message.reply_text_sync(
+            f"插件 {plugin_name} {'加载' if force_load else '重载'}失败: {e}"
+        )
+
+
+# 更新内置函数定义，使用新的过滤机制
+BUILT_IN_FUNCTIONS = [
     Func(
         name="sm",
         plugin_name="ncatbot",
         func=set_admin,
-        raw_message_filter="/sm",
+        prefix="/sm",  # 使用前缀匹配替代raw_message_filter
         permission_raise=True,
-        reply=True,
+        reply=False,
         permission=PermissionGroup.ROOT.value,
     ),
     Func(
         name="plg",
         plugin_name="ncatbot",
         func=show_plugin,
-        raw_message_filter="/plg",
+        prefix="/plg",  # 使用前缀匹配替代raw_message_filter
         permission_raise=True,
-        reply=True,
+        reply=False,
         permission=PermissionGroup.ADMIN.value,
     ),
     Func(
         name="acs",
         plugin_name="ncatbot",
         func=access,
-        raw_message_filter="/acs",
+        prefix="/acs",  # 使用前缀匹配替代raw_message_filter
         permission_raise=True,
-        reply=True,
+        reply=False,
         permission=PermissionGroup.ADMIN.value,
     ),
     Func(
@@ -249,9 +334,22 @@ builtin_functions: List[Func] = [
         plugin_name="ncatbot",
         func=set_config,
         filter=None,
-        raw_message_filter="/cfg",
+        prefix="/cfg",  # 使用前缀匹配替代raw_message_filter
         permission=PermissionGroup.ADMIN.value,
         permission_raise=True,
-        reply=True,
+        reply=False,
+    ),
+    Func(
+        name="reload",
+        plugin_name="ncatbot",
+        func=reload_plugin_command,
+        prefix="/reload",  # 使用前缀匹配
+        permission_raise=True,
+        reply=False,
+        permission=PermissionGroup.ADMIN.value,
+        description="热重载插件",
+        usage="/reload [-f] <plugin_name>",
+        examples=["/reload example_plugin", "/reload -f example_plugin"],
+        tags=["admin", "plugin", "reload"],
     ),
 ]

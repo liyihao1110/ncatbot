@@ -38,7 +38,7 @@ def connect_napcat():
     # INFO_TIME_EXPIRE = time.time() + 20
     LOG.info("正在连接 napcat websocket 服务器...")
     while not napcat_service_ok():
-        time.sleep(1)
+        time.sleep(0.05)
         if time.time() > MAX_TIME_EXPIRE:
             info(True)
 
