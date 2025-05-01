@@ -256,6 +256,10 @@ async def reload_plugin_command(message: BaseMessage, event_bus=None):
         )
         return
 
+    from ncatbot.plugin.event.event_bus import EventBus
+
+    event_bus: EventBus = event_bus
+
     # 解析参数
     force_load = False
     plugin_name = args[-1]  # 最后一个参数总是插件名

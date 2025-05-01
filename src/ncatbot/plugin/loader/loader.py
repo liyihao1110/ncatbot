@@ -503,15 +503,7 @@ class PluginLoader:
         if plugin_name not in self.plugins:
             return
 
-        for cfg in self.plugins[plugin_name]._configs:
-            self.event_bus.configs.pop(cfg.full_key)
-
-        for func in self.plugins[plugin_name]._funcs:
-            for i, _ in enumerate(self.event_bus.funcs):
-                if self.event_bus.funcs[i].name == func.name:
-                    self.event_bus.funcs.pop(i)
-                    break
-
+        self.event_bus.remove_plugin(self.plugins[plugin_name])
         await self.plugins[plugin_name].__unload__(*arg, **kwd)
         del self.plugins[plugin_name]
 

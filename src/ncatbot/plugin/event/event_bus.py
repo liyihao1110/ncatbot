@@ -29,13 +29,18 @@ class EventBus:
         """
         初始化事件总线
         """
+        from ncatbot.core import BotAPI
+        from ncatbot.plugin.base_plugin.base_plugin import BasePlugin
+        from ncatbot.plugin.loader.loader import PluginLoader
+
         self._exact_handlers = {}
         self._regex_handlers = []
         self.access_controller = get_global_access_controller()
-        self.funcs: List[Func] = []
+        self.funcs: list[Func] = []
         self.configs: dict[str, Conf] = {}
-        self.plugin_loader = plugin_loader
-        self.plugins: List = []  # List[BasePlugin]
+        self.plugin_loader: PluginLoader = plugin_loader
+        self.plugins: list[BasePlugin] = []
+        self.api: BotAPI = None
         self.load_builtin_funcs()
         self.subscribe(
             OFFICIAL_GROUP_MESSAGE_EVENT, self._func_activator, 100
@@ -111,6 +116,17 @@ class EventBus:
                 mode="white",
                 create_permission_path=True,
             )
+
+    def remove_plugin(self, plugin):
+        for cfg in plugin._configs:
+            self.configs.pop(cfg.full_key)
+
+        for func in plugin._funcs:
+            for i, _ in enumerate(self.funcs):
+                if self.funcs[i].name == func.name:
+                    self.funcs.pop(i)
+                    break
+        self.plugins.remove(plugin)
 
     def add_plugin(self, plugin):
         self.plugins.append(plugin)
