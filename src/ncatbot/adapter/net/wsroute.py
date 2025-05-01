@@ -26,7 +26,7 @@ async def check_websocket(uri):
                 else {"Content-Type": "application/json"}
             ),
         ):
-            _log.info(f"WebSocket {uri} 可用.")
+            _log.debug(f"WebSocket {uri} 可用.")
             return True
     except Exception:
         # _log.error(f"检查 WebSocket 端口时发生错误: {e}")

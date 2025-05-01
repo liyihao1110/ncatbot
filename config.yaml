@@ -1,0 +1,35 @@
+# NcatBot 配置文件
+
+# 基本配置
+root: "123456"  # root 账号
+bt_uin: "123456"  # bot 账号
+ws_uri: "ws://localhost:3001"  # ws 地址
+webui_uri: "http://localhost:6099"  # webui 地址
+webui_token: "napcat"  # webui 令牌
+ws_token: ""  # ws_uri 令牌
+ws_listen_ip: "localhost"  # ws 监听 ip, 默认只监听本机
+remote_mode: false  # 是否远程模式, 即 NapCat 服务不在本机运行
+
+# 更新检查
+check_napcat_update: false  # 是否检查 napcat 更新
+check_ncatbot_update: true  # 是否检查 ncatbot 更新
+
+# 开发者调试
+debug: false  # 是否开启调试模式
+skip_ncatbot_install_check: false  # 是否跳过 napcat 安装检查
+skip_plugin_load: false  # 是否跳过插件加载
+
+# 插件加载控制
+# 白名单和黑名单互斥，只能设置其中一个
+# 如果都不设置，则加载所有插件
+# plugin_whitelist:  # 插件白名单，为空表示不启用白名单
+#   - "plugin1"
+#   - "plugin2"
+# plugin_blacklist:  # 插件黑名单，为空表示不启用黑名单
+#   - "plugin3"
+#   - "plugin4"
+
+# NapCat 行为
+stop_napcat: false  # NcatBot 下线时是否停止 NapCat
+enable_webui_interaction: true  # 是否允许 NcatBot 与 NapCat webui 交互
+report_self_message: false  # 是否报告 Bot 自己的消息

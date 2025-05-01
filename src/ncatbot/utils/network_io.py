@@ -7,6 +7,7 @@ from tqdm import tqdm
 
 from ncatbot.utils.logger import get_log
 
+GITHUB_PROXY = None
 _log = get_log()
 
 
@@ -40,6 +41,9 @@ def download_file(url, file_name):
 
 def get_proxy_url():
     """获取 github 代理 URL"""
+    global GITHUB_PROXY
+    if GITHUB_PROXY is not None:
+        return GITHUB_PROXY
     TIMEOUT = 5
     github_proxy_urls = [
         "https://ghfast.top/",
@@ -76,12 +80,18 @@ def get_proxy_url():
     except:
         pass
     if len(available_proxy) > 0:
-        return available_proxy[0]
+        GITHUB_PROXY = available_proxy[0]
+        return GITHUB_PROXY
     else:
         _log.warning("无法连接到任何 GitHub 代理, 将直接连接 GitHub")
-        return ""
+        GITHUB_PROXY = ""
+        return GITHUB_PROXY
 
+
+import threading
+
+threading.Thread(target=get_proxy_url).start()
 
 if __name__ == "__main__":
-    get_proxy_url()
+
     print("done")

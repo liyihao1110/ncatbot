@@ -8,7 +8,7 @@ from typing import Any, Callable, List
 from ncatbot.core import BaseMessage
 from ncatbot.plugin.event.access_controller import get_global_access_controller
 from ncatbot.plugin.event.event import Event
-from ncatbot.plugin.event.function import Conf, Func, builtin_functions
+from ncatbot.plugin.event.function import BUILT_IN_FUNCTIONS, Conf, Func
 from ncatbot.utils import (
     OFFICIAL_GROUP_MESSAGE_EVENT,
     OFFICIAL_PRIVATE_MESSAGE_EVENT,
@@ -25,7 +25,7 @@ class EventBus:
     事件总线类，用于管理和分发事件
     """
 
-    def __init__(self):
+    def __init__(self, plugin_loader=None):
         """
         初始化事件总线
         """
@@ -34,6 +34,7 @@ class EventBus:
         self.access_controller = get_global_access_controller()
         self.funcs: List[Func] = []
         self.configs: dict[str, Conf] = {}
+        self.plugin_loader = plugin_loader
         self.plugins: List = []  # List[BasePlugin]
         self.load_builtin_funcs()
         self.subscribe(
@@ -74,7 +75,7 @@ class EventBus:
         self.access_controller.create_permission_path(
             "ncatbot.cfg.main.placeholder", ignore_exist=True
         )  # 创建占位路径
-        for func in builtin_functions:
+        for func in BUILT_IN_FUNCTIONS:
             if func.name == "plg":  # 绑定 plg 的参数
                 temp = copy.copy(func.func)
 
@@ -88,6 +89,14 @@ class EventBus:
 
                 async def async_func(message, configs=self.configs, temp=temp):
                     return await temp(configs, message)
+
+                func.func = async_func
+
+            if func.name == "reload":  # 绑定 reload 的参数
+                temp = copy.copy(func.func)
+
+                async def async_func(message, event_bus=self, temp=temp):
+                    return await temp(message, event_bus)
 
                 func.func = async_func
 
@@ -113,12 +122,9 @@ class EventBus:
         from ncatbot.plugin.base_plugin.base_plugin import BasePlugin
 
         assert isinstance(plugin, BasePlugin)
-
-        if "config" not in plugin.data:
-            plugin.data["config"] = {}
-        for conf in plugin.configs:
+        for conf in plugin._configs:
             _log.debug(f"加载插件 {plugin.name} 的配置 {conf.full_key}")
-            if conf.key not in plugin.data["config"]:
+            if "config" in plugin.data and conf.key not in plugin.data["config"]:
                 plugin.data["config"][conf.key] = conf.default
             self.access_controller.assign_permissions_to_role(
                 role_name=PermissionGroup.ADMIN.value,
@@ -134,7 +140,7 @@ class EventBus:
 
         assert isinstance(plugin, BasePlugin)
 
-        for func in plugin.funcs:
+        for func in plugin._funcs:
             _log.debug(f"加载插件 {plugin.name} 的功能 {func.name}")
             self.access_controller.assign_permissions_to_role(
                 role_name=func.permission,

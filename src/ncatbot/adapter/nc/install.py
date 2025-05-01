@@ -1,12 +1,11 @@
 # 安装 napcat
-
 import json
 import os
 import platform
 import subprocess
 import sys
 
-import requests
+from requests import get
 
 from ncatbot.utils import (
     INSTALL_SCRIPT_URL,
@@ -42,7 +41,7 @@ def get_napcat_version():
     """从GitHub获取 napcat 版本号"""
     github_proxy_url = get_proxy_url()
     version_url = f"{github_proxy_url}https://raw.githubusercontent.com/NapNeko/NapCatQQ/main/package.json"
-    version_response = requests.get(version_url)
+    version_response = get(version_url)
     if version_response.status_code == 200:
         version = version_response.json()["version"]
         LOG.debug(f"获取最新版本信息成功, 版本号: {version}")

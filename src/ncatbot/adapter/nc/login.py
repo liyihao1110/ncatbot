@@ -47,7 +47,7 @@ class LoginHandler:
         self.base_uri = config.webui_uri
         while True:
             try:
-                time.sleep(0.2)
+                time.sleep(0.02)
                 hashed_token = hashlib.sha256(
                     f"{config.webui_token}.{NAPCAT_WEBUI_SALT}".encode()
                 ).hexdigest()
@@ -56,7 +56,7 @@ class LoginHandler:
                     json={"hash": hashed_token},
                     timeout=5,
                 ).json()
-                time.sleep(0.2)
+                time.sleep(0.02)
                 self.header = {
                     "Authorization": "Bearer " + content["data"]["Credential"],
                 }
@@ -73,6 +73,7 @@ class LoginHandler:
                 exit(1)
             except KeyError:
                 if time.time() > MAX_TIME_EXPIER:
+                    # 尝试老版本 NapCat 登录
                     try:
                         content = requests.post(
                             self.base_uri + "/api/auth/login",
@@ -157,7 +158,7 @@ class LoginHandler:
             except TimeoutError:
                 LOG.warning("检查在线状态超时, 默认不在线")
                 return False
-            time.sleep(0.5)
+            time.sleep(0.05)
         return None
 
     def check_online_statu(self):
@@ -201,7 +202,9 @@ class LoginHandler:
             except TimeoutError:
                 pass
 
-        LOG.error("获取二维码失败, 请执行 `napcat stop` 后重启引导程序.")
+        LOG.error(
+            f"获取二维码失败, 请执行 `napcat stop; napcat start {config.bt_uin}` 后重启引导程序."
+        )
         exit(1)
 
     def login(self):
@@ -253,7 +256,8 @@ def is_qq_equal(uin, other):
 
 
 def online_qq_is_bot():
-    online_qq = get_handler(reset=True).get_online_qq()
+    handler = get_handler(reset=True)
+    online_qq = handler.get_online_qq()
 
     if online_qq is not None and not is_qq_equal(online_qq, config.bt_uin):
         LOG.warning(
