@@ -3,7 +3,6 @@ import os
 import time
 import urllib
 import urllib.parse
-from ipaddress import ip_address
 
 import yaml
 
@@ -181,12 +180,12 @@ class SetConfig:
             LOG.info("未启用插件白名单或黑名单，将加载所有插件")
 
         # 检验 ws_uri
-        if not ip_address(self.ws_uri).is_loopback:
+        self._standardize_ws_uri()
+        if self.ws_host != "localhost" and self.ws_host != "127.0.0.1":
             LOG.info(
                 "请注意, 当前配置的 NapCat 服务不是本地地址, 请确保远端 NapCat 服务正确配置."
             )
             time.sleep(1)
-        self._standardize_ws_uri()
 
         # 检验 ws_listen_ip
         if self.ws_listen_ip not in {"0.0.0.0", self.ws_host}:

@@ -279,7 +279,7 @@ class BotClient:
 
             _log.info("重连服务器成功")
 
-    def _start(self):
+    def _start(self, *args, **kwargs):
         retcode = 0
         try:
             retcode = asyncio.run(self._run_async())
