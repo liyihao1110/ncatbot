@@ -139,7 +139,7 @@ class BotClient:
         """清理工作, 在退出时调用"""
         _log.info("调用退出回调...")
         try:
-            self.handle_shutdown_event()
+            asyncio.run(self.handle_shutdown_event())
         except Exception:
             _log.error("退出回调执行失败, 报错如下:")
             _log.error(traceback.format_exc())
@@ -290,7 +290,8 @@ class BotClient:
         finally:
             # TODO 非正常退出时不会正常保存
             self.exit_(retcode)
-            self.exit(exit_process=True)
+            exit(0)
+            # self.exit(exit_process=True)
 
     def run(self, *args, **kwargs):
         """启动"""
