@@ -1,4 +1,45 @@
-from ncatbot.utils.assets import *
+from ncatbot.utils.assets import (
+    EVENT_QUEUE_MAX_SIZE,
+    INSTALL_SCRIPT_URL,
+    LINUX_NAPCAT_DIR,
+    META_CONFIG_PATH,
+    NAPCAT_CLI_PATH,
+    NAPCAT_CLI_URL,
+    NAPCAT_WEBUI_SALT,
+    OFFICIAL_GROUP_MESSAGE_EVENT,
+    OFFICIAL_HEARTBEAT_EVENT,
+    OFFICIAL_NOTICE_EVENT,
+    OFFICIAL_PRIVATE_MESSAGE_EVENT,
+    OFFICIAL_REQUEST_EVENT,
+    OFFICIAL_SHUTDOWN_EVENT,
+    OFFICIAL_STARTUP_EVENT,
+    PERSISTENT_DIR,
+    PLUGIN_BROKEN_MARK,
+    PLUGINS_DIR,
+    PYPI_URL,
+    REQUEST_SUCCESS,
+    STATUS_BUSY,
+    STATUS_DND,
+    STATUS_HIDDEN,
+    STATUS_LEARNING,
+    STATUS_LEAVE,
+    STATUS_LISTENING,
+    STATUS_LOVE_YOU,
+    STATUS_ONLINE,
+    STATUS_Q_ME,
+    WINDOWS_NAPCAT_DIR,
+    Color,
+    DefaultPermission,
+    InvalidPluginStateError,
+    PermissionGroup,
+    PluginCircularDependencyError,
+    PluginDependencyError,
+    PluginLoadError,
+    PluginNotFoundError,
+    PluginUnloadError,
+    PluginVersionError,
+    Status,
+)
 from ncatbot.utils.config import config
 from ncatbot.utils.file_io import (
     UniversalLoader,
@@ -16,7 +57,12 @@ from ncatbot.utils.function_enhance import (
 )
 from ncatbot.utils.logger import get_log
 from ncatbot.utils.network_io import download_file, get_proxy_url
-from ncatbot.utils.optional import *
+from ncatbot.utils.optional import (
+    ChangeDir,
+    TimeTaskScheduler,
+    md_maker,
+    visualize_tree,
+)
 
 __all__ = [
     "SetConfig",
@@ -48,6 +94,8 @@ __all__ = [
     "OFFICIAL_REQUEST_EVENT",
     "OFFICIAL_NOTICE_EVENT",
     "OFFICIAL_STARTUP_EVENT",
+    "OFFICIAL_SHUTDOWN_EVENT",
+    "OFFICIAL_HEARTBEAT_EVENT",
     "PLUGIN_BROKEN_MARK",
     "STATUS_ONLINE",
     "STATUS_Q_ME",
@@ -73,4 +121,10 @@ __all__ = [
     "PluginVersionError",
     "PluginUnloadError",
     "InvalidPluginStateError",
+    # 为什么导入了不写进__alll__里……
+    "Color",
+    "TimeTaskScheduler",
+    "ChangeDir",
+    "md_maker",
+    "visualize_tree",
 ]
