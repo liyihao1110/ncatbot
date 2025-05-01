@@ -158,6 +158,13 @@ class SetConfig:
         return True
 
     def validate_config(self):
+        def to_str():
+            self.bt_uin = str(self.bt_uin)
+            self.root = str(self.root)
+
+        # 转为 str
+        to_str()
+
         # 检查 bot_uin 和 root
         if self.bt_uin is self.default_bt_uin:
             LOG.warning("配置项中没有设置 QQ 号")

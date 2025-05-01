@@ -39,7 +39,7 @@ class BotClient:
             BotClient.registered = True
 
         check_duplicate_register()
-        self.api = BotAPI()
+        self.api: BotAPI = None
         self._subscribe_group_message_types = []
         self._subscribe_private_message_types = []
         self._group_event_handlers = []
@@ -52,8 +52,8 @@ class BotClient:
         self.plugins_path = plugins_path
         from ncatbot.plugin import EventBus, PluginLoader
 
-        self.plugin_sys = PluginLoader(None)
-        self.plugin_sys.event_bus = EventBus(plugin_loader=self.plugin_sys)
+        self.plugin_sys: PluginLoader = None
+        self.event_bus: EventBus = None
 
     def group_event(self, types=None):
         self._subscribe_group_message_types = types
@@ -294,11 +294,19 @@ class BotClient:
             # self.exit(exit_process=True)
 
     def run(self, *args, **kwargs):
-        """启动"""
+        """启动, 所有流程都需要调用这个函数启动"""
         for key in config.__dict__:
             if key in kwargs:
                 config.__dict__[key] = kwargs[key]
+
         config.validate_config()
+        from ncatbot.plugin import EventBus, PluginLoader
+
+        self.plugin_sys = PluginLoader(None)
+        self.event_bus = EventBus(self.plugin_sys)
+        self.plugin_sys.event_bus = self.event_bus
+        self.api = BotAPI()
+
         launch_napcat_service(*args, **kwargs)  # 保证 NapCat 正常启动
         _log.info("NapCat 服务启动登录完成")
         self._start(*args, **kwargs)
