@@ -21,7 +21,7 @@ class SetConfig:
 
     def __init__(self):
         # 内部状态
-        # 可设置状态
+        # 常用状态
         self.root = self.default_root  # root 账号
         self.bt_uin = self.default_bt_uin  # bot 账号
         self.ws_uri = self.default_ws_uri  # ws 地址
@@ -30,7 +30,9 @@ class SetConfig:
         self.ws_token = ""  # ws_uri 令牌
         self.ws_listen_ip = "localhost"  # ws 监听 ip, 默认只监听本机
         self.remote_mode = False  # 是否远程模式, 即 NapCat 服务不在本机运行
-
+        self.github_proxy = os.getenv(
+            "GITHUB_PROXY", None
+        )  # github 代理地址, 为 None 则自动获取, 为 "" 则不使用代理
         """
         如果纯远程模式, 则 NcatBot 不对 NapCat 的行为做任何管理.
         只使用 ws_uri 和 webui_uri 和 NapCat 进行交互, 不会配置启动 NapCat
@@ -76,7 +78,7 @@ class SetConfig:
         default_config_path = "config.yaml"
         if os.path.exists(default_config_path):
             try:
-                LOG.info(f"从默认配置文件 {default_config_path} 加载配置")
+                LOG.debug(f"从默认配置文件 {default_config_path} 加载配置")
                 self.load_config(default_config_path)
             except Exception as e:
                 LOG.error(f"加载默认配置文件失败: {e}")

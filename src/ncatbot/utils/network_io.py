@@ -1,3 +1,4 @@
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from queue import Queue
@@ -5,9 +6,9 @@ from queue import Queue
 import requests
 from tqdm import tqdm
 
+from ncatbot.utils import config
 from ncatbot.utils.logger import get_log
 
-GITHUB_PROXY = None
 _log = get_log()
 
 
@@ -41,9 +42,8 @@ def download_file(url, file_name):
 
 def get_proxy_url():
     """获取 github 代理 URL"""
-    global GITHUB_PROXY
-    if GITHUB_PROXY is not None:
-        return GITHUB_PROXY
+    if config.github_proxy is not None:
+        return config.github_proxy
     TIMEOUT = 5
     github_proxy_urls = [
         "https://ghfast.top/",
@@ -77,18 +77,16 @@ def get_proxy_url():
     try:
         while True:
             available_proxy.append(result_queue.get(block=True, timeout=0.1))
-    except:
+    except Exception:
         pass
     if len(available_proxy) > 0:
-        GITHUB_PROXY = available_proxy[0]
-        return GITHUB_PROXY
+        config.github_proxy = available_proxy[0]
+        return config.github_proxy
     else:
         _log.warning("无法连接到任何 GitHub 代理, 将直接连接 GitHub")
-        GITHUB_PROXY = ""
-        return GITHUB_PROXY
+        config.github_proxy = ""
+        return config.github_proxy
 
-
-import threading
 
 threading.Thread(target=get_proxy_url).start()
 

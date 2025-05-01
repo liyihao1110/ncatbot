@@ -5,8 +5,6 @@ import os
 import sys
 from typing import Optional
 
-from ncatbot.cli import get_qq, registry, system_commands
-
 
 def setup_work_directory(work_dir: Optional[str] = None) -> None:
     """Set up the working directory for NcatBot."""
@@ -35,8 +33,24 @@ def main() -> None:
     args = parse_args()
     setup_work_directory(args.work_dir)
 
-    if args.command is None:
+    if args.command is not None:
+        # Command line mode
+        from ncatbot.utils.logger import logging
+
+        if args.command not in ["run", "start", "r"]:  # 有些时候日志很烦
+            logging.getLogger().setLevel(logging.WARNING)
+
+        from ncatbot.cli import registry
+
+        try:
+            registry.execute(args.command, *args.args)
+        except Exception as e:
+            print(f"错误: {e}")
+            sys.exit(1)
+    else:
         # Interactive mode
+        from ncatbot.cli import get_qq, registry, system_commands
+
         print("输入 help 查看帮助")
         print("输入 s 启动 NcatBot, 输入 q 退出 CLI")
         while True:
@@ -59,13 +73,6 @@ def main() -> None:
                 break
             except Exception as e:
                 print(f"错误: {e}")
-    else:
-        # Command line mode
-        try:
-            registry.execute(args.command, *args.args)
-        except Exception as e:
-            print(f"错误: {e}")
-            sys.exit(1)
 
 
 if __name__ == "__main__":

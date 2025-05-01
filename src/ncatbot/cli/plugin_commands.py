@@ -18,7 +18,7 @@ from ncatbot.utils import PLUGIN_BROKEN_MARK, get_proxy_url
 def get_plugin_index() -> Optional[Dict]:
     """Get the plugin index from the official repository."""
     try:
-        index_url = f"{get_proxy_url()}/https://raw.githubusercontent.com/ncatbot/NcatBot-Plugins/main/index.json"
+        index_url = f"{get_proxy_url()}https://raw.githubusercontent.com/ncatbot/NcatBot-Plugins/main/index.json"
         response = requests.get(index_url)
         if response.status_code != 200:
             print(f"获取插件索引失败: {response.status_code}")
@@ -40,7 +40,7 @@ def gen_plugin_download_url(plugin: str, version: str, repository: str) -> str:
     # Extract repository owner and name from the repository URL
     # Example: https://github.com/huan-yp/TestPlugin -> huan-yp/TestPlugin
     repo_path = repository.replace("https://github.com/", "")
-    return f"{get_proxy_url()}/https://github.com/{repo_path}/blob/v{version}/release/{plugin}-{version}.zip"
+    return f"{get_proxy_url()}https://github.com/{repo_path}/blob/v{version}/release/{plugin}-{version}.zip"
 
 
 @registry.register("install", "安装插件", "install <插件名> [--fix]", aliases=["i"])
@@ -350,7 +350,7 @@ def list_remote_plugins() -> None:
     """List available plugins from the official repository."""
     try:
         # 获取插件索引
-        index_url = f"{get_proxy_url()}/https://raw.githubusercontent.com/ncatbot/NcatBot-Plugins/main/index.json"
+        index_url = f"{get_proxy_url()}https://raw.githubusercontent.com/ncatbot/NcatBot-Plugins/main/index.json"
         response = requests.get(index_url)
         if response.status_code != 200:
             print(f"获取插件列表失败: {response.status_code}")
