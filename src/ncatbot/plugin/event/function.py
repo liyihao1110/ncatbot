@@ -225,6 +225,21 @@ async def set_config(configs: dict[str, Conf], message: BaseMessage):
         return
     full_key, value = tuple(args)
 
+    args = full_key.split(".")
+    if len(args) == 1:
+        plugin_keys = [full_key.split(".")[1] for full_key in configs.keys()]
+        if plugin_keys.count(full_key) == 1:
+            for k, v in configs.items():
+                if k.split(".")[1] == full_key:
+                    full_key = k
+                    break
+        elif plugin_keys.count(full_key) == 0:
+            message.reply_text_sync(f"配置名 {args[0]} 不存在")
+            return
+        else:
+            message.reply_sync(f"配置名 {full_key} 有多个, 请提供插件名")
+            return
+
     # 检查配置项是否存在
     if full_key not in configs:
         message.reply_text_sync(f"配置 {full_key} 不存在")
