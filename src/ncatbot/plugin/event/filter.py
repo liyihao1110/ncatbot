@@ -64,7 +64,7 @@ class CustomFilter(Filter):
         self.filter_func = filter_func
 
     def _check(self, event: Event) -> bool:
-        return self.filter_func(event)
+        return self.filter_func(event.data)
 
 
 def create_filter(

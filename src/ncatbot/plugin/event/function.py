@@ -86,7 +86,11 @@ class Conf:
         if self.value_type == "int":
             value = int(value)
         elif self.value_type == "bool":
-            value = bool(value)
+            value = value.lower()
+            if value == "false" or value == "0" or value == "f":
+                value = False
+            else:
+                value = True
         else:
             pass
         self.plugin.data["config"][self.key] = value
