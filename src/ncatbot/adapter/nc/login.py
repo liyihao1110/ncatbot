@@ -70,7 +70,7 @@ class LoginHandler:
                         "如果你修改了natcat的网页端开放端口（不是websocket），请修改启动参数：webui_uri='ws://xxxxx:xxxx'"
                     )
                 LOG.info("开放防火墙的 WebUI 端口 (默认 6099)")
-                exit(1)
+                raise Exception("连接 WebUI 失败")
             except KeyError:
                 if time.time() > MAX_TIME_EXPIER:
                     # 尝试老版本 NapCat 登录
@@ -86,11 +86,11 @@ class LoginHandler:
                         }
                         LOG.debug("成功连接到 WEBUI")
                         return
-                    except:
+                    except Exception:
                         LOG.error(
                             "授权操作超时, 连接 WebUI 成功但无法获取授权信息, 可以使用 bot.run(enable_webui_interaction=False) 跳过鉴权"
                         )
-                        exit(0)
+                        raise Exception("连接 WebUI 失败")
             except (ConnectionError, NewConnectionError):
                 if platform.system() == "Windows":
                     if time.time() > MAX_TIME_EXPIER:
@@ -98,13 +98,13 @@ class LoginHandler:
                         LOG.info(
                             "请检查 Windows 安全中心, 查看是否有拦截了 NapCat 启动程序的日志"
                         )
-                        exit(1)
+                        raise Exception("连接 WebUI 失败")
                 elif platform.system() == "Linux":
                     if time.time() > MAX_TIME_EXPIER:
                         LOG.error(
                             "错误 LoginHandler.__init__ ConnectionError, 请保留日志并联系开发团队"
                         )
-                        exit(1)
+                        raise Exception("连接 WebUI 失败")
                 else:
                     LOG.error("不支持的操作系统, 请自行检查并适配")
             except Exception as e:
@@ -113,7 +113,7 @@ class LoginHandler:
                         f"未知错误 LoginHandler.__init__ {e}, 请保留日志并联系开发团队"
                     )
                     LOG.info(traceback.format_exc())
-                    exit(1)
+                    raise Exception("连接 WebUI 失败")
 
     def get_quick_login(self):
         # 获取快速登录列表
@@ -205,7 +205,7 @@ class LoginHandler:
         LOG.error(
             f"获取二维码失败, 请执行 `napcat stop; napcat start {config.bt_uin}` 后重启引导程序."
         )
-        exit(1)
+        raise Exception("获取二维码失败")
 
     def login(self):
         def _login():
@@ -224,17 +224,17 @@ class LoginHandler:
                                 LOG.error(
                                     "登录超时, 请重新操作, 如果无法扫码, 请在 webui 登录"
                                 )
-                                exit(0)
+                                raise TimeoutError("登录超时")
                             if time.time() > WARN_EXPIRE:
                                 LOG.warning("二维码即将失效, 请尽快扫码登录")
                                 WARN_EXPIRE += 60
                         LOG.info("登录成功")
                     except Exception as e:
                         LOG.error(f"生成 ASCII 二维码时出错: {e}")
-                        exit(1)
+                        raise Exception("登录失败")
                 else:
                     LOG.error("未找到二维码图片, 请在 webui 尝试扫码登录")
-                    exit(1)
+                    raise Exception("登录失败")
 
         if not self.check_online_statu():
             LOG.info("未登录 QQ, 尝试登录")

@@ -83,7 +83,12 @@ class Conf:
             value: 新的配置值
             message: 触发修改的消息对象，如果为None则只修改配置不触发回调
         """
-        self.plugin.data["config"][self.key] = value
+        if self.value_type == "int":
+            value = int(value)
+        elif self.value_type == "bool":
+            value = bool(value)
+        else:
+            self.plugin.data["config"][self.key] = value
         if self.on_change and message:
             run_func_sync(self.on_change, value, message)
 

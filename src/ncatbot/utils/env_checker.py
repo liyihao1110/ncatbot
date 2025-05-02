@@ -161,13 +161,13 @@ def check_linux_permissions(range: str = "all"):
         )
         if result.stdout.strip() != "root":
             _log.error("当前用户不是root用户, 请使用sudo运行")
-            exit(0)
+            raise Exception("当前用户不是root用户, 请使用sudo运行")
     except subprocess.CalledProcessError as e:
         _log.error(f"sudo 命令执行失败, 请检查错误: {e}")
-        exit(0)
-    except FileNotFoundError:
+        raise e
+    except FileNotFoundError as e:
         _log.error("sudo 命令不存在, 请检查错误")
-        exit(0)
+        raise e
     if range == "root":
         return "root"
     try:
@@ -180,7 +180,7 @@ def check_linux_permissions(range: str = "all"):
         package_manager = "apt-get"
     except subprocess.CalledProcessError as e:
         _log.error(f"apt-get 命令执行失败, 请检查错误: {e}")
-        exit(0)
+        raise e
     except FileNotFoundError:
         try:
             subprocess.run(
@@ -192,10 +192,10 @@ def check_linux_permissions(range: str = "all"):
             package_manager = "dnf"
         except subprocess.CalledProcessError as e:
             _log.error(f"dnf 命令执行失败, 请检查错误: {e}")
-            exit(0)
-        except FileNotFoundError:
+            raise e
+        except FileNotFoundError as e:
             _log.error("高级包管理器检查失败, 目前仅支持apt-get/dnf")
-            exit(0)
+            raise e
     _log.info(f"当前高级包管理器: {package_manager}")
     try:
         subprocess.run(
@@ -207,7 +207,7 @@ def check_linux_permissions(range: str = "all"):
         package_installer = "dpkg"
     except subprocess.CalledProcessError as e:
         _log.error(f"dpkg 命令执行失败, 请检查错误: {e}")
-        exit(0)
+        raise e
     except FileNotFoundError:
         try:
             subprocess.run(
@@ -219,9 +219,9 @@ def check_linux_permissions(range: str = "all"):
             package_installer = "rpm"
         except subprocess.CalledProcessError as e:
             _log.error(f"rpm 命令执行失败, 请检查错误: {e}")
-            exit(0)
-        except FileNotFoundError:
-            _log.error("基础包管理器检查失败, 目前仅支持dpkg/rpm")
-            exit(0)
+            raise e
+        except FileNotFoundError as e:
+            _log.error("基础包管理器检查失败, 目前仅支持 dpkg/rpm")
+            raise e
     _log.info(f"当前基础包管理器: {package_installer}")
     return package_manager, package_installer

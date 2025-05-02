@@ -2,7 +2,6 @@
 
 import argparse
 import os
-import sys
 from typing import Optional
 
 
@@ -12,8 +11,7 @@ def setup_work_directory(work_dir: Optional[str] = None) -> None:
         work_dir = os.getcwd()
 
     if not os.path.exists(work_dir):
-        print(f"工作目录 {work_dir} 不存在")
-        sys.exit(1)
+        raise FileNotFoundError(f"工作目录 {work_dir} 不存在")
 
     os.chdir(work_dir)
 
@@ -45,8 +43,7 @@ def main() -> None:
         try:
             registry.execute(args.command, *args.args)
         except Exception as e:
-            print(f"错误: {e}")
-            sys.exit(1)
+            raise e
     else:
         # Interactive mode
         from ncatbot.cli import get_qq, registry, system_commands
@@ -65,7 +62,7 @@ def main() -> None:
 
                 if cmd_name == "exit":
                     system_commands.exit_cli()
-                    break
+                    return
 
                 registry.execute(cmd_name, *cmd_args)
             except KeyboardInterrupt:

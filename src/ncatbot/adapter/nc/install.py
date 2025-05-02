@@ -67,7 +67,7 @@ def install_napcat_windows(type: str):
     if type == "install":
         LOG.info("未找到 napcat ，是否要自动安装？")
         if input("输入 Y 继续安装或 N 退出: ").strip().lower() not in ["y", "yes"]:
-            exit(0)  # 未安装不安装的直接退出程序
+            return False
     elif type == "update":
         if input("输入 Y 继续安装或 N 跳过更新: ").strip().lower() not in ["y", "yes"]:
             return False
@@ -128,10 +128,10 @@ def install_napcat_linux(type: str):
             return True
         else:
             LOG.error("执行一键安装脚本失败, 请检查命令行输出")
-            exit(1)
+            raise Exception("执行一键安装脚本失败")
     except Exception as e:
         LOG.error("执行一键安装脚本失败，错误信息:", e)
-        exit(1)
+        raise e
 
 
 def install_napcat(type: str):
@@ -154,7 +154,7 @@ def install_napcat(type: str):
 def check_permission():
     if check_linux_permissions("root") != "root":
         LOG.error("请使用 root 权限运行 ncatbot")
-        exit(1)
+        raise Exception("请使用 root 权限运行 ncatbot")
 
 
 def check_ncatbot_install():
@@ -163,7 +163,7 @@ def check_ncatbot_install():
         # 检查版本和安装方式
         version_ok = check_self_package_version()
         if not version_ok:
-            exit(0)
+            raise Exception("请使用 pip 安装 ncatbot")
     else:
         LOG.info("调试模式, 跳过 ncatbot 安装检查")
 
@@ -178,7 +178,7 @@ def install_update_napcat():
     if not is_napcat_install():
         if not install_napcat("install"):
             LOG.error("NapCat 安装失败")
-            exit(1)
+            raise Exception("NapCat 安装失败")
     elif config.check_napcat_update:
         # 检查 napcat 版本更新
         with open(

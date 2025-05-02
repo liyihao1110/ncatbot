@@ -32,7 +32,7 @@ def connect_napcat():
             pass
         LOG.info(f"===websocket url 是否正确: {config.ws_uri}===")
         if quit:
-            exit(1)
+            raise Exception("连接超时")
 
     MAX_TIME_EXPIRE = time.time() + 60
     # INFO_TIME_EXPIRE = time.time() + 20
@@ -63,7 +63,7 @@ def ncatbot_service_remote_start():
                 LOG.error(
                     "远端的 NapCat 服务 QQ 账号信息与本地 bot_uin 不匹配, 请检查远端 NapCat 配置"
                 )
-                exit(1)
+                raise Exception("账号错误")
         return True
     elif config.remote_mode:
         LOG.error("远程模式已经启用, 无法到连接远程 NapCat 服务器, 将自动退出")
@@ -77,7 +77,7 @@ def ncatbot_service_remote_start():
                     5. webui 中连接成功后再尝试启动 ncatbot
                     """
         )
-        exit(1)
+        raise Exception("服务器离线")
 
     LOG.info("NapCat 服务器离线, 启动本地 NapCat 服务中...")
     return False
@@ -103,7 +103,8 @@ def launch_napcat_service(*args, **kwargs):
             login(reset=True)  # NapCat 登录 QQ
     except BotUINError:  # 我也不知道, 后面可能会把这玩意删了
         LOG.error("我觉得这个错误不该有, 如果遇到了请联系开发者")
-        exit(1)
+        return False
         # stop_napcat()
         # launch_napcat_service(*args, **kwargs)
     connect_napcat()  # 连接 NapCat 服务
+    return True

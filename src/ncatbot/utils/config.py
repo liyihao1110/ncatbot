@@ -176,7 +176,6 @@ class SetConfig:
         # 检验插件白名单和黑名单
         if self.plugin_whitelist and self.plugin_blacklist:
             LOG.error("插件白名单和黑名单不能同时设置，请检查配置")
-            exit(1)
             raise ValueError("插件白名单和黑名单不能同时设置，请检查配置")
 
         if self.plugin_whitelist:

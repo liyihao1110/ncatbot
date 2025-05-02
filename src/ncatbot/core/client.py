@@ -110,6 +110,11 @@ class BotClient:
 
     def run_none_blocking(self, *args, **kwargs):
         """非阻塞启动"""
+        return self.run_non_blocking(*args, **kwargs)
+
+    def run_non_blocking(self, *args, **kwargs):
+        """非阻塞启动, 可能启动失败, 但是不会抛出异常"""
+        self.is_start = None
         Thread(target=self.run, args=args, kwargs=kwargs, daemon=True).start()
         return self.api
 
@@ -120,8 +125,9 @@ class BotClient:
         self.add_startup_handler(
             lambda: lock.release()
         )  # 在 NcatBot 接口可用时, 释放全局锁
-        self.run_none_blocking(*args, **kwargs)
-        lock.acquire()  # 等待 NcatBot 启动完成
+        self.run_non_blocking(*args, **kwargs)
+        if not lock.acquire(timeout=120):
+            raise RuntimeError("启动超时, 请检查你的网络连接")
         return self.api
 
     def exit_(self, retcode=0):
@@ -289,9 +295,9 @@ class BotClient:
             _log.error(traceback.format_exc())
         finally:
             # TODO 非正常退出时不会正常保存
+            # 能触发这个一定是插件模式, 管理权限归属于 Ncatbot-PluginSystem, 直接使用 exit
             self.exit_(retcode)
             exit(0)
-            # self.exit(exit_process=True)
 
     def run(self, *args, **kwargs):
         """启动, 所有流程都需要调用这个函数启动"""
@@ -307,26 +313,9 @@ class BotClient:
         self.plugin_sys.event_bus = self.event_bus
         self.api = BotAPI()
 
-        launch_napcat_service(*args, **kwargs)  # 保证 NapCat 正常启动
-        _log.info("NapCat 服务启动登录完成")
-        self._start(*args, **kwargs)
-
-    def exit(self, exit_process=False):
-        """嵌入模式中主动触发退出"""
-        try:
-            _log.info("插件卸载中...")
-            self.plugin_sys.unload_all()
-            _log.info("清理回调函数...")
-            self._group_event_handlers.clear()
-            self._private_event_handlers.clear()
-            self._notice_event_handlers.clear()
-            self._request_event_handlers.clear()
-            _log.info("清理工作结束, NcatBot 已经正常退出")
-            time.sleep(0.2)
-        except Exception:
-            _log.error("清理工作失败, 报错如下:")
-            _log.error(traceback.format_exc())
+        if not launch_napcat_service(*args, **kwargs):  # 保证 NapCat 正常启动
+            self.is_start = False
             return False
-        if exit_process:
-            exit(0)
-        return True
+        _log.info("NapCat 服务启动登录完成")
+        self.is_start = True
+        self._start(*args, **kwargs)

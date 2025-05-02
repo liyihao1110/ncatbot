@@ -412,7 +412,7 @@ class PluginLoader:
             load_order = self._resolve_load_order()
         except Exception as e:
             LOG.error(f"构造插件依赖图时出错: {e}")
-            exit(1)
+            raise e
 
         temp_plugins = {}
         for name in load_order:

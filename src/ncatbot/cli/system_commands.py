@@ -88,4 +88,3 @@ def update() -> None:
 def exit_cli() -> None:
     """Exit the CLI tool."""
     print("\n 正在退出 Ncatbot CLI. 再见!")
-    sys.exit(0)
