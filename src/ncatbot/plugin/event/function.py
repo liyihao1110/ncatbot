@@ -88,7 +88,8 @@ class Conf:
         elif self.value_type == "bool":
             value = bool(value)
         else:
-            self.plugin.data["config"][self.key] = value
+            pass
+        self.plugin.data["config"][self.key] = value
         if self.on_change and message:
             run_func_sync(self.on_change, value, message)
 
