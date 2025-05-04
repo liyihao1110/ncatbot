@@ -1,3 +1,4 @@
+from ncatbot.core.request import Request
 from ncatbot.core.api import BotAPI
 from ncatbot.core.client import BotClient
 from ncatbot.core.element import *
@@ -9,6 +10,7 @@ __all__ = [
     "GroupMessage",
     "PrivateMessage",
     "BaseMessage",
+    "Request",
     # MessageChain 核心元素
     "MessageChain",
     "Text",
