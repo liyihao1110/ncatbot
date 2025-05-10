@@ -37,10 +37,30 @@ def gen_plugin_download_url(plugin: str, version: str, repository: str) -> str:
         version: Plugin version
         repository: Plugin repository URL
     """
-    # Extract repository owner and name from the repository URL
-    # Example: https://github.com/huan-yp/TestPlugin -> huan-yp/TestPlugin
+
+    def check_url_exists(url):
+        """
+        检查 URL 是否存在（返回 200 状态码），不下载完整内容
+        """
+        try:
+            # 使用 stream=True，避免立即下载响应体
+            response = requests.get(url, stream=True, timeout=5)
+            # 立即关闭响应，避免下载内容
+            response.close()
+            return response.status_code == 200
+        except requests.RequestException as e:
+            print(f"检查 URL 失败: {url}, 错误: {e}")
+            return False
+
     repo_path = repository.replace("https://github.com/", "")
-    return f"{get_proxy_url()}https://github.com/{repo_path}/blob/v{version}/release/{plugin}-{version}.zip"
+    url1 = f"{get_proxy_url()}https://github.com/{repo_path}/raw/refs/heads/v{version}/release/{plugin}-{version}.zip"
+    url2 = f"{get_proxy_url()}https://github.com/{repo_path}/releases/download/v{version}/{plugin}-{version}.zip"
+    if check_url_exists(url1):
+        return url1
+    elif check_url_exists(url2):
+        return url2
+    else:
+        raise Exception(f"无法找到插件 {plugin} 的下载地址, {url1}, {url2} 均无效")
 
 
 @registry.register("install", "安装插件", "install <插件名> [--fix]", aliases=["i"])
