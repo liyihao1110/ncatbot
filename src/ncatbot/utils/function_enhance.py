@@ -43,7 +43,7 @@ def run_func_sync(func, *args, **kwargs):
             def task():
                 result.append(asyncio.run(func(*args, **kwargs)))
 
-            t = Thread(target=task)
+            t = Thread(target=task, daemon=True)
             t.start()
             t.join(timeout=5)
             if len(result) == 0:

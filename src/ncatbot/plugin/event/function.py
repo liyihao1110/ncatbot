@@ -120,8 +120,13 @@ async def set_admin(message: BaseMessage):
             message.reply_text_sync(f"已经将用户 {args[0]} 取消管理员")
 
 
-async def show_plugin(plugins, message: BaseMessage):
+async def show_plugin(message: BaseMessage, event_bus=None):
     # /plg [<plugin_name>]
+    from ncatbot.plugin import EventBus
+
+    event_bus: EventBus = event_bus
+    plugins = event_bus.plugins
+
     args = message.raw_message.split(" ")[1:]
     if len(args) == 0:
         text = "\n".join([f"{plugin.name}-{plugin.version}" for plugin in plugins])
@@ -214,18 +219,34 @@ async def access(message: BaseMessage):
         )
 
 
-async def set_config(configs: dict[str, Conf], message: BaseMessage):
+async def set_config(message: BaseMessage, event_bus=None):
     # /cfg <plugin_name>.<key> <value>
     # 权限路径 ncatbot.cfg.<plugin_name>.<key>
+    from ncatbot.plugin.event.event_bus import EventBus
 
-    # 格式检查
+    event_bus: EventBus = event_bus
+    configs = event_bus.configs
+
     args = message.raw_message.split(" ")[1:]
     if len(args) != 2:
         message.reply_text_sync(
-            "参数个数错误, 命令格式(不含尖括号): /cfg <plugin_name>.<key> <value>"
+            "参数个数错误, 命令格式:\n\
+            /cfg <plugin_name>.<key> <value>: 设置配置项的值\n\
+            /cfg -s <plugin_name>: 查看对应插件所有配置项的值"
         )
         return
     full_key, value = tuple(args)
+
+    if full_key == "-s":
+        if value not in [plugin.name for plugin in event_bus.plugins]:
+            message.reply_text_sync(f"插件 {value} 不存在")
+        else:
+            message.reply_text_sync(
+                [plugin for plugin in event_bus.plugins if plugin.name == value][
+                    0
+                ]._get_current_configs()
+            )
+        return
 
     args = full_key.split(".")
     if len(args) == 1:
@@ -273,8 +294,10 @@ async def set_config(configs: dict[str, Conf], message: BaseMessage):
 async def reload_plugin_command(message: BaseMessage, event_bus=None):
     """
     热重载插件命令
-    命令格式: /reload [-f] <plugin_name>
+    命令格式: /reload [-f/-u/-l] <plugin_name>
     -f: 强制加载，即使插件未加载也会尝试加载
+    -l: 仅加载，不检查是否已加载，功能同 -f
+    -u: 仅卸载
     """
     args = message.raw_message.split(" ")[1:]
     if len(args) < 1 or len(args) > 2:
@@ -289,46 +312,70 @@ async def reload_plugin_command(message: BaseMessage, event_bus=None):
 
     # 解析参数
     force_load = False
+    unload_only = False
     plugin_name = args[-1]  # 最后一个参数总是插件名
 
     # 检查是否有 -f 参数
-    if len(args) == 2 and args[0] == "-f":
+    if len(args) == 2 and args[0] == "-f" or args[0] == "-l":
         force_load = True
+    if len(args) == 2 and args[0] == "-u":
+        unload_only = True
 
-    # 检查插件是否存在
+    # 检查插件是否已经加载
     if not force_load and plugin_name not in [
         plugin.name for plugin in event_bus.plugins
     ]:
-        message.reply_text_sync(f"插件 {plugin_name} 未加载，使用 -f 参数可强制加载")
+        message.reply_text_sync(f"插件 {plugin_name} 未加载")
         return
 
     try:
-        if force_load and plugin_name not in [
-            plugin.name for plugin in event_bus.plugins
-        ]:
-            # 强制加载插件
-            plugin_loader = event_bus.plugin_loader
+        # 获取插件路径
+        from ncatbot.utils import PLUGINS_DIR
 
-            # 获取插件路径
-            from ncatbot.utils import PLUGINS_DIR
+        plugin_path = os.path.join(PLUGINS_DIR, plugin_name)
+        if not os.path.exists(plugin_path):
+            message.reply_text_sync(f"插件 {plugin_name} 不存在")
+            return
 
-            plugin_path = os.path.join(PLUGINS_DIR, plugin_name)
-
-            if not os.path.exists(plugin_path):
-                message.reply_text_sync(f"插件 {plugin_name} 不存在")
-                return
-
-            # 加载插件
-            await plugin_loader.load_plugins(plugin_path, api=event_bus.api)
-            message.reply_text_sync(f"插件 {plugin_name} 已成功加载")
-        else:
-            # 重载插件
-            await event_bus.plugin_loader.reload_plugin(plugin_name)
-            message.reply_text_sync(f"插件 {plugin_name} 已成功重载")
+        # 加载插件
+        await event_bus.plugin_loader.reload_plugin(
+            plugin_name, api=event_bus.api, unload_only=unload_only
+        )
+        message.reply_text_sync(
+            f"插件 {plugin_name} 已成功 {'卸载' if unload_only else '加载'}"
+        )
     except Exception as e:
         message.reply_text_sync(
-            f"插件 {plugin_name} {'加载' if force_load else '重载'}失败: {e}"
+            f"插件 {plugin_name} {'卸载' if unload_only else '加载'}失败: {e}"
         )
+
+
+async def help_command(message: BaseMessage, event_bus=None):
+    # /help [<plugin_name>]
+    from ncatbot.plugin.event.event_bus import EventBus
+
+    event_bus: EventBus = event_bus
+    plugins = event_bus.plugins
+
+    args = message.raw_message.split(" ")[1:]
+    if len(args) == 0:
+        text = (
+            "\n".join(
+                [f"/{func.name} {func.description}" for func in BUILT_IN_FUNCTIONS]
+            )
+            + "查看具体插件的帮助: \n"
+            + "====插件列表====\n"
+            + "\n".join([f"/help {plugin.name}" for plugin in plugins])
+        )
+    else:
+        plugin_name = args[0]
+        if plugin_name not in [plugin.name for plugin in event_bus.plugins]:
+            text = f"插件 {plugin_name} 不存在"
+        else:
+            text = [plugin for plugin in plugins if plugin.name == plugin_name][
+                0
+            ]._get_help()
+    message.reply_text_sync(text)
 
 
 # 更新内置函数定义，使用新的过滤机制
@@ -339,6 +386,7 @@ BUILT_IN_FUNCTIONS = [
         func=set_admin,
         prefix="/sm",  # 使用前缀匹配替代raw_message_filter
         permission_raise=True,
+        description="设置 Bot 管理员",
         reply=False,
         permission=PermissionGroup.ROOT.value,
     ),
@@ -348,6 +396,7 @@ BUILT_IN_FUNCTIONS = [
         func=show_plugin,
         prefix="/plg",  # 使用前缀匹配替代raw_message_filter
         permission_raise=True,
+        description="查看插件列表",
         reply=False,
         permission=PermissionGroup.ADMIN.value,
     ),
@@ -356,6 +405,7 @@ BUILT_IN_FUNCTIONS = [
         plugin_name="ncatbot",
         func=access,
         prefix="/acs",  # 使用前缀匹配替代raw_message_filter
+        description="设置用户和群组权限",
         permission_raise=True,
         reply=False,
         permission=PermissionGroup.ADMIN.value,
@@ -365,6 +415,7 @@ BUILT_IN_FUNCTIONS = [
         plugin_name="ncatbot",
         func=set_config,
         filter=None,
+        description="设置或查看配置项",
         prefix="/cfg",  # 使用前缀匹配替代raw_message_filter
         permission=PermissionGroup.ADMIN.value,
         permission_raise=True,
@@ -382,5 +433,16 @@ BUILT_IN_FUNCTIONS = [
         usage="/reload [-f] <plugin_name>",
         examples=["/reload example_plugin", "/reload -f example_plugin"],
         tags=["admin", "plugin", "reload"],
+    ),
+    Func(
+        name="help",
+        plugin_name="ncatbot",
+        regex=r"^(?:[/#-](?:help|帮助)|help|帮助)[\s\S]*",
+        description="查看帮助",
+        func=help_command,
+        reply=False,
+        permission=PermissionGroup.USER.value,
+        usage="/help [<plugin_name>]",
+        examples=["/help", "/help example_plugin"],
     ),
 ]

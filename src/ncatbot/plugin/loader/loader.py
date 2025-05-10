@@ -507,90 +507,147 @@ class PluginLoader:
         await self.plugins[plugin_name].__unload__(*arg, **kwd)
         del self.plugins[plugin_name]
 
-    async def reload_plugin(self, plugin_name: str):
+    async def reload_plugin(self, plugin_name: str, api=None, unload_only=False):
         """
         重新加载插件
         :param plugin_name: 插件名称
         """
-        if plugin_name not in self.plugins:
-            raise ValueError(f"插件 '{plugin_name}' 未加载")
+        if plugin_name in self.plugins:
+            LOG.info(f"开始重载插件: {plugin_name}")
 
-        LOG.info(f"开始重载插件: {plugin_name}")
+            # 保存旧插件实例
+            old_plugin = self.plugins[plugin_name]
 
-        # 保存旧插件实例
-        old_plugin = self.plugins[plugin_name]
+            # 获取插件模块路径
+            module_path = old_plugin.__class__.__module__
 
-        # 获取插件模块路径
-        module_path = old_plugin.__class__.__module__
-
-        try:
-            # 卸载插件
-            LOG.debug(f"卸载插件: {plugin_name}")
-            await self.unload_plugin(plugin_name)
-
-            # 导入模块
-            LOG.debug(f"导入模块: {module_path}")
-            module = importlib.import_module(module_path)
-
-            # 强制重新加载
-            LOG.debug(f"重新加载模块: {module_path}")
-            importlib.reload(module)
-
-            # 获取插件类
-            plugin_class = None
-            for item_name in dir(module):
-                item = getattr(module, item_name)
-                if (
-                    isinstance(item, type)
-                    and issubclass(item, BasePlugin)
-                    and hasattr(item, "name")
-                    and item.name == plugin_name
-                ):
-                    plugin_class = item
-                    break
-
-            if not plugin_class:
-                raise ValueError(f"无法在模块中找到插件类 '{plugin_name}'")
-
-            # 验证插件类
-            if not self._validate_plugin(plugin_class):
-                raise ValueError(f"插件类 '{plugin_name}' 验证失败")
-
-            # 创建新的插件实例
-            LOG.debug(f"创建新插件实例: {plugin_name}")
-            new_plugin = plugin_class(
-                event_bus=self.event_bus,
-                time_task_scheduler=self.time_task_scheduler,
-                debug=self._debug,
-                meta_data=self.meta_data.copy(),
-                api=old_plugin.api,
-            )
-
-            # 加载插件
-            LOG.debug(f"加载插件: {plugin_name}")
-            await new_plugin.__onload__()
-
-            # 添加到插件列表
-            self.plugins[plugin_name] = new_plugin
-            self.event_bus.add_plugin(new_plugin)
-
-            LOG.info(f"插件 {plugin_name} 重载成功")
-            return True
-
-        except Exception as e:
-            LOG.error(f"重载插件 {plugin_name} 时出错: {e}")
-            LOG.error(traceback.format_exc())
-
-            # 尝试恢复旧插件
             try:
-                if plugin_name not in self.plugins:
-                    self.plugins[plugin_name] = old_plugin
-                    self.event_bus.add_plugin(old_plugin)
-                    LOG.info(f"已恢复旧插件: {plugin_name}")
-            except Exception as recovery_error:
-                LOG.error(f"恢复旧插件 {plugin_name} 时出错: {recovery_error}")
+                # 卸载插件
+                LOG.debug(f"卸载插件: {plugin_name}")
+                await self.unload_plugin(plugin_name)
+                if unload_only:
+                    return
 
-            raise
+                # 导入模块
+                LOG.debug(f"导入模块: {module_path}")
+                module = importlib.import_module(module_path)
+
+                # 强制重新加载
+                LOG.debug(f"重新加载模块: {module_path}")
+                importlib.reload(module)
+
+                # 获取插件类
+                plugin_class = None
+                for item_name in dir(module):
+                    item = getattr(module, item_name)
+                    if (
+                        isinstance(item, type)
+                        and issubclass(item, BasePlugin)
+                        and hasattr(item, "name")
+                        and item.name == plugin_name
+                    ):
+                        plugin_class = item
+                        break
+
+                if not plugin_class:
+                    raise ValueError(f"无法在模块中找到插件类 '{plugin_name}'")
+
+                # 验证插件类
+                if not self._validate_plugin(plugin_class):
+                    raise ValueError(f"插件类 '{plugin_name}' 验证失败")
+
+                # 创建新的插件实例
+                LOG.debug(f"创建新插件实例: {plugin_name}")
+                new_plugin = plugin_class(
+                    event_bus=self.event_bus,
+                    time_task_scheduler=self.time_task_scheduler,
+                    debug=self._debug,
+                    meta_data=self.meta_data.copy(),
+                    api=old_plugin.api,
+                )
+
+                # 加载插件
+                LOG.debug(f"加载插件: {plugin_name}")
+                await new_plugin.__onload__()
+
+                # 添加到插件列表
+                self.plugins[plugin_name] = new_plugin
+                self.event_bus.add_plugin(new_plugin)
+
+                LOG.info(f"插件 {plugin_name} 重载成功")
+                return True
+
+            except Exception as e:
+                LOG.error(f"重载插件 {plugin_name} 时出错: {e}")
+                LOG.error(traceback.format_exc())
+
+                # 尝试恢复旧插件
+                try:
+                    if plugin_name not in self.plugins:
+                        self.plugins[plugin_name] = old_plugin
+                        self.event_bus.add_plugin(old_plugin)
+                        LOG.info(f"已恢复旧插件: {plugin_name}")
+                except Exception as recovery_error:
+                    LOG.error(f"恢复旧插件 {plugin_name} 时出错: {recovery_error}")
+        else:
+            LOG.warning(f"插件 {plugin_name} 之前未加载, 正在加载中...")
+            old_sys_path = sys.path.copy()
+            try:
+                directory_path = os.path.abspath("plugins")
+                if not os.path.isdir(os.path.join(directory_path, plugin_name)):
+                    raise PluginNotFoundError(plugin_name)
+
+                sys.path.append(directory_path)
+                if config.check_plugin_dependecies:
+                    install_plugin_dependencies(plugin_name, print_import_details=False)
+
+                # 强制重新加载
+                module = importlib.import_module(plugin_name)
+                importlib.reload(module)
+
+                # 获取插件类
+                plugin_class = None
+                for item_name in dir(module):
+                    item = getattr(module, item_name)
+                    if (
+                        isinstance(item, type)
+                        and issubclass(item, BasePlugin)
+                        and hasattr(item, "name")
+                        and item.name == plugin_name
+                    ):
+                        plugin_class = item
+                        break
+
+                if not plugin_class:
+                    raise ValueError(f"无法在模块中找到插件类 '{plugin_name}'")
+
+                # 验证插件类
+                if not self._validate_plugin(plugin_class):
+                    raise ValueError(f"插件类 '{plugin_name}' 验证失败")
+
+                # 创建新的插件实例
+                LOG.debug(f"创建新插件实例: {plugin_name}")
+                new_plugin = plugin_class(
+                    event_bus=self.event_bus,
+                    time_task_scheduler=self.time_task_scheduler,
+                    debug=self._debug,
+                    meta_data=self.meta_data.copy(),
+                    api=api,
+                )
+
+                # 加载插件
+                LOG.debug(f"加载插件: {plugin_name}")
+                await new_plugin.__onload__()
+
+                # 添加到插件列表
+                self.plugins[plugin_name] = new_plugin
+                self.event_bus.add_plugin(new_plugin)
+
+                LOG.info(f"插件 {plugin_name} 重载成功")
+            except Exception as e:
+                LOG.error(f"重载插件 {plugin_name} 时出错: {e}")
+            finally:
+                sys.path = old_sys_path
 
     def _load_modules_from_directory(
         self, directory_path: str

@@ -1,4 +1,5 @@
 import asyncio
+from typing import Any
 
 from ncatbot.core.api import BotAPI
 
@@ -11,16 +12,24 @@ class BaseMessage:
         "time",
         "post_type",
         "raw_message",
+        "user_id",
+        "message",
+        "sender",
+        "message_id",
     )
 
     def __init__(self, message):
         if not BaseMessage.api_initialized:
             BaseMessage.api = BotAPI()
             BaseMessage.api_initialized = True
-        self.self_id = message.get("self_id", None)
+        self.self_id: int = message.get("self_id", None)
         self.time = message.get("time", None)
         self.post_type = message.get("post_type", None)
-        self.raw_message = message.get("raw_message", None)
+        self.raw_message: str = message.get("raw_message", None)
+        self.sender: BaseMessage._Sender = self._Sender(message.get("sender", {}))
+        self.message: list[dict[str, Any]] = message.get("message", None)
+        self.user_id: int = message.get("user_id", None)
+        self.message_id: int = message.get("message_id", None)
 
     def __repr__(self):
         return str({items: str(getattr(self, items)) for items in self.__slots__})

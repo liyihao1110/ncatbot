@@ -81,23 +81,7 @@ class EventBus:
             "ncatbot.cfg.main.placeholder", ignore_exist=True
         )  # 创建占位路径
         for func in BUILT_IN_FUNCTIONS:
-            if func.name == "plg":  # 绑定 plg 的参数
-                temp = copy.copy(func.func)
-
-                async def async_func(message, plugins=self.plugins, temp=temp):
-                    return await temp(plugins, message)
-
-                func.func = async_func
-
-            if func.name == "cfg":  # 绑定 cfg 的参数
-                temp = copy.copy(func.func)
-
-                async def async_func(message, configs=self.configs, temp=temp):
-                    return await temp(configs, message)
-
-                func.func = async_func
-
-            if func.name == "reload":  # 绑定 reload 的参数
+            if func.name in ["plg", "cfg", "help", "reload"]:  # 绑定 plg 的参数
                 temp = copy.copy(func.func)
 
                 async def async_func(message, event_bus=self, temp=temp):
