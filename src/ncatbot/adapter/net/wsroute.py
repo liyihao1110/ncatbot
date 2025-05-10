@@ -50,7 +50,10 @@ class Route:
         )
 
     async def post(self, path, params=None, json=None):
-        async with websockets.connect(self.url, extra_headers=self.headers) as ws:
+        # 开大限制到 16MB
+        async with websockets.connect(
+            self.url, extra_headers=self.headers, max_size=2**24
+        ) as ws:
             if params:
                 await ws.send(
                     j.dumps(

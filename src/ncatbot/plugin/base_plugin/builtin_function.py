@@ -1,6 +1,6 @@
 import warnings
 from functools import wraps
-from typing import Any, Callable, Dict, List, final
+from typing import Any, Callable, Dict, List, Literal, final
 
 from ncatbot.core import BaseMessage
 from ncatbot.plugin.event import Conf, Func
@@ -202,7 +202,7 @@ class BuiltinFuncMixin:
         default: Any,
         on_change: Callable[[str, BaseMessage], Any] = None,
         description: str = "",
-        value_type: str = "",
+        value_type: Literal["int", "bool", "str", "float"] = "",
         allowed_values: List[Any] = None,
         metadata: Dict[str, Any] = None,
     ):

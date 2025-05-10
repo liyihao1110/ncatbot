@@ -268,3 +268,19 @@ class BasePlugin(EventHandlerMixin, SchedulerMixin, BuiltinFuncMixin):
     def _close_(self, *arg, **kwd):
         """插件卸载时的子函数,可被子类重写"""
         pass
+
+    def _get_help(self):
+        """自动生成帮助文档"""
+        text = ""
+        for func in self._funcs:
+            text += f"{func.name}-{func.description}: 使用方式 {func.usage}\n"
+        for conf in self._configs:
+            text += f"{conf.key}-{conf.description}: 类型 {conf.value_type}, 默认值 {conf.default}\n"
+        return text
+
+    def _get_current_configs(self):
+        """获取当前配置项"""
+        text = ""
+        for conf in self._configs:
+            text += f"{conf.key}-{conf.description}: {self.config.get(conf.key, conf.default)}\n\n"
+        return text

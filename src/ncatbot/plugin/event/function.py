@@ -91,6 +91,8 @@ class Conf:
                 value = False
             else:
                 value = True
+        elif self.value_type == "float":
+            value = float(value)
         else:
             pass
         self.plugin.data["config"][self.key] = value
