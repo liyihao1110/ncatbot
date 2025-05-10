@@ -157,7 +157,7 @@ def check_permission():
         raise Exception("请使用 root 权限运行 ncatbot")
 
 
-def check_ncatbot_install():
+def check_ncatbot_installation():
     """检查 ncatbot 版本, 以及是否正确安装"""
     if not config.skip_ncatbot_install_check:
         # 检查版本和安装方式
@@ -168,14 +168,14 @@ def check_ncatbot_install():
         LOG.info("调试模式, 跳过 ncatbot 安装检查")
 
 
-def is_napcat_install():
+def is_napcat_installed():
     napcat_dir = get_napcat_dir()
     return os.path.exists(napcat_dir)
 
 
-def install_update_napcat():
+def install_or_update_napcat():
     """安装 napcat 或者检查 napcat 更新并重新安装"""
-    if not is_napcat_install():
+    if not is_napcat_installed():
         if not install_napcat("install"):
             LOG.error("NapCat 安装失败")
             raise Exception("NapCat 安装失败")

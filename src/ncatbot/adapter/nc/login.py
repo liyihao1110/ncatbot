@@ -14,10 +14,10 @@ LOG = get_log("adapter.nc.login")
 main_handler = None
 
 
-def show_qrcode(barcode_url):
-    LOG.info(f"二维码指代的 url 地址: {barcode_url}")
+def show_qrcode(qrcode_url):
+    LOG.info(f"二维码指代的 url 地址: {qrcode_url}")
     qr = qrcode.QRCode()
-    qr.add_data(barcode_url)
+    qr.add_data(qrcode_url)
     qr.print_ascii(invert=True)
 
 
@@ -130,7 +130,7 @@ class LoginHandler:
             LOG.warning("获取快速登录列表失败, 禁用快速登录")
             return []
 
-    def check_login_statu(self):
+    def check_login_status(self):
         # 检查 NapCat 是否登录
         try:
             return requests.post(
@@ -161,7 +161,7 @@ class LoginHandler:
             time.sleep(0.05)
         return None
 
-    def check_online_statu(self):
+    def check_online_status(self):
         # 检查 QQ 是否在线
         online_qq = self.get_online_qq()
         if online_qq is None:
@@ -171,7 +171,7 @@ class LoginHandler:
         else:
             raise BotUINError(online_qq)
 
-    def send_quick_login(self):
+    def send_quick_login_request(self):
         # 发送快速登录请求
         LOG.info("正在发送快速登录请求...")
         try:
@@ -210,7 +210,7 @@ class LoginHandler:
     def login(self):
         def _login():
             uin = str(config.bt_uin)
-            if uin in self.get_quick_login() and self.send_quick_login():
+            if uin in self.get_quick_login() and self.send_quick_login_request():
                 return True
             else:
                 LOG.warning("终端二维码登录为试验性功能, 如果失败请在 webui 登录")
@@ -219,7 +219,7 @@ class LoginHandler:
                         show_qrcode(self.reqeust_qrcode_url())
                         TIMEOUT_EXPIRE = time.time() + 60
                         WARN_EXPIRE = time.time() + 30
-                        while not self.check_online_statu():
+                        while not self.check_online_status():
                             if time.time() > TIMEOUT_EXPIRE:
                                 LOG.error(
                                     "登录超时, 请重新操作, 如果无法扫码, 请在 webui 登录"
@@ -236,7 +236,7 @@ class LoginHandler:
                     LOG.error("未找到二维码图片, 请在 webui 尝试扫码登录")
                     raise Exception("登录失败")
 
-        if not self.check_online_statu():
+        if not self.check_online_status():
             LOG.info("未登录 QQ, 尝试登录")
             return _login()
         LOG.info("napcat 已登录成功")
