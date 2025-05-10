@@ -180,10 +180,13 @@ class EventBus:
         返回:
             str - 处理器的唯一 ID
         """
-        handler_id = str(uuid.uuid4())
+        handler_id = uuid.uuid4()
         pattern = None
         if event_type.startswith("re:"):
-            pattern = re.compile(event_type[3:])
+            try:
+                pattern = re.compile(event_type[3:])
+            except re.error as e:
+                raise ValueError(f"无效正则表达式: {event_type[3:]}") from e
             self._regex_handlers.append((pattern, priority, handler, handler_id))
         else:
             self._exact_handlers.setdefault(event_type, []).append(
