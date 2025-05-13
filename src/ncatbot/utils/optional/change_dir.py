@@ -2,7 +2,7 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-18 21:06:40
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-03-16 14:08:58
+# @LastEditTime : 2025-05-13 19:52:39
 # @Description  : 上下文管理器, 用于暂时切换工作路径, 使用插件的私有数据目录时需要
 # @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议
 # -------------------------
@@ -125,8 +125,8 @@ class ChangeDir(ContextDecorator):
             os.chdir(self.origin_path)
             LOG.debug(f"恢复目录: {self.origin_path}")
         except Exception as e:
-            LOG.error(f"恢复原始目录失败: {e}")
-            return False  # 允许异常传播
+            LOG.critical(f"恢复原始目录失败: {e}")
+            raise RuntimeError(f"恢复原始目录失败: {self.origin_path}", self.origin_path)
 
         # 清理临时目录 如果需要
         if self.temp_dir and not self.keep_temp:
@@ -139,7 +139,9 @@ class ChangeDir(ContextDecorator):
             except Exception as e:
                 LOG.error(f"删除临时目录失败: {e}")
 
-        return True  # 阻止异常传播
+        if exc_type:
+            LOG.debug(f"捕获到异常[{exc_type}]: {exc_val} | {exc_tb}")
+        return False  # 不处理异常，让异常继续传播
 
     def __del__(self) -> None:
         """
@@ -154,4 +156,4 @@ class ChangeDir(ContextDecorator):
                 if self.dir_id in self._DIRS_REGISTRY:
                     del self._DIRS_REGISTRY[self.dir_id]
             except Exception as e:
-                LOG.warning(f"清理临时目录失败: {e}")
+                LOG.error(f"清理临时目录失败: {e}")
