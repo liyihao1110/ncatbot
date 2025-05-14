@@ -193,6 +193,8 @@ logs/
 napcat/
 plugin.py
 data/
+.cursor/
+src_3.x/
 package.zip
 resource.o
 number.txt
