@@ -278,9 +278,9 @@ class BasePlugin(EventHandlerMixin, SchedulerMixin, BuiltinFuncMixin):
             text += f"{conf.key}-{conf.description}: 类型 {conf.value_type}, 默认值 {conf.default}\n"
         return text
 
-    def _get_current_configs(self):
+    def _get_current_configs(self, sep="\n\n"):
         """获取当前配置项"""
         text = ""
         for conf in self._configs:
-            text += f"{conf.key}-{conf.description}: {self.config.get(conf.key, conf.default)}\n\n"
+            text += f"{conf.key}-{conf.description}: {self.config.get(conf.key, conf.default)}{sep}"
         return text

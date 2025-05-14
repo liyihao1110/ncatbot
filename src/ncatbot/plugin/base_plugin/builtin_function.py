@@ -200,7 +200,7 @@ class BuiltinFuncMixin:
         self,
         key: str,
         default: Any,
-        on_change: Callable[[str, BaseMessage], Any] = None,
+        on_change: Callable[[str, BaseMessage, Any], Any] = None,
         description: str = "",
         value_type: Literal["int", "bool", "str", "float"] = "",
         allowed_values: List[Any] = None,
@@ -210,7 +210,7 @@ class BuiltinFuncMixin:
         Args:
             key (str): 配置项键名
             default (Any): 默认值
-            on_change (Callable[[str, BaseMessage], Any], optional): 配置变更回调函数. 接收新值和触发修改的消息对象.
+            on_change (Callable[[str, BaseMessage, Any], Any], optional): 配置变更回调函数. 接收新值和触发修改的消息对象.
             description (str, optional): 配置项描述
             value_type (str, optional): 值类型描述
             allowed_values (List[Any], optional): 允许的值列表
