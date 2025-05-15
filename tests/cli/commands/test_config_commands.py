@@ -48,8 +48,16 @@ class TestConfigCommands(unittest.TestCase):
                     # Verify that save_permanent_config was called
                     self.assertTrue(mock_save.called)
 
-                # Verify that print was called with error message
-                mock_print.assert_any_call("QQ 号必须为数字!")
+                # Verify error message was printed (could contain ANSI color codes)
+                error_message_found = any(
+                    "QQ 号必须为数字" in call_args[0][0]
+                    for call_args in mock_print.call_args_list
+                )
+                self.assertTrue(
+                    error_message_found,
+                    "Error message about numeric QQ not found in print calls",
+                )
+
                 # Verify that the function returned the QQ number
                 self.assertEqual(result, "123456789")
 
@@ -75,8 +83,16 @@ class TestConfigCommands(unittest.TestCase):
                     # Verify that save_permanent_config was called
                     self.assertTrue(mock_save.called)
 
-                # Verify that print was called with error message
-                mock_print.assert_any_call("两次输入的 QQ 号不一致!")
+                # Verify error message was printed (could contain ANSI color codes)
+                error_message_found = any(
+                    "两次输入的 QQ 号不一致" in call_args[0][0]
+                    for call_args in mock_print.call_args_list
+                )
+                self.assertTrue(
+                    error_message_found,
+                    "Error message about mismatched QQ not found in print calls",
+                )
+
                 # Verify that the function returned the QQ number
                 self.assertEqual(result, "123456789")
 

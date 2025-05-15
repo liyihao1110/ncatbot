@@ -11,7 +11,8 @@ from ncatbot.cli.utils import (
     get_plugin_versions,
     install_pip_dependencies,
 )
-from ncatbot.cli.utils.colors import command, error, header, info, success, warning
+from ncatbot.cli.utils.colors import command, error, info, success, warning
+from ncatbot.cli.utils.plugin_utils import format_plugin_table
 from ncatbot.plugin import get_plugin_info_by_name
 from ncatbot.utils import ncatbot_config as config
 
@@ -208,15 +209,15 @@ def create_plugin_template(
     category="plg",
     show_in_help=False,
 )
-def remove_plugin(plugin: str) -> None:
+def remove_plugin(plugin_name: str) -> None:
     """Remove a plugin."""
     plugins = list_plugins(False)
-    if plugins.get(plugin, PLUGIN_BROKEN_MARK) == PLUGIN_BROKEN_MARK:
-        print(error(f"插件 {command(plugin)} 不存在!"))
+    if plugins.get(plugin_name, PLUGIN_BROKEN_MARK) == PLUGIN_BROKEN_MARK:
+        print(error(f"插件 {command(plugin_name)} 不存在!"))
         return
 
-    shutil.rmtree(f"{config.plugin.plugins_dir}/{plugin}")
-    print(success(f"插件 {command(plugin)} 卸载成功!"))
+    shutil.rmtree(f"{config.plugin.plugins_dir}/{plugin_name}")
+    print(success(f"插件 {command(plugin_name)} 卸载成功!"))
 
 
 @registry.register(
@@ -237,53 +238,20 @@ def list_plugins(enable_print: bool = True) -> Dict[str, str]:
             plugins[dir] = version
         except Exception:
             plugins[dir] = PLUGIN_BROKEN_MARK
+
     if enable_print:
         if len(plugins) > 0:
-            # 计算字符显示宽度的函数 - 中文字符占用两个宽度单位
-            def get_display_width(s):
-                width = 0
-                for char in s:
-                    if "\u4e00" <= char <= "\u9fff":
-                        width += 2
-                    else:
-                        width += 1
-                return width
-
-            # 计算最大显示宽度
-            max_dir_width = max(get_display_width(dir) for dir in plugins.keys())
-
-            # 设置列宽并添加适当间距
-            dir_column_width = max(max_dir_width, 8) + 2
-
-            # 打印表头
-            dir_text = "插件目录"
-            version_text = "版本"
-
-            dir_text_width = get_display_width(dir_text)
-
-            # 创建对齐的表头 - 颜色代码不占用终端空间
-            dir_header = header(dir_text) + " " * (dir_column_width - dir_text_width)
-
-            print(f"{dir_header}  {header(version_text)}")
-
-            # 分隔线
-            separator_width = dir_column_width + 30
-            print("─" * separator_width)
-
-            for dir, version in plugins.items():
-                status = success if version != PLUGIN_BROKEN_MARK else error
-
-                # 计算实际显示宽度
-                dir_width = get_display_width(dir)
-
-                # 计算所需填充 - 颜色代码不占用终端空间
-                dir_padding = dir_column_width - dir_width
-
-                # 格式化输出
-                dir_col = command(dir) + " " * dir_padding
-                print(f"{dir_col}  {status(version)}")
+            # 使用统一的格式化函数显示本地插件列表
+            formatted_list = format_plugin_table(
+                plugins,
+                mode="local",
+                broken_mark=PLUGIN_BROKEN_MARK,
+                show_plugins_dir=config.plugin.plugins_dir,
+            )
+            print(formatted_list)
         else:
             print(warning("没有安装任何插件!\n\n"))
+
     return plugins
 
 
@@ -309,65 +277,9 @@ def list_remote_plugins() -> None:
             print(warning("没有找到可用的插件"))
             return
 
-        # 计算字符显示宽度的函数 - 中文字符占用两个宽度单位
-        def get_display_width(s):
-            width = 0
-            for char in s:
-                if "\u4e00" <= char <= "\u9fff":
-                    width += 2
-                else:
-                    width += 1
-            return width
-
-        # 计算最大显示宽度
-        max_name_width = max(get_display_width(name) for name in plugins.keys())
-        max_author_width = max(
-            get_display_width(plugin.get("author", "Unknown"))
-            for plugin in plugins.values()
-        )
-
-        # 确保最小宽度并添加适当间距
-        name_column_width = max(max_name_width, 8) + 2
-        author_column_width = max(max_author_width, 8) + 2
-
-        # 打印表头
-        name_text = "插件名"
-        author_text = "作者"
-        desc_text = "描述"
-
-        name_text_width = get_display_width(name_text)
-        author_text_width = get_display_width(author_text)
-
-        # 创建对齐的表头 - 颜色代码不占用终端空间
-        name_header = header(name_text) + " " * (name_column_width - name_text_width)
-        author_header = header(author_text) + " " * (
-            author_column_width - author_text_width
-        )
-
-        print(f"{name_header}  {author_header}  {header(desc_text)}")
-
-        # 分隔线
-        separator_width = name_column_width + author_column_width + 40
-        print("─" * separator_width)
-
-        # 打印每个插件的信息
-        for name, plugin in sorted(plugins.items()):
-            author = plugin.get("author", "Unknown")
-            description = plugin.get("description", "无描述")
-
-            # 计算实际显示宽度
-            name_width = get_display_width(name)
-            author_width = get_display_width(author)
-
-            # 计算所需填充 - 颜色代码不占用终端空间
-            name_padding = name_column_width - name_width
-            author_padding = author_column_width - author_width
-
-            # 格式化输出
-            name_col = command(name) + " " * name_padding
-            author_col = info(author) + " " * author_padding
-
-            print(f"{name_col}  {author_col}  {description}")
+        # 使用统一的格式化函数显示远程插件列表
+        formatted_list = format_plugin_table(plugins, mode="remote")
+        print(formatted_list)
 
     except Exception as e:
         print(error(f"获取插件列表时出错: {e}"))

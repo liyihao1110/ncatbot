@@ -11,10 +11,15 @@ from ncatbot.utils.logger import get_log
 LOG = get_log("Plugin")
 
 
-def get_plugin_info_by_name(name: str) -> Tuple[bool, str]:
+def get_plugin_info_by_name(name: str) -> Tuple[bool, dict]:
     if not os.path.exists(os.path.join(config.plugin.plugins_dir, name)):
         return False, None
-    return True, {"name": name, "version": "1.0.0"}
+    return True, {
+        "name": name,
+        "version": "1.0.0",
+        "author": "Unknown",
+        "description": "Unknown",
+    }
 
 
 class PluginLoader:
