@@ -276,7 +276,7 @@ def setup_logging():
     logger.addHandler(full_file_handler)
 
     # 记录日志设置信息
-    logging.getLogger("logger_setup").info(
+    logging.getLogger("logger_setup").debug(
         f"日志配置完成: 控制台级别={console_level}, "
         f"文件级别={file_level}, "
         f"核心日志文件={core_file_path}, "

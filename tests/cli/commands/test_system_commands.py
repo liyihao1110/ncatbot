@@ -88,8 +88,11 @@ class TestSystemCommands(unittest.TestCase):
     def test_exit_cli(self):
         """Test exit_cli command."""
         with patch("builtins.print") as mock_print:
-            # Call the function
-            system_commands.exit_cli()
+            # Call the function and expect CLIExit exception
+            from ncatbot.cli.utils import CLIExit
+
+            with self.assertRaises(CLIExit):
+                system_commands.exit_cli()
 
             # Verify that print was called with exit message
             mock_print.assert_called_once_with("\n 正在退出 Ncatbot CLI. 再见!")
