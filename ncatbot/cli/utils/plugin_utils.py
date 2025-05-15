@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple, TypedDict, Union
 import requests
 from requests.exceptions import RequestException, Timeout
 
+from ncatbot.cli.utils.colors import command, error, header, info, success
 from ncatbot.cli.utils.constants import PLUGIN_INDEX_URL
 from ncatbot.utils import get_log, get_proxy_url
 
@@ -195,3 +196,153 @@ def get_plugin_versions(
         return False, {}
 
     return True, plugin_info
+
+
+# 计算字符显示宽度的函数 - 中文字符占用两个宽度单位
+def get_display_width(s: str) -> int:
+    """计算字符串在终端中的显示宽度，中文字符占用两个宽度。
+
+    Args:
+        s: 要计算宽度的字符串
+
+    Returns:
+        int: 字符串的显示宽度
+    """
+    width = 0
+    for char in s:
+        if "\u4e00" <= char <= "\u9fff":
+            width += 2
+        else:
+            width += 1
+    return width
+
+
+def format_plugin_table(
+    plugins: Dict[str, Union[Dict[str, Any], PluginInfo, str]],
+    mode: str = "local",
+    broken_mark: str = "plugin broken",
+    show_plugins_dir: Optional[str] = None,
+) -> str:
+    """格式化并输出插件列表表格。
+
+    Args:
+        plugins: 插件字典
+            - 当 mode="local" 时，格式为 {插件名: 元数据字典或版本字符串}
+            - 当 mode="remote" 时，格式为 {插件名: 插件信息字典}
+        mode: 模式，"local" 表示本地插件，"remote" 表示远程插件
+        broken_mark: 标记插件损坏的字符串，仅在 mode="local" 时使用
+        show_plugins_dir: 可选的插件目录路径，当提供时会在表格上方显示
+
+    Returns:
+        str: 格式化后的插件列表字符串，为空字符串时表示没有插件
+    """
+    if not plugins:
+        return ""
+
+    output_lines = []
+
+    # 显示插件目录信息（如果提供）
+    if show_plugins_dir:
+        output_lines.append(f"插件目录: {info(show_plugins_dir)}")
+        output_lines.append("")
+
+    # 准备数据结构
+    formatted_plugins = {}
+
+    if mode == "local":
+        # 处理本地插件数据
+        for name, data in plugins.items():
+            if isinstance(data, str) and data == broken_mark:
+                # 处理损坏的插件
+                formatted_plugins[name] = {
+                    "name": name,
+                    "author": "Unknown",
+                    "description": error("插件损坏"),
+                    "version": error(broken_mark),
+                }
+            elif isinstance(data, str):
+                # 处理只有版本号的插件
+                formatted_plugins[name] = {
+                    "name": name,
+                    "author": "Unknown",
+                    "description": "无描述",
+                    "version": data,
+                }
+            else:
+                # 处理有完整元数据的插件
+                metadata = data
+                formatted_plugins[name] = {
+                    "name": name,
+                    "author": metadata.get("author", "Unknown"),
+                    "description": metadata.get("description", "无描述"),
+                    "version": metadata.get("version", "Unknown"),
+                }
+    else:  # mode == "remote"
+        # 处理远程插件数据
+        for name, data in plugins.items():
+            latest_version = (
+                data.get("versions", ["Unknown"])[0]
+                if "versions" in data
+                else "Unknown"
+            )
+            formatted_plugins[name] = {
+                "name": name,
+                "author": data.get("author", "Unknown"),
+                "description": data.get("description", "无描述"),
+                "version": latest_version,
+            }
+
+    # 计算最大显示宽度
+    max_name_width = max(get_display_width(name) for name in formatted_plugins.keys())
+    max_author_width = max(
+        get_display_width(plugin.get("author", "Unknown"))
+        for plugin in formatted_plugins.values()
+    )
+
+    # 设置列宽
+    name_column_width = max(max_name_width, 8) + 2
+    author_column_width = max(max_author_width, 8) + 2
+
+    # 表头
+    name_text = "插件名"
+    author_text = "作者"
+    version_text = "版本"
+    desc_text = "描述"
+
+    name_text_width = get_display_width(name_text)
+    author_text_width = get_display_width(author_text)
+    version_text_width = get_display_width(version_text)
+
+    name_header = header(name_text) + " " * (name_column_width - name_text_width)
+    author_header = header(author_text) + " " * (
+        author_column_width - author_text_width
+    )
+
+    output_lines.append(
+        f"{name_header}  {author_header}  {header(version_text)}  {header(desc_text)}"
+    )
+
+    # 分隔线
+    separator_width = name_column_width + author_column_width + 50
+    output_lines.append("─" * separator_width)
+
+    # 插件行
+    for name, plugin in sorted(formatted_plugins.items()):
+        author = plugin.get("author", "Unknown")
+        description = plugin.get("description", "无描述")
+        version = plugin.get("version", "Unknown")
+
+        name_width = get_display_width(name)
+        author_width = get_display_width(author)
+
+        name_padding = name_column_width - name_width
+        author_padding = author_column_width - author_width
+
+        name_col = command(name) + " " * name_padding
+        author_col = info(author) + " " * author_padding
+
+        output_lines.append(
+            f"{name_col}  {author_col}  {success(version)}  {description}"
+        )
+
+    return "\n".join(output_lines)
