@@ -11,13 +11,16 @@ class TestCommand(unittest.TestCase):
 
     def test_init(self):
         """Test initialization of Command."""
-        func = lambda: None
+
+        def test_func():
+            return None
+
         cmd = Command(
-            "test", func, "Test command", "test usage", "help text", ["t"], "Test"
+            "test", test_func, "Test command", "test usage", "help text", ["t"], "Test"
         )
 
         self.assertEqual(cmd.name, "test")
-        self.assertEqual(cmd.func, func)
+        self.assertEqual(cmd.func, test_func)
         self.assertEqual(cmd.description, "Test command")
         self.assertEqual(cmd.usage, "test usage")
         self.assertEqual(cmd.help_text, "help text")
@@ -26,8 +29,11 @@ class TestCommand(unittest.TestCase):
 
     def test_init_defaults(self):
         """Test initialization with default values."""
-        func = lambda: None
-        cmd = Command("test", func, "Test command", "test usage")
+
+        def test_func():
+            return None
+
+        cmd = Command("test", test_func, "Test command", "test usage")
 
         self.assertEqual(cmd.help_text, "Test command")
         self.assertEqual(cmd.aliases, [])

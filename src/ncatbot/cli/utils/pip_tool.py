@@ -380,7 +380,7 @@ class PipTool:
             for req_str in requirements:
                 try:
                     req = Requirement(req_str)
-                except:
+                except Exception:
                     continue  # 跳过依赖解析失败的包
 
                 # 处理环境标记
@@ -390,7 +390,7 @@ class PipTool:
                             continue
                     except UndefinedComparison:
                         continue  # 跳过包含未定义变量的条件
-                    except:
+                    except Exception:
                         continue  # 跳过其他异常
 
                 dep_name = req.name.lower()

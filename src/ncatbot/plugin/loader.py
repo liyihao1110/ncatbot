@@ -120,7 +120,7 @@ class PluginLoader:
             return False
 
         try:
-            plugin = self.loaded_plugins[name]
+            # No need to store plugin variable
             del self.loaded_plugins[name]
             LOG.info(f"Unloaded plugin {name}")
             return True
