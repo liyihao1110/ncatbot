@@ -26,6 +26,7 @@ class TestCommand(unittest.TestCase):
         self.assertEqual(cmd.help_text, "help text")
         self.assertEqual(cmd.aliases, ["t"])
         self.assertEqual(cmd.category, "Test")
+        self.assertEqual(cmd.show_in_help, True)  # Default should be True
 
     def test_init_defaults(self):
         """Test initialization with default values."""
@@ -38,6 +39,19 @@ class TestCommand(unittest.TestCase):
         self.assertEqual(cmd.help_text, "Test command")
         self.assertEqual(cmd.aliases, [])
         self.assertEqual(cmd.category, "General")
+        self.assertEqual(cmd.show_in_help, True)
+
+    def test_init_show_in_help_false(self):
+        """Test initialization with show_in_help=False."""
+
+        def test_func():
+            return None
+
+        cmd = Command(
+            "test", test_func, "Test command", "test usage", show_in_help=False
+        )
+
+        self.assertEqual(cmd.show_in_help, False)
 
 
 class TestCommandRegistry(unittest.TestCase):
@@ -74,6 +88,21 @@ class TestCommandRegistry(unittest.TestCase):
         # Verify category registration
         self.assertIn("Test", self.registry.categories)
         self.assertIn("test", self.registry.categories["Test"])
+
+    def test_register_with_show_in_help(self):
+        """Test command registration with show_in_help parameter."""
+
+        @self.registry.register(
+            "test",
+            "Test command",
+            "test usage",
+            show_in_help=False,
+        )
+        def test_func():
+            return "test"
+
+        cmd = self.registry.commands["test"]
+        self.assertEqual(cmd.show_in_help, False)
 
     def test_execute(self):
         """Test command execution."""
@@ -148,6 +177,35 @@ class TestCommandRegistry(unittest.TestCase):
         help_text = self.registry.get_help("InvalidCategory")
         self.assertEqual(help_text, "未知的分类: InvalidCategory")
 
+    def test_get_help_only_important(self):
+        """Test help text generation with only_important=True."""
+
+        @self.registry.register(
+            "test1", "Test command 1", "test1 usage", category="Category1"
+        )
+        def test_func1():
+            pass
+
+        @self.registry.register(
+            "test2",
+            "Test command 2",
+            "test2 usage",
+            category="Category1",
+            show_in_help=False,
+        )
+        def test_func2():
+            pass
+
+        # Test general help with only_important=True
+        help_text = self.registry.get_help(only_important=True)
+        self.assertIn("test1 usage", help_text)
+        self.assertNotIn("test2 usage", help_text)
+
+        # Test category help with only_important=True
+        help_text = self.registry.get_help("Category1", only_important=True)
+        self.assertIn("test1 usage", help_text)
+        self.assertNotIn("test2 usage", help_text)
+
     def test_get_categories(self):
         """Test getting command categories."""
 
@@ -189,6 +247,36 @@ class TestCommandRegistry(unittest.TestCase):
         # Test invalid category
         commands = self.registry.get_commands_by_category("InvalidCategory")
         self.assertEqual(commands, [])
+
+    def test_get_commands_by_category_only_important(self):
+        """Test getting commands by category with only_important=True."""
+
+        @self.registry.register(
+            "test1", "Test command 1", "test1 usage", category="Category1"
+        )
+        def test_func1():
+            pass
+
+        @self.registry.register(
+            "test2",
+            "Test command 2",
+            "test2 usage",
+            category="Category1",
+            show_in_help=False,
+        )
+        def test_func2():
+            pass
+
+        # Get all commands
+        commands = self.registry.get_commands_by_category("Category1")
+        self.assertEqual(len(commands), 2)
+
+        # Get only important commands
+        commands = self.registry.get_commands_by_category(
+            "Category1", only_important=True
+        )
+        self.assertEqual(len(commands), 1)
+        self.assertEqual(commands[0][0], "test1")
 
 
 if __name__ == "__main__":

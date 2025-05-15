@@ -5,10 +5,13 @@ import os
 import sys
 from typing import Optional
 
+from ncatbot.cli.commands.config_commands import set_qq
+from ncatbot.cli.commands.info_commands import show_meta
 from ncatbot.cli.commands.registry import registry
-from ncatbot.cli.commands.system_commands import exit_cli
+from ncatbot.cli.utils import CLIExit
+from ncatbot.cli.utils.colors import error, header, info, success, title, warning
 from ncatbot.utils import get_log
-from ncatbot.utils.config import ncatbot_config as config
+from ncatbot.utils import ncatbot_config as config
 
 logger = get_log("CLI")
 
@@ -46,16 +49,17 @@ def handle_command_mode(args: argparse.Namespace) -> None:
         registry.execute(args.command, *args.args)
     except Exception as e:
         logger.error(f"执行命令时出错: {e}")
+        print(error(f"执行命令时出错: {e}"))
         sys.exit(1)
 
 
 def handle_interactive_mode() -> None:
     """Handle interactive mode."""
-    print("输入 help 查看帮助")
-    print("输入 s 启动 NcatBot, 输入 q 退出 CLI")
+    print(header("输入 help 查看帮助"))
+    print(header("输入 s 启动 NcatBot, 输入 q 退出 CLI"))
     while True:
         try:
-            cmd = input(f"NcatBot ({config.bt_uin})> ").strip()
+            cmd = input(f"{info('NcatBot')} ({success(config.bt_uin)})> ").strip()
             if not cmd:
                 continue
 
@@ -63,16 +67,15 @@ def handle_interactive_mode() -> None:
             cmd_name = parts[0]
             cmd_args = parts[1:]
 
-            if cmd_name == "exit":
-                exit_cli()
-                return
-
             registry.execute(cmd_name, *cmd_args)
         except KeyboardInterrupt:
-            print("\n再见!")
+            print("\n" + info("再见!"))
+            break
+        except CLIExit:
             break
         except Exception as e:
             logger.error(f"执行命令时出错: {e}")
+            print(error(f"执行命令时出错: {e}"))
 
 
 def main() -> None:
@@ -81,8 +84,6 @@ def main() -> None:
 
     # Show version and exit if requested
     if args.version:
-        from ncatbot.cli.commands.info_commands import show_meta
-
         show_meta()
         return
 
@@ -90,11 +91,18 @@ def main() -> None:
         setup_work_directory(args.work_dir)
     except FileNotFoundError as e:
         logger.error(e)
+        print(error(str(e)))
         sys.exit(1)
+
+    # Check if QQ number is set to default value and prompt for setting it
+    if config.bt_uin == config._default_bt_uin:
+        print(warning("检测到 QQ 号未设置，请先设置 QQ 号"))
+        set_qq()
 
     if args.command is not None:
         handle_command_mode(args)
     else:
+        print(title("\n欢迎使用 NcatBot CLI!"))
         handle_interactive_mode()
 
 

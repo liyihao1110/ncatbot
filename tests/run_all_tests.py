@@ -13,6 +13,7 @@ from pathlib import Path
 
 from tests.cli.commands.test_config_commands import TestConfigCommands
 from tests.cli.commands.test_info_commands import TestInfoCommands
+from tests.cli.commands.test_plugin_commands import TestPluginCommands
 
 # CLI tests from the original src/ncatbot/tests
 from tests.cli.commands.test_registry import TestCommand, TestCommandRegistry
@@ -56,6 +57,7 @@ def discover_and_run_tests(
         test_suite.addTest(loader.loadTestsFromTestCase(TestInfoCommands))
         test_suite.addTest(loader.loadTestsFromTestCase(TestConfigCommands))
         test_suite.addTest(loader.loadTestsFromTestCase(TestSystemCommands))
+        test_suite.addTest(loader.loadTestsFromTestCase(TestPluginCommands))
     else:
         # Discover and add all tests
         loader = unittest.TestLoader()
