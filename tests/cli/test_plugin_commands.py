@@ -58,6 +58,9 @@ class TestPluginCommands(unittest.TestCase):
         # Call the function
         result = install("test_plugin")
 
+        # Check the function result
+        self.assertTrue(result)  # or verify the specific expected return value
+
         # Assertions
         mock_get_versions.assert_called_once_with("test_plugin")
         mock_download.assert_called_once()

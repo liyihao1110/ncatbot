@@ -165,6 +165,10 @@ class TestLogger(unittest.TestCase):
         get_log_logger = get_log("test_get_log_logger")
         direct_logger = logging.getLogger("test_direct_logger")
 
+        # Verify loggers are correctly registered or not
+        self.assertTrue(status.is_registered_logger(get_log_logger.name))
+        self.assertFalse(status.is_registered_logger(direct_logger.name))
+
         # Create filter instances
         get_log_filter = LoggerOriginFilter(from_get_log=True)
         other_filter = LoggerOriginFilter(from_get_log=False)

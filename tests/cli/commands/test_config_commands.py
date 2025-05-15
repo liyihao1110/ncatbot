@@ -26,6 +26,8 @@ class TestConfigCommands(unittest.TestCase):
                     self.assertEqual(mock_input.call_count, 2)
                     # Verify that save_permanent_config was called with correct args
                     mock_save.assert_called_once_with("bt_uin", "123456789")
+                    # Verify that print was called at least once
+                    self.assertTrue(mock_print.called)
                     # Verify that the function returned the QQ number
                     self.assertEqual(result, "123456789")
 
@@ -43,6 +45,8 @@ class TestConfigCommands(unittest.TestCase):
                     "ncatbot.utils.ncatbot_config.save_permanent_config"
                 ) as mock_save:
                     result = config_commands.set_qq()
+                    # Verify that save_permanent_config was called
+                    self.assertTrue(mock_save.called)
 
                 # Verify that print was called with error message
                 mock_print.assert_any_call("QQ 号必须为数字!")
@@ -68,6 +72,8 @@ class TestConfigCommands(unittest.TestCase):
                     "ncatbot.utils.ncatbot_config.save_permanent_config"
                 ) as mock_save:
                     result = config_commands.set_qq()
+                    # Verify that save_permanent_config was called
+                    self.assertTrue(mock_save.called)
 
                 # Verify that print was called with error message
                 mock_print.assert_any_call("两次输入的 QQ 号不一致!")
