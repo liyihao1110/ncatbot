@@ -6,10 +6,9 @@ Python 包配置主文件 (基于 setuptools)
 ├── setup.py
 ├── pyproject.toml
 ├── requirements.txt
-├── src/
-│   └── PACKAGE_NAME/  # 你的包目录
-│       ├── __init__.py
-│       └── ...        # 其他代码文件
+├── ncatbot/
+│    ├── __init__.py
+│    └── ...        # 其他代码文件
 └── README.md          # 长描述内容来源
 """
 
@@ -33,7 +32,7 @@ LICENSE = "MIT 修改版"  # 许可证类型 (MIT/Apache 2.0/GPL等)
 # 版本控制配置 -----------------------------------------------------------
 def get_version():
     """动态获取包版本号 (从__init__.py读取)"""
-    version_file = os.path.join("src", PACKAGE_NAME, "__init__.py")
+    version_file = os.path.join("ncatbot", "__init__.py")
     with open(version_file, encoding="utf-8") as f:
         version_match = re.search(
             r"^__version__\s*=\s*['\"]([^'\"]*)['\"]", f.read(), re.M
@@ -76,9 +75,9 @@ setup(
     long_description_content_type="text/markdown",  # 如果使用.md文件
     license=LICENSE,
     # 包结构配置
-    package_dir={"": "src"},  # 指定包根目录
+    package_dir={"": "ncatbot"},  # 指定包根目录
     packages=find_packages(
-        where="src",  # 在src目录下查找
+        where="ncatbot",  # 在 ncatbot 目录下查找
         exclude=["tests", "*.tests", "*.tests.*", "tests.*"],  # 排除测试代码
     ),
     include_package_data=True,  # 包含MANIFEST.in指定的数据文件
