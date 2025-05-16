@@ -120,9 +120,17 @@ def start_napcat_windows():
 
 
 def stop_napcat_windows():
-    """暂未实现"""
-    LOG.error("暂未实现 Windows 停止 NapCat 服务, 请手动关闭 NapCat 服务")
-    raise NotImplementedError("暂未实现 Windows 停止 NapCat 服务")
+    """停止 NapCat 服务: 在 Windows 上强制结束 QQ.exe 进程"""
+    try:
+        # 使用 taskkill 强制结束 QQ.exe 进程
+        subprocess.run(["taskkill", "/F", "/IM", "QQ.exe"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        LOG.info("已成功停止 QQ.exe 进程（NapCat 服务）")
+    except subprocess.CalledProcessError as e:
+        # 如果 taskkill 命令执行失败，记录错误并抛出异常
+        stdout = e.stdout.decode(errors='ignore') if e.stdout else ''
+        stderr = e.stderr.decode(errors='ignore') if e.stderr else ''
+        LOG.error(f"停止 NapCat 服务失败: {stderr or stdout}")
+        raise RuntimeError(f"无法停止 QQ.exe 进程: {stderr or stdout}")
 
 
 def is_napcat_running():
