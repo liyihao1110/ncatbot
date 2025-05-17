@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 import stat
+import tempfile
 import time
 from pathlib import Path
 from typing import List, Tuple
@@ -17,6 +18,7 @@ MAIN_REPO_NAME = "NcatBot-Plugins"
 
 github_token = None
 token_owner = None
+temp_dir = None  # 全局临时目录
 
 
 def get_github_token(token):
@@ -147,6 +149,7 @@ def make_archive_with_gitignore(plugin_name, version, path):
     """
     打包文件，同时忽略 .gitignore 中的文件
     """
+    global temp_dir
 
     def read_gitignore(path):
         ignore_patterns = [".git"]
@@ -165,17 +168,18 @@ def make_archive_with_gitignore(plugin_name, version, path):
                 return True
         return False
 
-    def remove_read_only_files(temp_dir):
-        for root, dirs, files in os.walk(temp_dir):
+    def remove_read_only_files(dir_path):
+        for root, dirs, files in os.walk(dir_path):
             for name in files:
                 file_path = Path(root) / name
                 if file_path.exists():
                     os.chmod(file_path, stat.S_IWRITE)
 
-    temp_dir = Path("temp")
-    if temp_dir.exists():
-        shutil.rmtree(temp_dir)
-    temp_dir.mkdir()
+    # 在临时目录中创建打包用的临时目录
+    pack_temp_dir = Path(temp_dir.name) / "pack_temp"
+    if pack_temp_dir.exists():
+        shutil.rmtree(pack_temp_dir)
+    pack_temp_dir.mkdir()
 
     ignore_patterns = read_gitignore(path)
 
@@ -185,17 +189,18 @@ def make_archive_with_gitignore(plugin_name, version, path):
             relative_path = file_path.relative_to(path)
             if should_ignore(relative_path, ignore_patterns):
                 continue
-            target_path = temp_dir / relative_path
+            target_path = pack_temp_dir / relative_path
             target_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(file_path, target_path)
 
     archive_name = f"{plugin_name}-{version}.zip"
-    shutil.make_archive(archive_name[:-4], "zip", temp_dir)
+    archive_path = Path(temp_dir.name) / archive_name
+    shutil.make_archive(str(archive_path)[:-4], "zip", pack_temp_dir)
 
-    remove_read_only_files(temp_dir)
-    shutil.rmtree(temp_dir)
+    remove_read_only_files(pack_temp_dir)
+    shutil.rmtree(pack_temp_dir)
 
-    return archive_name
+    return str(archive_path)
 
 
 def do_version_change(target_base_folder, version):
@@ -353,7 +358,6 @@ def create_github_release(
 
 def do_plugin_changes(repo: Repo, target_dir: str):
     global version, path, plugin_name
-    # version_file = os.path.join(target_dir, "version.txt")
     do_version_change(target_dir, version)
 
     def copy_source_files(source_path, target_path):
@@ -427,23 +431,6 @@ def cleanup(repos: List[Repo], zip_file: str = None):
         os.chmod(path, stat.S_IWRITE)
         func(path)
 
-    for repo in repos:
-        temp_repo_path = repo.working_dir
-        print(f"删除临时路径: {temp_repo_path}")
-        try:
-            shutil.rmtree(temp_repo_path, onexc=on_rm_error)
-            print("成功删除临时路径.")
-        except Exception as e:
-            print(f"删除临时路径时出错: {e}")
-
-    temp_dir = Path("temp")
-    if temp_dir.exists():
-        try:
-            shutil.rmtree(temp_dir, onexc=on_rm_error)
-            print("成功删除临时打包目录.")
-        except Exception as e:
-            print(f"删除临时打包目录时出错: {e}")
-
     if zip_file and os.path.exists(zip_file):
         try:
             os.remove(zip_file)
@@ -451,8 +438,16 @@ def cleanup(repos: List[Repo], zip_file: str = None):
         except Exception as e:
             print(f"删除 ZIP 文件时出错: {e}")
 
+    # 不再需要手动删除临时目录，tempfile会自动处理
+
 
 def main():
+    global plugin_name, version, path, github_token, plugin_meta, temp_dir
+    
+    # 创建全局临时目录
+    temp_dir = tempfile.TemporaryDirectory(prefix="ncatbot_publish_")
+    print(f"使用临时目录: {temp_dir.name}")
+
     def prepare():
         global plugin_name, version, path, github_token, plugin_meta
         path = get_plugin_path()
@@ -472,7 +467,7 @@ def main():
         return f"update-{plugin_name}-{version}"
 
     def setup_plugin_repo() -> Tuple[Repo, str]:
-        global github_token
+        global github_token, temp_dir
         token_owner = get_token_owner(github_token)
 
         if not has_existing_repo(token_owner, plugin_name):
@@ -483,7 +478,8 @@ def main():
 
         try:
             print("正在克隆插件仓库...")
-            repo = Repo.clone_from(repo_url, f"temp_repo{time.time()}")
+            repo_path = os.path.join(temp_dir.name, f"plugin_repo_{plugin_name}")
+            repo = Repo.clone_from(repo_url, repo_path)
         except GitCommandError as e:
             print(f"克隆仓库失败: {e}")
             exit(1)
@@ -500,7 +496,7 @@ def main():
         return repo, os.path.join(repo.working_dir)
 
     def setup_main_repo() -> Repo:
-        global github_token
+        global github_token, temp_dir
         token_owner = get_token_owner(github_token)
 
         if not has_existing_repo(token_owner, MAIN_REPO_NAME):
@@ -522,7 +518,8 @@ def main():
         try:
             print("正在克隆主仓库...")
             repo_url = f"https://github.com/{token_owner}/{MAIN_REPO_NAME}.git"
-            repo = Repo.clone_from(repo_url, f"temp_main_repo{time.time()}")
+            repo_path = os.path.join(temp_dir.name, "main_repo")
+            repo = Repo.clone_from(repo_url, repo_path)
         except GitCommandError as e:
             print(f"克隆仓库失败: {e}")
             exit(1)
@@ -591,15 +588,18 @@ def main():
 
         create_pull_request(branch_name, plugin_name, version)
 
-    branch_name = prepare()
-    plugin_repo, plugin_dir = setup_plugin_repo()
-    main_repo = setup_main_repo()
+    try:
+        branch_name = prepare()
+        plugin_repo, plugin_dir = setup_plugin_repo()
+        main_repo = setup_main_repo()
 
-    zip_file = do_plugin_changes(plugin_repo, plugin_dir)
-    do_main_changes(main_repo)
-    do_pull_requests(plugin_repo, main_repo, branch_name, zip_file)
-    cleanup([plugin_repo, main_repo], zip_file)
-
+        zip_file = do_plugin_changes(plugin_repo, plugin_dir)
+        do_main_changes(main_repo)
+        do_pull_requests(plugin_repo, main_repo, branch_name, zip_file)
+    finally:
+        # 确保无论如何都会清理临时目录
+        cleanup([plugin_repo, main_repo], zip_file)
+        temp_dir.cleanup()
 
 if __name__ == "__main__":
     main()
