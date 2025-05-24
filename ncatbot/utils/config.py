@@ -8,7 +8,7 @@ import warnings
 from dataclasses import KW_ONLY, asdict, dataclass, field, fields
 from typing import Any, List, Optional, Self, TextIO
 
-import rich
+import rich # 这东西真需要吗
 import yaml
 
 from ncatbot.utils.logger import get_log
@@ -162,53 +162,14 @@ class PluginConfig(BaseConfig):
 
     plugins_dir: str = "plugins"
     """插件目录"""
-    plugin_whitelist: List[str] = field(default_factory=list)
-    """插件白名单"""
-    plugin_blacklist: List[str] = field(default_factory=list)
-    """插件黑名单"""
-    check_plugin_dependecies: bool = False
-    """是否检查插件依赖"""
-    skip_plugin_load: bool = False
-    """是否跳过加载插件"""
-
-    def is_plugin_enabled(self, plugin_name: str) -> bool:
-        """检查是否应加载插件。
-
-        Args:
-            plugin_name: 插件名称
-
-        Returns:
-            bool: 如果应加载插件则为 True，否则为 False
-        """
-        if not self.plugin_whitelist and not self.plugin_blacklist:
-            return True
-
-        if self.plugin_whitelist:
-            return plugin_name in self.plugin_whitelist
-
-        if self.plugin_blacklist:
-            return plugin_name not in self.plugin_blacklist
-
-        return True
-
-    def validate(self) -> None:
-        """验证插件配置。
-
-        Raises:
-            ValueError: 如果配置无效
-        """
-        # 验证插件白名单和黑名单
-        if self.plugin_whitelist and self.plugin_blacklist:
-            logger.error("不能同时设置插件白名单和黑名单")
-            raise ValueError("不能同时设置插件白名单和黑名单")
-
-        # 记录插件信息
-        if self.plugin_whitelist:
-            logger.info(f"已启用插件白名单: {', '.join(self.plugin_whitelist)}")
-        elif self.plugin_blacklist:
-            logger.info(f"已启用插件黑名单: {', '.join(self.plugin_blacklist)}")
-        else:
-            logger.info("未设置插件白名单或黑名单，将加载所有插件")
+    # plugin_whitelist: List[str] = field(default_factory=list)
+    # """插件白名单"""
+    # plugin_blacklist: List[str] = field(default_factory=list)
+    # """插件黑名单"""
+    # check_plugin_dependecies: bool = False    # 必须检查，就像 pip 自动安装依赖
+    # """是否检查插件依赖"""
+    # skip_plugin_load: bool = False  # 插件加载是外部行为，应该移动到 NapCat 客户端配置
+    # """是否跳过加载插件"""
 
 
 @dataclass(frozen=False)
