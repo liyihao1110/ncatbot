@@ -1,0 +1,40 @@
+installed_packages = {pack['name'].strip().lower(): pack['version'] for pack in EPM.list_installed() if 'name' in pack}
+download_new = False
+# 处理 requirements.txt
+req_file = os.path.join(plugin_path, "requirements.txt") if os.path.isdir(plugin_path) else plugin_path.replace(".py", ".requirements.txt")
+if os.path.isfile(req_file):
+with open(req_file) as f:
+requirements = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+for req in requirements:
+if req.startswith('-'):
+    continue
+# 处理git/url安装
+if any(req.startswith(prefix) for prefix in ['git+', 'http:', 'https:']):
+    if input(f'发现特殊安装要求 {req}, 是否安装(Y/n):').lower() in ('y', ''):
+        LOG.info(f'开始安装: {req}')
+        EPM.install(req)
+    continue
+# 解析包名和版本约束
+if '==' in req:
+    pkg_name, version_constraint = req.split('==', 1)
+elif '>=' in req:
+    pkg_name, version_constraint = req.split('>=', 1)
+else:
+    pkg_name, version_constraint = req, None
+pkg_name = pkg_name.lower()
+if pkg_name in installed_packages:
+    if version_constraint:
+        current_ver = parse_version(installed_packages[pkg_name])
+        required_ver = parse_version(version_constraint)
+        if current_ver < required_ver:
+            if input(f'包 {pkg_name} 当前版本 {current_ver} 低于要求的 {required_ver}, 是否更新(Y/n):').lower() in ('y', ''):
+                LOG.info(f'更新包: {req}')
+                EPM.install(req)
+                download_new = True
+else:
+    download_new = True
+    if input(f'发现未安装的依赖 {req}, 是否安装(Y/n):').lower() in ('y', ''):
+        LOG.info(f'开始安装: {req}')
+        EPM.install(req)
+if download_new:
+    LOG.warning('在某些环境中, 动态安装的库可能不会立即生效, 需要重新启动。')

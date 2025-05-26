@@ -7,7 +7,11 @@
 # @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议
 # -------------------------
 
-from .RBAC_manager import PermissionManager, Role, User
-from .user_manager import UserManager
+from ncatbot.plugin_system.utils.rbac_manager.RBAC_manager import (
+    PermissionManager,
+    Role,
+    User,
+)
+from ncatbot.plugin_system.utils.rbac_manager.user_manager import UserManager
 
-__all__ = ['PermissionManager', 'UserManager', 'Role', 'User']
+__all__ = ["PermissionManager", "UserManager", "Role", "User"]

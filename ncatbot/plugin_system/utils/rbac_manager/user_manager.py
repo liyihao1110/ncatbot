@@ -4,13 +4,19 @@
 # @LastEditors  : Fish-LP fish.zh@outlook.com
 # @LastEditTime : 2025-05-24 16:27:08
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
-# @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议 
+# @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议
 # -------------------------
-from typing import Dict, Optional, List
-from .RBAC_manager import User, PermissionManager
+from typing import Dict, List, Optional
+
+from ncatbot.plugin_system.utils.rbac_manager.RBAC_manager import (
+    PermissionManager,
+    User,
+)
+
 
 class UserManager:
     """用户管理器，提供用户管理和权限验证功能"""
+
     def __init__(self, permission_manager: PermissionManager):
         self.users: Dict[str, User] = {}
         self.permission_manager = permission_manager

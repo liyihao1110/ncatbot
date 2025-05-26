@@ -4,18 +4,19 @@
 # @LastEditors  : Fish-LP fish.zh@outlook.com
 # @LastEditTime : 2025-05-23 20:12:31
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
-# @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议 
+# @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议
 # -------------------------
-from typing import Any, Dict, List, Optional
-PluginLoader = object
-BasePlugin = object
-# from .loader import PluginLoader
-# from .base_plugin import BasePlugin
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+if TYPE_CHECKING:
+    from ncatbot.core.api.bot_api import BotAPI
+    from ncatbot.plugin_system.base_plugin import BasePlugin
+    from ncatbot.plugin_system.loader import PluginLoader
 
 
 class PluginInfoMixin:
     """为PluginLoader提供插件信息管理能力的混入类"""
+
     plugins: Dict[str, BasePlugin]  # 已加载的插件
 
     def get_plugin(self, name: str) -> Optional[BasePlugin]:
@@ -32,28 +33,31 @@ class PluginInfoMixin:
             return list(self.plugins.values())
         return list(self.plugins.keys())
 
+
 class CompatibleHandler:
     def __init__(self, attr_name: str):
         self.attr_name = attr_name
-        
+
     def check(self, obj: Any) -> bool:
         """检查对象是否满足该处理器的处理条件"""
         raise NotImplementedError
-        
+
     def handle(self, obj: Any) -> None:
         """处理对象的兼容性行为"""
         raise NotImplementedError
 
+
 class PluginSysApi:
     """为Plugin提供管理其他插件的接口类"""
-    def __init__(self, plugin_sys: PluginLoader):
-        """初始化插件系统API。
+
+    def __init__(self, plugin_loader: "PluginLoader"):
+        """初始化插件系统API, 这里不注解了
 
         Args:
             plugin_sys (PluginLoader): 插件加载器实例
         """
-        self._plugin_sys = plugin_sys
-        
+        self._plugin_sys = plugin_loader
+
     async def unload_plugin(self, plugin_name: str, **kwargs) -> bool:
         """卸载指定的插件。
 
@@ -65,7 +69,7 @@ class PluginSysApi:
             bool: 卸载是否成功
         """
         return await self._plugin_sys.unload_plugin(plugin_name, **kwargs)
-        
+
     async def reload_plugin(self, plugin_name: str, **kwargs) -> bool:
         """重新加载指定的插件。
 
@@ -76,7 +80,7 @@ class PluginSysApi:
             bool: 重载是否成功
         """
         return await self._plugin_sys.reload_plugin(plugin_name, **kwargs)
-        
+
     def get_loaded_plugins(self) -> Dict[str, BasePlugin]:
         """获取所有已加载的插件。
 
@@ -85,5 +89,8 @@ class PluginSysApi:
         """
         return self._plugin_sys.plugins
 
-COMPATIBLE_HANDLERS: List[CompatibleHandler] = []
-PLUGINS_DIR = "./plugins"
+
+class IPluginApi(PluginSysApi, BotAPI):
+    def __init__(self, bot_api: BotAPI, plugin_sys_api: PluginSysApi):
+        self.__dict__.update(bot_api.__dict__)
+        self.__dict__.update(plugin_sys_api.__dict__)
