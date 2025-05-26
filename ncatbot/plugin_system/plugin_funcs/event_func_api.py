@@ -4,18 +4,17 @@
 # @LastEditors  : Fish-LP fish.zh@outlook.com
 # @LastEditTime : 2025-05-24 17:00:30
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
-# @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议 
+# @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议
 # -------------------------
-from typing import Any, Dict, List, Callable
-
+from typing import Any, Callable, Dict, List
 from uuid import UUID
 
-from ...utils import get_log
-from ..event import EventBus, Event
-from ..abc_api import AbstractPluginApi
+from ncatbot.plugin_system.abc_api import AbstractPluginApi
+from ncatbot.plugin_system.event import Event, EventBus
+from ncatbot.utils import get_log
 
+LOG = get_log("BasePlugin")
 
-LOG = get_log('BasePlugin')
 
 class PluginFunctionMixin(AbstractPluginApi):
     """
@@ -65,15 +64,15 @@ class PluginFunctionMixin(AbstractPluginApi):
             RuntimeError: 如果功能名称已存在，会引发此错误。
         """
 
-        if 'functions' not in self.meta_data:
-            self.meta_data['functions'] = {}
+        if "functions" not in self.meta_data:
+            self.meta_data["functions"] = {}
 
-        if name in self.meta_data['functions']:
+        if name in self.meta_data["functions"]:
             raise RuntimeError(f"你不能添加同名功能: '{name}' 已经添加过了")
 
         def pack(event: Event):
             """包装函数，用于判断是否触发功能并执行功能逻辑"""
-            if not self.meta_data['functions'][name]['enabled']:
+            if not self.meta_data["functions"][name]["enabled"]:
                 return
             if trigger and not trigger(event):
                 return
@@ -82,14 +81,14 @@ class PluginFunctionMixin(AbstractPluginApi):
             func(event)
 
         handler_id = self._event_bus.subscribe(event_type, pack, priority)
-        
-        self.meta_data['functions'][name] = {
+
+        self.meta_data["functions"][name] = {
             "enabled": True,
             "docs": docs,
             "permission": permission,
-            "handler_id": handler_id
+            "handler_id": handler_id,
         }
-        
+
         self._event_handlers.append(handler_id)
 
     def removefunc(self, name: str) -> bool:
@@ -102,12 +101,12 @@ class PluginFunctionMixin(AbstractPluginApi):
         Returns:
             bool: 如果移除成功返回 `True`，否则返回 `False`。
         """
-        if name not in self.meta_data['functions']:
+        if name not in self.meta_data["functions"]:
             return False
-        handler_id = self.meta_data['functions'][name]['handler_id']
+        handler_id = self.meta_data["functions"][name]["handler_id"]
         self._event_bus.unsubscribe(handler_id)
         self._event_handlers.remove(handler_id)
-        del self.meta_data['functions'][name]
+        del self.meta_data["functions"][name]
         return True
 
     def enablefunc(self, name: str) -> bool:
@@ -120,9 +119,9 @@ class PluginFunctionMixin(AbstractPluginApi):
         Returns:
             bool: 如果启用成功返回 `True`，否则返回 `False`。
         """
-        if name not in self.meta_data['functions']:
+        if name not in self.meta_data["functions"]:
             return False
-        self.meta_data['functions'][name]['enabled'] = True
+        self.meta_data["functions"][name]["enabled"] = True
         return True
 
     def disablefunc(self, name: str) -> bool:
@@ -135,9 +134,9 @@ class PluginFunctionMixin(AbstractPluginApi):
         Returns:
             bool: 如果禁用成功返回 `True`，否则返回 `False`。
         """
-        if name not in self.meta_data['functions']:
+        if name not in self.meta_data["functions"]:
             return False
-        self.meta_data['functions'][name]['enabled'] = False
+        self.meta_data["functions"][name]["enabled"] = False
         return True
 
     def updatefuncdocs(self, name: str, docs: str) -> bool:
@@ -151,9 +150,9 @@ class PluginFunctionMixin(AbstractPluginApi):
         Returns:
             bool: 如果更新成功返回 `True`，否则返回 `False`。
         """
-        if name not in self.meta_data['functions']:
+        if name not in self.meta_data["functions"]:
             return False
-        self.meta_data['functions'][name]['docs'] = docs
+        self.meta_data["functions"][name]["docs"] = docs
         return True
 
     def listfuncs(self) -> Dict[str, Dict[str, Any]]:
@@ -169,10 +168,12 @@ class PluginFunctionMixin(AbstractPluginApi):
                 "enabled": info["enabled"],
                 "permission": info["permission"],
             }
-            for name, info in self.meta_data['functions'].items()
+            for name, info in self.meta_data["functions"].items()
         }
 
-    def generate_help(self, template: str = "{name}: {docs} (状态: {enabled}, 权限: {permission})") -> str:
+    def generate_help(
+        self, template: str = "{name}: {docs} (状态: {enabled}, 权限: {permission})"
+    ) -> str:
         """
         自动生成帮助信息，支持自定义模板。
 
@@ -187,14 +188,14 @@ class PluginFunctionMixin(AbstractPluginApi):
         help_lines.append("帮助信息列表：")
         help_lines.append("-" * 40)  # 添加分隔符
 
-        for name, info in self.meta_data['functions'].items():
-            enabled_status = "启用" if info['enabled'] else "禁用"
+        for name, info in self.meta_data["functions"].items():
+            enabled_status = "启用" if info["enabled"] else "禁用"
             help_lines.append(
                 template.format(
                     name=name,
-                    docs=info['docs'],
+                    docs=info["docs"],
                     enabled=enabled_status,
-                    permission=info['permission']
+                    permission=info["permission"],
                 )
             )
 

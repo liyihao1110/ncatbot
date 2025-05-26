@@ -1,0 +1,2 @@
+class AsyncAPI:
+    pass

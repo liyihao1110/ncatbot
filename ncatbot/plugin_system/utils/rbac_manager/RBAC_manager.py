@@ -4,13 +4,19 @@
 # @LastEditors  : Fish-LP fish.zh@outlook.com
 # @LastEditTime : 2025-05-24 16:09:44
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
-# @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议 
+# @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议
 # -------------------------
 from typing import Dict, List
-from .permission_tree import RuleTree, LiteralTree
+
+from ncatbot.plugin_system.utils.rbac_manager.permission_tree import (
+    LiteralTree,
+    RuleTree,
+)
+
 
 class Role:
     """角色类，管理权限规则"""
+
     def __init__(self, name: str):
         self.name = name
         self.allow_tree = RuleTree()
@@ -19,7 +25,7 @@ class Role:
     def add_permission(self, permission_pattern: str) -> None:
         """添加允许权限规则"""
         self.allow_tree.add_permission(permission_pattern)
-        
+
     def deny_permission(self, permission_pattern: str) -> None:
         """添加拒绝权限规则"""
         self.deny_tree.add_permission(permission_pattern)
@@ -30,8 +36,10 @@ class Role:
             return False
         return self.allow_tree.match(path)
 
+
 class User:
     """用户类，关联多个角色"""
+
     def __init__(self, user_id: str):
         self.user_id = user_id
         self.roles: List[Role] = []
@@ -48,8 +56,10 @@ class User:
                 return True
         return False
 
+
 class PermissionManager:
     """RBAC权限管理核心类"""
+
     def __init__(self):
         self.roles: Dict[str, Role] = {}
         self.global_permissions = LiteralTree()
@@ -81,7 +91,9 @@ class PermissionManager:
         if role:
             user.assign_role(role)
 
-    def assign_permission(self, role_name: str, permission_pattern: str, deny: bool = False) -> None:
+    def assign_permission(
+        self, role_name: str, permission_pattern: str, deny: bool = False
+    ) -> None:
         """为角色分配权限规则，只有模式匹配到已注册权限时才能分配"""
         role = self.roles.get(role_name)
         matched_permissions = self.get_matched_permissions(permission_pattern)
