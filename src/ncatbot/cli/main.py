@@ -60,7 +60,7 @@ def main() -> None:
                 cmd_name = parts[0]
                 cmd_args = parts[1:]
 
-                if cmd_name == "exit":
+                if cmd_name == "exit" or cmd_name == "q":
                     system_commands.exit_cli()
                     return
 

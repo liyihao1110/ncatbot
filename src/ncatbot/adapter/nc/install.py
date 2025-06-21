@@ -116,7 +116,7 @@ def install_napcat_linux(type: str):
     try:
         LOG.info("正在下载一键安装脚本...")
         process = subprocess.Popen(
-            f"sudo bash -c 'curl {INSTALL_SCRIPT_URL} -o install && yes | bash install'",
+            f"sudo bash -c 'curl -sS {INSTALL_SCRIPT_URL} -o install && printf \"n\ny\n\" | sudo bash install'",
             shell=True,
             stdin=sys.stdin,
             stdout=sys.stdout,
