@@ -52,6 +52,9 @@ class SetConfig:
         self.plugin_blacklist = []  # 插件黑名单，为空表示不启用黑名单
         self.check_plugin_dependecies = False  # 加载时不检查插件 Python 第三方依赖
 
+        # 内置功能控制
+        self.enable_help = False
+
         # NapCat 行为
         self.stop_napcat = False  # NcatBot 下线时是否停止 NapCat
         self.enable_webui_interaction = True  # 是否允许 NcatBot 与 NapCat webui 交互

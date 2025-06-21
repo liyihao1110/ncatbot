@@ -148,6 +148,13 @@ class EventBus:
                 mode="white",
                 create_permission_path=True,
             )
+            if func.permission == PermissionGroup.ADMIN.value:
+                self.access_controller.unassign_permissions_to_role(
+                    role_name=PermissionGroup.USER.value,
+                    path=f"{func.plugin_name}.{func.name}",
+                    mode="white",
+                    create_permission_path=False,
+                )
             self.funcs.append(func)
 
     def subscribe(

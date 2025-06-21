@@ -220,7 +220,7 @@ class BotAPI(SYNC_API_MIXIN):
         :return: 获取群名片
         """
         return await self._http.post(
-            "/ArkSharePeer", {"group_id": group_id, "phoneNumber": phone_number}
+            "/ArkSharePeer", {"group_id": str(group_id), "phoneNumber": phone_number}
         )
 
     @report
@@ -229,7 +229,7 @@ class BotAPI(SYNC_API_MIXIN):
         :param group_id: 群号
         :return: 获取群共享名片
         """
-        return await self._http.post("/ArkShareGroup", {"group_id": group_id})
+        return await self._http.post("/ArkShareGroup", {"group_id": str(group_id)})
 
     @report
     async def set_online_status(self, status: str):
@@ -264,7 +264,9 @@ class BotAPI(SYNC_API_MIXIN):
         :param times: 次数
         :return: 发送赞
         """
-        return await self._http.post("/send_like", {"user_id": user_id, "times": times})
+        return await self._http.post(
+            "/send_like", {"user_id": str(user_id), "times": times}
+        )
 
     @report
     async def create_collection(self, rawdata: str, brief: str):
@@ -303,7 +305,7 @@ class BotAPI(SYNC_API_MIXIN):
         :param user_id: QQ号
         :return: 获取陌生人信息
         """
-        return await self._http.post("/get_stranger_info", {"user_id": user_id})
+        return await self._http.post("/get_stranger_info", {"user_id": str(user_id)})
 
     @report
     async def get_friend_list(self, cache: bool):
@@ -337,7 +339,8 @@ class BotAPI(SYNC_API_MIXIN):
         :return: 上传私聊文件
         """
         return await self._http.post(
-            "/upload_private_file", {"user_id": user_id, "file": file, "name": name}
+            "/upload_private_file",
+            {"user_id": str(user_id), "file": file, "name": name},
         )
 
     @report
@@ -358,7 +361,7 @@ class BotAPI(SYNC_API_MIXIN):
         return await self._http.post(
             "/delete_friend",
             {
-                "user_id": user_id,
+                "user_id": str(user_id),
                 "friend_id": friend_id,
                 "temp_block": temp_block,
                 "temp_both_del": temp_both_del,
@@ -371,7 +374,7 @@ class BotAPI(SYNC_API_MIXIN):
         :param user_id: QQ号
         :return: 获取用户状态
         """
-        return await self._http.post("/nc_get_user_status", {"user_id": user_id})
+        return await self._http.post("/nc_get_user_status", {"user_id": str(user_id)})
 
     @report
     async def get_mini_app_ark(self, app_json: dict):
@@ -395,9 +398,11 @@ class BotAPI(SYNC_API_MIXIN):
         :return: 设置消息已读
         """
         if group_id:
-            return await self._http.post("/mark_msg_as_read", {"group_id": group_id})
+            return await self._http.post(
+                "/mark_msg_as_read", {"group_id": str(group_id)}
+            )
         elif user_id:
-            return await self._http.post("/mark_msg_as_read", {"user_id": user_id})
+            return await self._http.post("/mark_msg_as_read", {"user_id": str(user_id)})
 
     @report
     async def mark_group_msg_as_read(self, group_id: Union[int, str]):
@@ -405,7 +410,9 @@ class BotAPI(SYNC_API_MIXIN):
         :param group_id: 群号
         :return: 设置群聊已读
         """
-        return await self._http.post("/mark_group_msg_as_read", {"group_id": group_id})
+        return await self._http.post(
+            "/mark_group_msg_as_read", {"group_id": str(group_id)}
+        )
 
     @report
     async def mark_private_msg_as_read(self, user_id: Union[int, str]):
@@ -413,7 +420,9 @@ class BotAPI(SYNC_API_MIXIN):
         :param user_id: QQ号
         :return: 设置私聊已读
         """
-        return await self._http.post("/mark_private_msg_as_read", {"user_id": user_id})
+        return await self._http.post(
+            "/mark_private_msg_as_read", {"user_id": str(user_id)}
+        )
 
     @report
     async def mark_all_as_read(self):
@@ -483,7 +492,7 @@ class BotAPI(SYNC_API_MIXIN):
         return await self._http.post(
             "/get_group_msg_history",
             {
-                "group_id": group_id,
+                "group_id": str(group_id),
                 "message_seq": message_seq,
                 "count": count,
                 "reverseOrder": reverse_order,
@@ -523,7 +532,7 @@ class BotAPI(SYNC_API_MIXIN):
         return await self._http.post(
             "/get_friend_msg_history",
             {
-                "user_id": user_id,
+                "user_id": str(user_id),
                 "message_seq": message_seq,
                 "count": count,
                 "reverseOrder": reverse_order,
@@ -566,7 +575,7 @@ class BotAPI(SYNC_API_MIXIN):
                         "message_id": message_id,
                         "emojiId": emoji_id,
                         "emojiType": emoji_type,
-                        "group_id": group_id,
+                        "group_id": str(group_id),
                         "count": count,
                     },
                 )
@@ -577,7 +586,7 @@ class BotAPI(SYNC_API_MIXIN):
                         "message_id": message_id,
                         "emojiId": emoji_id,
                         "emojiType": emoji_type,
-                        "group_id": group_id,
+                        "group_id": str(group_id),
                     },
                 )
         elif user_id:
@@ -588,7 +597,7 @@ class BotAPI(SYNC_API_MIXIN):
                         "message_id": message_id,
                         "emojiId": emoji_id,
                         "emojiType": emoji_type,
-                        "user_id": user_id,
+                        "user_id": str(user_id),
                         "count": count,
                     },
                 )
@@ -599,7 +608,7 @@ class BotAPI(SYNC_API_MIXIN):
                         "message_id": message_id,
                         "emojiId": emoji_id,
                         "emojiType": emoji_type,
-                        "user_id": user_id,
+                        "user_id": str(user_id),
                     },
                 )
 
@@ -622,10 +631,10 @@ class BotAPI(SYNC_API_MIXIN):
         """
         if group_id:
             return await self._http.post(
-                "/send_poke", {"user_id": user_id, "group_id": group_id}
+                "/send_poke", {"user_id": str(user_id), "group_id": str(group_id)}
             )
         else:
-            return await self._http.post("/send_poke", {"user_id": user_id})
+            return await self._http.post("/send_poke", {"user_id": str(user_id)})
 
     @report
     async def forward_friend_single_msg(
@@ -637,7 +646,8 @@ class BotAPI(SYNC_API_MIXIN):
         :return: 转发好友消息
         """
         return await self._http.post(
-            "/forward_friend_single_msg", {"user_id": user_id, "message_id": message_id}
+            "/forward_friend_single_msg",
+            {"user_id": str(user_id), "message_id": message_id},
         )
 
     @report
@@ -673,8 +683,8 @@ class BotAPI(SYNC_API_MIXIN):
         return await self._http.post(
             "/set_group_kick",
             {
-                "group_id": group_id,
-                "user_id": user_id,
+                "group_id": str(group_id),
+                "user_id": str(user_id),
                 "reject_add_request": reject_add_request,
             },
         )
@@ -691,7 +701,7 @@ class BotAPI(SYNC_API_MIXIN):
         """
         return await self._http.post(
             "/set_group_ban",
-            {"group_id": group_id, "user_id": user_id, "duration": duration},
+            {"group_id": str(group_id), "user_id": str(user_id), "duration": duration},
         )
 
     @report
@@ -700,7 +710,9 @@ class BotAPI(SYNC_API_MIXIN):
         :param group_id: 群号
         :return: 获取群系统消息
         """
-        return await self._http.post("/get_group_system_msg", {"group_id": group_id})
+        return await self._http.post(
+            "/get_group_system_msg", {"group_id": str(group_id)}
+        )
 
     @report
     async def get_essence_msg_list(self, group_id: Union[int, str]):
@@ -708,7 +720,9 @@ class BotAPI(SYNC_API_MIXIN):
         :param group_id: 群号
         :return: 获取精华消息列表
         """
-        return await self._http.post("/get_essence_msg_list", {"group_id": group_id})
+        return await self._http.post(
+            "/get_essence_msg_list", {"group_id": str(group_id)}
+        )
 
     @report
     async def set_group_whole_ban(self, group_id: Union[int, str], enable: bool):
@@ -718,7 +732,7 @@ class BotAPI(SYNC_API_MIXIN):
         :return: 群组全员禁言
         """
         return await self._http.post(
-            "/set_group_whole_ban", {"group_id": group_id, "enable": enable}
+            "/set_group_whole_ban", {"group_id": str(group_id), "enable": enable}
         )
 
     @report
@@ -729,7 +743,7 @@ class BotAPI(SYNC_API_MIXIN):
         :return: 设置群头像
         """
         return await self._http.post(
-            "/set_group_portrait", {"group_id": group_id, "file": file}
+            "/set_group_portrait", {"group_id": str(group_id), "file": file}
         )
 
     @report
@@ -744,7 +758,7 @@ class BotAPI(SYNC_API_MIXIN):
         """
         return await self._http.post(
             "/set_group_admin",
-            {"group_id": group_id, "user_id": user_id, "enable": enable},
+            {"group_id": str(group_id), "user_id": str(user_id), "enable": enable},
         )
 
     @report
@@ -766,7 +780,8 @@ class BotAPI(SYNC_API_MIXIN):
         :return: 设置群名片
         """
         return await self._http.post(
-            "/set_group_card", {"group_id": group_id, "user_id": user_id, "card": card}
+            "/set_group_card",
+            {"group_id": str(group_id), "user_id": str(user_id), "card": card},
         )
 
     @report
@@ -785,7 +800,7 @@ class BotAPI(SYNC_API_MIXIN):
         :return: 设置群名
         """
         return await self._http.post(
-            "/set_group_name", {"group_id": group_id, "group_name": group_name}
+            "/set_group_name", {"group_id": str(group_id), "group_name": group_name}
         )
 
     @report
@@ -794,7 +809,7 @@ class BotAPI(SYNC_API_MIXIN):
         :param group_id: 群号
         :return: 退出群组
         """
-        return await self._http.post("/set_group_leave", {"group_id": group_id})
+        return await self._http.post("/set_group_leave", {"group_id": str(group_id)})
 
     @report
     async def send_group_notice(
@@ -809,11 +824,11 @@ class BotAPI(SYNC_API_MIXIN):
         if image:
             return await self._http.post(
                 "/_send_group_notice",
-                {"group_id": group_id, "content": content, "image": image},
+                {"group_id": str(group_id), "content": content, "image": image},
             )
         else:
             return await self._http.post(
-                "/_send_group_notice", {"group_id": group_id, "content": content}
+                "/_send_group_notice", {"group_id": str(group_id), "content": content}
             )
 
     @report
@@ -822,7 +837,7 @@ class BotAPI(SYNC_API_MIXIN):
         :param group_id: 群号
         :return: 获取群公告
         """
-        return await self._http.post("/_get_group_notice", {"group_id": group_id})
+        return await self._http.post("/_get_group_notice", {"group_id": str(group_id)})
 
     @report
     async def set_group_special_title(
@@ -836,7 +851,11 @@ class BotAPI(SYNC_API_MIXIN):
         """
         return await self._http.post(
             "/set_group_special_title",
-            {"group_id": group_id, "user_id": user_id, "special_title": special_title},
+            {
+                "group_id": str(group_id),
+                "user_id": str(user_id),
+                "special_title": special_title,
+            },
         )
 
     @report
@@ -852,7 +871,12 @@ class BotAPI(SYNC_API_MIXIN):
         """
         return await self._http.post(
             "/upload_group_file",
-            {"group_id": group_id, "file": file, "name": name, "folder_id": folder_id},
+            {
+                "group_id": str(group_id),
+                "file": file,
+                "name": name,
+                "folder_id": folder_id,
+            },
         )
 
     @report
@@ -879,7 +903,7 @@ class BotAPI(SYNC_API_MIXIN):
         :param group_id: 群号
         :return: 获取群信息
         """
-        return await self._http.post("/get_group_info", {"group_id": group_id})
+        return await self._http.post("/get_group_info", {"group_id": str(group_id)})
 
     @report
     async def get_group_info_ex(self, group_id: Union[int, str]):
@@ -887,7 +911,7 @@ class BotAPI(SYNC_API_MIXIN):
         :param group_id: 群号
         :return: 获取群信息(拓展)
         """
-        return await self._http.post("/get_group_info_ex", {"group_id": group_id})
+        return await self._http.post("/get_group_info_ex", {"group_id": str(group_id)})
 
     @report
     async def create_group_file_folder(
@@ -900,7 +924,7 @@ class BotAPI(SYNC_API_MIXIN):
         """
         return await self._http.post(
             "/create_group_file_folder",
-            {"group_id": group_id, "folder_name": folder_name},
+            {"group_id": str(group_id), "folder_name": folder_name},
         )
 
     @report
@@ -911,7 +935,7 @@ class BotAPI(SYNC_API_MIXIN):
         :return: 删除群文件
         """
         return await self._http.post(
-            "/delete_group_file", {"group_id": group_id, "file_id": file_id}
+            "/delete_group_file", {"group_id": str(group_id), "file_id": file_id}
         )
 
     @report
@@ -922,7 +946,7 @@ class BotAPI(SYNC_API_MIXIN):
         :return: 删除群文件文件夹
         """
         return await self._http.post(
-            "/delete_group_folder", {"group_id": group_id, "folder_id": folder_id}
+            "/delete_group_folder", {"group_id": str(group_id), "folder_id": folder_id}
         )
 
     @report
@@ -932,7 +956,7 @@ class BotAPI(SYNC_API_MIXIN):
         :return: 获取群文件系统信息
         """
         return await self._http.post(
-            "/get_group_file_system_info", {"group_id": group_id}
+            "/get_group_file_system_info", {"group_id": str(group_id)}
         )
 
     @report
@@ -941,7 +965,9 @@ class BotAPI(SYNC_API_MIXIN):
         :param group_id: 群号
         :return: 获取群根目录文件列表
         """
-        return await self._http.post("/get_group_root_files", {"group_id": group_id})
+        return await self._http.post(
+            "/get_group_root_files", {"group_id": str(group_id)}
+        )
 
     @report
     async def get_group_files_by_folder(
@@ -955,7 +981,11 @@ class BotAPI(SYNC_API_MIXIN):
         """
         return await self._http.post(
             "/get_group_files_by_folder",
-            {"group_id": group_id, "folder_id": folder_id, "file_count": file_count},
+            {
+                "group_id": str(group_id),
+                "folder_id": folder_id,
+                "file_count": file_count,
+            },
         )
 
     @report
@@ -966,7 +996,7 @@ class BotAPI(SYNC_API_MIXIN):
         :return: 获取群文件URL
         """
         return await self._http.post(
-            "/get_group_file_url", {"group_id": group_id, "file_id": file_id}
+            "/get_group_file_url", {"group_id": str(group_id), "file_id": file_id}
         )
 
     @report
@@ -989,7 +1019,7 @@ class BotAPI(SYNC_API_MIXIN):
         """
         return await self._http.post(
             "/get_group_member_info",
-            {"group_id": group_id, "user_id": user_id, "no_cache": no_cache},
+            {"group_id": str(group_id), "user_id": str(user_id), "no_cache": no_cache},
         )
 
     @report
@@ -1002,7 +1032,7 @@ class BotAPI(SYNC_API_MIXIN):
         :return: 获取群成员列表
         """
         return await self._http.post(
-            "/get_group_member_list", {"group_id": group_id, "no_cache": no_cache}
+            "/get_group_member_list", {"group_id": str(group_id), "no_cache": no_cache}
         )
 
     @report
@@ -1011,7 +1041,9 @@ class BotAPI(SYNC_API_MIXIN):
         :param group_id: 群号
         :return: 获取群荣誉信息
         """
-        return await self._http.post("/get_group_honor_info", {"group_id": group_id})
+        return await self._http.post(
+            "/get_group_honor_info", {"group_id": str(group_id)}
+        )
 
     @report
     async def get_group_at_all_remain(self, group_id: Union[int, str]):
@@ -1019,7 +1051,9 @@ class BotAPI(SYNC_API_MIXIN):
         :param group_id: 群号
         :return: 获取群 @全体成员 剩余次数
         """
-        return await self._http.post("/get_group_at_all_remain", {"group_id": group_id})
+        return await self._http.post(
+            "/get_group_at_all_remain", {"group_id": str(group_id)}
+        )
 
     @report
     async def get_group_ignored_notifies(self, group_id: Union[int, str]):
@@ -1028,7 +1062,7 @@ class BotAPI(SYNC_API_MIXIN):
         :return: 获取群过滤系统消息
         """
         return await self._http.post(
-            "/get_group_ignored_notifies", {"group_id": group_id}
+            "/get_group_ignored_notifies", {"group_id": str(group_id)}
         )
 
     @report
@@ -1037,7 +1071,7 @@ class BotAPI(SYNC_API_MIXIN):
         :param group_id: 群号
         :return: 群打卡
         """
-        return await self._http.post("/set_group_sign", {"group_id": group_id})
+        return await self._http.post("/set_group_sign", {"group_id": str(group_id)})
 
     @report
     async def send_group_sign(self, group_id: Union[int, str]):
@@ -1045,7 +1079,7 @@ class BotAPI(SYNC_API_MIXIN):
         :param group_id: 群号
         :return: 群打卡
         """
-        return await self._http.post("/send_group_sign", {"group_id": group_id})
+        return await self._http.post("/send_group_sign", {"group_id": str(group_id)})
 
     @report
     async def get_ai_characters(
@@ -1057,7 +1091,7 @@ class BotAPI(SYNC_API_MIXIN):
         :return: 获取AI语音人物
         """
         return await self._http.post(
-            "/get_ai_characters", {"group_id": group_id, "chat_type": chat_type}
+            "/get_ai_characters", {"group_id": str(group_id), "chat_type": chat_type}
         )
 
     @report
@@ -1072,7 +1106,7 @@ class BotAPI(SYNC_API_MIXIN):
         """
         return await self._http.post(
             "/send_group_ai_record",
-            {"group_id": group_id, "character": character, "text": text},
+            {"group_id": str(group_id), "character": character, "text": text},
         )
 
     @report
@@ -1085,7 +1119,7 @@ class BotAPI(SYNC_API_MIXIN):
         """
         return await self._http.post(
             "/get_ai_record",
-            {"group_id": group_id, "character": character, "text": text},
+            {"group_id": str(group_id), "character": character, "text": text},
         )
 
     @report
@@ -1099,7 +1133,7 @@ class BotAPI(SYNC_API_MIXIN):
         """
         return await self._http.post(
             "/forward_group_single_msg",
-            {"group_id": group_id, "message_id": message_id},
+            {"group_id": str(group_id), "message_id": message_id},
         )
 
     @report
@@ -1176,7 +1210,7 @@ class BotAPI(SYNC_API_MIXIN):
         :return: 设置输入状态
         """
         return await self._http.post(
-            "/set_input_status", {"eventType": event_type, "user_id": user_id}
+            "/set_input_status", {"eventType": event_type, "user_id": str(user_id)}
         )
 
     @report
@@ -1267,7 +1301,7 @@ class BotAPI(SYNC_API_MIXIN):
         :return: 删除群公告
         """
         return await self._http.post(
-            "/_del_group_notice", {"group_id": group_id, "notice_id": notice_id}
+            "/_del_group_notice", {"group_id": str(group_id), "notice_id": notice_id}
         )
 
     @report
@@ -1334,7 +1368,9 @@ class BotAPI(SYNC_API_MIXIN):
         :param group_id: 群号
         :return: 获取群禁言列表
         """
-        return await self._http.post("/get_group_shut_list", {"group_id": group_id})
+        return await self._http.post(
+            "/get_group_shut_list", {"group_id": str(group_id)}
+        )
 
     @report
     async def post_group_msg(
@@ -1382,7 +1418,7 @@ class BotAPI(SYNC_API_MIXIN):
         )
         if len(message) == 0:
             return {"code": 0, "msg": "消息不能为空"}
-        params = {"group_id": group_id, "message": message}
+        params = {"group_id": str(group_id), "message": message}
         return await self._http.post("/send_group_msg", json=params)
 
     @report
@@ -1428,7 +1464,7 @@ class BotAPI(SYNC_API_MIXIN):
         )
         if len(message) == 0:
             return {"code": 0, "msg": "消息不能为空"}
-        params = {"user_id": user_id, "message": message}
+        params = {"user_id": str(user_id), "message": message}
         return await self._http.post("/send_private_msg", json=params)
 
     @report
@@ -1476,7 +1512,7 @@ class BotAPI(SYNC_API_MIXIN):
         else:
             return {"code": 0, "msg": "请至少选择一种文件"}
 
-        params = {"group_id": group_id, "message": message}
+        params = {"group_id": str(group_id), "message": message}
         return await self._http.post("/send_group_msg", json=params)
 
     @report
@@ -1524,7 +1560,7 @@ class BotAPI(SYNC_API_MIXIN):
         else:
             return {"code": 0, "msg": "请至少选择一种文件"}
 
-        params = {"user_id": user_id, "message": message}
+        params = {"user_id": str(user_id), "message": message}
         return await self._http.post("/send_private_msg", json=params)
 
     # ---------------------

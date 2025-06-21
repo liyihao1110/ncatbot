@@ -174,7 +174,8 @@ class RBACManager:
 
     def add_permissions(self, permissions_path: str):
         """添加权限路径到 Trie 树"""
-        self.permissions_trie.add_path(permissions_path)
+        if not self.check_availability(permissions_path=permissions_path):
+            self.permissions_trie.add_path(permissions_path)
 
     def del_permissions(self, permissions_path: str):
         self.permissions_trie.del_path(permissions_path)
@@ -229,7 +230,8 @@ class RBACManager:
                 f"权限路径 {permissions_path} 不存在,无法分配给角色 {role_name}"
             )
         self.refresh_cache(role_name=role_name)
-        self.roles[role_name][f"{mode}_permissions_list"].append(permissions_path)
+        if permissions_path not in self.roles[role_name][f"{mode}_permissions_list"]:
+            self.roles[role_name][f"{mode}_permissions_list"].append(permissions_path)
 
     def assign_permissions_to_user(
         self, user_name: str, permissions_path: str, mode: Literal["white", "black"]
@@ -248,7 +250,8 @@ class RBACManager:
         if not self.check_availability(user_name=user_name, role_name=role_name):
             raise IndexError(f"角色 {role_name} 或用户 {user_name} 不存在")
         self.refresh_cache(role_name=role_name, user_name=user_name)
-        self.users[user_name]["role_list"].append(role_name)
+        if role_name not in self.users[user_name]["role_list"]:
+            self.users[user_name]["role_list"].append(role_name)
 
     def unassign_permissions_to_role(
         self, role_name: str, permissions_path: str, mode: Literal["white", "black"]
@@ -256,7 +259,8 @@ class RBACManager:
         if not self.check_availability(role_name=role_name):
             raise IndexError(f"角色 {role_name} 不存在")
         self.refresh_cache(role_name=role_name)
-        self.roles[role_name][f"{mode}_permissions_list"].remove(permissions_path)
+        if permissions_path in self.roles[role_name][f"{mode}_permissions_list"]:
+            self.roles[role_name][f"{mode}_permissions_list"].remove(permissions_path)
 
     def unassign_permissions_to_user(
         self, user_name: str, permissions_path: str, mode: Literal["white", "black"]

@@ -5,10 +5,12 @@ import json
 import os
 import pickle
 import re
+import urllib
 import warnings
 import zipfile
 from pathlib import Path
 from typing import Any, Callable, Dict, Literal, Optional, Union
+from urllib.parse import urljoin  # 导入urljoin函数
 
 from ncatbot.utils.logger import get_log
 
@@ -80,10 +82,13 @@ def convert_uploadable_object(i, message_type):
                 image_data = f.read()
                 i = f"base64://{base64.b64encode(image_data).decode('utf-8')}"
         else:
-            i = f"file:///{os.path.abspath(i)}"
+            # 使用urljoin规范生成文件URL
+            i = urljoin("file:", urllib.request.pathname2url(os.path.abspath(i)))
         return {"type": message_type, "data": {"file": i}}
     else:
-        return {"type": message_type, "data": {"file": f"file:///{i}"}}
+        # 文件不存在时同样规范处理
+        file_url = urljoin("file:", urllib.request.pathname2url(os.path.abspath(i)))
+        return {"type": message_type, "data": {"file": file_url}}
 
 
 # -------------------------

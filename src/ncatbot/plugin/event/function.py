@@ -6,10 +6,7 @@ from ncatbot.core import BaseMessage
 from ncatbot.plugin.event.access_controller import get_global_access_controller
 from ncatbot.plugin.event.event import Event, EventSource
 from ncatbot.plugin.event.filter import create_filter
-from ncatbot.utils import (
-    PermissionGroup,
-    run_func_sync,
-)
+from ncatbot.utils import PermissionGroup, config, run_func_sync
 
 
 class Func:
@@ -20,7 +17,7 @@ class Func:
         name,  # 功能名, 构造权限路径时使用
         plugin_name,  # 插件名, 构造权限路径时使用
         func: Callable[[BaseMessage], None],
-        filter: Callable[[Event], bool] = None,
+        filter: Callable[[BaseMessage], bool] = None,
         prefix: str = None,  # 新增: 前缀匹配
         regex: str = None,  # 新增: 正则匹配
         permission: PermissionGroup = PermissionGroup.USER.value,  # 向事件总线传递默认权限设置
@@ -351,7 +348,7 @@ async def reload_plugin_command(message: BaseMessage, event_bus=None):
 
 
 async def help_command(message: BaseMessage, event_bus=None):
-    # /help [<plugin_name>]
+    # /nchelp [<plugin_name>]
     from ncatbot.plugin.event.event_bus import EventBus
 
     event_bus: EventBus = event_bus
@@ -365,7 +362,7 @@ async def help_command(message: BaseMessage, event_bus=None):
             )
             + "查看具体插件的帮助: \n"
             + "====插件列表====\n"
-            + "\n".join([f"/help {plugin.name}" for plugin in plugins])
+            + "\n".join([f"/nchelp {plugin.name}" for plugin in plugins])
         )
     else:
         plugin_name = args[0]
@@ -376,6 +373,18 @@ async def help_command(message: BaseMessage, event_bus=None):
                 0
             ]._get_help()
     message.reply_text_sync(text)
+
+
+def help_filter(msg: BaseMessage) -> bool:
+    """帮助命令的过滤函数"""
+    text = msg.raw_message
+    if config.enable_help:
+        import re
+
+        regex = (r"^(?:[/#-](?:help|帮助)|help|帮助)[\s\S]*",)
+        return re.match(regex, text) is not None
+    else:
+        return text.startswith("/nchelp")
 
 
 # 更新内置函数定义，使用新的过滤机制
@@ -437,12 +446,12 @@ BUILT_IN_FUNCTIONS = [
     Func(
         name="help",
         plugin_name="ncatbot",
-        regex=r"^(?:[/#-](?:help|帮助)|help|帮助)[\s\S]*",
+        filter=help_filter,
         description="查看帮助",
         func=help_command,
         reply=False,
         permission=PermissionGroup.USER.value,
-        usage="/help [<plugin_name>]",
-        examples=["/help", "/help example_plugin"],
+        usage="/nchelp [<plugin_name>]",
+        examples=["/nchelp", "/nchelp example_plugin"],
     ),
 ]

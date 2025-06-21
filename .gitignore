@@ -197,3 +197,4 @@ package.zip
 resource.o
 number.txt
 **.exe
+.cursor/
