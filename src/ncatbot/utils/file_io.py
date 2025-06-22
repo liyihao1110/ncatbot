@@ -17,6 +17,8 @@ from ncatbot.utils.logger import get_log
 _log = get_log()
 
 
+
+
 def unzip_file(file_name, exact_path, remove=False):
     try:
         with zipfile.ZipFile(file_name, "r") as zip_ref:
@@ -34,45 +36,22 @@ def read_file(file_path) -> any:
         return f.read()
 
 
-def convert_uploadable_object(i, message_type):
+def convert_uploadable_object(i: str, message_type):
     """将可上传对象转换为标准格式"""
 
     def is_base64(s: str):
-        if s.startswith("base64://"):
-            return True
-        if re.match(
-            r"data:image/(jpg|jpeg|png|gif|bmp|webp|tiff|svg|mp4|avi|mov|wmv|flv|mkv|mpg|mpeg|m4v);base64,",
-            s,
-        ):
-            return True
-        return False
+        return to_base64(s) is not None
 
     def to_base64(s: str):
+        data_format_re = r"data:image/(jpg|jpeg|png|gif|bmp|webp|tiff|svg|mp4|avi|mov|wmv|flv|mkv|mpg|mpeg|m4v);base64,"
         if s.startswith("base64://"):
             return s
-        if re.match(
-            r"data:image/(jpg|jpeg|png|gif|bmp|webp|tiff|svg|mp4|avi|mov|wmv|flv|mkv|mpg|mpeg|m4v);base64,",
-            s,
-        ):
-            m = re.match(
-                r"data:image/(jpg|jpeg|png|gif|bmp|webp|tiff|svg|mp4|avi|mov|wmv|flv|mkv|mpg|mpeg|m4v);base64,(.*)",
-                s,
-            )
+        m = re.match(data_format_re, s)
+        if m is not None:
             return f"base64://{m.group(2)}"
+        return None
 
     if i.startswith("http"):
-        # TODO: 优化图片请求
-        # if message_type == "image":
-        #     try:
-        #         with httpx.Client() as client:
-        #             response = client.get(i)
-        #             response.raise_for_status()
-        #             image_data = response.content
-        #             i = f"base64://{base64.b64encode(image_data).decode('utf-8')}"
-        #     except httpx.HTTPError as e:
-        #         return {"type": "text", "data": {"text": f"URL请求失败: {e}"}}
-        #     except Exception as e:
-        #         return {"type": "text", "data": {"text": f"图片转换失败: {e}"}}
         return {"type": message_type, "data": {"file": i}}
     elif is_base64(i):
         return {"type": message_type, "data": {"file": to_base64(i)}}
@@ -82,11 +61,9 @@ def convert_uploadable_object(i, message_type):
                 image_data = f.read()
                 i = f"base64://{base64.b64encode(image_data).decode('utf-8')}"
         else:
-            # 使用urljoin规范生成文件URL
             i = urljoin("file:", urllib.request.pathname2url(os.path.abspath(i)))
         return {"type": message_type, "data": {"file": i}}
     else:
-        # 文件不存在时同样规范处理
         file_url = urljoin("file:", urllib.request.pathname2url(os.path.abspath(i)))
         return {"type": message_type, "data": {"file": file_url}}
 
