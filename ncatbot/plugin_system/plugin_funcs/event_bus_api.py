@@ -1,13 +1,11 @@
-from typing import Any, Callable, List, final
+from typing import Any, List, Callable, final
 from uuid import UUID
-
-from ncatbot.plugin_system.abc_api import AbstractPluginApi
-from ncatbot.plugin_system.event import Event, EventBus
-
+from ..event import EventBus, Event
+from ..abc_api import AbstractPluginApi
 
 class EventHandlerMixin(AbstractPluginApi):
     """事件处理混入类，提供事件发布和订阅功能
-
+    
     # 描述
     该混入类实现了完整的事件处理系统，包括事件的同步/异步发布以及处理器的管理功能
     作为一个Mixin类，它需要与具有 `_event_bus` 实例的类配合使用
@@ -17,10 +15,10 @@ class EventHandlerMixin(AbstractPluginApi):
     - `_event_handlers` (List[UUID]): 当前已注册的事件处理器ID列表
 
     """
-
+    
     _event_bus: EventBus
     _event_handlers: List[UUID]
-
+    
     @final
     def publish_sync(self, event: Event) -> List[Any]:
         """同步发布事件
@@ -46,9 +44,7 @@ class EventHandlerMixin(AbstractPluginApi):
         return self._event_bus.publish_async(event)
 
     @final
-    def register_handler(
-        self, event_type: str, handler: Callable[[Event], Any], priority: int = 0
-    ) -> UUID:
+    def register_handler(self, event_type: str, handler: Callable[[Event], Any], priority: int = 0) -> UUID:
         """注册一个事件处理器
 
         Args:

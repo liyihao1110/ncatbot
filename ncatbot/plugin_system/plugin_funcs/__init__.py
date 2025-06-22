@@ -2,16 +2,16 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-05-15 18:59:25
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-05-15 19:23:53
-# @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
-# @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议
+# @LastEditTime : 2025-06-12 18:32:05
+# @Description  : 扩展的插件功能
+# @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议 
 # -------------------------
-from ncatbot.plugin_system.plugin_funcs.event_bus_api import EventHandlerMixin
-from ncatbot.plugin_system.plugin_funcs.event_func_api import PluginFunctionMixin
-from ncatbot.plugin_system.plugin_funcs.time_task_api import TimeTaskMixin
+from .event_bus_api import EventHandlerMixin
+from .event_func_api import PluginFunctionMixin
+from .time_task_api import TimeTaskMixin
 
 __all__ = [
-    "EventHandlerMixin",
-    "PluginFunctionMixin",
-    "TimeTaskMixin",
+    'EventHandlerMixin', # 事件发布和订阅功能
+    'PluginFunctionMixin',  # 插件功能管理(快速添加功能)
+    'TimeTaskMixin', # 定时任务的管理
 ]
