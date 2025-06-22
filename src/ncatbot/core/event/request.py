@@ -2,7 +2,7 @@
 from typing import Literal
 from ncatbot.core.event.event_data import BaseEventData
 
-class Request(BaseEventData):
+class RequestEvent(BaseEventData):
     post_type: Literal["request"] = None
     request_type: Literal["friend", "group"] = None
     commnet: str = None # 验证信息

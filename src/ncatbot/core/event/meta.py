@@ -11,4 +11,8 @@ class MetaEvent(BaseEventData):
     interval: Optional[int] = None # heartbeat
     status: Optional[Status] = None # heartbeat
     def __init__(self, data: dict):
+        self.meta_event_type = data.get("meta_event_type")
+        self.sub_type = data.get("sub_type", None)
+        self.interval = data.get("interval", None)
+        self.status = data.get("status", None)
         super().__init__(data)

@@ -1,6 +1,7 @@
 import asyncio
 import inspect
 import traceback
+import threading
 from functools import wraps
 from typing import Type, TypeVar
 
@@ -11,6 +12,15 @@ from ncatbot.utils.logger import get_log
 T = TypeVar("T")
 _log = get_log()
 
+
+def fire_and_forget(coro):
+    def run_in_thread():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(coro)
+        loop.close()
+    
+    threading.Thread(target=run_in_thread, daemon=True).start()
 
 async def run_func_async(func, *args, **kwargs):
     # 异步运行异步或者同步的函数

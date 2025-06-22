@@ -7,7 +7,8 @@ class File:
     size: str = None
     busid: str = None
     
-class Notice(BaseEventData):
+class NoticeEvent(BaseEventData):
+    # 保留细化能力
     post_type: Literal["notice"] = None
     notice_type: Literal["group_upload", "group_admin", "group_decrease", "group_increase", "friend_add", "group_recall", "group_ban", "notify"] = None
     sub_type: Literal["set", "unset", "leave", "kick", "kick_me", "approve", "invite", "ban", "lift_ban", "poke", "lucky_king", "honor"] = None

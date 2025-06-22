@@ -52,6 +52,7 @@ from ncatbot.utils.function_enhance import (
     report,
     run_func_async,
     run_func_sync,
+    fire_and_forget,
     to_async,
     to_sync,
 )
@@ -79,6 +80,7 @@ __all__ = [
     "to_async",
     "run_func_sync",
     "run_func_async",
+    "fire_and_forget",
     "add_sync_methods",
     # literals
     "NAPCAT_WEBUI_SALT",
