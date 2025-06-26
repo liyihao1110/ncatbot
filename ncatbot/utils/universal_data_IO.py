@@ -2,7 +2,7 @@
 # @Author       : Fish-LP fish.zh@outlook.com
 # @Date         : 2025-02-13 21:47:01
 # @LastEditors  : Fish-LP fish.zh@outlook.com
-# @LastEditTime : 2025-06-24 20:50:37
+# @LastEditTime : 2025-06-26 19:00:31
 # @Description  : 通用文件加载器，支持JSON/TOML/YAML/PICKLE格式的同步/异步读写
 # @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议
 # -------------------------
@@ -25,10 +25,8 @@ Raises:
     ValueError:                 当未手动开启pickle支持时抛出/不支持的解析方式
 """
 
-import os
 import ast
 import json
-import time
 import pickle
 import asyncio
 import warnings
@@ -40,14 +38,8 @@ from typing import Any, Callable, Dict, Literal, Optional, Union
 # region 常量
 # ---------------------
 
-start_time = time.perf_counter()
-with open(__file__, 'r') as file:
-    file_content = file.read()
-end_time = time.perf_counter()
-reading_time = end_time - start_time
-
-# 文件操作防抖，根据读取自己的时间计算
-FILE_DEBOUNCE_TIME = reading_time * 20
+# 文件操作防抖时间(1ms)
+FILE_DEBOUNCE_TIME = 0.001
 
 # regionend
 
@@ -56,52 +48,56 @@ FILE_DEBOUNCE_TIME = reading_time * 20
 # ---------------------
 
 # watchdog检测
+WATCHDOG_AVAILABLE = False
 try:
     from watchdog.observers import Observer # type: ignore
     from watchdog.events import FileSystemEventHandler # type: ignore
     WATCHDOG_AVAILABLE = True
 except ImportError:
-    WATCHDOG_AVAILABLE = False
     warnings.warn("watchdog 模块未安装。实时读取功能将被禁用。", ImportWarning)
 
 # PICKLE
-PICKLE_AVAILABLE = True  # 安全警告：需手动审核来源可信的pickle文件
+PICKLE_AVAILABLE = True  # ! 安全警告：需手动审核来源可信的pickle文件
 
 # TOML 模块检测
+TOML_AVAILABLE = False
 try:
-    import toml  # type: ignore
+    import toml # type: ignore
     TOML_AVAILABLE = True
 except ImportError:
-    TOML_AVAILABLE = False  # 非关键依赖,静默处理
+    pass  # 非关键依赖,静默处理
 
 # 异步文件操作模块检测
+AIOFILES_AVAILABLE = False
 try:
-    import aiofiles  # type: ignore
+    import aiofiles # type: ignore
     AIOFILES_AVAILABLE = True
 except ImportError:
-    AIOFILES_AVAILABLE = False
     warnings.warn("aiofiles 模块未安装。异步功能将被禁用。", ImportWarning)
 
 # YAML 模块检测
+YAML_AVAILABLE = False
 try:
-    import yaml  # type: ignore
+    import yaml
     YAML_AVAILABLE = True
 except ImportError:
-    YAML_AVAILABLE = False  # 非关键依赖,静默处理
+    pass  # 非关键依赖,静默处理
 
 # 高性能JSON模块检测
+UJSON_AVAILABLE = False
 try:
-    import ujson  # type: ignore
+    import ujson # type: ignore
     UJSON_AVAILABLE = True
 except ImportError:
-    UJSON_AVAILABLE = False  # 回退到标准json模块
+    pass  # 回退到标准json模块
 
 # endregion
 
-JSON_TYPE = [bool,str,float,'None']
-YAML_TYPE = [bool,str,int,float,'None']
-TOML_TYPE = [str,float]
-PICKLE_TYPE = [bool,str,'None']
+# 格式支持类型
+JSON_TYPE = [bool, str, float, 'None']
+YAML_TYPE = [bool, str, int, float, 'None']
+TOML_TYPE = [str, float]    # 不清楚
+PICKLE_TYPE = [bool, str, 'None']   # 不清楚
 
 # ---------------------
 # region 异常类定义区块
@@ -132,26 +128,29 @@ class ModuleNotInstalledError(UniversalLoaderError):
 # region 文件修改检测与回调
 # ---------------------
 if WATCHDOG_AVAILABLE:
-    class FileChangeHandler(FileSystemEventHandler): # type: ignore
+    class FileChangeHandler(FileSystemEventHandler):
+        """处理文件变更事件的类"""
         def __init__(self, callback: Callable, file_path: Path, on_modified_callbacks: list[Callable] = None):
             super().__init__()
             self.callback = callback
             self.file_path = file_path
             self.on_modified_callbacks = on_modified_callbacks or []
-            self.last_modified = self._get_current_mtime()
+            self.last_modified = self._get_current_mtime(self.file_path)
         
-        def _get_current_mtime(self):
+        @staticmethod
+        def _get_current_mtime(file_path: Path) -> float:
             """获取当前文件修改时间"""
             try:
-                return self.file_path.stat().st_mtime
+                return file_path.stat().st_mtime
             except OSError:
                 return 0
         
         def on_modified(self, event):
+            """文件修改事件处理"""
             if event.is_directory or event.src_path != str(self.file_path):
                 return
             
-            current_mtime = self._get_current_mtime()
+            current_mtime = self._get_current_mtime(self.file_path)
             if current_mtime > self.last_modified + FILE_DEBOUNCE_TIME:  # 防抖
                 self.last_modified = current_mtime
                 self.callback()
@@ -182,10 +181,64 @@ class UniversalLoader(dict):
     _custom_type_handlers = {}
     
     # 实时保存的触发方法列表
-    _REALTIME_METHODS = [
-        '__setitem__', '__delitem__', 'update', 
-        'setdefault', 'pop', 'popitem', 'clear'
-    ]
+    _REALTIME_METHODS = {
+        '__setitem__',
+        '__delitem__',
+        'update', 
+        'setdefault',
+        'pop',
+        'popitem',
+        'clear'
+    }
+    
+    # 文件类型映射
+    FILE_TYPE_MAP = {
+        'json': 'json',
+        'toml': 'toml',
+        'yaml': 'yaml',
+        'yml': 'yaml',
+        'pickle': 'pickle'
+    }
+    
+    # 文件模式映射
+    _FILE_MODES = {
+        'json': 'text',
+        'toml': 'text',
+        'yaml': 'text',
+        'pickle': 'binary'
+    }
+    
+    # 同步加载器映射
+    _SYNC_LOADERS = {
+        'json': lambda self, f: ujson.load(f) if UJSON_AVAILABLE else json.load(f),
+        'toml': lambda self, f: toml.load(f),
+        'yaml': lambda self, f: yaml.safe_load(f) or {},
+        'pickle': lambda self, f: pickle.load(f)
+    }
+    
+    # 同步保存器映射
+    _SYNC_SAVERS = {
+        'json': lambda self, data, f: ujson.dump(data, f, ensure_ascii=False, indent=4) if UJSON_AVAILABLE else json.dump(data, f, ensure_ascii=False, indent=4),
+        'toml': lambda self, data, f: toml.dump(data, f),
+        'yaml': lambda self, data, f: yaml.dump(data, f, allow_unicode=True, default_flow_style=False),
+        'pickle': lambda self, data, f: pickle.dump(data, f)
+    }
+    
+    # 异步加载器映射
+    _ASYNC_LOADERS = {
+        'json': lambda self, content: ujson.loads(content) if UJSON_AVAILABLE else json.loads(content),
+        'toml': lambda self, content: toml.loads(content),
+        'yaml': lambda self, content: yaml.safe_load(content) or {},
+        'pickle': lambda self, content: pickle.loads(content)
+    }
+    
+    # 异步保存器映射
+    _ASYNC_SAVERS = {
+        'json': lambda self, data: ujson.dumps(data, ensure_ascii=False, indent=4) if UJSON_AVAILABLE else json.dumps(data, ensure_ascii=False, indent=4),
+        'toml': lambda self, data: toml.dumps(data),
+        'yaml': lambda self, data: yaml.dump(data, allow_unicode=True),
+        'pickle': lambda self, data: pickle.dumps(data)
+    }
     
     def __init__(
         self,
@@ -207,25 +260,43 @@ class UniversalLoader(dict):
         """
         super().__init__()
         self._file_path: Path = Path(file_path).resolve()
-        self.file_encoding: str = file_encoding
-        self._file_type = file_type.lower() if file_type else self._detect_file_type()
+        self._file_encoding: str = file_encoding
+        self._file_type = file_type.lower() if file_type else self._detect_file_type(self._file_path)
         self._async_lock = asyncio.Lock()
         self._observer = None
         self._realtime_save = realtime_save
         self._on_modified_callbacks = []
         
-        # 动态重写方法以实现实时保存
+        # 检查模块可用性
+        self._check_module_availability()
+        
+        # 动态重写方法以支持实时保存
         if realtime_save:
             self._wrap_methods_for_realtime_save()
         
         self._setup_realtime_features(realtime_load)
+    
+    def _check_module_availability(self):
+        """检查所需模块是否可用"""
+        if self._file_type == 'yaml' and not YAML_AVAILABLE:
+            raise ModuleNotInstalledError("请安装 PyYAML 模块：pip install PyYAML")
+        if self._file_type == 'pickle' and not PICKLE_AVAILABLE:
+            raise ValueError("请手动开启PICKLE支持")
+        if self._file_type == 'toml' and not TOML_AVAILABLE:
+            raise ModuleNotInstalledError("请安装 toml 模块：pip install toml")
 
     @property
-    def file_path(self):
+    def file_path(self) -> Path:
+        """文件路径"""
         return self._file_path
 
     @property
-    def file_type(self):
+    def file_type(self) -> str:
+        """文件类型"""
+        return self._file_type
+
+    def file_encoding(self) -> str:
+        """文件编码"""
         return self._file_type
 
     def _wrap_methods_for_realtime_save(self):
@@ -241,25 +312,16 @@ class UniversalLoader(dict):
             
             setattr(self, method_name, wrapper)
 
-    # 禁用
-    # def backup(self, save_path: Path) -> None:
-    #     """创建文件备份"""
-    #     if save_path.exists():
-    #         timestamp = time.strftime("%Y%m%d%H%M%S")
-    #         backup_path = save_path.with_name(f"{save_path.stem}_{timestamp}{save_path.suffix}")
-    #         try:
-    #             shutil.copy(save_path, backup_path)
-    #         except Exception as e:
-    #             warnings.warn(f"自动备份失败: {e}")
-
     # 触发保存统一入口
     def _trigger_save(self) -> None:
         """触发保存操作"""
         if self._realtime_save:
             self.save()
 
-    def add_change_callback(self, callback: Callable):
+    def add_change_callback(self, callback: Callable):  # 也许应该改成内部的
         """添加数据变更回调函数"""
+        if not WATCHDOG_AVAILABLE:
+            raise ModuleNotInstalledError("实时读取功能不可用，缺少watchdog模块")
         if not callable(callback):
             raise TypeError("回调必须是可调用对象")
         self._on_modified_callbacks.append(callback)
@@ -272,7 +334,7 @@ class UniversalLoader(dict):
             self._observer.schedule(handler, str(self._file_path.parent), recursive=False)
             self._observer.start()
         elif realtime_load:
-            warnings.warn("实时读取功能不可用，缺少watchdog模块。", RuntimeWarning)
+            warnings.warn("实时读取功能不可用，缺少watchdog模块。", ModuleNotInstalledError)
 
     def __del__(self):
         if getattr(self, '_observer', None):
@@ -285,7 +347,8 @@ class UniversalLoader(dict):
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         if self._realtime_save:
             try:
-                self.save()
+                if self._file_path and self._check_file_exists(self._file_path):
+                    self.save()
             except SaveError as e:
                 warnings.warn(f"自动保存失败: {e}")
     
@@ -295,38 +358,37 @@ class UniversalLoader(dict):
     async def __aexit__(self, exc_type, exc_value, traceback) -> None:
         if self._realtime_save:
             try:
-                await self.asave()
+                if self._file_path and self._check_file_exists(self._file_path):
+                    await self.asave()
             except SaveError as e:
                 warnings.warn(f"异步自动保存失败: {e}")
 
-    def _detect_file_type(self) -> str:
+    @classmethod
+    def _detect_file_type(cls, path: Path) -> str:
         """通过文件扩展名检测文件类型"""
-        file_type_map = {
-            'json': 'json',
-            'toml': 'toml',
-            'yaml': 'yaml',
-            'yml': 'yaml',
-            'pickle': 'pickle'
-        }
-        ext = self._file_path.suffix.lower().lstrip('.')
-        file_type = file_type_map.get(ext, None)
+        ext = path.suffix.lower().lstrip('.')
+        file_type = cls.FILE_TYPE_MAP.get(ext, None)
         if not file_type:
-            raise FileTypeUnknownError(f"无法识别的文件格式: {self._file_path}")
+            raise FileTypeUnknownError(f"无法识别的文件格式: {path}")
         return file_type
 
-    def _check_file_exists(self) -> None:
-        if not os.path.isfile(str(self._file_path)):
-            raise FileNotFoundError(f"文件路径无效或不是文件: {self._file_path}")
+    @staticmethod
+    def _check_file_exists(path: Path) -> None:
+        """检查文件是否存在"""
+        if not path.is_file():
+            raise FileNotFoundError(f"文件路径无效或不是文件: {path}")
 
     async def _async_check_file_exists(self) -> None:
-        await asyncio.to_thread(self._check_file_exists)
+        """异步检查文件是否存在"""
+        await asyncio.to_thread(self._check_file_exists, self._file_path)
 
     # ---------------------
     # region 核心数据操作方法
     # ---------------------
 
     def load(self) -> 'UniversalLoader':
-        self._check_file_exists()
+        """同步加载文件数据"""
+        self._check_file_exists(self._file_path)
         try:
             data = self._load_data_sync()
             self._validate_data_structure(data)
@@ -337,6 +399,7 @@ class UniversalLoader(dict):
         return self
 
     async def aload(self) -> 'UniversalLoader':
+        """异步加载文件数据"""
         await self._async_check_file_exists()
         async with self._async_lock:
             try:
@@ -349,6 +412,7 @@ class UniversalLoader(dict):
         return self
 
     def save(self, save_path: Optional[Union[str, Path]] = None) -> 'UniversalLoader':
+        """同步保存数据到文件"""
         save_path = Path(save_path).resolve() if save_path else self._file_path
         try:
             self._save_data_sync(save_path)
@@ -357,6 +421,7 @@ class UniversalLoader(dict):
         return self
 
     async def asave(self, save_path: Optional[Union[str, Path]] = None) -> 'UniversalLoader':
+        """异步保存数据到文件"""
         save_path = Path(save_path).resolve() if save_path else self._file_path
         async with self._async_lock:
             try:
@@ -365,7 +430,8 @@ class UniversalLoader(dict):
                 raise SaveError(f"异步保存失败: {e}") from e
         return self
 
-    def _validate_data_structure(self, data):
+    def _validate_data_structure(self, data: Any):
+        """验证数据结构"""
         if self._file_type == 'toml' and not isinstance(data, dict):
             raise ValueError("TOML格式只支持字典类型数据")
     # endregion
@@ -376,6 +442,7 @@ class UniversalLoader(dict):
 
     @classmethod
     def register_type_handler(cls, type_name: str, serialize_func: Callable, deserialize_func: Callable):
+        """注册自定义类型处理器"""
         cls._custom_type_handlers[type_name] = (serialize_func, deserialize_func)
 
     def _type_convert(
@@ -386,6 +453,7 @@ class UniversalLoader(dict):
         encode_keys: bool = True, 
         encode_values: bool = True
     ) -> Any:
+        """类型转换主方法"""
         # 处理自定义类型
         if hasattr(data, '__class__') and data.__class__.__name__ in self._custom_type_handlers:
             if mode == 'preserve':
@@ -415,6 +483,7 @@ class UniversalLoader(dict):
         return self._restore_item(data)
 
     def _preserve_item(self, item: Any) -> str:
+        """保留类型的信息转换"""
         flag = self._flag
 
         if item is None:
@@ -443,6 +512,7 @@ class UniversalLoader(dict):
         return f"unknown{flag}{str(item)}"
 
     def _restore_item(self, item: Any) -> Any:
+        """恢复原始类型转换"""
         flag = self._flag
 
         if not isinstance(item, str) or flag not in item:
@@ -498,107 +568,107 @@ class UniversalLoader(dict):
     # ---------------------
 
     def _load_data_sync(self) -> Dict[str, Any]:
-        if self._file_type == 'json':
-            with self._file_path.open('r', encoding=self.file_encoding) as f:
-                raw_data = ujson.load(f) if UJSON_AVAILABLE else json.load(f)
-                return self._type_convert(raw_data, 'restore')
+        """同步加载数据实现"""
+        file_mode = self._FILE_MODES[self._file_type]
+        loader = self._SYNC_LOADERS.get(self._file_type)
         
-        elif self._file_type == 'toml':
-            with self._file_path.open('r', encoding=self.file_encoding) as f:
-                raw_data = toml.load(f)
-                return self._type_convert(raw_data, 'restore')
-        
-        elif self._file_type == 'yaml':
-            if not YAML_AVAILABLE:
-                raise ModuleNotInstalledError("请安装 PyYAML 模块：pip install PyYAML")
-            with self._file_path.open('r', encoding=self.file_encoding) as f:
-                raw_data = yaml.safe_load(f) or {}
-                return self._type_convert(raw_data, 'restore')
-        
-        elif self._file_type == 'pickle':
-            if not PICKLE_AVAILABLE:
-                raise ValueError("请手动开启PICKLE支持")
-            with self._file_path.open('rb') as f:
-                raw_data = pickle.load(f)
-                return self._type_convert(raw_data, 'restore')
-        
-        else:
+        if not loader:
             raise FileTypeUnknownError(f"不支持的文件类型: {self._file_type}")
+        
+        try:
+            if file_mode == 'text':
+                with self._file_path.open('r', encoding=self._file_encoding) as f:
+                    raw_data = loader(self, f)
+            else:  # b
+                with self._file_path.open('rb') as f:
+                    raw_data = loader(self, f)
+            
+            return self._type_convert(raw_data, 'restore')
+        except Exception as e:
+            raise LoadError(f"加载文件时出错: {e}") from e
 
     async def _load_data_async(self) -> Dict[str, Any]:
-        if AIOFILES_AVAILABLE:
-            if self._file_type == 'json':
-                async with aiofiles.open(self._file_path, 'r', encoding=self.file_encoding) as f:
-                    content = await f.read()
-                    return self._type_convert(ujson.loads(content) if UJSON_AVAILABLE else json.loads(content), 'restore')
-            elif self._file_type == 'toml':
-                async with aiofiles.open(self._file_path, 'r', encoding=self.file_encoding) as f:
-                    content = await f.read()
-                    return self._type_convert(toml.loads(content), 'restore')
-            elif self._file_type == 'yaml':
-                async with aiofiles.open(self._file_path, 'r', encoding=self.file_encoding) as f:
-                    content = await f.read()
-                    return self._type_convert(yaml.safe_load(content) or {}, 'restore')
-            elif self._file_type == 'pickle':
-                async with aiofiles.open(self._file_path, 'rb') as f:
-                    content = await f.read()
-                    raw_data = pickle.loads(content)
-                    return self._type_convert(raw_data, 'restore')
-        else:
-            return self._load_data_sync()
+        """异步加载数据实现"""
+        file_mode = self._FILE_MODES[self._file_type]
+        loader = self._ASYNC_LOADERS.get(self._file_type)
+        
+        if not loader:
+            raise FileTypeUnknownError(f"不支持的文件类型: {self._file_type}")
+        
+        try:
+            if AIOFILES_AVAILABLE:
+                if file_mode == 'text':
+                    async with aiofiles.open(self._file_path, 'r', encoding=self._file_encoding) as f:
+                        content = await f.read()
+                else:  # b
+                    async with aiofiles.open(self._file_path, 'rb') as f:
+                        content = await f.read()
+                
+                raw_data = loader(self, content)
+                return self._type_convert(raw_data, 'restore')
+            else:
+                return self._load_data_sync()
+        except Exception as e:
+            raise LoadError(f"异步加载文件时出错: {e}") from e
     # endregion
 
     # ---------------------
     # region 数据保存实现
     # ---------------------
     def _save_data_sync(self, save_path: Path) -> None:
-        if self._file_type == 'json':
-            converted_data = self._type_convert(self.copy(), 'preserve', JSON_TYPE)
-            with save_path.open('w', encoding=self.file_encoding) as f:
-                if UJSON_AVAILABLE:
-                    ujson.dump(converted_data, f, ensure_ascii=False, indent=4)
-                else:
-                    json.dump(converted_data, f, ensure_ascii=False, indent=4)
+        """同步保存数据实现"""
+        file_mode = self._FILE_MODES[self._file_type]
+        saver = self._SYNC_SAVERS.get(self._file_type)
         
-        elif self._file_type == 'toml':
-            converted_data = self._type_convert(self.copy(), 'preserve', TOML_TYPE)
-            with save_path.open('w', encoding=self.file_encoding) as f:
-                toml.dump(converted_data, f)
-        
-        elif self._file_type == 'yaml':
-            converted_data = self._type_convert(self.copy(), 'preserve', YAML_TYPE)
-            with save_path.open('w', encoding=self.file_encoding) as f:
-                yaml.dump(converted_data, f, allow_unicode=True, default_flow_style=False)
-        
-        elif self._file_type == 'pickle':
-            converted_data = self._type_convert(self.copy(), 'preserve', PICKLE_TYPE)
-            with save_path.open('wb') as f:
-                pickle.dump(converted_data, f)
-        
-        else:
+        if not saver:
             raise FileTypeUnknownError(f"不支持的文件类型: {self._file_type}")
+        
+        converted_data = self._type_convert(self.copy(), 'preserve', self._get_exclude_types())
+        
+        try:
+            if file_mode == 'text':
+                with save_path.open('w', encoding=self._file_encoding) as f:
+                    saver(self, converted_data, f)
+            else:  # b
+                with save_path.open('wb') as f:
+                    saver(self, converted_data, f)
+        except Exception as e:
+            raise SaveError(f"保存文件时出错: {e}") from e
 
     async def _save_data_async(self, save_path: Path) -> None:
-        if AIOFILES_AVAILABLE:
-            if self._file_type == 'json':
-                converted_data = self._type_convert(self.copy(), 'preserve', JSON_TYPE)
-                async with aiofiles.open(save_path, 'w', encoding=self.file_encoding) as f:
-                    content = ujson.dumps(converted_data) if UJSON_AVAILABLE else json.dumps(converted_data)
-                    await f.write(content)
-            elif self._file_type == 'toml':
-                converted_data = self._type_convert(self.copy(), 'preserve', TOML_TYPE)
-                async with aiofiles.open(save_path, 'w', encoding=self.file_encoding) as f:
-                    await f.write(toml.dumps(converted_data))
-            elif self._file_type == 'yaml':
-                converted_data = self._type_convert(self.copy(), 'preserve', YAML_TYPE)
-                async with aiofiles.open(save_path, 'w', encoding=self.file_encoding) as f:
-                    await f.write(yaml.dump(converted_data, allow_unicode=True))
-            elif self._file_type == 'pickle':
-                converted_data = self._type_convert(self.copy(), 'preserve', PICKLE_TYPE)
-                async with aiofiles.open(save_path, 'wb') as f:
-                    await f.write(pickle.dumps(converted_data))
-        else:
-            self._save_data_sync(save_path)
+        """异步保存数据实现"""
+        file_mode = self._FILE_MODES[self._file_type]
+        saver = self._ASYNC_SAVERS.get(self._file_type)
+        
+        if not saver:
+            raise FileTypeUnknownError(f"不支持的文件类型: {self._file_type}")
+        
+        converted_data = self._type_convert(self.copy(), 'preserve', self._get_exclude_types())
+        
+        try:
+            if AIOFILES_AVAILABLE:
+                serialized_data = saver(self, converted_data)
+                
+                if file_mode == 'text':
+                    async with aiofiles.open(save_path, 'w', encoding=self._file_encoding) as f:
+                        await f.write(serialized_data)
+                else:  # b
+                    async with aiofiles.open(save_path, 'wb') as f:
+                        await f.write(serialized_data)
+            else:
+                self._save_data_sync(save_path)
+        except Exception as e:
+            raise SaveError(f"异步保存失败: {e}") from e
+
+    def _get_exclude_types(self) -> list:
+        """获取当前文件类型对应的排除类型"""
+        type_map = {
+            'json': JSON_TYPE,
+            'toml': TOML_TYPE,
+            'yaml': YAML_TYPE,
+            'pickle': PICKLE_TYPE
+        }
+        return type_map.get(self._file_type, [])
 # endregion
 
 # ---------------------

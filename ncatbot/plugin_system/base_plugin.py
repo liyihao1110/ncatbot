@@ -67,6 +67,9 @@ class BasePlugin(
     - `meta_data (dict)`: 插件元数据字典
     - `data (UniversalLoader)`: 插件数据管理器实例
     - `save_type`: `data` 数据保存类型 (默认 'json')
+    - `file_encoding`: `data` 文件编码（默认 'utf-8'）
+    - `realtime_save`: `data` 行为，实时保存（默认 False）
+    - `realtime_load`: `data` 行为，实时读取，需要`watchdog`（默认 False）
     
     ## 目录管理
     - `work_space (ChangeDir)`: 工作目录上下文管理器
@@ -95,6 +98,9 @@ class BasePlugin(
     author: str = 'Unknown'
     info: str = '这个作者很懒且神秘,没有写一点点描述,真是一个神秘的插件'
     save_type: str = 'yaml'
+    file_encoding: str = 'utf-8'
+    realtime_save: bool = False
+    realtime_load: bool = False
     
     data: UniversalLoader
     self_path: Path
@@ -168,7 +174,13 @@ class BasePlugin(
             raise PluginWorkspaceError(self.name, self._work_path, "不是有效的工作目录")
 
         # 接口
-        self._data = UniversalLoader(self._data_path, self.save_type, realtime_save=True, realtime_load=True)
+        self._data = UniversalLoader(
+            file_path=self._data_path,
+            file_encoding=self.file_encoding,
+            file_type=self.save_type,
+            realtime_save=self.realtime_save,
+            realtime_load=self.realtime_load
+        )
         self.data = self._data
         self.work_space = ChangeDir(self._work_path)
         self.self_space = ChangeDir(self.self_path)
@@ -205,8 +217,8 @@ class BasePlugin(
             await self.on_close(*arg, **kwd)
             
             if not self.first_load and self.debug:
-                LOG.warning(f"{Color.YELLOW}debug模式下将{Color.RED}取消{Color.RESET}退出时的默认保存行为")
-                print(f'{Color.GRAY}{self.name}\n', '\n'.join(visualize_tree(self.data.data)), sep='')
+                LOG.warning(f"{Color.YELLOW}debug模式下将{Color.RED}取消{Color.YELLOW}退出时的默认保存行为{Color.RESET}")
+                print(f'{Color.GRAY}{self.name}\n', '\n'.join(visualize_tree(self.data)), sep='')
             else:
                 await self.data.asave()
                 
@@ -229,13 +241,10 @@ class BasePlugin(
             if isinstance(self.data, dict):
                 self.data = self._data
             await self.data.aload()
-            if 'meta_data' not in self.data:
-                self.data['meta_data'] = self._meta_data
-                await self.data.asave()
             
         except (FileTypeUnknownError, LoadError, FileNotFoundError) as e:
             if not self.debug or self.first_load:
-                open(self._data_path,'w').write('')
+                open(self._data_path, 'w', encoding='utf-8').close()
             else:
                 raise PluginDataError(self.name, "加载", str(e))
         
