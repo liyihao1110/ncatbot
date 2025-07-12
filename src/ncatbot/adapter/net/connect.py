@@ -8,6 +8,35 @@ from ncatbot.utils import config, get_log
 _log = get_log()
 
 
+def connect(uri, *, extra_headers, **kwargs):
+    """
+    使用自定义的 connect 函数来同时兼容新版和旧版 websockets
+
+    默认使用旧版参数名 ``extra_headers``
+    """
+    return websockets.connect(
+        uri,
+        extra_headers=extra_headers,
+        **kwargs
+    )
+
+try:
+    import websockets.asyncio.client
+
+    if websockets.connect == websockets.asyncio.client.connect:
+        def connect(uri, *, extra_headers, **kwargs):
+            """
+            如果 ``websockets.connect`` 对应新版 ``asyncio`` 实现，需要把参数名 ``extra_headers`` 改为 ``additional_headers``
+            """
+            return websockets.connect(
+                uri,
+                additional_headers=extra_headers,
+                **kwargs
+            )
+except ImportError:
+    pass
+
+
 class Websocket:
     def __init__(self, client):
         self.client = client
@@ -50,7 +79,7 @@ class Websocket:
         del message_post_type, message_type
 
     async def on_connect(self):
-        async with websockets.connect(
+        async with connect(
             uri=self._websocket_uri, extra_headers=self._header, ping_interval=None
         ) as ws:
             # 我发现你们在client.py中已经进行了websocket连接的测试，故删除了此处不必要的错误处理。

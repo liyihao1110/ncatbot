@@ -4,6 +4,7 @@ import json as j
 import websockets
 
 from ncatbot.utils import config, get_log
+from .connect import connect
 
 _log = get_log()
 
@@ -15,7 +16,7 @@ async def check_websocket(uri):
     :return: 如果可用返回 True，否则返回 False
     """
     try:
-        async with websockets.connect(
+        async with connect(
             f"{uri}",
             extra_headers=(
                 {
@@ -51,7 +52,7 @@ class Route:
 
     async def post(self, path, params=None, json=None):
         # 开大限制到 16MB
-        async with websockets.connect(
+        async with connect(
             self.url, extra_headers=self.headers, max_size=2**24
         ) as ws:
             if params:
