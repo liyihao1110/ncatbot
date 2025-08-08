@@ -134,7 +134,6 @@ class DownloadableMessageSegment(MessageSegment):
         return path
         
     async def download_to(self, dir: str, name: str=None):
-        # TODO: 下载文件到指定位置
         path = self._get_final_path(dir, name)
         try:
             async with httpx.AsyncClient() as client:
@@ -190,10 +189,6 @@ class Image(DownloadableMessageSegment):
 @dataclass(repr=False)
 class File(DownloadableMessageSegment):
     msg_seg_type: Literal["file"] = field(init=False, repr=False, default="file")
-    async def get_download_url(self):
-        # TODO: 获取下载链接
-        pass
-    
     def to_dict(self):
         name = self.get_file_name()
         dict = super().to_dict()
@@ -356,7 +351,6 @@ class Node(MessageSegment):
 
 @dataclass(repr=False)
 class Forward(MessageSegment):
-    # TODO: 提供辅助函数构造消息节点
     id: str = field(default=None)
     # summary: str = field(init=False, repr=False, default="[聊天记录]")
     # prompt: str = field(init=False)

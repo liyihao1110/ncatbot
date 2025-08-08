@@ -183,7 +183,7 @@ class BotClient:
             finally:
                 loop.close()
                 self.crash_flag = True
-                self.release_callback()
+                self.release_callback(None)
         
         thread = threading.Thread(target=run_async_task)
         thread.daemon = True  # 设置为守护线程
@@ -193,7 +193,6 @@ class BotClient:
         self.add_startup_handler(self.release_callback)
         thread.start()
         flag = self.lock.acquire(timeout=90)
-        self.lock.release()
         if self.crash_flag:
             raise NcatBotError("Bot 启动失败")
         if not flag:

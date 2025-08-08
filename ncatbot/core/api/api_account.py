@@ -1,5 +1,17 @@
 from typing import Literal, Union
 from .utils import BaseAPI, APIReturnStatus
+from ncatbot.core.event.message_segment.message_segment import convert_uploadable_object
+from dataclasses import dataclass
+
+@dataclass
+class LoginInfo:
+    nickname: str
+    user_id: str
+    
+class CustomFaceList:
+    urls: list[str]
+    def __init__(self, data: list[dict]):
+        self.urls = [item["url"] for item in data]
 
 class AccountAPI(BaseAPI):
 
@@ -17,26 +29,24 @@ class AccountAPI(BaseAPI):
         APIReturnStatus.raise_if_failed(result)
     
     async def set_avatar(self, file: str) -> None:
-        # TODO: 支持本地文件
-        result = await self.async_callback("/set_avatar", {"file": file})
+        result = await self.async_callback("/set_avatar", {"file": convert_uploadable_object(file)})
         APIReturnStatus.raise_if_failed(result)
     
     async def set_self_longnick(self, longNick: str) -> None:
         result = await self.async_callback("/set_self_longnick", {"longNick": longNick})
         APIReturnStatus.raise_if_failed(result)
     
-    async def get_login_info(self) -> dict:
-        # TODO: 返回值
+    async def get_login_info(self) -> LoginInfo:
         result = await self.async_callback("/get_login_info")
         status = APIReturnStatus(result)
-        status.raise_if_failed()
-        return status.data
+        
+        return LoginInfo(**status.data)
     
     async def get_status(self) -> dict:
-        # TODO: 返回值
+        # TODO: 返回值(不紧急)
         result = await self.async_callback("/get_status")
         status = APIReturnStatus(result)
-        status.raise_if_failed()
+        
         return status.data
     
     # ---------------------
@@ -44,10 +54,10 @@ class AccountAPI(BaseAPI):
     # ---------------------
     
     async def get_friends_with_cat(self) -> list[dict]:
-        # TODO: 返回值
+        # TODO: 返回值(不紧急)
         result = await self.async_callback("/get_friends_with_cat")
         status = APIReturnStatus(result)
-        status.raise_if_failed()
+        
         return status.data
     
     async def send_like(self, user_id: Union[str, int], times: int = 1) -> None:
@@ -66,10 +76,10 @@ class AccountAPI(BaseAPI):
         APIReturnStatus.raise_if_failed(result)
     
     async def get_friend_list(self) -> list[dict]:
-        # TODO: 返回值
+        # TODO: 返回值(不紧急)
         result = await self.async_callback("/get_friend_list")
         status = APIReturnStatus(result)
-        status.raise_if_failed()
+        
         return status.data
 
     async def delete_friend(self, user_id: Union[str, int], block: bool = True, both: bool = True) -> None:
@@ -103,10 +113,10 @@ class AccountAPI(BaseAPI):
         APIReturnStatus.raise_if_failed(result)
         
     async def get_recent_contact(self) -> list[dict]:
-        # TODO: 返回值
+        # TODO: 返回值(不紧急)
         result = await self.async_callback("/get_recent_contact")
         status = APIReturnStatus(result)
-        status.raise_if_failed()
+        
         return status.data
     
     async def _mark_all_as_read(self) -> None:
@@ -130,23 +140,20 @@ class AccountAPI(BaseAPI):
         """获取陌生人信息，接口暂不完善，有需求提 PR
         : 解析参考 https://napcat.apifox.cn/226656970e0
         """
-        # TODO: 返回值
+        # TODO: 返回值(不紧急)
         result = await self.async_callback("/get_stranger_info", {"user_id": user_id})
         status = APIReturnStatus(result)
-        status.raise_if_failed()
         return status.data
     
-    async def fetch_custom_face(self, count: int = 48) -> list[dict]:
-        # TODO: 返回值
+    async def fetch_custom_face(self, count: int = 48) -> CustomFaceList:
         result = await self.async_callback("/fetch_custom_face", {"count": count})
         status = APIReturnStatus(result)
-        status.raise_if_failed()
-        return status.data
+        return CustomFaceList(status.data)
     
     async def nc_get_user_status(self, user_id: Union[str, int]) -> dict:
         result = await self.async_callback("/nc_get_user_status", {"user_id": user_id})
         status = APIReturnStatus(result)
-        status.raise_if_failed()
+        
         return status.data
     
  

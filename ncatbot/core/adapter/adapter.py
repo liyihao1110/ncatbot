@@ -106,7 +106,7 @@ class Adapter:
 
     async def _handle_event(self, message: dict):
         """处理事件, 不能阻塞"""
-        post_type: Literal["message", "notice", "request", "meta"] = message.get("post_type")
+        post_type: Literal["message", "notice", "request", "meta_event"] = message.get("post_type")
         
         if post_type == "message":
             message_type: Literal["private", "group"] = message.get("message_type")

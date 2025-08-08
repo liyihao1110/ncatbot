@@ -18,8 +18,6 @@ from tqdm import tqdm as tqdm_original
 from ncatbot.utils.assets.color import Color
 from ncatbot.utils.status import status
 
-# TODO: 将一些不重要的日志（HTTP连接等）输出到别的位置
-
 
 # 定义自定义的 tqdm 类,继承自原生的 tqdm 类
 class tqdm(tqdm_original):

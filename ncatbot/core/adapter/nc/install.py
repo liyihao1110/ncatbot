@@ -57,7 +57,6 @@ def check_windows_qq_version():
 
 
 def install_napcat_windows(type: str):
-    # TODO 检查 Windows QQ 的版本是否符合要求
     """
     Windows系统下载安装napcat
 

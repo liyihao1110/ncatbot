@@ -34,7 +34,7 @@ class APIReturnStatus:
     def raise_if_failed(cls, data: dict):
         if data.get("retcode") != 0:
             raise NapCatAPIError(data.get("message"))
-        
+    
     def __init__(self, data: dict):
         self.raise_if_failed(data)
         self.retcode = data.get("retcode")

@@ -339,7 +339,7 @@ class MessageAPI(BaseAPI):
     
     async def fetch_emoji_like(self, message_id: Union[str, int], emoji_id: Union[str, int], emoji_type: Union[str, int]) -> dict:
         """获取贴表情详情"""
-        # TODO: 返回值
+        # TODO: 返回值(不紧急)
         result = await self.async_callback("/fetch_emoji_like", {"message_id": message_id, "emoji_id": emoji_id, "emoji_type": emoji_type})
         status = APIReturnStatus(result)
         return status.data
