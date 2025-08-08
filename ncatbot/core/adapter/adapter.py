@@ -1,13 +1,15 @@
 import asyncio
 import datetime
 import json
+import traceback
 from typing import Dict, Callable, Any, Optional, Literal
 import uuid
 from threading import Lock
 from queue import Queue
 import websockets
+from websockets.exceptions import ConnectionClosedError
 from ncatbot.core.event import PrivateMessageEvent, GroupMessageEvent, NoticeEvent, RequestEvent, MetaEvent, BaseEventData
-from ncatbot.utils import get_log
+from ncatbot.utils import get_log, ncatbot_config
 from ncatbot.utils import (
     OFFICIAL_PRIVATE_MESSAGE_EVENT,
     OFFICIAL_GROUP_MESSAGE_EVENT,
@@ -17,6 +19,7 @@ from ncatbot.utils import (
     OFFICIAL_SHUTDOWN_EVENT,
     OFFICIAL_HEARTBEAT_EVENT,
 )
+from ncatbot.utils.error import NcatBotError, NcatBotConnectionError
 
 LOG = get_log("Adapter")
 
@@ -65,7 +68,8 @@ class Adapter:
 
     async def connect_websocket(self) -> bool:
         """连接 ws 客户端"""
-        self.client = await websockets.connect(self.ws_url, close_timeout=0.2, max_size=2**30, open_timeout=1)
+        uri_with_token = self.ws_url + "/?access_token=" + ncatbot_config.napcat.ws_token
+        self.client = await websockets.connect(uri_with_token, close_timeout=0.2, max_size=2**30, open_timeout=1)
         try:
             while True:
                 LOG.debug("looping")
@@ -81,10 +85,15 @@ class Adapter:
             # 当任务被取消时（如KeyboardInterrupt）
             await self.cleanup()
             raise
-
-        except Exception as e:
+        
+        except ConnectionClosedError:
+            # TODO 细化判断
+            raise NcatBotConnectionError("NapCat 服务主动关闭了连接")
+        
+        except Exception:
             await self.cleanup()
-            raise
+            LOG.info(traceback.format_exc())
+            raise NcatBotError("未知网络错误")
 
     async def _handle_response(self, message: dict):
         """处理API响应, 不能阻塞"""

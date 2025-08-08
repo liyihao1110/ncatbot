@@ -56,7 +56,7 @@ class LoginError(Exception):
 class LoginHandler:
     # 登录处理器
     def __init__(self):
-        MAX_TIME_EXPIER = time.time() + 15
+        MAX_TIME_EXPIER = time.time() + 90
         self.base_uri = f"http://{ncatbot_config.napcat.webui_host}:{ncatbot_config.napcat.webui_port}"
         while True:
             try:
@@ -164,14 +164,16 @@ class LoginHandler:
                 self.base_uri + "/api/QQLogin/SetQuickLogin",
                 headers=self.header,
                 json={"uin": str(ncatbot_config.bt_uin)},
-                timeout=5,
+                timeout=8,
             ).json()
-            success = status.get("message", "failed") in ["success"]
+            success = status.get("message", "failed") in ["success", "QQ Is Logined"]
             if not success:
                 LOG.warning(f"快速登录请求失败: {status}")
             return success
         except TimeoutError:
             LOG.warning("快速登录失败, 进行其它登录尝试")
+        except Exception:
+            print(traceback.format_exc())
 
     def get_qrcode_url(self):
         EXPIRE = time.time() + 15
@@ -288,8 +290,6 @@ class LoginHandler:
 
 
 def login(reset=False):
-    if main_handler is None and platform.system() == "Windows":
-        LOG.info("即将弹出权限请求, 请允许")
     get_handler(reset=reset).login()
 
 

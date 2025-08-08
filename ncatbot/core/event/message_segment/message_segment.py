@@ -4,6 +4,8 @@ import re
 import base64
 import os
 import asyncio
+import time
+import httpx
 from ncatbot.core.event.message_segment.utils import convert_uploadable_object
 import urllib
 from dataclasses import dataclass, field, fields
@@ -84,6 +86,7 @@ class MessageSegment():
 class DownloadableMessageSegment(MessageSegment):
     file: str
     url: str = field(init=False)
+    msg_seg_type: Literal["file", "image", "record", "video"] = field(init=False, repr=False, default=None)
     file_id: str = field(init=False, default=None)
     file_size: int = field(init=False, default=None)
     file_name: str = field(default=None)
@@ -109,6 +112,7 @@ class DownloadableMessageSegment(MessageSegment):
                 filename = filename.split('?')[0].split('#')[0]
         else:
             filename = os.path.basename(self.file)
+        return filename
     
     def to_dict(self):
         self.file = convert_uploadable_object(self.file)
@@ -117,9 +121,30 @@ class DownloadableMessageSegment(MessageSegment):
     def __post_init__(self):
         pass
     
-    async def download_to(self, path):
+    def _get_final_path(self, dir: str, name: str):
+        name = name if name else self.get_file_name()
+        if not os.path.exists(dir):
+            raise NcatBotError(f"下载路径不存在: {dir}")
+        target_path = os.path.join(dir, name)
+        if os.path.exists(target_path):
+            path = target_path.split(".")[0] + "_" + str(time.time()) + "." + target_path.split(".")[1]
+            LOG.warning(f"文件已存在: {target_path}, 将保存为 {path}")
+        else:
+            path = target_path
+        return path
+        
+    async def download_to(self, dir: str, name: str=None):
         # TODO: 下载文件到指定位置
-        pass
+        path = self._get_final_path(dir, name)
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(self.url)
+                with open(path, "wb") as f:
+                    f.write(response.content)
+        except httpx.UnsupportedProtocol as e:
+            LOG.error(f"不支持的协议: {self.file}")
+            return None
+        return path
 
 @dataclass(repr=False)
 class PlainText(MessageSegment):
@@ -170,8 +195,9 @@ class File(DownloadableMessageSegment):
         pass
     
     def to_dict(self):
+        name = self.get_file_name()
         dict = super().to_dict()
-        dict["data"]["name"] = self.get_file_name()
+        dict["data"]["name"] = name
         return dict
     
     def get_summary(self):
@@ -378,7 +404,6 @@ class Forward(MessageSegment):
             obj.content.append(Node.from_message_event(await status.global_api.get_msg(msg)))
         obj.message_type = message_type
         
-    
     def to_forward_dict(self):
         def modify_type(msg_list: list[dict]):
             for msg in msg_list:
@@ -418,9 +443,10 @@ class Forward(MessageSegment):
             "source": source
         }
     
-    async def get_content(self):
+    async def get_content(self) -> list[Node]:
         fwd = await status.global_api.get_forward_msg(self.id)
         self.__dict__.update(fwd.__dict__)
+        return self.content
     
     def filter(self, cls: Type[T]) -> list[T]:
         return self.content[0].content.filter(cls)

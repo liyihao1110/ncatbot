@@ -1,6 +1,6 @@
 from typing import Literal, Callable
 from ncatbot.core.event.message_segment import MessageArray
-from ncatbot.core.event.sender import Sender
+from ncatbot.core.event.sender import BaseSender
 """
 self_id, message_id 等无需进行数学运算, 故直接使用 str
 """
@@ -59,7 +59,7 @@ class MessageEventData(BaseEventData):
     user_id: str = None # 和 OneBot11 标准不一致, 这里采取 str
     message: MessageArray = None
     raw_message: str = None
-    sender: Sender = None
+    sender: BaseSender = None
     
     def __init__(self, data: dict):
         super().__init__(data)
@@ -69,7 +69,6 @@ class MessageEventData(BaseEventData):
         self.user_id = str(data.get("user_id"))
         self.message = MessageArray(data.get("message"))
         self.raw_message = data.get("raw_message")
-        self.sender = Sender(data.get("sender"))
         
     def get_core_properties_str(self):
         return super().get_core_properties_str() + [

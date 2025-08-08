@@ -116,7 +116,7 @@ def process_iterable(data: list) -> list[MessageSegment]:
 
 def process_item(item: Union[List[Union[dict, MessageSegment]], Union[dict, MessageSegment]]) -> list[MessageSegment]:
     """
-    处理单个消息元素，返回对应的 MessageSegment 对象
+    处理消息(单个或迭代器)，返回对应的 list[MessageSegment] 对象
     
     Args:
         item: 可以是 MessageSegment 对象或字典
@@ -147,6 +147,7 @@ class MessageArray:
         
     @classmethod
     def from_list(cls, data: list[Union[dict, MessageSegment]]):
+        """"其实也支持单个"""
         return cls(data)
     
     def to_list(self) -> list[Dict]:
@@ -172,7 +173,7 @@ class MessageArray:
         self.messages.append(process_dict(data))
     
     def add_text(self, text: str):
-        self.messages.append(process_item(text))
+        self.messages.extend(process_item(text))
     
     def add_image(self, image: str):
         self.messages.append(Image(file=image))

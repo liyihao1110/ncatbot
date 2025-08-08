@@ -2,7 +2,7 @@ from typing import Union, Literal
 from abc import abstractmethod
 from ncatbot.core.event.event_data import MessageEventData
 from ncatbot.utils import status
-
+from ncatbot.core.event.sender import PrivateSender, GroupSender
 class BaseMessageEvent(MessageEventData):
     message_type: Literal["private", "group"] = None # 上级会获取
     sub_type: str = None # 下级会细化 Literal, 上级会获取
@@ -31,8 +31,11 @@ class GroupMessageEvent(BaseMessageEvent):
     anonymous: Union[None, AnonymousMessage]
     group_id: str = None
     sub_type: Literal["normal", "anonymous", "notice"] # 上级会获取
+    sender: GroupSender = None
+    
     def __init__(self, data: dict):
         super().__init__(data)
+        self.sender = GroupSender(data.get("sender"))
         self.anonymous = AnonymousMessage(data.get("anonymous")) if data.get("anonymous", None) else None
         self.group_id = str(data.get("group_id"))
     
@@ -58,6 +61,12 @@ class GroupMessageEvent(BaseMessageEvent):
 class PrivateMessageEvent(BaseMessageEvent):
     message_type: Literal["private"] = None # 上级会获取
     sub_type: Literal["friend", "group", "other"] # 上级会获取
+    sender: PrivateSender = None
+    
+    def __init__(self, data: dict):
+        super().__init__(data)
+        self.sender = PrivateSender(data.get("sender"))
+    
     async def reply(self, text: str=None, image: str=None):
         return await status.global_api.post_private_msg(self.user_id, text, image)
     

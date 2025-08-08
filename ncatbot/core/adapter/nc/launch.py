@@ -54,6 +54,7 @@ def napcat_service_ok(EXPIRE=0):
             if time.time() > MAX_TIME_EXPIRE:
                 return False
             time.sleep(0.5)
+        return True
 
 
 def connect_napcat():
@@ -100,8 +101,9 @@ def lanuch_napcat_service(*args, **kwargs):
         else:
             raise NcatBotError("远端 NapCat 服务异常, 请检查远端 NapCat 服务, 或者关闭远端模式")
     else:
+        LOG.info("正在以本地模式运行, 检查中...")
         if napcat_service_ok():
-            pass
+            check_napcat_service_remote()
         else:
             if platform.system() not in ["Windows", "Linux"]:
                 raise NcatBotError("本地模式不支持该操作系统, 请使用远端模式")
@@ -115,10 +117,11 @@ def lanuch_napcat_service(*args, **kwargs):
                         LOG.info("登录中...")
                         login(reset=True)
                         connect_napcat()
+                        LOG.info("连接成功")
                     else:
                         LOG.info("快速登录成功, 跳过登录引导")
                 else:
-                    if not napcat_service_ok(3):
+                    if not napcat_service_ok(15):
                         raise NcatBotError("禁用 WebUI 交互时, 必须手动登录")
                     else:
                         pass

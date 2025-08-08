@@ -105,8 +105,8 @@ def config_napcat():
             default_webui_config["port"] = ncatbot_config.napcat.webui_port
             default_webui_config["token"] = ncatbot_config.napcat.webui_token
             default_webui_config["wsListenIp"] = ncatbot_config.napcat.ws_listen_ip
-            with open(webui_config_path, "w") as f:
-                json.dump(default_webui_config, f, indent=4, ensure_ascii=False)
+        with open(webui_config_path, "w") as f:
+            json.dump(default_webui_config, f, indent=4, ensure_ascii=False)
 
     config_onebot11()
     config_quick_login()

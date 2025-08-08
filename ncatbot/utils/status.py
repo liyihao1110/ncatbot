@@ -2,6 +2,7 @@
 
 from threading import Lock
 from typing import Any, Set, TYPE_CHECKING
+import logging
 
 if TYPE_CHECKING:
     from ncatbot.core.api import BotAPI
@@ -42,6 +43,15 @@ class Status:
         """
         with self._lock:
             return logger_name in self._registered_loggers
+
+    def update_logger_level(self) -> None:
+        """Update the level of all registered loggers."""
+        from ncatbot.utils.config import ncatbot_config
+        level = logging.DEBUG if ncatbot_config.debug else logging.INFO
+        with self._lock:
+            for logger_name in self._registered_loggers:
+                logger = logging.getLogger(logger_name)
+                logger.setLevel(level)
 
     def get_registered_loggers(self) -> Set[str]:
         """Get all registered logger names.

@@ -243,7 +243,7 @@ def setup_logging():
 
     # 控制台处理器
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(console_log_level)
+    console_handler.setLevel(logging.DEBUG)
     console_handler.setFormatter(ColoredFormatter(log_format))
     console_handler.addFilter(LoggerOriginFilter(from_get_log=True))
 
@@ -255,7 +255,7 @@ def setup_logging():
         backupCount=backup_count,
         encoding="utf-8",
     )
-    core_file_handler.setLevel(file_log_level)
+    core_file_handler.setLevel(logging.DEBUG)
     core_file_handler.setFormatter(logging.Formatter(file_format))
     # 添加过滤器，只记录通过 get_log 创建的日志记录器产生的日志
     core_file_handler.addFilter(LoggerOriginFilter(from_get_log=True))
@@ -268,7 +268,7 @@ def setup_logging():
         backupCount=backup_count,
         encoding="utf-8",
     )
-    full_file_handler.setLevel(file_log_level)
+    full_file_handler.setLevel(logging.DEBUG)
     full_file_handler.setFormatter(logging.Formatter(file_format))
 
     # 添加处理器
@@ -299,7 +299,7 @@ def get_log(name: Optional[str] = None) -> logging.Logger:
         日志记录器实例
     """
     logger = logging.getLogger(name)
-    logger.setLevel(logging.getLogger().level)
+    logger.setLevel(logging.INFO)
 
     # 注册到状态管理器
     if name is not None:

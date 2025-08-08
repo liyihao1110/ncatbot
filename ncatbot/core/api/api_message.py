@@ -7,6 +7,8 @@ from ncatbot.core.event import (
     File,
     Music,
     Reply,
+    Text,
+    PlainText,
 )
 from ncatbot.core.event.message_segment.message_array import MessageArray
 from ncatbot.utils import NcatBotValueError
@@ -45,10 +47,14 @@ class MessageAPI(BaseAPI):
         return await self.post_group_array_msg(group_id, msg_array)
     
     async def send_group_text(self, group_id: Union[str, int], text: str) -> str:
-        """发送群聊文本消息（NcatBot 接口）"""
-        result = await self.async_callback("/send_group_msg", {"group_id": group_id, "message": [{"type": "text", "data": {"text": text}}]})
-        status = MessageAPIReturnStatus(result)
-        return status.message_id
+        """发送群聊文本消息（支持 CQ 码）（NcatBot 接口）"""
+        msg_array = MessageArray(text)
+        return await self.post_group_array_msg(group_id, msg_array)
+    
+    async def send_group_plain_text(self, group_id: Union[str, int], text: str) -> str:
+        """发送群聊文本消息（不转义）（NcatBot 接口）"""
+        msg_array = MessageArray(PlainText(text))
+        return await self.post_group_array_msg(group_id, msg_array)
     
     async def send_group_image(self, group_id: Union[str, int], image: str) -> str:
         """发送群图片消息（NcatBot 接口）"""
@@ -151,10 +157,14 @@ class MessageAPI(BaseAPI):
         return await self.post_private_array_msg(user_id, msg_array)
     
     async def send_private_text(self, user_id: Union[str, int], text: str) -> str:
-        """发送私聊文本消息（NcatBot 接口）"""
-        result = await self.async_callback("/send_private_msg", {"user_id": user_id, "message": [{"type": "text", "data": {"text": text}}]})
-        status = MessageAPIReturnStatus(result)
-        return status.message_id
+        """发送私聊文本消息（支持 CQ 码）（NcatBot 接口）"""
+        msg_array = MessageArray(text)
+        return await self.post_private_array_msg(user_id, msg_array)
+    
+    async def send_private_plain_text(self, user_id: Union[str, int], text: str) -> str:
+        """发送私聊文本消息（不转义）（NcatBot 接口）"""
+        msg_array = MessageArray(PlainText(text))
+        return await self.post_private_array_msg(user_id, msg_array)
     
     async def send_private_image(self, user_id: Union[str, int], image: str) -> str:
         """发送私聊图片消息（NcatBot 接口）"""
@@ -281,6 +291,14 @@ class MessageAPI(BaseAPI):
         if msg is None:
             raise NcatBotValueError("msg", "None")
         return await self.send_forward_msg(group_id, user_id, **msg.to_forward_dict())
+    
+    async def post_group_forward_msg(self, group_id: Union[str, int], forward: Forward) -> str:
+        """发送群合并转发消息（NcatBot 接口）"""
+        return await self.post_forward_msg(group_id=group_id, msg=forward)
+
+    async def post_private_forward_msg(self, user_id: Union[str, int], forward: Forward) -> str:
+        """发送私聊合并转发消息（NcatBot 接口）"""
+        return await self.post_forward_msg(user_id=user_id, msg=forward)
     
     # ---------------------
     # region 消息获取

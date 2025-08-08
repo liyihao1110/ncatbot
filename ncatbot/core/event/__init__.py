@@ -3,7 +3,7 @@ from .message import BaseMessageEvent, AnonymousMessage, GroupMessageEvent, Priv
 from .meta import MetaEvent, Status
 from .notice import NoticeEvent
 from .request import RequestEvent
-from .sender import Sender
+from .sender import BaseSender, PrivateSender, GroupSender
 from .message_segment import (
     MessageSegment,
     MessageArray,
@@ -55,7 +55,9 @@ __all__ = [
     'RequestEvent',
     
     # From sender.py
-    'Sender',
+    'BaseSender',
+    'PrivateSender',
+    'GroupSender',
     
     # From message_segment
     'MessageSegment',

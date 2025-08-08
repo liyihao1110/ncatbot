@@ -1,6 +1,8 @@
 import asyncio
 import copy
 import inspect
+import traceback
+import threading
 from typing import Callable, Optional, Type, Literal, Union
 from ncatbot.core.adapter.adapter import Adapter
 from ncatbot.core.api.api import BotAPI
@@ -16,6 +18,8 @@ from ncatbot.utils import (
     OFFICIAL_HEARTBEAT_EVENT,
 )
 from ncatbot.utils import get_log, status, ncatbot_config, ThreadPool
+from ncatbot.core.adapter.nc.launch import lanuch_napcat_service
+from ncatbot.utils.error import NcatBotError, NcatBotConnectionError
 
 LOG = get_log("Client")    
 EVENTS = (
@@ -34,6 +38,7 @@ class BotClient:
         self.event_handlers: dict[str, list] = {}
         self.thread_pool = ThreadPool(max_workers=8, max_per_func=2)
         self.api = BotAPI(self.adapter.send)
+        self.crash_flag = False
         status.global_api = self.api
         for event_name in EVENTS:
             self.create_official_event_handler_group(event_name)
@@ -158,12 +163,56 @@ class BotClient:
         status.exit = True
         LOG.info("Bot 已经正常退出")
     
-    def run(self):
+    def run_frontend(self, bt_uin=None, root=None, ws_uri=None, webui_uri=None, ws_token=None, webui_token=None, ws_listen_ip=None, remote_mode=None, enable_webui_interaction=None, debug=None):
         try:
-            asyncio.run(self.adapter.connect_websocket())
+            self.start(bt_uin=bt_uin, root=root, ws_uri=ws_uri, webui_uri=webui_uri, ws_token=ws_token, webui_token=webui_token, ws_listen_ip=ws_listen_ip, remote_mode=remote_mode, enable_webui_interaction=enable_webui_interaction, debug=debug)
         except KeyboardInterrupt:
             self.bot_exit()
+        except Exception:
+            raise
             
-    def start(self):
-        pass
+    def run_backend(self, bt_uin=None, root=None, ws_uri=None, webui_uri=None, ws_token=None, webui_token=None, ws_listen_ip=None, remote_mode=None, enable_webui_interaction=None, debug=None):
+        def run_async_task():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                self.start(bt_uin=bt_uin, root=root, ws_uri=ws_uri, webui_uri=webui_uri, ws_token=ws_token, webui_token=webui_token, ws_listen_ip=ws_listen_ip, remote_mode=remote_mode, enable_webui_interaction=enable_webui_interaction, debug=debug)
+            except Exception as e:
+                LOG.error(f"Bot 启动失败: {e}")
+                LOG.info(traceback.format_exc())
+            finally:
+                loop.close()
+                self.crash_flag = True
+                self.release_callback()
+        
+        thread = threading.Thread(target=run_async_task)
+        thread.daemon = True  # 设置为守护线程
+        self.lock = threading.Lock()
+        self.lock.acquire()
+        self.release_callback = lambda x: self.lock.release()
+        self.add_startup_handler(self.release_callback)
+        thread.start()
+        flag = self.lock.acquire(timeout=90)
+        self.lock.release()
+        if self.crash_flag:
+            raise NcatBotError("Bot 启动失败")
+        if not flag:
+            raise NcatBotError("Bot 启动超时")
+        return self.api
+            
+    def start(self, **kwargs):
+        legal_args = ["bt_uin", "root", "ws_uri", "webui_uri", "ws_token", "webui_token", "ws_listen_ip", "remote_mode", "enable_webui_interaction", "debug"]
+        for key, value in kwargs.items():
+            if key not in legal_args:
+                raise NcatBotError(f"非法参数: {key}")
+            if value is None:
+                continue
+            ncatbot_config.update_value(key, value)
+        ncatbot_config.validate_config()
+        lanuch_napcat_service()
+        try:
+            asyncio.run(self.adapter.connect_websocket())
+        except NcatBotConnectionError as e:
+            self.bot_exit()
+            raise
         

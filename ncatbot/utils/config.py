@@ -2,6 +2,7 @@
 
 import copy
 import os
+import logging
 import time
 import urllib.parse
 import warnings
@@ -11,6 +12,7 @@ from typing import Any, List, Optional, Self, TextIO
 import rich  # 这东西真需要吗
 import yaml
 from ncatbot.utils.logger import get_log
+from ncatbot.utils.status import status
 
 logger = get_log("Config")
 CONFIG_PATH = os.getenv("NCATBOT_CONFIG_PATH", os.path.join(os.getcwd(), "config.yaml"))
@@ -159,16 +161,17 @@ class NapCatConfig(BaseConfig):
         self.webui_port = parsed.port
 
     def validate(self) -> None:
-        """验证配置。"""
-        if self.ws_host not in {"localhost", "127.0.0.1"}:
+        """验证配置，生成自动获取配置，并更新状态"""
+        self._standardize_ws_uri()
+        self._standardize_webui_uri()
+        
+        if self.ws_host not in ["localhost", "127.0.0.1"]:
             logger.info("NapCat 服务不是本地的，请确保远程服务配置正确")
             time.sleep(1)
 
         if self.ws_listen_ip not in {"0.0.0.0", self.ws_host}:
             logger.warning("WS 监听地址与 WS 地址不匹配，连接可能失败")
-
-        self._standardize_ws_uri()
-        self._standardize_webui_uri()
+        status.update_logger_level()
 
 
 @dataclass(frozen=False)
@@ -287,7 +290,7 @@ class Config(BaseConfig):
         return (
             f"[BOTQQ]: {self.bt_uin} | [WSURI]: {self.napcat.ws_uri} | "
             f"[WS_TOKEN]: {self.napcat.ws_token} | [ROOT]: {self.root} | "
-            f"[WEBUI]: {self.napcat.webui_uri}"
+            f"[WEBUI]: {self.napcat.webui_uri} | [WEBUI_TOKEN]: {self.napcat.webui_token}"
         )
 
     def update_from_file(self, path: str) -> None:
@@ -309,7 +312,7 @@ class Config(BaseConfig):
             self.bt_uin = str(input("请输入机器人 QQ 号: "))
 
         if self.root == self._default_root:
-            logger.warning("未设置根 QQ 号，某些权限功能可能无法正常工作")
+            logger.warning("未设置 root QQ 号，某些权限功能可能无法正常工作")
 
         logger.info(self)
 
@@ -326,10 +329,11 @@ class Config(BaseConfig):
         """
         try:
             logger.debug(f"从 {CONFIG_PATH} 加载配置")
-            return Config.create_from_file(CONFIG_PATH)
+            cfg = Config.create_from_file(CONFIG_PATH)
         except Exception as e:
             logger.error(f"加载配置失败: {e}")
-            return Config()
+            cfg = Config()
+        return cfg        
 
     def save_permanent_config(self, key: str, value: Any) -> None:
         """有些配置是永久性的，需要保存到文件中。
