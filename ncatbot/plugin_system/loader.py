@@ -33,10 +33,11 @@ from .pluginsys_err import (
 from .config import config
 from .rbac import RBACManager
 from .builtin_plugin import SystemManager
+from ncatbot.utils import get_log
 if TYPE_CHECKING:
     import importlib.util
 
-LOG = getLogger("PluginLoader")
+LOG = get_log("PluginLoader")
 _PLUGINS_DIR = config.plugins_dir
 _PIP_TOOL = PipTool() if config.auto_install_pip_pack else None
 
@@ -243,7 +244,16 @@ class PluginLoader:
 
     async def load_builtin_plugins(self) -> None:
         """加载内置插件。"""
-        await self.from_class_load_plugins([SystemManager])
+        plugins = [SystemManager]
+        for plugin in plugins:
+            plugin_obj = plugin(
+                event_bus=self.event_bus,
+                debug=self._debug,
+                rbac_manager=self.rbac_manager,
+                plugin_loader=self,
+            )
+            self.plugins[plugin.name] = plugin_obj
+            await self._init_plugin_in_thread(plugin_obj)
 
     async def load_plugins(self, plugins_path: str = _PLUGINS_DIR, **kwargs) -> None:
         """从目录批量加载。"""

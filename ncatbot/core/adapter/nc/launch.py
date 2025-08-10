@@ -27,7 +27,7 @@ LOG = get_log("ncatbot.core.adapter.nc.launch")
 
 class NcatBotLoginError(NcatBotError):
     def __init__(self, info):
-        super().__init__(info)
+        super().__init__(info, False)
 
 
 async def test_websocket() -> bool:
@@ -38,7 +38,7 @@ async def test_websocket() -> bool:
             if data.get("status", "ok") == "ok":
                 return True
             else:
-                raise NcatBotError("WebSocket Token 填写错误")
+                raise NcatBotError("WebSocket Token 填写错误", False)
     except NcatBotError:
         raise
     except Exception as e:

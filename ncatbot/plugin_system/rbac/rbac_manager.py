@@ -12,6 +12,7 @@ from functools import lru_cache
 from typing import Dict, Literal, Set
 
 from ncatbot.utils.assets.literals import PermissionGroup
+from ncatbot.utils import ncatbot_config
 from ncatbot.plugin_system.rbac.rbac_path import PermissionPath
 from ncatbot.plugin_system.rbac.rbac_trie import Trie
 
@@ -23,6 +24,7 @@ class _RBACManager:
         self.users: Dict = {}
         self.permissions_trie: Trie = Trie(self.case_sensitive)
         self.default_role = default_role
+        self.role_users: Dict[str, Set[str]] = {}
         self.role_inheritance = {}  # 存储角色继承关系 {role: [inherited_roles]}
 
     def __str__(self):
@@ -192,11 +194,13 @@ class _RBACManager:
             "white_permissions_list": [],
             "black_permissions_list": [],
         }
+        self.role_users[role_name] = set()
 
     def add_user(self, user_name: str, force: bool = False):
         if not force and self.check_availability(user_name=user_name):
             raise IndexError(f"用户 {user_name} 已经存在")
         self.refresh_cache(user_name=user_name)
+        self.role_users[self.default_role].add(user_name)
         self.users[user_name] = {
             "white_permissions_list": [],
             "black_permissions_list": [],
@@ -213,10 +217,14 @@ class _RBACManager:
         for role in self.role_inheritance:
             if role_name in self.role_inheritance[role]:
                 self.role_inheritance[role].remove(role_name)
+        for user in self.role_users[role_name]:
+            self.users[user]["role_list"].remove(role_name)
         del self.roles[role_name]
+        del self.role_users[role_name]
 
     def del_user(self, user_name: str):
         self.refresh_cache(user_name=user_name)
+        self.role_users[self.default_role].remove(user_name)
         del self.users[user_name]
 
     def assign_permissions_to_role(
@@ -255,6 +263,7 @@ class _RBACManager:
         self.refresh_cache(role_name=role_name, user_name=user_name)
         if role_name not in self.users[user_name]["role_list"]:
             self.users[user_name]["role_list"].append(role_name)
+            self.role_users[role_name].add(user_name)
 
     def unassign_permissions_to_role(
         self, role_name: str, permissions_path: str, mode: Literal["white", "black"]
@@ -278,6 +287,7 @@ class _RBACManager:
             raise IndexError(f"角色 {role_name} 或用户 {user_name} 不存在")
         self.refresh_cache(role_name=role_name, user_name=user_name)
         self.users[user_name]["role_list"].remove(role_name)
+        self.role_users[role_name].remove(user_name)
 
     def _check_circular_inheritance(
         self, role: str, inherited_role: str, visited: set = None
@@ -417,9 +427,17 @@ class RBACManager:
             self.manager = _RBACManager.from_dict(json.load(open(path, "r", encoding="utf-8")))
         else:
             self.manager = _RBACManager(default_role=PermissionGroup.USER.value)
-            self.manager.add_permissions(PermissionGroup.USER.value)
-            self.manager.add_permissions(PermissionGroup.ADMIN.value)
-            self.manager.add_permissions(PermissionGroup.ROOT.value)
+            
+        self.add_role(PermissionGroup.USER.value)
+        self.add_role(PermissionGroup.ADMIN.value)
+        self.add_role(PermissionGroup.ROOT.value)
+        self.unassign_root_roles()
+        self.assign_role_to_user(ncatbot_config.root, PermissionGroup.ROOT.value)
+    
+    def unassign_root_roles(self):
+        for user in self.manager.role_users[PermissionGroup.ROOT.value]:
+            self.manager.users[user]["role_list"].remove(PermissionGroup.ROOT.value)
+        self.manager.role_users[PermissionGroup.ROOT.value] = set()
     
     def save(self, path):
         # TODO 编码问题

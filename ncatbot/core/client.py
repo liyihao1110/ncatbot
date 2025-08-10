@@ -51,14 +51,20 @@ class BotClient:
     
     def register_builtin_handler(self):
         # 注册插件系统事件处理器
+        def make_async_handler(event_name):
+            async def warpper(event: BaseEventData):
+                LOG.debug(f"已发布 {event_name} 事件")
+                await self.event_bus.publish(NcatBotEvent(event_name, event))
+            return warpper
+        
         self.add_startup_handler(lambda x: LOG.info(f"Bot {x.self_id} 启动成功"))
-        self.add_startup_handler(lambda x: self.event_bus.publish(NcatBotEvent(OFFICIAL_STARTUP_EVENT, x)))
-        self.add_private_message_handler(lambda x: self.event_bus.publish(NcatBotEvent(OFFICIAL_STARTUP_EVENT, x)))
-        self.add_group_message_handler(lambda x: self.event_bus.publish(NcatBotEvent(OFFICIAL_GROUP_MESSAGE_EVENT, x)))
-        self.add_notice_handler(lambda x: self.event_bus.publish(NcatBotEvent(OFFICIAL_NOTICE_EVENT, x)))
-        self.add_request_handler(lambda x: self.event_bus.publish(NcatBotEvent(OFFICIAL_REQUEST_EVENT, x)))
-        self.add_shutdown_handler(lambda x: self.event_bus.publish(NcatBotEvent(OFFICIAL_SHUTDOWN_EVENT, x)))
-        self.add_heartbeat_handler(lambda x: self.event_bus.publish(NcatBotEvent(OFFICIAL_HEARTBEAT_EVENT, x)))
+        self.add_startup_handler(make_async_handler(OFFICIAL_STARTUP_EVENT))
+        self.add_private_message_handler(make_async_handler(OFFICIAL_PRIVATE_MESSAGE_EVENT))
+        self.add_group_message_handler(make_async_handler(OFFICIAL_GROUP_MESSAGE_EVENT))
+        self.add_notice_handler(make_async_handler(OFFICIAL_NOTICE_EVENT))
+        self.add_request_handler(make_async_handler(OFFICIAL_REQUEST_EVENT))
+        self.add_shutdown_handler(make_async_handler(OFFICIAL_SHUTDOWN_EVENT))
+        self.add_heartbeat_handler(make_async_handler(OFFICIAL_HEARTBEAT_EVENT))
     
     def create_official_event_handler_group(self, event_name):
         async def event_callback(event: BaseEventData):
@@ -206,9 +212,9 @@ class BotClient:
         thread.start()
         flag = self.lock.acquire(timeout=90)
         if self.crash_flag:
-            raise NcatBotError("Bot 启动失败")
+            raise NcatBotError("Bot 启动失败", log=False)
         if not flag:
-            raise NcatBotError("Bot 启动超时")
+            raise NcatBotError("Bot 启动超时", log=True)
         return self.api
             
     def start(self, **kwargs):

@@ -1,8 +1,14 @@
 import re
+import asyncio
 from typing import Callable, Optional, List, Dict, Any
 from typing import final
 from ncatbot.core.event import BaseMessageEvent
+from ncatbot.plugin_system.event import NcatBotEvent
 from ncatbot.utils.assets.literals import PermissionGroup
+from ncatbot.utils import get_log
+from functools import partial
+
+LOG = get_log("FunctionMixin")
 
 class Filter:
     """消息过滤器基类"""
@@ -142,6 +148,43 @@ class FunctionMixin:
             raise ValueError(f"插件 {self.name} 不存在功能 {name}")
 
     @final
+    def _create_func_handler(self, name: str, handler: Callable, filter_chain) -> Callable:
+        is_coroutine = asyncio.iscoroutinefunction(handler)
+
+        async def wrapped_handler(
+            event: NcatBotEvent,
+            current_name: str = name,
+            current_handler: Callable = handler,
+            current_filter: Any = filter_chain,
+        ):
+            print("捕获到:", current_name)  # 直接使用 name，无需默认参数
+            data = event.data
+            
+            if not isinstance(data, BaseMessageEvent):
+                LOG.error(f"事件数据类型错误，预期 BaseMessageEvent，实际得到 {type(data)}")
+                return None
+            try:
+                permission = f"{self.name}.{current_name}"
+                if not self._rbac_manager.check_permission(data.user_id, permission):
+                    # TODO: 权限不足反馈
+                    return None
+                
+                if not current_filter.check(data):
+                    return None
+                
+                LOG.debug(f"插件 {self.name} 功能 {current_name} 正在执行")
+                if is_coroutine:
+                    return await current_handler(data)
+                else:
+                    return current_handler(data)
+                    
+            except Exception as e:
+                LOG.error(f"插件 {self.name} 功能 {current_name} 执行失败: {e}", exc_info=True)
+                return None
+        wrapped_handler.__name__ = name
+        return wrapped_handler
+    
+    @final
     def _register_func(
         self,
         name: str,
@@ -166,13 +209,7 @@ class FunctionMixin:
                 prefix = f"/{self.name}.{name}"
             
             filter_chain = create_filter(prefix, regex, filter)
-            def warpped_handler(event: BaseMessageEvent):
-                if self._rbac_manager.check_permission(event.user_id, f"{self.name}.{name}"):
-                    if filter_chain.check(event):
-                        return handler(event)
-                else:
-                    # TODO 权限不足反馈
-                    return None
+            warpped_handler = self._create_func_handler(name, handler, filter_chain)
             func = Func({
                 'name': name,
                 'permission': permission,
@@ -181,7 +218,7 @@ class FunctionMixin:
                 'examples': examples,
                 'tags': tags,
                 'metadata': metadata,
-                'handlder_id': self.register_handler(warpped_handler)
+                'handlder_id': self.register_handler("re:ncatbot.group_message_event|ncatbot.private_message_event", warpped_handler)
             })
             self._registered_funcs.append(func)
             return func

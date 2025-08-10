@@ -4,10 +4,11 @@ import traceback
 
 class NcatBotError(Exception):
     logger = get_log("NcatBotError")
-    def __init__(self, info):
-        self.logger.error(f"{info}")
-        if ncatbot_config.debug:
-            self.logger.info(f"stacktrace:\n{traceback.format_exc()}")
+    def __init__(self, info, log: bool = True):
+        if log:
+            self.logger.error(f"{info}")
+            if ncatbot_config.debug:
+                self.logger.info(f"stacktrace:\n{traceback.format_exc()}")
         super().__init__(info)
 
 class NcatBotValueError(NcatBotError):

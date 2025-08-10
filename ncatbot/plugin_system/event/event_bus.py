@@ -7,14 +7,15 @@ import ctypes
 import queue
 from concurrent.futures import Future
 from functools import lru_cache
-from logging import getLogger
+from ncatbot.utils import get_log
+# from logging import getLogger
 from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, Set
 
 if TYPE_CHECKING:
     from ..base_plugin import BasePlugin
 
 from .event import NcatBotEvent
-LOG = getLogger('EventBus')
+LOG = get_log('EventBus')
 
 
 class HandlerTimeoutError(Exception):
@@ -30,7 +31,7 @@ class HandlerTimeoutError(Exception):
         return f"来自 {self.meta_data['name']} 的处理器 {self.handler} 执行超时 {self.time}"
 
 class EventBus:
-    def __init__(self, default_timeout: float = 5.0, max_workers: int = 20) -> None:
+    def __init__(self, default_timeout: float = 600, max_workers: int = 1) -> None:
         """
         事件总线实现 - 线程池
         
@@ -81,8 +82,10 @@ class EventBus:
         while True:
             try:
                 # 获取任务
-                task = self.task_queue.get(timeout=1)
-                handler, event, timeout, result_queue, hid = task
+                # print("Try Get Task")
+                task = self.task_queue.get(timeout=0.1)
+                runner, handler, event, timeout, result_queue, hid = task
+                LOG.debug(f"线程执行任务: {handler.__name__}")
                 result_queue: asyncio.Queue
                 
                 # 记录任务开始时间
@@ -91,7 +94,7 @@ class EventBus:
                 
                 try:
                     # 执行任务
-                    result = handler(event)
+                    result = runner(handler, event)
                     asyncio.run(result_queue.put(result))
                 except Exception as e:
                     asyncio.run(result_queue.put(e))
@@ -150,6 +153,7 @@ class EventBus:
         执行处理程序
         """
         # 如果是异步函数，在独立事件循环中运行
+        LOG.debug(f"执行处理程序: {handler.__name__}")
         if asyncio.iscoroutinefunction(handler):
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
@@ -226,7 +230,8 @@ class EventBus:
             result_queues[hid] = result_queue
             
             # 提交任务到线程池
-            self.task_queue.put((lambda e: self._run_handler(handler, e), event, timeout, result_queue, hid))
+            LOG.debug(f"提交任务到线程池: {handler.__name__}")
+            self.task_queue.put((self._run_handler, handler, event, timeout, result_queue, hid))
         
         # 异步等待所有任务完成并收集结果
         try:

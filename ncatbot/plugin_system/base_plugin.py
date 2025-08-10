@@ -13,7 +13,7 @@ from uuid import UUID
 from pathlib import Path
 from typing import Any, Dict, List, Set, final
 from concurrent.futures import ThreadPoolExecutor
-from logging import getLogger
+from ncatbot.utils import get_log
 
 from .config import config
 from .event import EventBus, NcatBotEvent
@@ -21,7 +21,7 @@ from .decorator import RegisterServer
 from .rbac import RBACManager
 from ncatbot.utils import status
 
-LOG = getLogger("BasePlugin")
+LOG = get_log("BasePlugin")
 
 
 class BasePlugin:
@@ -215,7 +215,7 @@ class BasePlugin:
         """
         handler_id = self.event_bus.subscribe(event_type, handler, priority, plugin=self)
         self._handlers_id.add(handler_id)
-        LOG.debug(f"{self.name} 注册事件处理器 {event_type}: {handler_id}")
+        LOG.debug(f"{self.name} 注册事件处理器 {event_type}: {handler.__name__}")
         return handler_id
 
     def unregister_handler(self, handler_id: UUID) -> bool:

@@ -3,6 +3,7 @@ from typing import Callable, Any, List
 from ncatbot.core.event import BaseMessageEvent
 from ncatbot.utils import PermissionGroup
 import asyncio
+import functools
 
 class AliasFilter(Filter):
     def __init__(self, name: str, aliases: List[str]):
@@ -57,19 +58,24 @@ class CommandMixin(FunctionMixin):
             self._registered_commands = []
         return self._registered_commands
     
-    def register_command(self, name: str, handler: Callable[[BaseMessageEvent, list[str]], Any], aliases: List[str] = None, description: str = "", usage: str = "", examples: List[str] = None, permission: PermissionGroup = PermissionGroup.USER.value) -> Command:
-        # TODO 提示已经注册的别名
-        # TODO 限定参数
-        if name in self._registered_commands:
-            raise ValueError(f"命令 {name} 已经存在")
-
-        async def warpped_handler(event: BaseMessageEvent):
+    def _create_command_handler(self, handler: Callable) -> Callable:
+        @functools.wraps(handler)
+        async def warpped_handler(event: BaseMessageEvent, handler=handler):
             args = event.raw_message.split()
             if asyncio.iscoroutinefunction(handler):
                 return await handler(event, args)
             else:
                 return handler(event, args)
-        func = self._register_func(name, warpped_handler, AliasFilter(name, aliases), description=description, usage=usage, examples=examples, permission=PermissionGroup.USER.value)
+        return warpped_handler
+    
+    def register_command(self, name: str, handler: Callable[[BaseMessageEvent, list[str]], Any], aliases: List[str] = None, description: str = "", usage: str = "", examples: List[str] = None, permission: PermissionGroup = PermissionGroup.USER.value) -> Command:
+        # TODO 提示已经注册的别名
+        # TODO 限定参数
+        if name in self._registered_commands:
+            raise ValueError(f"命令 {name} 已经存在")
+        
+        warpped_handler = self._create_command_handler(handler)
+        func = self._register_func(name, warpped_handler, AliasFilter(name, aliases).check, description=description, usage=usage, examples=examples, permission=PermissionGroup.USER.value)
         command = Command({
             'name': name,
             'aliases': aliases,
