@@ -6,10 +6,10 @@
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
 # @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议 
 # -------------------------
-from .event import Event
+from .event import NcatBotEvent
 from .event_bus import EventBus
 
 __all__ = [
-    'Event',
+    'NcatBotEvent',
     'EventBus',
 ]

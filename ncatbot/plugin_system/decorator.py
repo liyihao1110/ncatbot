@@ -10,7 +10,7 @@ from functools import wraps
 from typing import Protocol, Callable, List, ClassVar, TYPE_CHECKING
 if TYPE_CHECKING:
     from .base_plugin import BasePlugin
-    from .event.event_bus import EventBus, Event
+    from .event.event_bus import EventBus, NcatBotEvent
 
 
 class CompatibleHandler(Protocol):  # 我觉得应该改个名字
@@ -36,7 +36,7 @@ def register_server(addr: str) -> Callable:
     '''注册服务到指定地址'''
     def decorator(func: Callable) -> Callable:
         @wraps(func)
-        def wrapper(self, event: 'Event'):
+        def wrapper(self, event: 'NcatBotEvent'):
             result = func(self, event.data)
             event.add_result(result)
         if tag := getattr(wrapper ,"_tag", None):
@@ -69,7 +69,7 @@ def register_handler(event_type: str, priority: int = 0, get_event: bool = True)
     '''注册事件处理器'''
     def decorator(func: Callable) -> Callable:
         @wraps(func)
-        def wrapper(self, event: 'Event'):
+        def wrapper(self, event: 'NcatBotEvent'):
             if get_event:
                 func(self, event)
             else:

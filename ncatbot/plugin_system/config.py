@@ -19,5 +19,7 @@ class PluginSystemConfig:
     '''插件目录路径'''
     plugins_data_dir: str = field(default='./data')
     plugins_config_dir: str = field(default='./config')
+    rbac_path: str = field(default='./data/rbac.json')
+    '''RBAC 配置文件路径'''
 
 config = PluginSystemConfig()

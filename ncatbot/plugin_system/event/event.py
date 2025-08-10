@@ -10,7 +10,7 @@ from typing import List, Any
 from copy import copy
 
 
-class Event:
+class NcatBotEvent:
     """事件类
 
     用于封装事件信息,包含事件类型、数据及处理结果。

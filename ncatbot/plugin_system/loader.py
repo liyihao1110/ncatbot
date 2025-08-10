@@ -23,7 +23,7 @@ from logging import getLogger
 from .decorator import CompatibleHandler
 from .base_plugin import BasePlugin
 from .event import EventBus
-from .pip_tool import PipTool
+from ncatbot.utils.pip_tool import PipTool
 from .pluginsys_err import (
     PluginCircularDependencyError,
     PluginDependencyError,
@@ -31,7 +31,8 @@ from .pluginsys_err import (
     PluginNameConflictError,
 )
 from .config import config
-
+from .rbac import RBACManager
+from .builtin_plugin import SystemManager
 if TYPE_CHECKING:
     import importlib.util
 
@@ -184,6 +185,7 @@ class PluginLoader:
     def __init__(self, event_bus: EventBus, *, debug: bool = False) -> None:
         self.plugins: Dict[str, BasePlugin] = {}
         self.event_bus = event_bus or EventBus()
+        self.rbac_manager = RBACManager(config.rbac_path)
         self._debug = debug
         self._resolver = _DependencyResolver()
 
@@ -226,6 +228,8 @@ class PluginLoader:
             plugin = cls(
                 event_bus=self.event_bus,
                 debug=self._debug,
+                rbac_manager=self.rbac_manager,
+                plugin_loader=self,
                 **kwargs,
             )
             temp[name] = plugin
@@ -236,6 +240,10 @@ class PluginLoader:
         self._validate_versions()
         # 并发执行所有插件的初始化
         await asyncio.gather(*init_tasks)
+
+    async def load_builtin_plugins(self) -> None:
+        """加载内置插件。"""
+        await self.from_class_load_plugins([SystemManager])
 
     async def load_plugins(self, plugins_path: str = _PLUGINS_DIR, **kwargs) -> None:
         """从目录批量加载。"""
@@ -256,6 +264,7 @@ class PluginLoader:
                     plugin_classes.append(cls)
 
         await self.from_class_load_plugins(plugin_classes, **kwargs)
+        await self.load_builtin_plugins()
         LOG.info("已加载插件数 [%d]", len(self.plugins))
         self._load_compatible_data()
 
@@ -296,6 +305,8 @@ class PluginLoader:
             new = cls(
                 event_bus=self.event_bus,
                 debug=self._debug,
+                rbac_manager=self.rbac_manager,
+                plugin_loader=self,
                 **kwargs,
             )
             await new.__onload__()

@@ -13,7 +13,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, Se
 if TYPE_CHECKING:
     from ..base_plugin import BasePlugin
 
-from .event import Event
+from .event import NcatBotEvent
 LOG = getLogger('EventBus')
 
 
@@ -145,7 +145,7 @@ class EventBus:
         elif res != 1:
             ctypes.pythonapi.PyThreadState_SetAsyncExc(thread.ident, None)
     
-    def _run_handler(self, handler: Callable, event: Event) -> Any:
+    def _run_handler(self, handler: Callable, event: NcatBotEvent) -> Any:
         """
         执行处理程序
         """
@@ -163,7 +163,7 @@ class EventBus:
     def subscribe(
         self,
         event_type: str,
-        handler: Callable[[Event], Any],
+        handler: Callable[[NcatBotEvent], Any],
         priority: int = 0,
         timeout: Optional[float] = None,
         plugin: Optional['BasePlugin'] = None
@@ -209,7 +209,7 @@ class EventBus:
             removed |= len(self._regex) != original_len
         return removed
 
-    async def publish(self, event: Event) -> List[Any]:
+    async def publish(self, event: NcatBotEvent) -> List[Any]:
         """发布事件并等待所有处理器完成"""
         handlers = self._collect_handlers(event.type)
         handler_meta = self._handler_meta.copy()

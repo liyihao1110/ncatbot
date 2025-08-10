@@ -7,13 +7,13 @@
 # @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议 
 # -------------------------
 from .base_plugin import BasePlugin
-from .event import Event, EventBus
+from .event import NcatBotEvent, EventBus
 from .loader import PluginLoader
 from .decorator import *
 
 __all__ = [
     'BasePlugin',
-    'Event',
+    'NcatBotEvent',
     'EventBus',
     'PluginLoader',
     'register_server',

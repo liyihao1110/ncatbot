@@ -4,9 +4,12 @@ import inspect
 import traceback
 import threading
 from typing import Callable, Optional, Type, Literal, Union
+
+from yaml import Event
 from ncatbot.core.adapter.adapter import Adapter
 from ncatbot.core.api.api import BotAPI
 from ncatbot.core.event import MessageSegment
+from ncatbot.plugin_system.event import EventBus
 from ncatbot.core.event import BaseEventData, PrivateMessageEvent, GroupMessageEvent, NoticeEvent, RequestEvent, MetaEvent
 from ncatbot.utils import (
     OFFICIAL_PRIVATE_MESSAGE_EVENT,
@@ -20,6 +23,7 @@ from ncatbot.utils import (
 from ncatbot.utils import get_log, status, ncatbot_config, ThreadPool
 from ncatbot.core.adapter.nc.launch import lanuch_napcat_service
 from ncatbot.utils.error import NcatBotError, NcatBotConnectionError
+from ncatbot.plugin_system import PluginLoader, NcatBotEvent
 
 LOG = get_log("Client")    
 EVENTS = (
@@ -46,7 +50,15 @@ class BotClient:
         self.register_builtin_handler()
     
     def register_builtin_handler(self):
+        # 注册插件系统事件处理器
         self.add_startup_handler(lambda x: LOG.info(f"Bot {x.self_id} 启动成功"))
+        self.add_startup_handler(lambda x: self.event_bus.publish(NcatBotEvent(OFFICIAL_STARTUP_EVENT, x)))
+        self.add_private_message_handler(lambda x: self.event_bus.publish(NcatBotEvent(OFFICIAL_STARTUP_EVENT, x)))
+        self.add_group_message_handler(lambda x: self.event_bus.publish(NcatBotEvent(OFFICIAL_GROUP_MESSAGE_EVENT, x)))
+        self.add_notice_handler(lambda x: self.event_bus.publish(NcatBotEvent(OFFICIAL_NOTICE_EVENT, x)))
+        self.add_request_handler(lambda x: self.event_bus.publish(NcatBotEvent(OFFICIAL_REQUEST_EVENT, x)))
+        self.add_shutdown_handler(lambda x: self.event_bus.publish(NcatBotEvent(OFFICIAL_SHUTDOWN_EVENT, x)))
+        self.add_heartbeat_handler(lambda x: self.event_bus.publish(NcatBotEvent(OFFICIAL_HEARTBEAT_EVENT, x)))
     
     def create_official_event_handler_group(self, event_name):
         async def event_callback(event: BaseEventData):
@@ -200,6 +212,7 @@ class BotClient:
         return self.api
             
     def start(self, **kwargs):
+        # 配置参数
         legal_args = ["bt_uin", "root", "ws_uri", "webui_uri", "ws_token", "webui_token", "ws_listen_ip", "remote_mode", "enable_webui_interaction", "debug"]
         for key, value in kwargs.items():
             if key not in legal_args:
@@ -208,6 +221,11 @@ class BotClient:
                 continue
             ncatbot_config.update_value(key, value)
         ncatbot_config.validate_config()
+        # 加载插件
+        self.event_bus = EventBus()
+        self.plugin_loader = PluginLoader(self.event_bus, debug=ncatbot_config.debug)
+        asyncio.run(self.plugin_loader.load_plugins())
+        # 启动服务
         lanuch_napcat_service()
         try:
             asyncio.run(self.adapter.connect_websocket())

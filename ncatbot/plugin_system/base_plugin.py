@@ -16,8 +16,10 @@ from concurrent.futures import ThreadPoolExecutor
 from logging import getLogger
 
 from .config import config
-from .event import EventBus, Event
+from .event import EventBus, NcatBotEvent
 from .decorator import RegisterServer
+from .rbac import RBACManager
+from ncatbot.utils import status
 
 LOG = getLogger("BasePlugin")
 
@@ -64,7 +66,7 @@ class BasePlugin:
     # -------- 内部属性 --------
     _handlers_id: Set[UUID]  # 注册的事件处理器ID集合
 
-    def __init__(self, event_bus: EventBus, *, debug: bool = False, **extras: Any) -> None:
+    def __init__(self, event_bus: EventBus, *, debug: bool = False, rbac_manager: RBACManager = None, **extras: Any) -> None:
         """初始化插件实例。
 
         仅做最轻量的装配，不做任何IO操作。
@@ -90,7 +92,9 @@ class BasePlugin:
             setattr(self, k, v)
             
         # 初始化属性
+        self.api = status.global_api
         self._handlers_id = set()
+        self._rbac_manager = rbac_manager
 
         # 路径计算（只算不建）
         self.main_file = Path(inspect.getmodule(self.__class__).__file__).resolve()
@@ -244,7 +248,7 @@ class BasePlugin:
         Returns:
             所有处理器的返回结果列表
         """
-        return await self.event_bus.publish(Event(event_type, data))
+        return await self.event_bus.publish(NcatBotEvent(event_type, data))
 
     async def request(self, addr: str, data: dict = None) -> Any:
         """发送请求并等待响应。
@@ -256,5 +260,5 @@ class BasePlugin:
         Returns:
             第一个响应结果，如果没有响应则返回None
         """
-        result = await self.event_bus.publish(Event(f"SERVER-{addr}", data))
+        result = await self.event_bus.publish(NcatBotEvent(f"SERVER-{addr}", data))
         return result[0] if result else None
