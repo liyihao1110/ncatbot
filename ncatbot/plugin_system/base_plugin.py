@@ -11,7 +11,7 @@ import aiofiles
 import inspect
 from uuid import UUID
 from pathlib import Path
-from typing import Any, Dict, List, Set, final, TYPE_CHECKING
+from typing import Any, Dict, List, Set, Union, final, TYPE_CHECKING
 from concurrent.futures import ThreadPoolExecutor
 from logging import getLogger
 
@@ -264,4 +264,24 @@ class BasePlugin:
         return result[0] if result else None
 
     def get_plugin(self, name: str) -> 'BasePlugin':
+        """根据插件名称获取插件实例。
+
+        Args:
+            name: 插件名称。
+
+        Returns:
+            插件实例；若不存在则返回 None。
+        """
         self._loader.get_plugin(name)
+    
+    def list_plugins(self, *, obj: bool = False) -> List[Union[str, 'BasePlugin']]:
+        """插件列表
+
+        Args:
+            obj: 实例模式
+
+        Returns:
+            插件实例/插件名称列表
+        """
+        self._loader.list_plugins(obj=obj)
+        

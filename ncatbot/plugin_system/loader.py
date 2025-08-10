@@ -210,6 +210,7 @@ class PluginLoader:
             plugin = cls(
                 event_bus=self.event_bus,
                 debug=self._debug,
+                loader=self,
                 **kwargs,
             )
             temp[name] = plugin
@@ -280,6 +281,7 @@ class PluginLoader:
             new = cls(
                 event_bus=self.event_bus,
                 debug=self._debug,
+                loader=self,
                 **kwargs,
             )
             await new.__onload__()
@@ -305,12 +307,28 @@ class PluginLoader:
 
     # -------------------- 查询 API --------------------
     def get_plugin(self, name: str) -> Optional[BasePlugin]:
-        return self.plugins.get(name)
+        """根据插件名称获取插件实例。
+
+        Args:
+            name: 插件名称。
+
+        Returns:
+            插件实例；若不存在则返回 None。
+        """
+        return self.plugins.get(name, None)
 
     def get_metadata(self, name: str) -> dict:
         return self.plugins[name].meta_data
 
     def list_plugins(self, *, obj: bool = False) -> List[Union[str, BasePlugin]]:
+        """插件列表
+
+        Args:
+            obj: 实例模式
+
+        Returns:
+            插件实例/插件名称列表
+        """
         return list(self.plugins.values()) if obj else list(self.plugins.keys())
 
     # -------------------- 私有辅助 --------------------
