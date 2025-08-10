@@ -7,6 +7,9 @@ class BaseMessageEvent(MessageEventData):
     message_type: Literal["private", "group"] = None # 上级会获取
     sub_type: str = None # 下级会细化 Literal, 上级会获取
     
+    def is_group_msg(self):
+        return hasattr(self, "group_id")
+    
     @abstractmethod
     async def reply(self):
         pass

@@ -5,6 +5,7 @@ import uuid
 import time
 import ctypes
 import queue
+import traceback
 from concurrent.futures import Future
 from functools import lru_cache
 from ncatbot.utils import get_log
@@ -154,15 +155,20 @@ class EventBus:
         """
         # 如果是异步函数，在独立事件循环中运行
         LOG.debug(f"执行处理程序: {handler.__name__}")
-        if asyncio.iscoroutinefunction(handler):
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                return loop.run_until_complete(handler(event))
-            finally:
-                loop.close()
-        # 同步函数直接执行
-        return handler(event)
+        try:
+            if asyncio.iscoroutinefunction(handler):
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    return loop.run_until_complete(handler(event))
+                finally:
+                    loop.close()
+            # 同步函数直接执行
+            return handler(event)
+        except Exception as e:
+            LOG.error(f"执行处理程序 {handler.__name__} 时发生错误: {e}")
+            LOG.info(f"错误堆栈: {traceback.format_exc()}")
+            raise e
 
     def subscribe(
         self,

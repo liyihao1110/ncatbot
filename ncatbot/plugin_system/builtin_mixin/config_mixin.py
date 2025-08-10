@@ -48,6 +48,8 @@ class ConfigMixin(CommandMixin):
             self.register_command(f"config.{self.name}", self._configurator, permission=PermissionGroup.ADMIN.value)
             
         if name not in self._registered_configs:
+            if isinstance(value_type, str):
+                value_type = eval(value_type)
             self.config[name] = value_type(default_value)
             self._registered_configs[name] = Config({
                 'name': name,

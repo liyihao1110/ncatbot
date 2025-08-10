@@ -157,7 +157,6 @@ class FunctionMixin:
             current_handler: Callable = handler,
             current_filter: Any = filter_chain,
         ):
-            print("捕获到:", current_name)  # 直接使用 name，无需默认参数
             data = event.data
             
             if not isinstance(data, BaseMessageEvent):
