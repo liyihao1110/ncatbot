@@ -11,7 +11,7 @@ import aiofiles
 import inspect
 from uuid import UUID
 from pathlib import Path
-from typing import Any, Dict, List, Set, final
+from typing import Any, Dict, List, Set, Union, final, TYPE_CHECKING
 from concurrent.futures import ThreadPoolExecutor
 from ncatbot.utils import get_log
 
@@ -20,6 +20,9 @@ from .event import EventBus, NcatBotEvent
 from .decorator import RegisterServer
 from .rbac import RBACManager
 from ncatbot.utils import status
+
+if TYPE_CHECKING:
+    from .loader import PluginLoader
 
 LOG = get_log("BasePlugin")
 
@@ -65,8 +68,9 @@ class BasePlugin:
 
     # -------- 内部属性 --------
     _handlers_id: Set[UUID]  # 注册的事件处理器ID集合
+    _loader: 'PluginLoader' # 插件加载器
 
-    def __init__(self, event_bus: EventBus, *, debug: bool = False, rbac_manager: RBACManager = None, **extras: Any) -> None:
+    def __init__(self, event_bus: EventBus, *, debug: bool = False, rbac_manager: RBACManager = None, plugin_loader: 'PluginLoader' = None, **extras: Any) -> None:
         """初始化插件实例。
 
         仅做最轻量的装配，不做任何IO操作。
@@ -87,6 +91,7 @@ class BasePlugin:
 
         # 保存外部注入
         self._event_bus = event_bus
+        self._loader = plugin_loader
         self._debug = debug
         for k, v in extras.items():
             setattr(self, k, v)
@@ -262,3 +267,26 @@ class BasePlugin:
         """
         result = await self.event_bus.publish(NcatBotEvent(f"SERVER-{addr}", data))
         return result[0] if result else None
+
+    def get_plugin(self, name: str) -> 'BasePlugin':
+        """根据插件名称获取插件实例。
+
+        Args:
+            name: 插件名称。
+
+        Returns:
+            插件实例；若不存在则返回 None。
+        """
+        self._loader.get_plugin(name)
+    
+    def list_plugins(self, *, obj: bool = False) -> List[Union[str, 'BasePlugin']]:
+        """插件列表
+
+        Args:
+            obj: 实例模式
+
+        Returns:
+            插件实例/插件名称列表
+        """
+        self._loader.list_plugins(obj=obj)
+        
