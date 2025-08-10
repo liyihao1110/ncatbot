@@ -22,8 +22,8 @@ class SystemManager(NcatBotPlugin):
 
     async def get_status(self, event: BaseMessageEvent, *args) -> None:
         text = f"ncatbot 状态:\n"
-        text += f"插件数量: {len(self.plugin_loader.plugins)}\n"
-        text += f"插件列表: {', '.join([plugin.name for plugin in self.plugin_loader.plugins.values()])}\n"
+        text += f"插件数量: {len(self._loader.plugins)}\n"
+        text += f"插件列表: {', '.join([plugin.name for plugin in self._loader.plugins.values()])}\n"
         text += f"CPU 使用率: {psutil.cpu_percent()}%\n"
         text += f"内存使用率: {psutil.virtual_memory().percent}%\n"
         text += f"NcatBot 版本: {ncatbot.__version__}\n"
