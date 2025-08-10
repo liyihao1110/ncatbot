@@ -10,7 +10,6 @@ import asyncio
 import importlib
 # TODO 用 zipimport 实现 zip 格式插件
 import sys
-import pkg_resources    # 来自 setuptools
 from collections import defaultdict, deque
 from pathlib import Path
 from types import ModuleType
@@ -23,7 +22,7 @@ from logging import getLogger
 from .decorator import CompatibleHandler
 from .base_plugin import BasePlugin
 from .event import EventBus
-from .pip_tool import PipTool
+from .packhelper import PackageHelper
 from .pluginsys_err import (
     PluginCircularDependencyError,
     PluginDependencyError,
@@ -37,7 +36,7 @@ if TYPE_CHECKING:
 
 LOG = getLogger("PluginLoader")
 _PLUGINS_DIR = config.plugins_dir
-_PIP_TOOL = PipTool() if config.auto_install_pip_pack else None
+_AUTO_INSTALL = config.auto_install_pip_pack
 
 
 # ---------------------------------------------------------------------------
@@ -46,9 +45,8 @@ _PIP_TOOL = PipTool() if config.auto_install_pip_pack else None
 class _ModuleImporter:
     """把「目录->模块对象」的细节收敛到这里，方便做单元测试。"""
 
-    def __init__(self, directory: str, pip_tool: Optional[PipTool]):
+    def __init__(self, directory: str):
         self.directory = Path(directory).resolve()
-        self.pip_tool = pip_tool
 
     def load_all(self) -> Dict[str, ModuleType]:
         """返回 {插件名: 模块对象}。"""
@@ -91,7 +89,7 @@ class _ModuleImporter:
             raise
 
     def _maybe_install_deps(self, plugin_path: Path) -> None:
-        if not self.pip_tool:
+        if not _AUTO_INSTALL:
             return
         req_file = (
             plugin_path / "requirements.txt"
@@ -109,21 +107,7 @@ class _ModuleImporter:
 
     def _ensure_package(self, req: str) -> None:
         """检查包是否存在，不存在则安装。"""
-        try:
-            # 尝试解析requirement字符串
-            requirement = pkg_resources.Requirement.parse(req)
-            
-            # 检查包是否已安装
-            pkg_resources.working_set.find(requirement)
-            LOG.debug("依赖包已存在: %s", req)
-            
-        except pkg_resources.VersionConflict:
-            LOG.warning("依赖包版本冲突，尝试更新: %s", req)
-            self.pip_tool.install(req)
-            
-        except pkg_resources.DistributionNotFound:
-            LOG.info("开始安装缺失的依赖: %s", req)
-            self.pip_tool.install(req)
+        PackageHelper.ensure(req)
 
 
 class _DependencyResolver:
@@ -245,7 +229,7 @@ class PluginLoader:
             return
 
         LOG.info("从 %s 导入插件", path)
-        importer = _ModuleImporter(str(path), _PIP_TOOL)
+        importer = _ModuleImporter(str(path))
         modules = importer.load_all()
 
         plugin_classes: List[Type[BasePlugin]] = []
