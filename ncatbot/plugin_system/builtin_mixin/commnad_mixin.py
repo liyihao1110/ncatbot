@@ -44,7 +44,6 @@ class Command:
 
 class CommandMixin(FunctionMixin):
     _registered_command_activators: List[str] = []
-    _registered_commands: List[Command] = []
     def unregister_command(self, name: str):
         for command in self._registered_commands:
             if command.name == name:
@@ -72,6 +71,8 @@ class CommandMixin(FunctionMixin):
     def register_command(self, name: str, handler: Callable[[BaseMessageEvent, list[str]], Any], aliases: List[str] = None, description: str = "", usage: str = "", examples: List[str] = None, permission: PermissionGroup = PermissionGroup.USER.value, timeout: float = None) -> Command:
         # TODO 提示已经注册的别名
         # TODO 限定参数
+        if not hasattr(self, '_registered_commands'):
+            self._registered_commands: List[Command] = []
         if name in self._registered_commands:
             raise ValueError(f"命令 {name} 已经存在")
         

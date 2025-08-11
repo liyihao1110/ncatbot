@@ -28,14 +28,18 @@ class ConfigMixin(CommandMixin):
         try:
             if len(args) < 3:
                 raise ValueError("参数不足")
-            config_name = args[2]
+            config_name = args[1]
             if config_name not in self._registered_configs:
                 raise ValueError(f"配置 {config_name} 不存在")
             config = self._registered_configs[config_name]
-            real_value = config.value_type(args[2])
-            self.config["config.name"] = real_value
+            if isinstance(config.value_type, str):
+                real_value = eval(config.value_type)(args[2])
+            else:
+                real_value = config.value_type(args[2])
+            self.config[config_name] = real_value
+            event.reply_sync(f"配置 {config_name} 设置为 {real_value} 成功")
         except Exception as e:
-            pass
+            LOG.error(f"插件 {self.name} 配置 {config_name} 设置失败: {e}")
             # event.reply_sync()
     
     def get_registered_configs(self) -> Dict[str, Config]:
@@ -49,12 +53,11 @@ class ConfigMixin(CommandMixin):
             self._registered_configs: Dict[str, Config] = dict()
             self.register_command(f"config.{self.name}", self._configurator, permission=PermissionGroup.ADMIN.value)
         LOG.debug(f"插件 {self.name} 注册配置 {name}")
-        print(name, self.name, id(self._registered_configs), id(self))
-        print(self._registered_configs)
         if name not in self._registered_configs:
             if isinstance(value_type, str):
                 value_type = eval(value_type)
-            self.config[name] = value_type(default_value)
+            if self.config.get(name, None) is None:
+                self.config[name] = value_type(default_value)
             self._registered_configs[name] = Config({
                 'name': name,
                 'default_value': default_value,

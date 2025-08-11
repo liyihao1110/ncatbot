@@ -86,7 +86,7 @@ class EventBus:
                 # 获取任务
                 task = self.task_queue.get(timeout=0.1)
                 runner, handler, event, timeout, result_queue, hid = task
-                LOG.debug(f"线程执行任务: {handler.__name__}")
+                # LOG.debug(f"线程执行任务: {handler.__name__}")
                 result_queue: Queue
                 
                 # 记录任务开始时间
@@ -97,14 +97,14 @@ class EventBus:
                     # 执行任务
                     result = runner(handler, event)
                     result_queue.put(result)
-                    LOG.debug(f"任务结果: {id(result_queue)}")
+                    # LOG.debug(f"任务结果: {id(result_queue)}")
                 except Exception as e:
                     result_queue.put(e)
                 finally:
                     # 清理任务状态
                     del self.worker_timeouts[thread_id]
                     self.task_queue.task_done()
-                    LOG.debug(f"线程任务结束: {handler.__name__}")
+                    # LOG.debug(f"线程任务结束: {handler.__name__}")
             except queue.Empty:
                 # 检查是否需要退出
                 if len(self.workers) > max(5, len(self.workers) * 0.8):
@@ -156,7 +156,7 @@ class EventBus:
         执行处理程序
         """
         # 如果是异步函数，在独立事件循环中运行
-        LOG.debug(f"执行处理程序: {handler.__name__}")
+        # LOG.debug(f"执行处理程序: {handler.__name__}")
         try:
             if asyncio.iscoroutinefunction(handler):
                 loop = asyncio.new_event_loop()
@@ -245,10 +245,11 @@ class EventBus:
         try:
             for hid, queue in result_queues.items():
                 try:
-                    LOG.debug(f"等待任务 {hid} {id(queue)} 完成")
+                    # LOG.debug(f"等待任务 {hid} {id(queue)} 完成")
                     result = queue.get(timeout=timeout)
-                    LOG.debug(f"任务 {hid} 完成")
+                    # LOG.debug(f"任务 {hid} 完成")
                     if isinstance(result, Exception):
+                        LOG.error(f"任务 {handler_meta[hid].__name__} {hid} 发生错误: {result}")
                         if isinstance(result, TimeoutError):
                             event.add_exception(HandlerTimeoutError(
                                 meta_data=handler_meta[hid],
@@ -277,7 +278,7 @@ class EventBus:
         try:
             for e in event.exceptions:
                 LOG.error(str(e))
-            LOG.debug(f"收集结果: {event._results}")
+            # LOG.debug(f"收集结果: {event._results}")
             return event._results.copy()
         except Exception as e:
             LOG.error(f"收集结果时发生错误: {e}")

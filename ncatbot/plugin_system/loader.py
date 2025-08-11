@@ -320,6 +320,7 @@ class PluginLoader:
 
     async def unload_all(self, **kwargs) -> None:
         """一键异步卸载全部插件。"""
+        self.rbac_manager.save(config.rbac_path)
         await asyncio.gather(
             *(self.unload_plugin(name, **kwargs) for name in list(self.plugins))
         )

@@ -181,6 +181,7 @@ class BotClient:
     
     def bot_exit(self):
         status.exit = True
+        asyncio.run(self.plugin_loader.unload_all())
         LOG.info("Bot 已经正常退出")
     
     def run_frontend(self, bt_uin=None, root=None, ws_uri=None, webui_uri=None, ws_token=None, webui_token=None, ws_listen_ip=None, remote_mode=None, enable_webui_interaction=None, debug=None):

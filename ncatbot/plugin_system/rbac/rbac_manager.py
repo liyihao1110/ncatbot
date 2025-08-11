@@ -348,6 +348,10 @@ class _RBACManager:
                 }
                 for role_name, role_data in self.roles.items()
             },
+            "role_users": {
+                role_name: list(users)
+                for role_name, users in self.role_users.items()
+            },
             # 保存用户数据（包含直接权限和角色关联）
             "users": {
                 user_name: {
@@ -363,16 +367,15 @@ class _RBACManager:
             "role_inheritance": self.role_inheritance,
         }
 
-    def from_dict(self, data: dict) -> "_RBACManager":
+    @classmethod
+    def from_dict(cls, data: dict) -> "_RBACManager":
         """从字典重建RBACManager实例"""
         # 检查全局配置
-        original_case_sensitive = self.case_sensitive
-        new_case_sensitive = data.get("case_sensitive", True)
-        if new_case_sensitive != original_case_sensitive:
-            raise ValueError("全局唯一配置不匹配，请检查大小写匹配设置")
+        
 
-        instance = self
-
+        instance = cls()
+        instance.case_sensitive = data.get("case_sensitive", True)
+        instance.default_role = data.get("default_role", None)
         trie_paths = data.get("permissions_trie_paths", [])
         instance.permissions_trie.trie = trie_paths
 
@@ -393,6 +396,12 @@ class _RBACManager:
                     if instance.permissions_trie.check_path(p)
                 ],
             }
+        
+        # 恢复角色/用户对照表
+        for role_name, users in data.get("role_users", {}).items():
+            instance.role_users[role_name] = set(users)
+            for user in users:
+                instance.role_users[role_name].add(user)
 
         # 恢复用户数据
         valid_roles = set(instance.roles.keys())
@@ -431,8 +440,15 @@ class RBACManager:
         self.add_role(PermissionGroup.USER.value)
         self.add_role(PermissionGroup.ADMIN.value)
         self.add_role(PermissionGroup.ROOT.value)
+        self.set_role_inheritance(PermissionGroup.ADMIN.value, PermissionGroup.ROOT.value)
+        self.set_role_inheritance(PermissionGroup.USER.value, PermissionGroup.ADMIN.value)
         self.unassign_root_roles()
         self.assign_role_to_user(ncatbot_config.root, PermissionGroup.ROOT.value)
+    
+    def set_role_inheritance(self, role: str, inherited_role: str):
+        if not self.role_exists(role) or not self.role_exists(inherited_role):
+            raise IndexError(f"角色 {role} 或 {inherited_role} 不存在")
+        self.manager.set_role_inheritance(role, inherited_role)
     
     def unassign_root_roles(self):
         for user in self.manager.role_users[PermissionGroup.ROOT.value]:

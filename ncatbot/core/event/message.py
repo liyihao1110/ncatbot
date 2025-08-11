@@ -18,6 +18,10 @@ class BaseMessageEvent(MessageEventData):
     async def reply(self):
         pass
     
+    @abstractmethod
+    def reply_sync(self):
+        pass
+    
     def get_core_properties_str(self):
         return super().get_core_properties_str() + [
             f"sender={self.sender}",
