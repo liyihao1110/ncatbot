@@ -2,6 +2,9 @@ from .commnad_mixin import CommandMixin
 from typing import Any, List, Dict, Union
 from ncatbot.core.event import BaseMessageEvent
 from ncatbot.utils import PermissionGroup
+from ncatbot.utils import get_log
+
+LOG = get_log("ConfigMixin")
 
 class Config:
     def __init__(self, data: dict):
@@ -19,7 +22,6 @@ class Config:
         return False
 
 class ConfigMixin(CommandMixin):
-    _registered_configs: Dict[str, Config] = {}
     def _configurator(self, event: BaseMessageEvent, args: List[str]):
         # [config].[plugin_name] [config_name] [value]
         # TODO 错误提示
@@ -44,9 +46,11 @@ class ConfigMixin(CommandMixin):
     def register_config(self, name: str, default_value: Any, description: str = "", value_type: type = Union[str, int, bool], metadata: Dict[str, Any] = None):
         # TODO: 自动生成描述
         if not hasattr(self, "_registered_configs"):
-            self._registered_configs: Dict[str, Config] = {}
+            self._registered_configs: Dict[str, Config] = dict()
             self.register_command(f"config.{self.name}", self._configurator, permission=PermissionGroup.ADMIN.value)
-            
+        LOG.debug(f"插件 {self.name} 注册配置 {name}")
+        print(name, self.name, id(self._registered_configs), id(self))
+        print(self._registered_configs)
         if name not in self._registered_configs:
             if isinstance(value_type, str):
                 value_type = eval(value_type)
@@ -58,5 +62,6 @@ class ConfigMixin(CommandMixin):
                 'value_type': value_type,
                 'metadata': metadata
             })
+            
         else:
             raise ValueError(f"配置 {name} 已存在")

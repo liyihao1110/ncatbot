@@ -1,7 +1,7 @@
 from .client import BotClient
 from .event import GroupMessageEvent, PrivateMessageEvent, RequestEvent, NoticeEvent, MetaEvent
 from .helper import ForwardConstructor
-from .legacy import GroupMessage, PrivateMessage, MessageChain
+from .legacy import GroupMessage, PrivateMessage, MessageChain, BaseMessage
 from .event import (
     Text,
     At,
@@ -18,6 +18,7 @@ from .event import (
 )
 
 __all__ = [
+    "BaseMessage",
     "GroupMessage",
     "PrivateMessage",
     "BotClient",

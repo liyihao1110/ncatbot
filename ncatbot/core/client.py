@@ -5,7 +5,6 @@ import traceback
 import threading
 from typing import Callable, Optional, Type, Literal, Union
 
-from yaml import Event
 from ncatbot.core.adapter.adapter import Adapter
 from ncatbot.core.api.api import BotAPI
 from ncatbot.core.event import MessageSegment

@@ -13,9 +13,10 @@ class AliasFilter(Filter):
     def check(self, event: BaseMessageEvent) -> bool:
         if event.raw_message.startswith("/" + self.name):
             return True
-        for alias in self.aliases:
-            if event.raw_message.startswith("/" + alias):
-                return True
+        if self.aliases is not None:
+            for alias in self.aliases:
+                if event.raw_message.startswith("/" + alias):
+                    return True
         return False
     
 class Command:

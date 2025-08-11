@@ -129,6 +129,11 @@ class Func:
 
 
 class FunctionMixin:
+    def _warn_permission_raise_deprecated(self):
+        if not hasattr(FunctionMixin, '_permission_raise_deprecated_warned'):
+            FunctionMixin._permission_raise_deprecated_warned = True
+            LOG.warning("提权参数已经弃用, 请删掉该参数")
+
     @final
     def get_registered_funcs(self) -> List[Func]:
         if not hasattr(self, '_registered_funcs'):
@@ -231,6 +236,7 @@ class FunctionMixin:
         filter: Callable = None,
         prefix: str = None,
         regex: str = None,
+        permission_raise: bool = None,
         description: str = "",
         usage: str = "",
         examples: List[str] = None,
@@ -252,6 +258,8 @@ class FunctionMixin:
             tags: 功能标签
             metadata: 额外元数据
         """
+        if permission_raise is not None:
+            self._warn_permission_raise_deprecated()
         return self._register_func(
             name,
             handler,
@@ -273,12 +281,15 @@ class FunctionMixin:
         filter: Callable = None,
         prefix: str = None,
         regex: str = None,
+        permission_raise: bool = None,
         description: str = "",
         usage: str = "",
         examples: List[str] = None,
         tags: List[str] = None,
         metadata: Dict[str, Any] = None,
     ) -> Func:
+        if permission_raise is not None:
+            self._warn_permission_raise_deprecated()
         return self._register_func(
             name,
             handler,
