@@ -1,6 +1,7 @@
 """NcatBot 工具包。"""
 
 from ncatbot.utils.config import ncatbot_config
+from ncatbot.utils.config import ncatbot_config as config
 from ncatbot.utils.logger import get_log
 from ncatbot.utils.status import Status, status
 from ncatbot.utils.network_io import get_proxy_url
@@ -47,6 +48,7 @@ from ncatbot.utils.assets import (
 __all__ = [
     # 配置导出
     "ncatbot_config",
+    "config",
     
     # 日志导出
     "get_log",

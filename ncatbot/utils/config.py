@@ -395,6 +395,27 @@ class Config(BaseConfig):
                 logger.warning(f"[setting] 未知配置项: {key}")
         self.validate_config()
 
+    # 3xx 兼容
+    def set_bot_uin(self, bot_uin: str) -> None:
+        self.bt_uin = str(bot_uin)
+    
+    def set_root(self, root: str) -> None:
+        self.root = str(root)
+    
+    def set_ws_uri(self, ws_uri: str) -> None:
+        self.napcat.ws_uri = str(ws_uri)
+    
+    def set_webui_uri(self, webui_uri: str) -> None:
+        self.napcat.webui_uri = str(webui_uri)
+    
+    def set_ws_token(self, ws_token: str) -> None:
+        self.napcat.ws_token = str(ws_token)
+    
+    def set_webui_token(self, webui_token: str) -> None:
+        self.napcat.webui_token = str(webui_token)
+    
+    def set_ws_listen_ip(self, ws_listen_ip: str) -> None:
+        self.napcat.ws_listen_ip = str(ws_listen_ip)
 
 # 复杂嵌套对象的递归属性映射
 ATTRIBUTE_RECURSIVE = {

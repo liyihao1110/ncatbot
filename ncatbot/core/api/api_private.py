@@ -1,5 +1,5 @@
 from typing import Literal, Union
-from .utils import BaseAPI, APIReturnStatus
+from .utils import BaseAPI, APIReturnStatus, run_coroutine
 
 class PrivateAPI(BaseAPI):
     
@@ -42,9 +42,18 @@ class PrivateAPI(BaseAPI):
         result = await self.async_callback("/set_input_status", {"status": status})
         APIReturnStatus.raise_if_failed(result)
     
+    # ---------------------
+    # region 同步版本接口
+    # ---------------------
     
+    def upload_private_file_sync(self, user_id: Union[str, int], file: str, name: str) -> None:
+        return run_coroutine(self.upload_private_file, user_id, file, name)
     
+    def get_private_file_url_sync(self, file_id: str) -> str:
+        return run_coroutine(self.get_private_file_url, file_id)
     
+    def post_private_file_sync(self, user_id: Union[str, int], image: str=None, record: str=None, video: str=None, file: str=None) -> str:
+        return run_coroutine(self.post_private_file, user_id, image, record, video, file)
     
-    
-    
+    def set_input_status_sync(self, status: int) -> None:
+        return run_coroutine(self.set_input_status, status)

@@ -245,3 +245,6 @@ class BotClient:
     add_notice_event_handler = add_notice_handler
     add_request_event_handler = add_request_handler
     add_startup_event_handler = add_startup_handler
+    run_blocking = run_frontend
+    run_non_blocking = run_backend
+    run = run_frontend

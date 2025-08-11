@@ -1,5 +1,5 @@
 from typing import Literal, Union
-from .utils import BaseAPI, APIReturnStatus
+from .utils import BaseAPI, APIReturnStatus, run_coroutine
 from ncatbot.core.event import File
 from dataclasses import dataclass
 import time
@@ -346,4 +346,118 @@ class GroupAPI(BaseAPI):
         result = await self.async_callback("/send_group_notice", {"group_id": group_id, "content": content, "confirm_required": confirm_required, "image": image, "is_show_edit_card": is_show_edit_card, "pinned": pinned, "tip_window_type": tip_window_type, "type": type})
         APIReturnStatus.raise_if_failed(result)
 
+    # ---------------------
+    # region 同步版本接口
+    # ---------------------
+    
+    def set_group_kick_members_sync(self, group_id: Union[str, int], user_id: Union[str, int], reject_add_request: bool = False) -> None:
+        return run_coroutine(self.set_group_kick_members, group_id, user_id, reject_add_request)
+    
+    def set_group_kick_sync(self, group_id: Union[str, int], user_id: Union[str, int], reject_add_request: bool = False) -> None:
+        return run_coroutine(self.set_group_kick, group_id, user_id, reject_add_request)
+    
+    def set_group_ban_sync(self, group_id: Union[str, int], user_id: Union[str, int], duration: int = 30 * 60) -> None:
+        return run_coroutine(self.set_group_ban, group_id, user_id, duration)
+    
+    def set_group_whole_ban_sync(self, group_id: Union[str, int], enable: bool) -> None:
+        return run_coroutine(self.set_group_whole_ban, group_id, enable)
+    
+    def set_group_admin_sync(self, group_id: Union[str, int], user_id: Union[str, int], enable: bool) -> None:
+        return run_coroutine(self.set_group_admin, group_id, user_id, enable)
+    
+    def set_group_leave_sync(self, group_id: Union[str, int], is_dismiss: bool = False) -> None:
+        return run_coroutine(self.set_group_leave, group_id, is_dismiss)
+    
+    def set_group_special_title_sync(self, group_id: Union[str, int], user_id: Union[str, int], special_title: str = "") -> None:
+        return run_coroutine(self.set_group_special_title, group_id, user_id, special_title)
+        
+    def set_group_add_request_sync(self, flag: str, approve: bool, reason: str = None) -> None:
+        return run_coroutine(self.set_group_add_request, flag, approve, reason)
+
+    def set_group_card_sync(self, group_id: Union[str, int], user_id: Union[str, int], card: str = "") -> None:
+        return run_coroutine(self.set_group_card, group_id, user_id, card)
+    
+    def set_essence_msg_sync(self, message_id: Union[str, int]) -> None:
+        return run_coroutine(self.set_essence_msg, message_id)
+    
+    def delete_essence_msg_sync(self, message_id: Union[str, int]) -> None:
+        return run_coroutine(self.delete_essence_msg, message_id)
+    
+    def get_group_essence_msg_sync(self, group_id: Union[str, int]) -> list[dict]:
+        return run_coroutine(self.get_group_essence_msg, group_id)
+    
+    def post_group_file_sync(self, group_id: Union[str, int], image: str = None, record: str=None, video: str=None, file: str=None) -> str:
+        return run_coroutine(self.post_group_file, group_id, image, record, video, file)
+    
+    def move_group_file_sync(self, group_id: Union[str, int], file_id: str, current_parent_directory: str, target_parent_directory: str) -> None:
+        return run_coroutine(self.move_group_file, group_id, file_id, current_parent_directory, target_parent_directory)
+    
+    def trans_group_file_sync(self, group_id: Union[str, int], file_id: str) -> None:
+        return run_coroutine(self.trans_group_file, group_id, file_id)
+        
+    def rename_group_file_sync(self, group_id: Union[str, int], file_id: str, new_name: str) -> None:
+        return run_coroutine(self.rename_group_file, group_id, file_id, new_name)
+        
+    def get_file_sync(self, file_id: str, file: str) -> File:
+        return run_coroutine(self.get_file, file_id, file)
+
+    def upload_group_file_sync(self, group_id: Union[str, int], file: str, name: str, folder) -> str:
+        return run_coroutine(self.upload_group_file, group_id, file, name, folder)
+
+    def create_group_file_folder_sync(self, group_id: Union[str, int], folder_name: str) -> None:
+        return run_coroutine(self.create_group_file_folder, group_id, folder_name)
+    
+    def group_file_folder_makedir_sync(self, group_id: Union[str, int], path: str) -> str:
+        return run_coroutine(self.group_file_folder_makedir, group_id, path)
+    
+    def delete_group_file_sync(self, group_id: Union[str, int], file_id: str) -> None:
+        return run_coroutine(self.delete_group_file, group_id, file_id)
+    
+    def delete_group_folder_sync(self, group_id: Union[str, int], folder_id: str) -> None:
+        return run_coroutine(self.delete_group_folder, group_id, folder_id)
+        
+    def get_group_root_files_sync(self, group_id: Union[str, int], file_count: int = 50) -> dict:
+        return run_coroutine(self.get_group_root_files, group_id, file_count)
+    
+    def get_group_files_by_folder_sync(self, group_id: Union[str, int], folder_id: str, file_count: int = 50) -> dict:
+        return run_coroutine(self.get_group_files_by_folder, group_id, folder_id, file_count)
+    
+    def get_group_file_url_sync(self, group_id: Union[str, int], file_id: str) -> str:
+        return run_coroutine(self.get_group_file_url, group_id, file_id)
+    
+    def get_group_honor_info_sync(self, group_id: Union[str, int], type: Literal["talkative", "performer", "legend", "emotion", "all"]) -> GroupChatActivity:
+        return run_coroutine(self.get_group_honor_info, group_id, type)
+
+    def get_group_info_sync(self, group_id: Union[str, int]) -> GroupInfo:
+        return run_coroutine(self.get_group_info, group_id)
+    
+    def get_group_info_ex_sync(self, group_id: Union[str, int]) -> dict:
+        return run_coroutine(self.get_group_info_ex, group_id)
+    
+    def get_group_member_info_sync(self, group_id: Union[str, int], user_id: Union[str, int]) -> GroupMemberInfo:
+        return run_coroutine(self.get_group_member_info, group_id, user_id)
+    
+    def get_group_member_list_sync(self, group_id: Union[str, int]) -> GroupMemberList:
+        return run_coroutine(self.get_group_member_list, group_id)
+    
+    def get_group_shut_list_sync(self, group_id: Union[str, int]) -> GroupMemberList:
+        return run_coroutine(self.get_group_shut_list, group_id)
+    
+    def set_group_remark_sync(self, group_id: Union[str, int], remark: str) -> None:
+        return run_coroutine(self.set_group_remark, group_id, remark)
+    
+    def set_group_sign_sync(self, group_id: Union[str, int]) -> None:
+        return run_coroutine(self.set_group_sign, group_id)
+
+    def send_group_sign_sync(self, group_id: Union[str, int]) -> None:
+        return run_coroutine(self.send_group_sign, group_id)
+    
+    def set_group_avatar_sync(self, group_id: Union[str, int], file: str) -> None:
+        return run_coroutine(self.set_group_avatar, group_id, file)
+    
+    def set_group_name_sync(self, group_id: Union[str, int], name: str) -> None:
+        return run_coroutine(self.set_group_name, group_id, name)
+
+    def _send_group_notice_sync(self, group_id: Union[str, int], content: str, confirm_required: bool = False, image: str = None, is_show_edit_card: bool = False, pinned: bool = False) -> None:
+        return run_coroutine(self._send_group_notice, group_id, content, confirm_required, image, is_show_edit_card, pinned)
     

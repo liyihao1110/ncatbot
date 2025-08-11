@@ -9,6 +9,7 @@
 from .base_plugin import BasePlugin
 from .event import NcatBotEvent, EventBus
 from .loader import PluginLoader
+from .builtin_mixin import NcatBotPlugin
 from .decorator import *
 
 __all__ = [
@@ -18,4 +19,5 @@ __all__ = [
     'PluginLoader',
     'register_server',
     'register_handler',
+    'NcatBotPlugin',
 ]

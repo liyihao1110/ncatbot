@@ -16,10 +16,15 @@ class ExclusiveArgumentError(NcatBotError):
 def run_coroutine(func: Callable[..., Coroutine[Any, Any, T]], *args, **kwargs):
     result: list[T] = []
     def runner():
-        result.append(asyncio.run(func(*args, **kwargs)))
+        try:
+            result.append(asyncio.run(func(*args, **kwargs)))
+        except Exception as e:
+            result.append(e)
     thread = threading.Thread(target=runner)
     thread.start()
     thread.join()
+    if isinstance(result[0], Exception):
+        raise result[0]
     return result[0]
 
 def check_exclusive_argument(arg1, arg2, names: list[str], error: bool = False):

@@ -1,5 +1,5 @@
 from typing import Literal, Union
-from .utils import BaseAPI, APIReturnStatus
+from .utils import BaseAPI, APIReturnStatus, run_coroutine
 from ncatbot.core.event.message_segment.message_segment import convert_uploadable_object
 from dataclasses import dataclass
 
@@ -156,6 +156,72 @@ class AccountAPI(BaseAPI):
         
         return status.data
     
- 
- 
+    # ---------------------
+    # region 同步版本接口
+    # ---------------------
     
+    def set_qq_profile_sync(self, nickname: str, personal_note: str, sex: Literal["未知", "男", "女"]) -> None:
+        return run_coroutine(self.set_qq_profile, nickname, personal_note, sex)
+    
+    def set_online_status_sync(self, status: int, ext_status: int, battary_status: int) -> None:
+        return run_coroutine(self.set_online_status, status, ext_status, battary_status)
+    
+    def set_avatar_sync(self, file: str) -> None:
+        return run_coroutine(self.set_avatar, file)
+    
+    def set_self_longnick_sync(self, longNick: str) -> None:
+        return run_coroutine(self.set_self_longnick, longNick)
+    
+    def get_login_info_sync(self) -> LoginInfo:
+        return run_coroutine(self.get_login_info)
+    
+    def get_status_sync(self) -> dict:
+        return run_coroutine(self.get_status)
+    
+    def get_friends_with_cat_sync(self) -> list[dict]:
+        return run_coroutine(self.get_friends_with_cat)
+    
+    def send_like_sync(self, user_id: Union[str, int], times: int = 1) -> None:
+        return run_coroutine(self.send_like, user_id, times)
+    
+    def set_friend_add_request_sync(self, flag: str, approve: bool, remark: str = None) -> None:
+        return run_coroutine(self.set_friend_add_request, flag, approve, remark)
+    
+    def get_friend_list_sync(self) -> list[dict]:
+        return run_coroutine(self.get_friend_list)
+
+    def delete_friend_sync(self, user_id: Union[str, int], block: bool = True, both: bool = True) -> None:
+        return run_coroutine(self.delete_friend, user_id, block, both)
+    
+    def set_friend_remark_sync(self, user_id: Union[str, int], remark: str) -> None:
+        return run_coroutine(self.set_friend_remark, user_id, remark)
+    
+    def mark_group_msg_as_read_sync(self, group_id: Union[str, int]) -> None:
+        return run_coroutine(self.mark_group_msg_as_read, group_id)
+    
+    def mark_private_msg_as_read_sync(self, user_id: Union[str, int]) -> None:
+        return run_coroutine(self.mark_private_msg_as_read, user_id)
+
+    def create_collection_sync(self, rawData: str, brief: str) -> None:
+        return run_coroutine(self.create_collection, rawData, brief)
+        
+    def get_recent_contact_sync(self) -> list[dict]:
+        return run_coroutine(self.get_recent_contact)
+    
+    def _mark_all_as_read_sync(self) -> None:
+        return run_coroutine(self._mark_all_as_read)
+    
+    def AskShareGroup_sync(self, group_id: Union[str, int]) -> None:
+        return run_coroutine(self.AskShareGroup, group_id)
+    
+    def get_stranger_info_sync(self, user_id: Union[str, int]) -> dict:
+        return run_coroutine(self.get_stranger_info, user_id)
+    
+    def fetch_custom_face_sync(self, count: int = 48) -> CustomFaceList:
+        return run_coroutine(self.fetch_custom_face, count)
+    
+    def nc_get_user_status_sync(self, user_id: Union[str, int]) -> dict:
+        return run_coroutine(self.nc_get_user_status, user_id)
+
+ 
+        

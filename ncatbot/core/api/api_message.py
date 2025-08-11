@@ -14,7 +14,7 @@ from ncatbot.core.event.message_segment.message_array import MessageArray
 from ncatbot.core.helper import ForwardConstructor
 from ncatbot.core.legacy import MessageChain
 from ncatbot.utils import NcatBotValueError
-from .utils import BaseAPI, APIReturnStatus, MessageAPIReturnStatus, check_exclusive_argument
+from .utils import BaseAPI, APIReturnStatus, MessageAPIReturnStatus, check_exclusive_argument, run_coroutine
 
 class MessageAPI(BaseAPI):
     
@@ -48,6 +48,8 @@ class MessageAPI(BaseAPI):
             msg_array.add_text(text)
         if image is not None:
             msg_array.add_image(image)
+        if rtf is not None:
+            msg_array += rtf
         return await self.post_group_array_msg(group_id, msg_array)
     
     async def send_group_text(self, group_id: Union[str, int], text: str) -> str:
@@ -161,10 +163,14 @@ class MessageAPI(BaseAPI):
     async def post_private_msg(self, user_id: Union[str, int], text: str=None, reply: Union[str, int]=None, image: str=None, rtf: MessageChain=None) -> str:
         """发送私聊消息（NcatBot 接口）"""
         msg_array = MessageArray()
+        if reply is not None:
+            msg_array.add_reply(reply)
         if text is not None:
             msg_array.add_text(text)
         if image is not None:
             msg_array.add_image(image)
+        if rtf is not None:
+            msg_array += rtf
         return await self.post_private_array_msg(user_id, msg_array)
     
     async def send_private_text(self, user_id: Union[str, int], text: str) -> str:
@@ -361,3 +367,145 @@ class MessageAPI(BaseAPI):
         result = await self.async_callback("/fetch_emoji_like", {"message_id": message_id, "emoji_id": emoji_id, "emoji_type": emoji_type})
         status = APIReturnStatus(result)
         return status.data
+    
+    # ---------------------
+    # region 同步版本接口
+    # ---------------------
+    
+    def send_group_msg_sync(self, group_id: Union[str, int], message: list[dict]) -> str:
+        return run_coroutine(self.send_group_msg, group_id, message)
+    
+    def post_group_array_msg_sync(self, group_id: Union[str, int], msg: MessageArray) -> str:
+        return run_coroutine(self.post_group_array_msg, group_id, msg)
+    
+    def post_group_msg_sync(self, group_id: Union[str, int], text: str=None, at: Union[str, int]=None, reply: Union[str, int]=None, image: str=None, rtf: MessageChain=None) -> str:
+        return run_coroutine(self.post_group_msg, group_id, text, at, reply, image, rtf)
+    
+    def send_group_text_sync(self, group_id: Union[str, int], text: str) -> str:
+        return run_coroutine(self.send_group_text, group_id, text)
+    
+    def send_group_plain_text_sync(self, group_id: Union[str, int], text: str) -> str:
+        return run_coroutine(self.send_group_plain_text, group_id, text)
+    
+    def send_group_image_sync(self, group_id: Union[str, int], image: str) -> str:
+        return run_coroutine(self.send_group_image, group_id, image)
+    
+    def send_group_record_sync(self, group_id: Union[str, int], file: str) -> str:
+        return run_coroutine(self.send_group_record, group_id, file)
+    
+    def send_group_dice_sync(self, group_id: Union[str, int], value: int = 1) -> str:
+        return run_coroutine(self.send_group_dice, group_id, value)
+    
+    def send_group_rps_sync(self, group_id: Union[str, int], value: int = 1) -> str:
+        return run_coroutine(self.send_group_rps, group_id, value)
+    
+    def send_group_file_sync(self, group_id: Union[str, int], file: str, name: str=None) -> str:
+        return run_coroutine(self.send_group_file, group_id, file, name)
+    
+    def send_group_music_sync(self, group_id: Union[str, int], type: Literal["qq", "163"], id: Union[int, str]) -> str:
+        return run_coroutine(self.send_group_music, group_id, type, id)
+    
+    def send_group_forward_msg_by_id_sync(self, group_id: Union[str, int], messages: list[Union[str, int]]) -> str:
+        return run_coroutine(self.send_group_forward_msg_by_id, group_id, messages)
+    
+    def send_group_forward_msg_sync(self, group_id: Union[str, int], messages: list[dict], news: list[str], prompt: str, summary: str, source: str) -> str:
+        return run_coroutine(self.send_group_forward_msg, group_id, messages, news, prompt, summary, source)
+    
+    def send_group_custom_music_sync(self, group_id: Union[str, int], audio: str, url: str, title: str, content: str=None, image: str=None) -> str:
+        return run_coroutine(self.send_group_custom_music, group_id, audio, url, title, content, image)
+    
+    def forward_group_single_msg_sync(self, group_id: Union[str, int], message_id: Union[str, int]) -> str:
+        return run_coroutine(self.forward_group_single_msg, group_id, message_id)
+    
+    def group_poke_sync(self, group_id: Union[str, int], user_id: Union[str, int]) -> None:
+        return run_coroutine(self.group_poke, group_id, user_id)
+    
+    def send_private_msg_sync(self, user_id: Union[str, int], message: list[dict]) -> str:
+        return run_coroutine(self.send_private_msg, user_id, message)
+    
+    def post_private_array_msg_sync(self, user_id: Union[str, int], msg: MessageArray) -> str:
+        return run_coroutine(self.post_private_array_msg, user_id, msg)
+    
+    def post_private_msg_sync(self, user_id: Union[str, int], text: str=None, reply: Union[str, int]=None, image: str=None, rtf: MessageChain=None) -> str:
+        return run_coroutine(self.post_private_msg, user_id, text, reply, image, rtf)
+    
+    def send_private_text_sync(self, user_id: Union[str, int], text: str) -> str:
+        return run_coroutine(self.send_private_text, user_id, text)
+    
+    def send_private_plain_text_sync(self, user_id: Union[str, int], text: str) -> str:
+        return run_coroutine(self.send_private_plain_text, user_id, text)
+    
+    def send_private_image_sync(self, user_id: Union[str, int], image: str) -> str:
+        return run_coroutine(self.send_private_image, user_id, image)
+    
+    def send_private_record_sync(self, user_id: Union[str, int], file: str) -> str:
+        return run_coroutine(self.send_private_record, user_id, file)
+    
+    def send_private_dice_sync(self, user_id: Union[str, int], value: int = 1) -> str:
+        return run_coroutine(self.send_private_dice, user_id, value)
+    
+    def send_private_rps_sync(self, user_id: Union[str, int], value: int = 1) -> str:
+        return run_coroutine(self.send_private_rps, user_id, value)
+    
+    def send_private_file_sync(self, user_id: Union[str, int], file: str, name: str=None) -> str:
+        return run_coroutine(self.send_private_file, user_id, file, name)
+    
+    def send_private_music_sync(self, user_id: Union[str, int], type: Literal["qq", "163"], id: Union[int, str]) -> str:
+        return run_coroutine(self.send_private_music, user_id, type, id)
+    
+    def send_private_forward_msg_sync(self, user_id: Union[str, int], messages: list[dict], news: list[str], prompt: str, summary: str, source: str) -> str:
+        return run_coroutine(self.send_private_forward_msg, user_id, messages, news, prompt, summary, source)
+    
+    def send_private_forward_msg_by_id_sync(self, user_id: Union[str, int], messages: list[Union[str, int]]) -> str:
+        return run_coroutine(self.send_private_forward_msg_by_id, user_id, messages)
+    
+    def send_private_custom_music_sync(self, user_id: Union[str, int], audio: str, url: str, title: str, content: str=None, image: str=None) -> str:
+        return run_coroutine(self.send_private_custom_music, user_id, audio, url, title, content, image)
+    
+    def forward_private_single_msg_sync(self, user_id: Union[str, int], message_id: Union[str, int]) -> str:
+        return run_coroutine(self.forward_private_single_msg, user_id, message_id)
+    
+    def friend_poke_sync(self, user_id: Union[str, int]) -> None:
+        return run_coroutine(self.friend_poke, user_id)
+    
+    def send_poke_sync(self, group_id: Union[str, int] = None, user_id: Union[str, int] = None) -> None:
+        return run_coroutine(self.send_poke, group_id, user_id)
+    
+    def delete_msg_sync(self, message_id: Union[str, int]) -> dict:
+        return run_coroutine(self.delete_msg, message_id)
+    
+    def set_msg_emoji_like_sync(self, message_id: Union[str, int], emoji_id: Union[str, int], set: bool = True) -> None:
+        return run_coroutine(self.set_msg_emoji_like, message_id, emoji_id, set)
+    
+    def send_forward_msg_sync(self, group_id: Union[str, int] = None, user_id: Union[str, int] = None, messages: list[GroupMessageEvent] = None, news: list[str] = None, prompt: str = None, summary: str = None, source: str = None) -> str:
+        return run_coroutine(self.send_forward_msg, group_id, user_id, messages, news, prompt, summary, source)
+    
+    def post_forward_msg_sync(self, group_id: Union[str, int] = None, user_id: Union[str, int] = None, msg: Forward = None):
+        return run_coroutine(self.post_forward_msg, group_id, user_id, msg)
+    
+    def post_group_forward_msg_sync(self, group_id: Union[str, int], forward: Forward) -> str:
+        return run_coroutine(self.post_group_forward_msg, group_id, forward)
+
+    def post_private_forward_msg_sync(self, user_id: Union[str, int], forward: Forward) -> str:
+        return run_coroutine(self.post_private_forward_msg, user_id, forward)
+    
+    def get_group_msg_history_sync(self, group_id: Union[str, int], message_seq: Union[str, int], number: int = 20, reverseOrder: bool = False) -> list[GroupMessageEvent]:
+        return run_coroutine(self.get_group_msg_history, group_id, message_seq, number, reverseOrder)
+    
+    def get_msg_sync(self, message_id: Union[str, int]) -> BaseMessageEvent:
+        return run_coroutine(self.get_msg, message_id)
+    
+    def get_forward_msg_sync(self, message_id: Union[str, int]) -> Forward:
+        return run_coroutine(self.get_forward_msg, message_id)
+    
+    def get_friend_msg_history_sync(self, user_id: Union[str, int], message_seq: Union[str, int], number: int = 20, reverseOrder: bool = False) -> list[PrivateMessageEvent]:
+        return run_coroutine(self.get_friend_msg_history, user_id, message_seq, number, reverseOrder)
+    
+    def get_record_sync(self, file: str = None, file_id: str = None, out_format: Literal["mp3", "amr", "wma", "m4a", "ogg", "wav", "flac", "spx"] = "mp3") -> Record:
+        return run_coroutine(self.get_record, file, file_id, out_format)
+    
+    def get_image_sync(self, file: str = None, file_id: str = None) -> Image:
+        return run_coroutine(self.get_image, file, file_id)
+    
+    def fetch_emoji_like_sync(self, message_id: Union[str, int], emoji_id: Union[str, int], emoji_type: Union[str, int]) -> dict:
+        return run_coroutine(self.fetch_emoji_like, message_id, emoji_id, emoji_type)

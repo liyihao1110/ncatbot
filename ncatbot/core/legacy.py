@@ -1,11 +1,5 @@
-from ncatbot.core.event import GroupMessageEvent, PrivateMessageEvent
-from ncatbot.core.event import MessageArray
+from ncatbot.core.event.message_segment import MessageArray as MessageChain
+from ncatbot.core.event.message import GroupMessageEvent as GroupMessage
+from ncatbot.core.event.message import PrivateMessageEvent as PrivateMessage
 
-class GroupMessage(GroupMessageEvent):
-    pass
 
-class PrivateMessage(PrivateMessageEvent):
-    pass
-
-class MessageChain(MessageArray):
-    pass

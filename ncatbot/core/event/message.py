@@ -1,9 +1,11 @@
-from typing import Union, Literal
+from typing import Union, Literal, TYPE_CHECKING
 from abc import abstractmethod
 from ncatbot.core.event.event_data import MessageEventData
 from ncatbot.utils import status
 from ncatbot.core.event.sender import PrivateSender, GroupSender
-from ncatbot.core.legacy import MessageChain
+
+if TYPE_CHECKING:
+    from ncatbot.core.legacy import MessageChain
 
 class BaseMessageEvent(MessageEventData):
     message_type: Literal["private", "group"] = None # 上级会获取
@@ -60,7 +62,7 @@ class GroupMessageEvent(BaseMessageEvent):
         """
         return await status.global_api.set_group_ban(self.group_id, self.user_id, ban_duration)
     
-    async def reply(self, text: str=None, image: str=None, at: bool=True, rtf: MessageChain=None):
+    async def reply(self, text: str=None, image: str=None, at: bool=True, rtf: "MessageChain"=None):
         return await status.global_api.post_group_msg(self.group_id, self.message_id, text, image, self.user_id if at else None, rtf)
 
 class PrivateMessageEvent(BaseMessageEvent):
@@ -72,7 +74,7 @@ class PrivateMessageEvent(BaseMessageEvent):
         super().__init__(data)
         self.sender = PrivateSender(data.get("sender"))
     
-    async def reply(self, text: str=None, image: str=None, rtf: MessageChain=None):
+    async def reply(self, text: str=None, image: str=None, rtf: "MessageChain"=None):
         return await status.global_api.post_private_msg(self.user_id, text, image, rtf)
     
     def __repr__(self):
