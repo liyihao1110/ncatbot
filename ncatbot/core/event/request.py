@@ -26,3 +26,13 @@ class RequestEvent(BaseEventData):
             if remark is not None:
                 LOG.warning("加群请求不支持备注")
             return await status.global_api.set_group_add_request(self.flag, approve, reason)
+    
+    def approve_sync(self, approve: bool = True, remark: str = None, reason: str = None):
+        if self.request_type == "friend":
+            if reason is not None:
+                LOG.warning("好友请求不支持拒绝理由")
+            return status.global_api.set_friend_add_request_sync(self.flag, approve, remark)
+        elif self.request_type == "group":
+            if remark is not None:
+                LOG.warning("加群请求不支持备注")
+            return status.global_api.set_group_add_request_sync(self.flag, approve, reason)
