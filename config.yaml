@@ -14,6 +14,7 @@ napcat:
   check_napcat_update: false
   stop_napcat: false
   report_self_message: false
+  report_forward_message_detail: true # 上报解析合并转发消息
 plugin:
   # plugin_whitelist:
   # - 'TestPlguin'

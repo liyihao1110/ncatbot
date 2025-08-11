@@ -165,27 +165,35 @@ class MessageArray:
     
     def add_by_list(self, data: list[Union[dict, MessageSegment]]):
         self.messages.extend(process_item(data))
+        return self
     
     def add_by_segment(self, segment: MessageSegment):
         self.messages.append(segment)
+        return self
     
     def add_by_dict(self, data: dict):
         self.messages.append(process_dict(data))
+        return self
     
     def add_text(self, text: str):
         self.messages.extend(process_item(text))
+        return self
     
     def add_image(self, image: str):
         self.messages.append(Image(file=image))
+        return self
     
     def add_at(self, user_id: Union[str, int]):
         self.messages.append(At(user_id))
+        return self
     
     def add_at_all(self):
         self.messages.append(AtAll())
+        return self
     
     def add_reply(self, message_id: Union[str, int]):
         self.messages.append(Reply(message_id))
+        return self
     
     def __add__(self, other):
         messages = self.messages + process_item(other)

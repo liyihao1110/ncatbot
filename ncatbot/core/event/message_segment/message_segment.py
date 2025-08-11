@@ -39,6 +39,52 @@ class MessageSegmentValueError(Exception):
 @dataclass(repr=False)
 class MessageSegment():
     msg_seg_type: Literal["text", "face", "image", "record", "video", "at", "rps", "dice", "shake", "poke", "anonymous", "share", "contact", "location", "music", "reply", "forward", "node", "xml", "json"] = field(init=False, repr=False)
+    _data: dict = field(init=False, repr=False) # 兼容 3xx 版本数据辅助
+    
+    # -------------
+    # region 兼容层
+    # -------------
+    def __getitem__(self, key: str) -> Any:
+        """支持 dict[key] 访问方式"""
+        if self._data is None:
+            self._data = self.to_dict()  # 第一次访问时生成字典
+        return self._data[key]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        """支持 dict[key] = value 修改方式"""
+        if self._data is None:
+            self._data = self.to_dict()
+        self._data[key] = value
+
+    def __delitem__(self, key: str) -> None:
+        """支持 del dict[key] 删除方式"""
+        if self._data is None:
+            self._data = self.to_dict()
+        del self._data[key]
+
+    def get(self, key: str, default: Any = None) -> Any:
+        """支持 dict.get(key, default)"""
+        if self._data is None:
+            self._data = self.to_dict()
+        return self._data.get(key, default)
+
+    def keys(self):
+        """支持 dict.keys()"""
+        if self._data is None:
+            self._data = self.to_dict()
+        return self._data.keys()
+
+    def values(self):
+        """支持 dict.values()"""
+        if self._data is None:
+            self._data = self.to_dict()
+        return self._data.values()
+
+    def items(self):
+        """支持 dict.items()"""
+        if self._data is None:
+            self._data = self.to_dict()
+        return self._data.items()
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]):
@@ -389,7 +435,7 @@ class Forward(MessageSegment):
         return obj
     
     @classmethod
-    async def from_message_ids(cls, messages: list[Union[str, int]], message_type: Literal["group", "friend"]):
+    async def from_message_id(cls, messages: list[Union[str, int]], message_type: Literal["group", "friend"]):
         from ncatbot.core.event.event_data import MessageEventData
         obj = cls(None)
         if len(messages) == 0:

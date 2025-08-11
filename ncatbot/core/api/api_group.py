@@ -198,6 +198,19 @@ class GroupAPI(BaseAPI):
     # --------------
     # region 群文件
     # --------------
+    async def post_group_file(self, group_id: Union[str, int], image: str = None, record: str=None, video: str=None, file: str=None) -> str:
+        count = sum(1 for arg in [image, record, video, file] if arg is not None)
+        if count != 1:
+            raise ValueError("只能上传一个文件")
+        if image is not None:
+            return await self.send_group_image(group_id, image)
+        elif record is not None:
+            return await self.send_group_record(group_id, record)
+        elif video is not None:
+            return await self.send_group_video(group_id, video)
+        elif file is not None:
+            return await self.send_group_file(group_id, file)
+    
     async def move_group_file(self, group_id: Union[str, int], file_id: str, current_parent_directory: str, target_parent_directory: str) -> None:
         result = await self.async_callback("/move_group_file", {"group_id": group_id, "file_id": file_id, "current_parent_directory": current_parent_directory, "target_parent_directory": target_parent_directory})
         APIReturnStatus.raise_if_failed(result)

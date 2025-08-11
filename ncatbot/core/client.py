@@ -238,4 +238,10 @@ class BotClient:
         except NcatBotConnectionError as e:
             self.bot_exit()
             raise
-        
+    
+    # 兼容 3xx 版本
+    add_group_event_handler = add_group_message_handler
+    add_private_event_handler = add_private_message_handler
+    add_notice_event_handler = add_notice_handler
+    add_request_event_handler = add_request_handler
+    add_startup_event_handler = add_startup_handler

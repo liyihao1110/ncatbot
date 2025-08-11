@@ -11,6 +11,8 @@ from ncatbot.core.event import (
     PlainText,
 )
 from ncatbot.core.event.message_segment.message_array import MessageArray
+from ncatbot.core.helper import ForwardConstructor
+from ncatbot.core.legacy import MessageChain
 from ncatbot.utils import NcatBotValueError
 from .utils import BaseAPI, APIReturnStatus, MessageAPIReturnStatus, check_exclusive_argument
 
@@ -35,11 +37,13 @@ class MessageAPI(BaseAPI):
         status = MessageAPIReturnStatus(result)
         return status.message_id
     
-    async def post_group_msg(self, group_id: Union[str, int], reply: Union[str, int]=None, text: str=None, image: str=None) -> str:
+    async def post_group_msg(self, group_id: Union[str, int], text: str=None, at: Union[str, int]=None, reply: Union[str, int]=None, image: str=None, rtf: MessageChain=None) -> str:
         """发送群聊消息（NcatBot 接口）"""
         msg_array = MessageArray()
         if reply is not None:
             msg_array.add_reply(reply)
+        if at is not None:
+            msg_array.add_at(at)
         if text is not None:
             msg_array.add_text(text)
         if image is not None:
@@ -105,6 +109,13 @@ class MessageAPI(BaseAPI):
         status = MessageAPIReturnStatus(result)
         return status.message_id
     
+    async def send_group_forward_msg_by_id(self, group_id: Union[str, int], messages: list[Union[str, int]]) -> str:
+        info = await self.get_login_info()
+        fcr = ForwardConstructor(info.user_id, info.nickname)
+        for message_id in messages:
+            fcr.attach_message_id(message_id)
+        return await self.post_group_forward_msg(group_id, fcr.to_forward())
+    
     async def send_group_forward_msg(self, group_id: Union[str, int], messages: list[dict], news: list[str], prompt: str, summary: str, source: str) -> str:
         """发送群合并转发消息（NcatBot 接口）"""
         result = await self.async_callback("/send_group_forward_msg", {"group_id": group_id, "messages": messages, "news": news, "prompt": prompt, "summary": summary, "source": source})
@@ -147,7 +158,7 @@ class MessageAPI(BaseAPI):
         status = MessageAPIReturnStatus(result)
         return status.message_id
     
-    async def post_private_msg(self, user_id: Union[str, int], text: str=None, image: str=None) -> str:
+    async def post_private_msg(self, user_id: Union[str, int], text: str=None, reply: Union[str, int]=None, image: str=None, rtf: MessageChain=None) -> str:
         """发送私聊消息（NcatBot 接口）"""
         msg_array = MessageArray()
         if text is not None:
@@ -208,6 +219,13 @@ class MessageAPI(BaseAPI):
         result = await self.async_callback("/send_private_forward_msg", {"user_id": user_id, "messages": messages, "news": news, "prompt": prompt, "summary": summary, "source": source})
         status = MessageAPIReturnStatus(result)
         return status.message_id
+    
+    async def send_private_forward_msg_by_id(self, user_id: Union[str, int], messages: list[Union[str, int]]) -> str:
+        info = await self.get_login_info()
+        fcr = ForwardConstructor(info.user_id, info.nickname)
+        for message_id in messages:
+            fcr.attach_message_id(message_id)
+        return await self.post_private_forward_msg(user_id, fcr.to_forward())
     
     async def send_private_custom_music(self, user_id: Union[str, int], audio: str, url: str, title: str, content: str=None, image: str=None) -> str:
         """发送私聊音乐分享消息（NcatBot 接口）"""

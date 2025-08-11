@@ -27,6 +27,9 @@ def config_napcat():
                     encoding="utf-8",
                 )
             )
+            if original_data["parseMultMsg"] != ncatbot_config.napcat.report_forward_message_detail:
+                LOG.warning("解析合并转发消息配置不匹配, 将修改为 NcatBot 配置的配置: " + str(ncatbot_config.napcat.report_forward_message_detail))
+                original_data["parseMultMsg"] = ncatbot_config.napcat.report_forward_message_detail
         else:
             original_data = {
                 "network": {
@@ -34,7 +37,7 @@ def config_napcat():
                 },
                 "musicSignUrl": "",
                 "enableLocalFile2Url": False,
-                "parseMultMsg": False,
+                "parseMultMsg": ncatbot_config.napcat.report_forward_message_detail,
             }
 
         expected_server_config = {

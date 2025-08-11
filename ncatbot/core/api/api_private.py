@@ -15,6 +15,21 @@ class PrivateAPI(BaseAPI):
         status = APIReturnStatus(result)
         return status.data.get("url")
     
+    async def post_private_file(self, user_id: Union[str, int], image: str=None, record: str=None, video: str=None, file: str=None) -> str:
+        count = sum(1 for arg in [image, record, video, file] if arg is not None)
+        if count != 1:
+            raise ValueError("只能上传一个文件")
+        if image is not None:
+            return await self.send_private_image(user_id, image)
+        elif record is not None:
+            return await self.send_private_record(user_id, record)
+        elif video is not None:
+            return await self.send_private_video(user_id, video)
+        elif file is not None:
+            return await self.send_private_file(user_id, file)
+        else:
+            raise ValueError("必须上传一个文件")
+    
     # ---------------------
     # region 其它
     # ---------------------

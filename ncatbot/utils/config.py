@@ -130,6 +130,8 @@ class NapCatConfig(BaseConfig):
     """是否启用远程模式"""
     report_self_message: bool = False
     """是否报告自身消息"""
+    report_forward_message_detail: bool = True
+    """是否上报解析合并转发消息"""
 
     # 自动检测的值（不由构造函数初始化）
     ws_host: Optional[str] = field(default=None, init=False)
