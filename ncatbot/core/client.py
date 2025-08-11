@@ -36,19 +36,19 @@ EVENTS = (
 )
 
 class BotClient:
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.adapter = Adapter(ncatbot_config.napcat.ws_uri)
         self.event_handlers: dict[str, list] = {}
-        self.thread_pool = ThreadPool(max_workers=8, max_per_func=2)
+        self.thread_pool = ThreadPool(max_workers=1, max_per_func=1)
         self.api = BotAPI(self.adapter.send)
         self.crash_flag = False
         status.global_api = self.api
         for event_name in EVENTS:
             self.create_official_event_handler_group(event_name)
         
-        self.register_builtin_handler()
+        self.register_builtin_handler(*args, **kwargs)
     
-    def register_builtin_handler(self):
+    def register_builtin_handler(self, *args, **kwargs):
         # 注册插件系统事件处理器
         def make_async_handler(event_name):
             async def warpper(event: BaseEventData):
@@ -56,14 +56,17 @@ class BotClient:
                 await self.event_bus.publish(NcatBotEvent(event_name, event))
             return warpper
         
-        self.add_startup_handler(lambda x: LOG.info(f"Bot {x.self_id} 启动成功"))
-        self.add_startup_handler(make_async_handler(OFFICIAL_STARTUP_EVENT))
-        self.add_private_message_handler(make_async_handler(OFFICIAL_PRIVATE_MESSAGE_EVENT))
-        self.add_group_message_handler(make_async_handler(OFFICIAL_GROUP_MESSAGE_EVENT))
-        self.add_notice_handler(make_async_handler(OFFICIAL_NOTICE_EVENT))
-        self.add_request_handler(make_async_handler(OFFICIAL_REQUEST_EVENT))
-        self.add_shutdown_handler(make_async_handler(OFFICIAL_SHUTDOWN_EVENT))
-        self.add_heartbeat_handler(make_async_handler(OFFICIAL_HEARTBEAT_EVENT))
+        if 'only_private' in kwargs and kwargs['only_private']:
+            self.add_private_message_handler(make_async_handler(OFFICIAL_PRIVATE_MESSAGE_EVENT))
+        else:
+            self.add_startup_handler(lambda x: LOG.info(f"Bot {x.self_id} 启动成功"))
+            self.add_startup_handler(make_async_handler(OFFICIAL_STARTUP_EVENT))
+            self.add_private_message_handler(make_async_handler(OFFICIAL_PRIVATE_MESSAGE_EVENT))
+            self.add_group_message_handler(make_async_handler(OFFICIAL_GROUP_MESSAGE_EVENT))
+            self.add_notice_handler(make_async_handler(OFFICIAL_NOTICE_EVENT))
+            self.add_request_handler(make_async_handler(OFFICIAL_REQUEST_EVENT))
+            self.add_shutdown_handler(make_async_handler(OFFICIAL_SHUTDOWN_EVENT))
+            self.add_heartbeat_handler(make_async_handler(OFFICIAL_HEARTBEAT_EVENT))
     
     def create_official_event_handler_group(self, event_name):
         async def event_callback(event: BaseEventData):

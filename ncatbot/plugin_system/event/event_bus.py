@@ -5,6 +5,7 @@ import uuid
 import time
 import ctypes
 import queue
+from queue import Queue
 import traceback
 from concurrent.futures import Future
 from functools import lru_cache
@@ -87,7 +88,7 @@ class EventBus:
                 task = self.task_queue.get(timeout=0.1)
                 runner, handler, event, timeout, result_queue, hid = task
                 LOG.debug(f"线程执行任务: {handler.__name__}")
-                result_queue: asyncio.Queue
+                result_queue: Queue
                 
                 # 记录任务开始时间
                 start_time = time.time()
@@ -96,13 +97,15 @@ class EventBus:
                 try:
                     # 执行任务
                     result = runner(handler, event)
-                    asyncio.run(result_queue.put(result))
+                    result_queue.put(result)
+                    LOG.debug(f"任务结果: {id(result_queue)}")
                 except Exception as e:
-                    asyncio.run(result_queue.put(e))
+                    result_queue.put(e)
                 finally:
                     # 清理任务状态
                     del self.worker_timeouts[thread_id]
                     self.task_queue.task_done()
+                    LOG.debug(f"线程任务结束: {handler.__name__}")
             except queue.Empty:
                 # 检查是否需要退出
                 if len(self.workers) > max(5, len(self.workers) * 0.8):
@@ -231,19 +234,21 @@ class EventBus:
                 break
             
             # 为每个任务创建结果队列
-            result_queue = asyncio.Queue()
+            result_queue = Queue()
             self.result_queues[hid] = result_queue
             result_queues[hid] = result_queue
             
             # 提交任务到线程池
-            LOG.debug(f"提交任务到线程池: {handler.__name__}")
+            LOG.debug(f"提交任务到线程池: {handler.__name__}, {hid}")
             self.task_queue.put((self._run_handler, handler, event, timeout, result_queue, hid))
         
         # 异步等待所有任务完成并收集结果
         try:
             for hid, queue in result_queues.items():
                 try:
-                    result = await asyncio.wait_for(queue.get(), timeout=timeout)
+                    LOG.debug(f"等待任务 {hid} {id(queue)} 完成")
+                    result = queue.get(timeout=timeout)
+                    LOG.debug(f"任务 {hid} 完成")
                     if isinstance(result, Exception):
                         if isinstance(result, TimeoutError):
                             event.add_exception(HandlerTimeoutError(
@@ -256,6 +261,7 @@ class EventBus:
                     else:
                         event._results.append(result)
                 except asyncio.TimeoutError:
+                    LOG.error(f"任务 {hid} 超时")
                     event.add_exception(HandlerTimeoutError(
                         meta_data=handler_meta[hid],
                         handler=hid,
@@ -263,12 +269,21 @@ class EventBus:
                     ))
         finally:
             # 清理结果队列
-            for hid in result_queues:
-                del self.result_queues[hid]
-        
-        for e in event.exceptions:
-            LOG.error(str(e))
-        return event._results.copy()
+            try:
+                for hid in result_queues:
+                    del self.result_queues[hid]
+            except Exception as e:
+                LOG.error(f"清理结果队列时发生错误: {e}")
+                LOG.info(traceback.format_exc())
+        try:
+            for e in event.exceptions:
+                LOG.error(str(e))
+            LOG.debug(f"收集结果: {event._results}")
+            return event._results.copy()
+        except Exception as e:
+            LOG.error(f"收集结果时发生错误: {e}")
+            LOG.info(traceback.format_exc())
+            return []
 
     def _collect_handlers(self, event_type: str) -> List[Tuple]:
         """收集匹配的事件处理程序"""
