@@ -33,7 +33,7 @@ class HandlerTimeoutError(Exception):
         return f"来自 {self.meta_data['name']} 的处理器 {self.handler} 执行超时 {self.time}"
 
 class EventBus:
-    def __init__(self, default_timeout: float = 600, max_workers: int = 1) -> None:
+    def __init__(self, default_timeout: float = 5, max_workers: int = 1) -> None:
         """
         事件总线实现 - 线程池
         
@@ -84,7 +84,6 @@ class EventBus:
         while True:
             try:
                 # 获取任务
-                # print("Try Get Task")
                 task = self.task_queue.get(timeout=0.1)
                 runner, handler, event, timeout, result_queue, hid = task
                 LOG.debug(f"线程执行任务: {handler.__name__}")

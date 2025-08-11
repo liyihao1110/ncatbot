@@ -207,7 +207,7 @@ class BasePlugin:
     # ------------------------------------------------------------------
     # 事件系统接口
     # ------------------------------------------------------------------
-    def register_handler(self, event_type: str, handler: callable, priority: int = 0) -> UUID:
+    def register_handler(self, event_type: str, handler: callable, priority: int = 0, timeout: float = None) -> UUID:
         """注册事件处理器。
         
         Args:
@@ -218,7 +218,7 @@ class BasePlugin:
         Returns:
             注册生成的事件处理器UUID
         """
-        handler_id = self.event_bus.subscribe(event_type, handler, priority, plugin=self)
+        handler_id = self.event_bus.subscribe(event_type, handler, priority, timeout, plugin=self)
         self._handlers_id.add(handler_id)
         LOG.debug(f"{self.name} 注册事件处理器 {event_type}: {handler.__name__}")
         return handler_id

@@ -69,14 +69,14 @@ class CommandMixin(FunctionMixin):
                 return handler(event, args)
         return warpped_handler
     
-    def register_command(self, name: str, handler: Callable[[BaseMessageEvent, list[str]], Any], aliases: List[str] = None, description: str = "", usage: str = "", examples: List[str] = None, permission: PermissionGroup = PermissionGroup.USER.value) -> Command:
+    def register_command(self, name: str, handler: Callable[[BaseMessageEvent, list[str]], Any], aliases: List[str] = None, description: str = "", usage: str = "", examples: List[str] = None, permission: PermissionGroup = PermissionGroup.USER.value, timeout: float = None) -> Command:
         # TODO 提示已经注册的别名
         # TODO 限定参数
         if name in self._registered_commands:
             raise ValueError(f"命令 {name} 已经存在")
         
         warpped_handler = self._create_command_handler(handler)
-        func = self._register_func(name, warpped_handler, AliasFilter(name, aliases).check, description=description, usage=usage, examples=examples, permission=PermissionGroup.USER.value)
+        func = self._register_func(name, warpped_handler, AliasFilter(name, aliases).check, description=description, usage=usage, examples=examples, permission=PermissionGroup.USER.value, timeout=timeout)
         command = Command({
             'name': name,
             'aliases': aliases,
@@ -89,8 +89,8 @@ class CommandMixin(FunctionMixin):
         self._registered_commands.append(command)
         return command
     
-    def register_user_command(self, name: str, handler: Callable[[BaseMessageEvent, list[str]], Any], aliases: List[str] = None, description: str = "", usage: str = "", examples: List[str] = None) -> Command:
-        return self.register_command(name, handler, aliases, description, usage, examples, PermissionGroup.USER.value)
+    def register_user_command(self, name: str, handler: Callable[[BaseMessageEvent, list[str]], Any], aliases: List[str] = None, description: str = "", usage: str = "", examples: List[str] = None, timeout: float = None) -> Command:
+        return self.register_command(name, handler, aliases, description, usage, examples, PermissionGroup.USER.value, timeout)
         
-    def register_admin_command(self, name: str, handler: Callable[[list[str], BaseMessageEvent], Any], aliases: List[str] = None, description: str = "", usage: str = "", examples: List[str] = None) -> Command:
-        return self.register_command(name, handler, aliases, description, usage, examples, PermissionGroup.ADMIN.value)
+    def register_admin_command(self, name: str, handler: Callable[[list[str], BaseMessageEvent], Any], aliases: List[str] = None, description: str = "", usage: str = "", examples: List[str] = None, timeout: float = None) -> Command:
+        return self.register_command(name, handler, aliases, description, usage, examples, PermissionGroup.ADMIN.value, timeout)

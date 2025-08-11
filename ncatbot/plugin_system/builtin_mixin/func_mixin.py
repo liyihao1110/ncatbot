@@ -202,6 +202,7 @@ class FunctionMixin:
         examples: List[str] = None,
         tags: List[str] = None,
         metadata: Dict[str, Any] = None,
+        timeout: float = None,
     ) -> Func:
         # 默认权限路径: 插件名.功能名
         self._rbac_manager.assign_permissions_to_role(permission, f"{self.name}.{name}", 'white')
@@ -222,7 +223,7 @@ class FunctionMixin:
                 'examples': examples,
                 'tags': tags,
                 'metadata': metadata,
-                'handlder_id': self.register_handler("re:ncatbot.group_message_event|ncatbot.private_message_event", warpped_handler)
+                'handlder_id': self.register_handler("re:ncatbot.group_message_event|ncatbot.private_message_event", warpped_handler, timeout=timeout)
             })
             self._registered_funcs.append(func)
             return func
@@ -242,6 +243,7 @@ class FunctionMixin:
         examples: List[str] = None,
         tags: List[str] = None,
         metadata: Dict[str, Any] = None,
+        timeout: float = None,
     ) -> Func:
         """注册普通用户功能
 
@@ -272,6 +274,7 @@ class FunctionMixin:
             examples,
             tags,
             metadata,
+            timeout,
         )
 
     def register_admin_func(
@@ -287,6 +290,7 @@ class FunctionMixin:
         examples: List[str] = None,
         tags: List[str] = None,
         metadata: Dict[str, Any] = None,
+        timeout: float = None,
     ) -> Func:
         if permission_raise is not None:
             self._warn_permission_raise_deprecated()
@@ -302,4 +306,5 @@ class FunctionMixin:
             examples,
             tags,
             metadata,
+            timeout,
         )
