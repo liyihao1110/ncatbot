@@ -240,6 +240,13 @@ class BotClient:
             raise
     
     # 兼容 3xx 版本
+    group_event = on_group_message
+    private_event = on_private_message
+    notice_event = on_notice
+    request_event = on_request
+    startup_event = on_startup
+    shutdown_event = on_shutdown
+    heartbeat_event = on_heartbeat
     add_group_event_handler = add_group_message_handler
     add_private_event_handler = add_private_message_handler
     add_notice_event_handler = add_notice_handler
