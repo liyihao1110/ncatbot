@@ -10,11 +10,7 @@ class ForwardConstructor:
         self.content = content if content else []
 
     def attach(self, content: MessageArray, user_id: str=None, nickname: str=None):
-        if user_id is not None:
-            self.user_id = user_id
-        if nickname is not None:
-            self.nickname = nickname
-        self.content.append(Node(user_id=self.user_id, nickname=self.nickname, content=content))
+        self.content.append(Node(user_id=user_id if user_id else self.user_id, nickname=nickname if nickname else self.nickname, content=content))
 
     def attach_text(self, text: str, user_id: str=None, nickname: str=None):
         self.attach(MessageArray(Text(text)), user_id, nickname)
