@@ -38,7 +38,7 @@ class MessageSegmentValueError(Exception):
 
 @dataclass(repr=False)
 class MessageSegment():
-    msg_seg_type: Literal["text", "face", "image", "record", "video", "at", "rps", "dice", "shake", "poke", "anonymous", "share", "contact", "location", "music", "reply", "forward", "node", "xml", "json"] = field(init=False, repr=False)
+    msg_seg_type: Literal["text", "face", "image", "record", "video", "at", "rps", "dice", "shake", "poke", "anonymous", "share", "contact", "location", "music", "reply", "forward", "node", "xml", "json", "markdown"] = field(init=False, repr=False)
     _data: dict = field(init=False, repr=False) # 兼容 3xx 版本数据辅助
     
     # -------------
@@ -506,7 +506,12 @@ class XML(MessageSegment):
 class Json(MessageSegment):
     data: str
     msg_seg_type: Literal["json"] = field(init=False, repr=False, default="json")
-    
+
+@dataclass(repr=False)
+class Markdown(MessageSegment):
+    content: str
+    msg_seg_type: Literal["markdown"] = field(init=False, repr=False, default="markdown")
+
 def get_class_by_name(name: str) -> Type[MessageSegment]:
     def find_all_subclasses(cls) -> list[Type[MessageSegment]]:
         subclasses = set()

@@ -1,12 +1,11 @@
 """Plugin main file."""
 
-from ncatbot.core import BaseMessage, GroupMessage, PrivateMessage
-from ncatbot.plugin import BasePlugin, CompatibleEnrollment
-
-bot = CompatibleEnrollment  # 兼容回调函数注册器
+from ncatbot.core import GroupMessageEvent, PrivateMessageEvent, BaseMessageEvent
+from ncatbot.plugin_system import NcatBotPlugin
 
 
-class Plugin(BasePlugin):
+
+class Plugin(NcatBotPlugin):
     """Plugin class."""
 
     name = "Plugin Name"  # 插件名称
@@ -14,22 +13,6 @@ class Plugin(BasePlugin):
     author = "Your Name"  # 插件作者
     info = "这是一个示例插件，用于演示插件系统的基本功能"  # 插件描述
     dependencies = {}  # 插件依赖，格式: {"插件名": "版本要求"}
-
-    @bot.group_event()
-    async def on_group_event(self, msg: GroupMessage):
-        """群消息事件处理."""
-        if msg.raw_message == "测试":
-            await self.api.post_group_msg(
-                msg.group_id, text="Plugin Name 插件测试成功喵"
-            )
-
-    @bot.private_event()
-    async def on_private_event(self, msg: PrivateMessage):
-        """好友消息事件处理."""
-        if msg.raw_message == "测试":
-            await self.api.post_private_msg(
-                msg.user_id, text="Plugin Name 插件测试成功喵"
-            )
 
     async def on_load(self):
         """插件加载时执行的操作."""
@@ -59,10 +42,10 @@ class Plugin(BasePlugin):
             metadata={"category": "greeting", "max_length": 20},
         )
 
-    async def test_handler(self, msg: BaseMessage):
+    async def test_handler(self, msg: BaseMessageEvent):
         """测试功能处理函数."""
         await msg.reply_text(f"测试功能调用成功！当前问候语: {self.config['greeting']}")
 
-    async def on_greeting_change(self, value, msg: BaseMessage):
+    async def on_greeting_change(self, value, msg: BaseMessageEvent):
         """配置变更回调函数."""
         await msg.reply_text(f"问候语已修改为: {value}")

@@ -1,5 +1,5 @@
 from .client import BotClient
-from .event import GroupMessageEvent, PrivateMessageEvent, RequestEvent, NoticeEvent, MetaEvent
+from .event import GroupMessageEvent, PrivateMessageEvent, RequestEvent, NoticeEvent, MetaEvent, BaseMessageEvent
 from .helper import ForwardConstructor
 from .legacy import GroupMessage, PrivateMessage, MessageChain, BaseMessage
 from .event import (
@@ -41,4 +41,5 @@ __all__ = [
     "Forward",
     "MessageArray",
     "MessageSegment",
+    "BaseMessageEvent",
 ]

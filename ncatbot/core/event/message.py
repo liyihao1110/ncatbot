@@ -76,10 +76,10 @@ class GroupMessageEvent(BaseMessageEvent):
         return status.global_api.set_group_ban_sync(self.group_id, self.user_id, ban_duration)
     
     async def reply(self, text: str=None, image: str=None, at: bool=True, rtf: "MessageChain"=None):
-        return await status.global_api.post_group_msg(self.group_id, self.message_id, text, image, self.user_id if at else None, rtf)
+        return await status.global_api.post_group_msg(self.group_id, text, self.user_id if at else None, reply=self.message_id, image=image, rtf=rtf)
 
     def reply_sync(self, text: str=None, image: str=None, at: bool=True, rtf: "MessageChain"=None):
-        return status.global_api.post_group_msg_sync(self.group_id, self.message_id, text, image, self.user_id if at else None, rtf)
+        return status.global_api.post_group_msg_sync(self.group_id, text, self.user_id if at else None, reply=self.message_id, image=image, rtf=rtf)
     
 class PrivateMessageEvent(BaseMessageEvent):
     message_type: Literal["private"] = None # 上级会获取
@@ -91,10 +91,10 @@ class PrivateMessageEvent(BaseMessageEvent):
         self.sender = PrivateSender(data.get("sender"))
     
     async def reply(self, text: str=None, image: str=None, rtf: "MessageChain"=None):
-        return await status.global_api.post_private_msg(self.user_id, text, image, rtf)
+        return await status.global_api.post_private_msg(self.user_id, text, self.message_id, image, rtf)
     
     def reply_sync(self, text: str=None, image: str=None, rtf: "MessageChain"=None):
-        return status.global_api.post_private_msg_sync(self.user_id, text, image, rtf)
+        return status.global_api.post_private_msg_sync(self.user_id, text, self.message_id, image, rtf)
     
     def __repr__(self):
         return super().__repr__()
