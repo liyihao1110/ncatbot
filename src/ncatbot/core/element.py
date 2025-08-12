@@ -2,7 +2,17 @@ import json
 import re
 from typing import Iterable, Union
 
-from ncatbot.utils import convert_uploadable_object, get_log
+from ncatbot.utils import config
+from ncatbot.utils import convert_uploadable_object as _cuo
+from ncatbot.utils import get_log
+
+
+def convert_uploadable_object(i, message_type):
+    def is_local():
+        return config.ws_host == "localhost" or config.ws_host == "127.0.0.1"
+
+    return _cuo(i, message_type, not is_local())
+
 
 LOG = get_log("Element")
 
@@ -133,7 +143,10 @@ class Image(Element):
         self.path = path
 
     def to_dict(self) -> dict:
-        return convert_uploadable_object(self.path, "image")
+        return convert_uploadable_object(
+            self.path,
+            "image",
+        )
 
 
 class Face(Element):

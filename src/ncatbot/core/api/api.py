@@ -8,11 +8,20 @@ from ncatbot.utils import (
     Status,
     add_sync_methods,
     config,
-    convert_uploadable_object,
+)
+from ncatbot.utils import convert_uploadable_object as _cuo
+from ncatbot.utils import (
     md_maker,
     read_file,
     report,
 )
+
+
+def convert_uploadable_object(i, message_type):
+    def is_local():
+        return config.ws_host == "localhost" or config.ws_host == "127.0.0.1"
+
+    return _cuo(i, message_type, not is_local())
 
 
 @add_sync_methods

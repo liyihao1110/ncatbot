@@ -34,7 +34,7 @@ def read_file(file_path) -> any:
         return f.read()
 
 
-def convert_uploadable_object(i, message_type):
+def convert_uploadable_object(i, message_type, use_b64=False):
     """将可上传对象转换为标准格式"""
 
     def is_base64(s: str):
@@ -65,7 +65,9 @@ def convert_uploadable_object(i, message_type):
     elif is_base64(i):
         return {"type": message_type, "data": {"file": to_base64(i)}}
     elif os.path.exists(i):
-        if message_type == "image":
+        if not use_b64:
+            return {"type": message_type, "data": {"file": i}}
+        elif message_type == "image":
             with open(i, "rb") as f:
                 image_data = f.read()
                 i = f"base64://{base64.b64encode(image_data).decode('utf-8')}"
