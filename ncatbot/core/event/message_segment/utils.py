@@ -3,6 +3,7 @@ import os
 import base64
 import urllib.request
 from urllib.parse import urljoin
+from ncatbot.utils import ncatbot_config
 
 def convert_uploadable_object(i):
     """将可上传对象转换为标准格式"""
@@ -35,6 +36,8 @@ def convert_uploadable_object(i):
     elif is_base64(i):
         return to_base64(i)
     elif os.path.exists(i):
+        if ncatbot_config.is_napcat_local():
+            return os.path.abspath(i)
         i = urljoin(
             "file:",
             f"base64://{base64.b64encode(open(i, 'rb').read()).decode('utf-8')}",

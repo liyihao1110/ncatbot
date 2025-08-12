@@ -395,6 +395,9 @@ class Config(BaseConfig):
                 logger.warning(f"[setting] 未知配置项: {key}")
         self.validate_config()
 
+    def is_napcat_local(self) -> bool:
+        return self.napcat.ws_host in ["localhost", "127.0.0.1"]
+
     # 3xx 兼容
     def set_bot_uin(self, bot_uin: str) -> None:
         self.bt_uin = str(bot_uin)
