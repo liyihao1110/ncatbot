@@ -66,7 +66,7 @@ def convert_uploadable_object(i, message_type, use_b64=False):
         return {"type": message_type, "data": {"file": to_base64(i)}}
     elif os.path.exists(i):
         if not use_b64:
-            return {"type": message_type, "data": {"file": i}}
+            return {"type": message_type, "data": {"file": os.path.abspath(i)}}
         elif message_type == "image":
             with open(i, "rb") as f:
                 image_data = f.read()
