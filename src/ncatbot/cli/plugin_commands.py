@@ -230,7 +230,7 @@ class {plugin_name}(BasePlugin):
 
     async def test_handler(self, msg: BaseMessage):
         # 测试功能处理函数
-        await msg.reply_text(f"测试功能调用成功！当前问候语: {{self.config["greeting"]}}")
+        await msg.reply_text(f"测试功能调用成功！当前问候语: {{self.config['greeting']}}")
 
     async def on_greeting_change(self, value, msg: BaseMessage):
         # 配置变更回调函数
