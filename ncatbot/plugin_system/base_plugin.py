@@ -288,5 +288,5 @@ class BasePlugin:
         Returns:
             插件实例/插件名称列表
         """
-        self._loader.list_plugins(obj=obj)
+        return self._loader.list_plugins(obj=obj)
         

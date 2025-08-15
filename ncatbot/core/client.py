@@ -184,20 +184,74 @@ class BotClient:
         asyncio.run(self.plugin_loader.unload_all())
         LOG.info("Bot 已经正常退出")
     
-    def run_frontend(self, bt_uin=None, root=None, ws_uri=None, webui_uri=None, ws_token=None, webui_token=None, ws_listen_ip=None, remote_mode=None, enable_webui_interaction=None, debug=None):
+    def run_frontend(
+        self,
+        bt_uin=None,
+        root=None,
+        ws_uri=None,
+        webui_uri=None,
+        ws_token=None,
+        webui_token=None,
+        ws_listen_ip=None,
+        remote_mode=None,
+        enable_webui_interaction=None,
+        debug=None,
+        *args,
+        **kwargs
+    ):
         try:
-            self.start(bt_uin=bt_uin, root=root, ws_uri=ws_uri, webui_uri=webui_uri, ws_token=ws_token, webui_token=webui_token, ws_listen_ip=ws_listen_ip, remote_mode=remote_mode, enable_webui_interaction=enable_webui_interaction, debug=debug)
+            self.start(
+                bt_uin=bt_uin,
+                root=root,
+                ws_uri=ws_uri,
+                webui_uri=webui_uri,
+                ws_token=ws_token,
+                webui_token=webui_token,
+                ws_listen_ip=ws_listen_ip,
+                remote_mode=remote_mode,
+                enable_webui_interaction=enable_webui_interaction,
+                debug=debug,
+                *args,
+                **kwargs
+            )
         except KeyboardInterrupt:
             self.bot_exit()
         except Exception:
             raise
             
-    def run_backend(self, bt_uin=None, root=None, ws_uri=None, webui_uri=None, ws_token=None, webui_token=None, ws_listen_ip=None, remote_mode=None, enable_webui_interaction=None, debug=None):
+    def run_backend(
+        self,
+        bt_uin=None,
+        root=None,
+        ws_uri=None,
+        webui_uri=None,
+        ws_token=None,
+        webui_token=None,
+        ws_listen_ip=None,
+        remote_mode=None,
+        enable_webui_interaction=None,
+        debug=None,
+        *args,
+        **kwargs
+    ):
         def run_async_task():
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             try:
-                self.start(bt_uin=bt_uin, root=root, ws_uri=ws_uri, webui_uri=webui_uri, ws_token=ws_token, webui_token=webui_token, ws_listen_ip=ws_listen_ip, remote_mode=remote_mode, enable_webui_interaction=enable_webui_interaction, debug=debug)
+                self.start(
+                    bt_uin=bt_uin,
+                    root=root,
+                    ws_uri=ws_uri,
+                    webui_uri=webui_uri,
+                    ws_token=ws_token,
+                    webui_token=webui_token,
+                    ws_listen_ip=ws_listen_ip,
+                    remote_mode=remote_mode,
+                    enable_webui_interaction=enable_webui_interaction,
+                    debug=debug,
+                    *args,
+                    **kwargs
+                )
             except Exception as e:
                 LOG.error(f"Bot 启动失败: {e}")
                 LOG.info(traceback.format_exc())
@@ -222,7 +276,11 @@ class BotClient:
             
     def start(self, **kwargs):
         # 配置参数
-        legal_args = ["bt_uin", "root", "ws_uri", "webui_uri", "ws_token", "webui_token", "ws_listen_ip", "remote_mode", "enable_webui_interaction", "debug"]
+        legal_args = [
+            "bt_uin", "root", "ws_uri", "webui_uri", "ws_token",
+            "webui_token", "ws_listen_ip", "remote_mode",
+            "enable_webui_interaction", "debug"
+        ]
         for key, value in kwargs.items():
             if key not in legal_args:
                 raise NcatBotError(f"非法参数: {key}")

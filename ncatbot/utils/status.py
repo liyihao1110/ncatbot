@@ -48,6 +48,7 @@ class Status:
         """Update the level of all registered loggers."""
         from ncatbot.utils.config import ncatbot_config
         level = logging.DEBUG if ncatbot_config.debug else logging.INFO
+        logging.getLogger().setLevel(level)
         with self._lock:
             for logger_name in self._registered_loggers:
                 logger = logging.getLogger(logger_name)

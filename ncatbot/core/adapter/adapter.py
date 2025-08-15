@@ -70,6 +70,7 @@ class Adapter:
         """连接 ws 客户端"""
         uri_with_token = self.ws_url + "/?access_token=" + ncatbot_config.napcat.ws_token
         self.client = await websockets.connect(uri_with_token, close_timeout=0.2, max_size=2**30, open_timeout=1)
+        LOG.info("NapCat WebSocket 连接成功")
         try:
             while True:
                 LOG.debug("looping")

@@ -67,7 +67,7 @@ def connect_napcat():
 def check_napcat_service_remote():
     """尝试以远程模式连接到 NapCat 服务"""
     if napcat_service_ok():
-        LOG.info(f"napcat 服务器 {ncatbot_config.napcat.ws_uri} 在线, 连接中...")
+        LOG.info(f"napcat 服务器 {ncatbot_config.napcat.ws_uri} 在线, 正在检查账号状态...")
         if not ncatbot_config.enable_webui_interaction:  # 跳过基于 WebUI 交互的检查
             LOG.warning(
                 f"跳过基于 WebUI 交互的检查, 请自行确保 NapCat 已经登录了正确的 QQ {ncatbot_config.bt_uin}"
@@ -103,7 +103,8 @@ def lanuch_napcat_service(*args, **kwargs):
     else:
         LOG.info("正在以本地模式运行, 检查中...")
         if napcat_service_ok():
-            check_napcat_service_remote()
+            if check_napcat_service_remote():
+                LOG.debug("远端 NapCat 服务正常")
         else:
             if platform.system() not in ["Windows", "Linux"]:
                 raise NcatBotError("本地模式不支持该操作系统, 请使用远端模式")

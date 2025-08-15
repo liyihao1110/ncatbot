@@ -1,14 +1,7 @@
 from ncatbot.plugin_system.builtin_plugin.filter_registry import register
 
 class CompatibleEnrollment:
-    def on_group_message(self, func):
-        return register.group_event(func)
-    
-    def on_private_message(self, func):
-        return register.private_event(func)
-    
-    def on_notice(self, func):
-        return register.notice_event(func)
-    
-    def on_request(self, func):
-        return register.request_event(func)
+    group_event = register.group_event
+    private_event = register.private_event
+    notice_event = register.notice_event
+    request_event = register.request_event

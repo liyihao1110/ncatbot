@@ -1,10 +1,9 @@
 from ncatbot.core.event.event_data import BaseEventData
 from ncatbot.plugin_system.base_plugin import BasePlugin
 from ncatbot.plugin_system.builtin_mixin import NcatBotPlugin
-from typing import Dict, Callable, Optional, List, Union
+from typing import Dict, Callable, Optional, List, Union, TYPE_CHECKING
 from ncatbot.core.event import BaseMessageEvent, Text, MessageSegment
 from ncatbot.plugin_system.event.event import NcatBotEvent
-from ncatbot.plugin_system.loader import _iter_callables
 from ncatbot.utils import OFFICIAL_GROUP_MESSAGE_EVENT, OFFICIAL_PRIVATE_MESSAGE_EVENT
 from abc import ABC, abstractmethod
 from ncatbot.utils import get_log
@@ -46,7 +45,6 @@ class AdminFilter(BaseFilter):
 class RootFilter(BaseFilter):
     def check(self, manager: "FilterRegistryPlugin", event: BaseMessageEvent) -> bool:
         return manager.rbac_manager.user_has_role(event.user_id, "root")
-
 
 class CommandGroup:
     # TODO: 精细权限控制
@@ -247,10 +245,10 @@ class FilterRegistryPlugin(NcatBotPlugin):
     name = "FilterRegistryPlugin"
     author = "huan-yp"
     desc = "过滤器注册插件"
-    ver = "1.0.0"
+    version = "1.0.0"
     async def on_load(self) -> None:
-        self.event_bus.subscribe("re:ncatbot.group_message_event|ncatbot.private_message_event", self.do_command)
-        self.event_bus.subscribe("re:ncatbot.notice_event|ncatbot.request_event", self.do_legacy_command)
+        self.event_bus.subscribe("re:ncatbot.group_message_event|ncatbot.private_message_event", self.do_command, timeout=900)
+        self.event_bus.subscribe("re:ncatbot.notice_event|ncatbot.request_event", self.do_legacy_command, timeout=900)
         self.func_plugin_map: Dict[Callable, NcatBotPlugin] = {}
         self.max_length = 0
         return await super().on_load()
@@ -295,6 +293,8 @@ class FilterRegistryPlugin(NcatBotPlugin):
         self.command_group_map: Dict[tuple[str, ...], CommandGroup] = {}
         build_command_map(register)
         
+        
+        from ncatbot.plugin_system.loader import _iter_callables
         for func in _iter_callables(self):
             if hasattr(func, "__alias__"):
                 for alias in func.__alias__:
@@ -312,11 +312,11 @@ class FilterRegistryPlugin(NcatBotPlugin):
                     LOG.error(f"函数 {func.__name__} 的参数数量不正确")
                     LOG.info(f"函数来自 {func.__module__}.{func.__qualname__}")
                     raise ValueError(f"函数 {func.__name__} 的参数数量不正确")
-                if sig.parameters[0].name != "self":
+                if list(sig.parameters.values())[0].name != "self":
                     LOG.error(f"函数 {func.__name__} 的参数名不正确")
                     LOG.info(f"函数来自 {func.__module__}.{func.__qualname__}")
                     raise ValueError(f"函数 {func.__name__} 的参数名不正确, 应该为 self")
-                if not issubclass(sig.parameters[1].annotation, BaseMessageEvent):
+                if not issubclass(list(sig.parameters.values())[1].annotation, BaseMessageEvent):
                     LOG.error(f"函数 {func.__name__} 的参数类型不正确")
                     LOG.info(f"函数来自 {func.__module__}.{func.__qualname__}")
                     raise ValueError(f"函数 {func.__name__} 的参数类型不正确, 应该为 BaseMessageEvent")
@@ -329,13 +329,14 @@ class FilterRegistryPlugin(NcatBotPlugin):
     def find_plugin(self, func: Callable) -> NcatBotPlugin:
         plugins = self.list_plugins(obj=True)
         for plugin in plugins:
-            if func in plugin.callables:
+            if func in plugin.__dict__.values():
                 return plugin
         return None
     
     async def run_func(self, func: Callable, *args, **kwargs):
         plugin = self.find_plugin(func)
         filters: List[BaseFilter] = getattr(func, "__filter__", [])
+        args = [plugin] + list(args)
         for filter in filters:
             if not filter.check(self, args[1]):
                 return False
@@ -372,5 +373,5 @@ class FilterRegistryPlugin(NcatBotPlugin):
                 args, success = FuncAnalyser(func).convert_args(data)
                 return await self.run_func(func, data, *args)
         for func in filter.registered_commands:
-            self.run_func(func, data)
+            await self.run_func(func, data)
 

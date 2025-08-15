@@ -416,7 +416,8 @@ class Forward(MessageSegment):
     def from_dict(cls, data):
         obj = super().from_dict(data)
         if obj.content is not None:
-            obj.content = create_message_array(obj.content).messages
+            obj_merge = cls.from_content(obj.content, obj.id)
+            obj.content = obj_merge.content
         return obj        
         
     @classmethod
