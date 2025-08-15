@@ -157,3 +157,4 @@ plugins/
 logs/
 napcat/
 data/
+*.DS_Store
