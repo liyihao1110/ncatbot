@@ -70,6 +70,7 @@ class SetConfig:
 
         # 自动获取状态
         self.ws_host = None  # ws host
+        self.webui_scheme = None # webui 协议（http/https）
         self.webui_host = None  # webui host
         self.ws_port = None  # ws 端口
         self.webui_port = None  # webui 端口
@@ -243,9 +244,11 @@ class SetConfig:
                 "请注意, 当前配置的 NapCat webui 地址为 https, 我们建议用 http，如果你确实配置了 SSL 证书，请忽略该警告"
             )
             time.sleep(2.5)
-        self.webui_host = urllib.parse.urlparse(self.webui_uri).hostname
-        self.webui_port = urllib.parse.urlparse(self.webui_uri).port
-        if self.ws_port is None:
+        url_parts = urllib.parse.urlparse(self.webui_uri)
+        self.webui_scheme = url_parts.scheme
+        self.webui_host = url_parts.hostname
+        self.webui_port = url_parts.port
+        if self.webui_port is None:
             LOG.warning(
                 f"webui_uri {self.webui_uri} 可能有误, 未填写端口, 请确定你真的不需要端口"
             )
