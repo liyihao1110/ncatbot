@@ -169,7 +169,7 @@ class FunctionMixin:
                 return None
             try:
                 permission = f"{self.name}.{current_name}"
-                if not self._rbac_manager.check_permission(data.user_id, permission):
+                if not self.rbac_manager.check_permission(data.user_id, permission):
                     # TODO: 权限不足反馈
                     return None
                 
@@ -205,7 +205,7 @@ class FunctionMixin:
         timeout: float = None,
     ) -> Func:
         # 默认权限路径: 插件名.功能名
-        self._rbac_manager.assign_permissions_to_role(permission, f"{self.name}.{name}", 'white')
+        self.rbac_manager.assign_permissions_to_role(permission, f"{self.name}.{name}", 'white')
         # 注册功能
         if not hasattr(self, '_registered_funcs'):
             self._registered_funcs: List[Func] = []

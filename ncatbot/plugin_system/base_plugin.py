@@ -99,7 +99,7 @@ class BasePlugin:
         # 初始化属性
         self.api = status.global_api
         self._handlers_id = set()
-        self._rbac_manager = rbac_manager
+        self.rbac_manager = rbac_manager
 
         # 路径计算（只算不建）
         self.main_file = Path(inspect.getmodule(self.__class__).__file__).resolve()
