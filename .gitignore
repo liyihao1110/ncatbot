@@ -152,7 +152,7 @@ cython_debug/
 .idea/
 
 # 项目自定义
-test/
+test*/
 plugins/
 logs/
 napcat/

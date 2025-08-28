@@ -37,7 +37,7 @@ EVENTS = (
 
 class BotClient:
     def __init__(self, *args, **kwargs):
-        self.adapter = Adapter(ncatbot_config.napcat.ws_uri)
+        self.adapter = Adapter()
         self.event_handlers: dict[str, list] = {}
         self.thread_pool = ThreadPool(max_workers=1, max_per_func=1)
         self.api = BotAPI(self.adapter.send)

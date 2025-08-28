@@ -24,9 +24,8 @@ from ncatbot.utils.error import NcatBotError, NcatBotConnectionError
 LOG = get_log("Adapter")
 
 class Adapter:
-    def __init__(self, ws_url: str):
+    def __init__(self):
         self.pending_requests: Dict[str, Queue] = {}
-        self.ws_url: str = ws_url
         self.client: Optional[websockets.ClientConnection] = None
         self.event_callback: Dict[str, Callable[[BaseEventData], None]] = {}
         self._lock = Lock()
@@ -68,7 +67,7 @@ class Adapter:
 
     async def connect_websocket(self) -> bool:
         """连接 ws 客户端"""
-        uri_with_token = self.ws_url + "/?access_token=" + ncatbot_config.napcat.ws_token
+        uri_with_token = ncatbot_config.napcat.ws_uri + "/?access_token=" + ncatbot_config.napcat.ws_token
         self.client = await websockets.connect(uri_with_token, close_timeout=0.2, max_size=2**30, open_timeout=1)
         LOG.info("NapCat WebSocket 连接成功")
         try:
