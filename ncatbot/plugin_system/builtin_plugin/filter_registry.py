@@ -28,7 +28,23 @@ class CustomFilter(BaseFilter):
         self.func = func
         
     def check(self, manager: "FilterRegistryPlugin", event: BaseMessageEvent) -> bool:
-        pass
+        try:
+            # 检查函数签名，支持不同的参数组合
+            sig = inspect.signature(self.func)
+            params = list(sig.parameters.values())
+            
+            if len(params) == 1:
+                # 只接受 event 参数
+                return self.func(event)
+            elif len(params) == 2:
+                # 接受 manager 和 event 参数
+                return self.func(manager, event)
+            else:
+                LOG.error(f"CustomFilter 函数签名不正确: {self.func.__name__}")
+                return False
+        except Exception as e:
+            LOG.error(f"CustomFilter 执行失败: {self.func.__name__}, 错误: {e}")
+            return False
 
 class GroupFilter(BaseFilter):
     def check(self, manager: "FilterRegistryPlugin", event: BaseMessageEvent) -> bool:
@@ -211,31 +227,57 @@ class FuncAnalyser:
         
         return args_types
     
-    def convert_args(self, event: BaseMessageEvent) -> tuple[tuple[...], bool]: # 将事件中的参数转换为函数参数
+    def convert_args(self, event: BaseMessageEvent) -> tuple[bool, tuple[...]] : # 将事件中的参数转换为函数参数
         # 需要保证参数类型正确, 否则异常
         args_type = self.detect_args_type()
         args_list = []
         cur_index = 0
-        def add_arg(arg: Union[str, MessageSegment]):
+        
+        def add_arg(arg: Union[str, MessageSegment]) -> bool:
+            nonlocal cur_index  # 关键修复：使用 nonlocal 声明
             if cur_index >= len(args_type):
                 return False
-            if args_type[cur_index] in (str, int, float, bool):
-                args_list.append(args_type[cur_index](arg))
-                cur_index += 1
-            elif issubclass(args_type[cur_index], MessageSegment):
-                args_list.append(arg)
-                cur_index += 1
-            return True
+            
+            try:
+                if args_type[cur_index] in (str, int, float, bool):
+                    # 添加类型转换错误处理
+                    if args_type[cur_index] == str:
+                        converted_arg = str(arg)
+                    elif args_type[cur_index] == int:
+                        converted_arg = int(arg)
+                    elif args_type[cur_index] == float:
+                        converted_arg = float(arg)
+                    elif args_type[cur_index] == bool:
+                        converted_arg = bool(arg)
+                    
+                    args_list.append(converted_arg)
+                    cur_index += 1
+                elif issubclass(args_type[cur_index], MessageSegment):
+                    if not isinstance(arg, MessageSegment):
+                        return False  # 类型不匹配
+                    args_list.append(arg)
+                    cur_index += 1
+                return True
+            except (ValueError, TypeError) as e:
+                LOG.warning(f"参数类型转换失败: {arg} -> {args_type[cur_index]}, 错误: {e}")
+                return False
             
         for arg in event.message.messages:            
             if isinstance(arg, Text):
-                cur_str_list = arg.text.split(" ")
-                for str in cur_str_list:
-                    if not add_arg(str):
-                        return (False, args_list)
+                # 过滤空字符串和仅包含空白字符的字符串
+                cur_str_list = [s.strip() for s in arg.text.split(" ") if s.strip()]
+                for str_arg in cur_str_list:
+                    if not add_arg(str_arg):
+                        return (False, tuple(args_list))
             else:
                 if not add_arg(arg):
-                    return (False, args_list)
+                    return (False, tuple(args_list))
+        
+        # 最后检查是否所有必需参数都已填充
+        if cur_index < len(args_type):
+            LOG.debug(f"参数数量不足: 需要 {len(args_type)} 个，实际获得 {cur_index} 个")
+            return (False, tuple(args_list))
+        
         return (True, tuple(args_list))
 
 filter = FilterRegistry()
@@ -366,12 +408,14 @@ class FilterRegistryPlugin(NcatBotPlugin):
         for i in range(len(activator)):
             if activator[i] in self.command_map:
                 func = self.command_map[activator[i]]
-                args, success = FuncAnalyser(func).convert_args(data)
-                return await self.run_func(func, data, *args)
+                success, args = FuncAnalyser(func).convert_args(data)
+                if success:
+                    return await self.run_func(func, data, *args)
             if activator[i] in self.alias_map:
                 func = self.alias_map[activator[i]]
-                args, success = FuncAnalyser(func).convert_args(data)
-                return await self.run_func(func, data, *args)
+                success, args = FuncAnalyser(func).convert_args(data)
+                if success:
+                    return await self.run_func(func, data, *args)
         for func in filter.registered_commands:
             await self.run_func(func, data)
 

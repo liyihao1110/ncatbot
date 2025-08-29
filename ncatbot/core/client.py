@@ -42,6 +42,7 @@ class BotClient:
         self.thread_pool = ThreadPool(max_workers=1, max_per_func=1)
         self.api = BotAPI(self.adapter.send)
         self.crash_flag = False
+        self.mock_mode = False  # 添加这一行
         status.global_api = self.api
         for event_name in EVENTS:
             self.create_official_event_handler_group(event_name)
@@ -196,6 +197,7 @@ class BotClient:
         remote_mode=None,
         enable_webui_interaction=None,
         debug=None,
+        mock_mode=False,  # 添加这一行
         *args,
         **kwargs
     ):
@@ -211,6 +213,7 @@ class BotClient:
                 remote_mode=remote_mode,
                 enable_webui_interaction=enable_webui_interaction,
                 debug=debug,
+                mock_mode=mock_mode,  # 添加这一行
                 *args,
                 **kwargs
             )
@@ -231,6 +234,7 @@ class BotClient:
         remote_mode=None,
         enable_webui_interaction=None,
         debug=None,
+        mock_mode=False,  # 添加这一行
         *args,
         **kwargs
     ):
@@ -249,6 +253,7 @@ class BotClient:
                     remote_mode=remote_mode,
                     enable_webui_interaction=enable_webui_interaction,
                     debug=debug,
+                    mock_mode=mock_mode,  # 添加这一行
                     *args,
                     **kwargs
                 )
@@ -274,25 +279,53 @@ class BotClient:
             raise NcatBotError("Bot 启动超时", log=True)
         return self.api
             
-    def start(self, **kwargs):
+    def start(self, mock_mode=False, **kwargs):
+        # 设置 mock 模式
+        self.mock_mode = mock_mode
+        
         # 配置参数
         legal_args = [
             "bt_uin", "root", "ws_uri", "webui_uri", "ws_token",
             "webui_token", "ws_listen_ip", "remote_mode",
-            "enable_webui_interaction", "debug"
+            "enable_webui_interaction", "debug", "mock_mode"  # 添加 mock_mode
         ]
         for key, value in kwargs.items():
             if key not in legal_args:
                 raise NcatBotError(f"非法参数: {key}")
             if value is None:
                 continue
-            ncatbot_config.update_value(key, value)
-        ncatbot_config.validate_config()
+            if key != "mock_mode":  # mock_mode 不需要写入配置
+                ncatbot_config.update_value(key, value)
+        
+        if not mock_mode:
+            ncatbot_config.validate_config()
+            
         # 加载插件
         self.event_bus = EventBus()
         self.plugin_loader = PluginLoader(self.event_bus, debug=ncatbot_config.debug)
         asyncio.run(self.plugin_loader.load_plugins())
-        # 启动服务
+        
+        if mock_mode:
+            LOG.info("Mock 模式启动：跳过 NapCat 服务和 WebSocket 连接")
+            # 在 mock 模式下触发启动事件
+            from ncatbot.core.event.meta import MetaEvent
+            startup_event = MetaEvent({
+                "post_type": "meta_event",
+                "meta_event_type": "lifecycle",
+                "sub_type": "enable",
+                "self_id": "123456789",
+                "time": int(__import__('time').time())
+            })
+            # 同步调用启动处理器
+            import inspect
+            for handler in self.event_handlers[OFFICIAL_STARTUP_EVENT]:
+                if inspect.iscoroutinefunction(handler):
+                    asyncio.run(handler(startup_event))
+                else:
+                    handler(startup_event)
+            return
+            
+        # 启动服务（仅在非 mock 模式下）
         lanuch_napcat_service()
         try:
             asyncio.run(self.adapter.connect_websocket())
