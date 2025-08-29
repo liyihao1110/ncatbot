@@ -8,7 +8,14 @@ from threading import Lock
 from queue import Queue
 import websockets
 from websockets.exceptions import ConnectionClosedError
-from ncatbot.core.event import PrivateMessageEvent, GroupMessageEvent, NoticeEvent, RequestEvent, MetaEvent, BaseEventData
+from ncatbot.core.event import (
+    PrivateMessageEvent,
+    GroupMessageEvent,
+    NoticeEvent,
+    RequestEvent,
+    MetaEvent,
+    BaseEventData,
+)
 from ncatbot.utils import get_log, ncatbot_config
 from ncatbot.utils import (
     OFFICIAL_PRIVATE_MESSAGE_EVENT,
@@ -22,6 +29,7 @@ from ncatbot.utils import (
 from ncatbot.utils.error import NcatBotError, NcatBotConnectionError
 
 LOG = get_log("Adapter")
+
 
 class Adapter:
     def __init__(self):
@@ -38,37 +46,49 @@ class Adapter:
         """检查服务器是否在线"""
         return self.client is not None
 
-    async def send(self, path: str, params: dict = None, timeout: float = 300.0) -> dict:
+    async def send(
+        self, path: str, params: dict = None, timeout: float = 300.0
+    ) -> dict:
         """异步发送消息并等待响应"""
         # send 函数可能会在其它事件循环被调用, 需要使用线程安全通信方式
         echo = str(uuid.uuid4())
         queue = Queue(maxsize=1)
-        
+
         with self._lock:
             self.pending_requests[echo] = queue
 
         try:
             if not self.client:
                 raise ConnectionError("WebSocket 未连接")
-                
-            await self.client.send(json.dumps({
-                "action": path.replace("/", ""),
-                "params": params or {},
-                "echo": echo
-            }))
-            
+
+            await self.client.send(
+                json.dumps(
+                    {
+                        "action": path.replace("/", ""),
+                        "params": params or {},
+                        "echo": echo,
+                    }
+                )
+            )
+
             # 为了避免使用异步队列的心智开销使用线程池
             result = await asyncio.to_thread(queue.get, timeout=timeout)
             return result
-            
+
         finally:
             with self._lock:
                 self.pending_requests.pop(echo, None)
 
     async def connect_websocket(self) -> bool:
         """连接 ws 客户端"""
-        uri_with_token = ncatbot_config.napcat.ws_uri + "/?access_token=" + ncatbot_config.napcat.ws_token
-        self.client = await websockets.connect(uri_with_token, close_timeout=0.2, max_size=2**30, open_timeout=1)
+        uri_with_token = (
+            ncatbot_config.napcat.ws_uri
+            + "/?access_token="
+            + ncatbot_config.napcat.ws_token
+        )
+        self.client = await websockets.connect(
+            uri_with_token, close_timeout=0.2, max_size=2**30, open_timeout=1
+        )
         LOG.info("NapCat WebSocket 连接成功")
         try:
             while True:
@@ -85,11 +105,11 @@ class Adapter:
             # 当任务被取消时（如KeyboardInterrupt）
             await self.cleanup()
             raise
-        
+
         except ConnectionClosedError:
             # TODO 细化判断
             raise NcatBotConnectionError("NapCat 服务主动关闭了连接")
-        
+
         except Exception:
             await self.cleanup()
             LOG.info(traceback.format_exc())
@@ -106,8 +126,12 @@ class Adapter:
 
     async def _handle_event(self, message: dict):
         """处理事件, 不能阻塞"""
-        post_type: Literal["message", "notice", "request", "meta_event"] = message.get("post_type")
-        
+        post_type: Literal["message", "notice", "request", "meta_event"] = message.get(
+            "post_type"
+        )
+
+        callback = None
+
         if post_type == "message":
             message_type: Literal["private", "group"] = message.get("message_type")
             if message_type == "private":
@@ -125,7 +149,7 @@ class Adapter:
         elif post_type == "meta_event":
             event = MetaEvent(message)
             if event.meta_event_type == "lifecycle":
-                
+
                 if event.sub_type == "enable":
                     callback = None
                     # TODO: 正确的 Bot 上线处理
@@ -136,7 +160,7 @@ class Adapter:
                     callback = self.event_callback.get(OFFICIAL_STARTUP_EVENT)
             elif event.meta_event_type == "heartbeat":
                 callback = self.event_callback.get(OFFICIAL_HEARTBEAT_EVENT)
-        
+
         if callback:
             try:
                 await callback(event)
@@ -151,10 +175,9 @@ class Adapter:
                     if not future.done():
                         future.cancel()
                 self.pending_requests.clear()
-            
+
             if self.client:
                 await self.client.close()
             self.client = None
         except:
             pass
-        
