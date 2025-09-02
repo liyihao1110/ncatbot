@@ -25,6 +25,7 @@ from .message_segment import (
     Json,
 )
 from .message_array import MessageArray
+from .sentence import Sentence
 
 __all__ = [
     'MessageSegment',
@@ -52,5 +53,6 @@ __all__ = [
     'Forward',
     'XML',
     'Json',
-    'MessageArray'
+    'MessageArray',
+    'Sentence'
 ]

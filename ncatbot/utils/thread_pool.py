@@ -3,10 +3,34 @@ import queue
 import time
 import os
 from concurrent.futures import Future
-from typing import Callable, Any, Dict
+from typing import Callable, Any, Dict, TypeVar, Coroutine
 import inspect
 import asyncio
 import traceback
+
+T = TypeVar('T')
+
+def run_coroutine(func: Callable[..., Coroutine[Any, Any, T]], *args, **kwargs):
+    """
+    在新线程中运行协程函数
+    
+    :param func: 协程函数
+    :param args: 位置参数
+    :param kwargs: 关键字参数
+    :return: 协程函数的返回值
+    """
+    result: list[T] = []
+    def runner():
+        try:
+            result.append(asyncio.run(func(*args, **kwargs)))
+        except Exception as e:
+            result.append(e)
+    thread = threading.Thread(target=runner)
+    thread.start()
+    thread.join()
+    if isinstance(result[0], Exception):
+        raise result[0]
+    return result[0]
 
 class ThreadPool:
     """

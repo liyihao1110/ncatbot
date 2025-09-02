@@ -480,6 +480,8 @@ class RBACManager:
         return self.manager.check_permission(user_name, path)
     
     def user_has_role(self, user_name: str, role_name: str) -> bool:
+        if not self.user_exists(user_name):
+            self.add_user(user_name)
         return role_name in self.manager.users[user_name]["role_list"]
     
     def add_role(self, role_name: str, ignore_if_exists: bool = True):

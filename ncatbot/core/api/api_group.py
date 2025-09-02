@@ -1,5 +1,6 @@
 from typing import Literal, Union
-from .utils import BaseAPI, APIReturnStatus, run_coroutine
+from .utils import BaseAPI, APIReturnStatus
+from ncatbot.utils.thread_pool import run_coroutine
 from ncatbot.core.event import File
 from dataclasses import dataclass
 import time

@@ -34,6 +34,7 @@ class TestHelper:
             nickname=nickname,
             **kwargs
         )
+        LOG.info(f"发送群聊消息事件: {event}")
         await self.client.inject_event(event)
         
     async def send_private_message(
@@ -50,6 +51,7 @@ class TestHelper:
             nickname=nickname,
             **kwargs
         )
+        LOG.info(f"发送私聊消息事件: {event}")
         await self.client.inject_event(event)
         
     def assert_reply_sent(self, expected_text: Optional[str] = None):

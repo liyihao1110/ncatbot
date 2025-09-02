@@ -1,10 +1,6 @@
-import asyncio
 from typing import Callable
 from ncatbot.utils import get_log, ncatbot_config, NcatBotError
 import traceback
-import threading
-from typing import TypeVar, Callable, Any, Coroutine
-T = TypeVar('T')
 
 LOG = get_log("API")
 
@@ -13,19 +9,6 @@ class ExclusiveArgumentError(NcatBotError):
     def __init__(self, arg_name1, arg_name2, extra_info="参数互斥"):
         super().__init__(f"{extra_info}: {arg_name1}, {arg_name2}")
 
-def run_coroutine(func: Callable[..., Coroutine[Any, Any, T]], *args, **kwargs):
-    result: list[T] = []
-    def runner():
-        try:
-            result.append(asyncio.run(func(*args, **kwargs)))
-        except Exception as e:
-            result.append(e)
-    thread = threading.Thread(target=runner)
-    thread.start()
-    thread.join()
-    if isinstance(result[0], Exception):
-        raise result[0]
-    return result[0]
 
 def check_exclusive_argument(arg1, arg2, names: list[str], error: bool = False):
     if (arg1 is not None) == (arg2 is not None):

@@ -13,6 +13,8 @@ from ncatbot.utils import get_log
 # from logging import getLogger
 from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, Set
 
+from ncatbot.utils.thread_pool import run_coroutine
+
 if TYPE_CHECKING:
     from ..base_plugin import BasePlugin
 
@@ -159,14 +161,9 @@ class EventBus:
         # LOG.debug(f"执行处理程序: {handler.__name__}")
         try:
             if asyncio.iscoroutinefunction(handler):
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                try:
-                    return loop.run_until_complete(handler(event))
-                finally:
-                    loop.close()
-            # 同步函数直接执行
-            return handler(event)
+                return run_coroutine(handler, event)
+            else:
+                return handler(event)
         except Exception as e:
             LOG.error(f"执行处理程序 {handler.__name__} 时发生错误: {e}")
             LOG.info(f"错误堆栈: {traceback.format_exc()}")

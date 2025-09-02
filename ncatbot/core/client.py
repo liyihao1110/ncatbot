@@ -7,6 +7,7 @@ from typing import Callable, Optional, Type, Literal, Union
 
 from ncatbot.core.adapter.adapter import Adapter
 from ncatbot.core.api.api import BotAPI
+from ncatbot.utils.thread_pool import run_coroutine
 from ncatbot.core.event import MessageSegment
 from ncatbot.plugin_system.event import EventBus
 from ncatbot.core.event import BaseEventData, PrivateMessageEvent, GroupMessageEvent, NoticeEvent, RequestEvent, MetaEvent
@@ -303,7 +304,8 @@ class BotClient:
         # 加载插件
         self.event_bus = EventBus()
         self.plugin_loader = PluginLoader(self.event_bus, debug=ncatbot_config.debug)
-        asyncio.run(self.plugin_loader.load_plugins())
+        
+        run_coroutine(self.plugin_loader.load_plugins)
         
         if mock_mode:
             LOG.info("Mock 模式启动：跳过 NapCat 服务和 WebSocket 连接")
@@ -320,7 +322,7 @@ class BotClient:
             import inspect
             for handler in self.event_handlers[OFFICIAL_STARTUP_EVENT]:
                 if inspect.iscoroutinefunction(handler):
-                    asyncio.run(handler(startup_event))
+                    run_coroutine(handler, startup_event)
                 else:
                     handler(startup_event)
             return

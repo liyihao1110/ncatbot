@@ -264,6 +264,7 @@ def setup_logging():
 def get_log(name: Optional[str] = None) -> logging.Logger:
     """返回一个logger；若name为空则返回root logger"""
     logger = logging.getLogger(name)
+    # logger.setLevel(logging.INFO)
     
     # 注册非根 logger
     if name is not None:

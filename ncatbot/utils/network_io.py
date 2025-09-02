@@ -91,7 +91,7 @@ def get_proxy_url():
         return ""
 
 
-threading.Thread(target=get_proxy_url, daemon=True).start()
+# threading.Thread(target=get_proxy_url, daemon=True).start()
 
 if __name__ == "__main__":
 
