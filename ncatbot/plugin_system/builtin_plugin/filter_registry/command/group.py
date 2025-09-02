@@ -43,7 +43,11 @@ class CommandGroup:
         Returns:
             CommandGroup: 新创建的子命令组
         """
-        command_group = CommandGroup(self, name)
+        # 如果父类是 FilterRegistry，创建带命令标记功能的子组
+        if hasattr(self, 'filter_functions'):
+            command_group = FilterAwareCommandGroup(self, name)
+        else:
+            command_group = CommandGroup(self, name)
         self.children.append(command_group)
         return command_group
     

@@ -109,7 +109,7 @@ class FilterRegistryPlugin(NcatBotPlugin):
         self.command_group_map: Dict[tuple[str, ...], CommandGroup] = {}
         build_command_map(register)    
     
-        for normal_func in register.registered_commands:
+        for normal_func in register.filter_functions:
             validate_func(normal_func)
     
     def clear(self):
@@ -181,5 +181,5 @@ class FilterRegistryPlugin(NcatBotPlugin):
                 success, args = FuncAnalyser(func, ignore=activator).convert_args(data)
                 if success:
                     return await self.run_func(func, data, *args)
-        for func in filter.registered_commands:
+        for func in filter.filter_functions:
             await self.run_func(func, data)

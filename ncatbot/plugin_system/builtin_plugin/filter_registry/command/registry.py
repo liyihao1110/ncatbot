@@ -20,7 +20,7 @@ class FilterRegistry(CommandGroup):
     
     def __init__(self):
         super().__init__(None, "filter_registry")
-        self.registered_commands: Set[Callable] = set()
+        self.filter_functions: Set[Callable] = set()  # 重命名：只存储纯过滤器函数
         self.registered_notice_commands: Set[Callable] = set()
         self.registered_request_commands: Set[Callable] = set()
     
@@ -30,7 +30,9 @@ class FilterRegistry(CommandGroup):
         只允许具有管理员或root权限的用户执行命令。
         """
         def decorator(func: Callable):
-            self.registered_commands.add(func)
+            # 只有非命令函数才添加到 filter_functions
+            if not getattr(func, "__is_command__", False):
+                self.filter_functions.add(func)
             if not hasattr(func, "__filter__"):
                 setattr(func, "__filter__", [])
             getattr(func, "__filter__").append(AdminFilter())
@@ -43,7 +45,9 @@ class FilterRegistry(CommandGroup):
         只允许具有root权限的用户执行命令。
         """
         def decorator(func: Callable):
-            self.registered_commands.add(func)
+            # 只有非命令函数才添加到 filter_functions
+            if not getattr(func, "__is_command__", False):
+                self.filter_functions.add(func)
             if not hasattr(func, "__filter__"):
                 setattr(func, "__filter__", [])
             getattr(func, "__filter__").append(RootFilter())
@@ -56,7 +60,9 @@ class FilterRegistry(CommandGroup):
         只允许群组消息触发命令。
         """
         def decorator(func: Callable):
-            self.registered_commands.add(func)
+            # 只有非命令函数才添加到 filter_functions
+            if not getattr(func, "__is_command__", False):
+                self.filter_functions.add(func)
             if not hasattr(func, "__filter__"):
                 setattr(func, "__filter__", [])
             getattr(func, "__filter__").append(GroupFilter())
@@ -69,7 +75,9 @@ class FilterRegistry(CommandGroup):
         只允许私聊消息触发命令。
         """
         def decorator(func: Callable):
-            self.registered_commands.add(func)
+            # 只有非命令函数才添加到 filter_functions
+            if not getattr(func, "__is_command__", False):
+                self.filter_functions.add(func)
             if not hasattr(func, "__filter__"):
                 setattr(func, "__filter__", [])
             getattr(func, "__filter__").append(PrivateFilter())
@@ -133,7 +141,9 @@ class FilterRegistry(CommandGroup):
                 await event.reply("检测到关键词！")
         """
         def decorator(func: Callable) -> Callable:
-            self.registered_commands.add(func)
+            # 只有非命令函数才添加到 filter_functions
+            if not getattr(func, "__is_command__", False):
+                self.filter_functions.add(func)
             if not hasattr(func, "__filter__"):
                 setattr(func, "__filter__", [])
             
@@ -147,6 +157,18 @@ class FilterRegistry(CommandGroup):
                 raise
             
             return func
+        return decorator
+
+    def command(self, name: str, alias: List[str] = None):
+        """重写命令注册装饰器
+        
+        标记函数为命令，确保不会被添加到过滤器遍历列表中。
+        """
+        def decorator(func: Callable):
+            # 标记为命令函数
+            setattr(func, "__is_command__", True)
+            # 调用父类方法注册命令
+            return super(FilterRegistry, self).command(name, alias)(func)
         return decorator
 
     # 别名方法

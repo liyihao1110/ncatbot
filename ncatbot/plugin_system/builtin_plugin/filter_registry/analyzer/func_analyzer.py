@@ -154,7 +154,10 @@ class FuncAnalyser:
                     elif args_type[self.cur_index] == float:
                         converted_arg = float(arg)
                     elif args_type[self.cur_index] == bool:
-                        converted_arg = bool(arg)
+                        if arg.lower() == "false" or arg == '0':
+                            converted_arg = False
+                        else:
+                            converted_arg = True
                     
                     self.args_list.append(converted_arg)
                     self.cur_index += 1
@@ -178,8 +181,6 @@ class FuncAnalyser:
 
             # 按空格分割处理
             cur_str_list = [s.strip() for s in text_content.split(" ") if s.strip()]
-            LOG.debug(cur_str_list)
-
 
             for i, str_arg in enumerate(cur_str_list):
                 # 在处理每个单词前，检查当前参数是否需要 Sentence
@@ -210,9 +211,6 @@ class FuncAnalyser:
                 if not add_arg(arg):
                     return (False, tuple(self.args_list))
         
-        LOG.debug(event.message)
-        LOG.debug(self.args_list)
-        LOG.debug(f"函数信息: {self.func_name}, 模块: {self.func_module}, 限定名: {self.func_qualname}")
         # 最后检查是否所有必需参数都已填充
         if self.cur_index < len(args_type):
             LOG.debug(f"参数数量不足: 需要 {len(args_type)} 个，实际获得 {self.cur_index} 个")
