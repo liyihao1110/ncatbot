@@ -1,9 +1,9 @@
 from .system_manager import SystemManager
-from .filter_registry import FilterRegistryPlugin
+from .unified_registry import UnifiedRegistryPlugin
 
 __all__ = [
-    "SystemManager",
-    "FilterRegistryPlugin"
+    "SystemManager", 
+    "UnifiedRegistryPlugin"
 ]
 
 # 内置插件在这里声明后才能被使用

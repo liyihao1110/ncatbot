@@ -9,7 +9,6 @@ from ncatbot.core.adapter.adapter import Adapter
 from ncatbot.core.api.api import BotAPI
 from ncatbot.utils.thread_pool import run_coroutine
 from ncatbot.core.event import MessageSegment
-from ncatbot.plugin_system.event import EventBus
 from ncatbot.core.event import BaseEventData, PrivateMessageEvent, GroupMessageEvent, NoticeEvent, RequestEvent, MetaEvent
 from ncatbot.utils import (
     OFFICIAL_PRIVATE_MESSAGE_EVENT,
@@ -23,7 +22,6 @@ from ncatbot.utils import (
 from ncatbot.utils import get_log, status, ncatbot_config, ThreadPool
 from ncatbot.core.adapter.nc.launch import lanuch_napcat_service
 from ncatbot.utils.error import NcatBotError, NcatBotConnectionError
-from ncatbot.plugin_system import PluginLoader, NcatBotEvent
 
 LOG = get_log("Client")    
 EVENTS = (
@@ -55,6 +53,7 @@ class BotClient:
         def make_async_handler(event_name):
             async def warpper(event: BaseEventData):
                 LOG.debug(f"已发布 {event_name} 事件")
+                from ncatbot.plugin_system.event import NcatBotEvent
                 await self.event_bus.publish(NcatBotEvent(event_name, event))
             return warpper
         
@@ -302,6 +301,7 @@ class BotClient:
             ncatbot_config.validate_config()
             
         # 加载插件
+        from ncatbot.plugin_system import EventBus, PluginLoader
         self.event_bus = EventBus()
         self.plugin_loader = PluginLoader(self.event_bus, debug=ncatbot_config.debug)
         

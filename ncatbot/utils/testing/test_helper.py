@@ -88,13 +88,13 @@ class TestHelper:
         """获取所有 API 调用"""
         return self.mock_api.get_call_history()
         
-    def get_latest_reply(self) -> Optional[Dict]:
+    def get_latest_reply(self, index: int = -1) -> Optional[Dict]:
         """获取最新的回复"""
         group_calls = self.mock_api.get_calls_for_endpoint("/send_group_msg")
         private_calls = self.mock_api.get_calls_for_endpoint("/send_private_msg")
         
         all_calls = group_calls + private_calls
-        return all_calls[-1] if all_calls else None
+        return all_calls[index] if all_calls else None
         
     def clear_history(self):
         """清空所有历史记录"""

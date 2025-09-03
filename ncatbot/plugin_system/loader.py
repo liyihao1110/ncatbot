@@ -31,7 +31,7 @@ from .pluginsys_err import (
 )
 from .config import config
 from .rbac import RBACManager
-from .builtin_plugin import SystemManager, FilterRegistryPlugin
+from .builtin_plugin import SystemManager, UnifiedRegistryPlugin
 from ncatbot.utils import get_log
 if TYPE_CHECKING:
     import importlib.util
@@ -229,7 +229,7 @@ class PluginLoader:
     async def load_builtin_plugins(self) -> None:
         """加载内置插件。"""
         # 内置插件要在这里声明
-        plugins = [SystemManager, FilterRegistryPlugin]
+        plugins = [SystemManager, UnifiedRegistryPlugin]
         for plugin in plugins:
             plugin_obj = plugin(
                 event_bus=self.event_bus,
