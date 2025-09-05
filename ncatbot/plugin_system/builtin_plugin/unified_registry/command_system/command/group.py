@@ -2,6 +2,8 @@
 
 from typing import Dict, Callable, List, Optional
 
+from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.analyzer.param_validator import CommonadSpec
+
 class CommandGroup:
     """命令组类
     
@@ -80,11 +82,11 @@ class CommandGroup:
             else:
                 return parent_path + (self.name,)
     
-    def get_all_commands(self) -> Dict[tuple[str, ...], Callable]:
+    def get_all_commands(self) -> Dict[tuple[str, ...], CommonadSpec]:
         """获取所有命令的映射
         
         Returns:
-            Dict[tuple[str, ...], Callable]: 命令路径到函数的映射
+            Dict[tuple[str, ...], CommonadSpec]: 命令路径到函数的映射
         """
         commands = {}
         
@@ -99,11 +101,11 @@ class CommandGroup:
         
         return commands
     
-    def get_all_aliases(self) -> Dict[tuple[str, ...], Callable]:
+    def get_all_aliases(self) -> Dict[tuple[str, ...], CommonadSpec]:
         """获取所有别名的映射
         
         Returns:
-            Dict[tuple[str, ...], Callable]: 别名路径到函数的映射
+            Dict[tuple[str, ...], CommonadSpec]: 别名路径到函数的映射
         """
         aliases = {}
         

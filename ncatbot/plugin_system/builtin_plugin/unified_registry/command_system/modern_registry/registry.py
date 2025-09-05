@@ -7,67 +7,17 @@ from typing import Callable, Dict, List, Optional, Any, Union, Type
 from dataclasses import dataclass, field
 import inspect
 
-from .specs import ParameterSpec, OptionSpec, OptionGroup, SpecBuilder
-from .decorators import DecoratorValidator, option, param, option_group
+from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.analyzer.func_analyzer import FuncAnalyser
+from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.analyzer.param_validator import CommonadSpec
+
+from .decorators import option, param, option_group
 from .exceptions import (
     CommandRegistrationError, CommandNotFoundError, ArgumentError,
     ErrorHandler, ErrorContext
 )
-from .type_system import UnionType, CommonUnionTypes
 from ncatbot.utils import get_log
 
 LOG = get_log(__name__)
-
-
-@dataclass
-class CommandDefinition:
-    """命令定义
-    
-    包含命令的完整信息和元数据。
-    """
-    name: str
-    func: Callable
-    description: Optional[str] = None
-    parameters: List[ParameterSpec] = field(default_factory=list)
-    options: List[OptionSpec] = field(default_factory=list)
-    option_groups: List[OptionGroup] = field(default_factory=list)
-    aliases: List[str] = field(default_factory=list)
-    filters: List[Dict] = field(default_factory=list)
-    
-    # 配置选项
-    strict_mode: bool = True       # 严格模式
-    auto_help: bool = True         # 自动帮助
-    case_sensitive: bool = False   # 大小写敏感
-    
-    def get_all_names(self) -> List[str]:
-        """获取所有名称（包含别名）"""
-        return [self.name] + self.aliases
-    
-    def get_parameter_by_name(self, name: str) -> Optional[ParameterSpec]:
-        """根据名称获取参数"""
-        for param in self.parameters:
-            if param.name == name:
-                return param
-        return None
-    
-    def get_option_by_name(self, name: str) -> Optional[OptionSpec]:
-        """根据名称获取选项"""
-        for option in self.options:
-            if name in option.get_option_names():
-                return option
-        return None
-    
-    def get_positional_parameters(self) -> List[ParameterSpec]:
-        """获取位置参数（排除选项参数）"""
-        return [p for p in self.parameters if p.is_positional and not p.is_option]
-    
-    def get_named_parameters(self) -> List[ParameterSpec]:
-        """获取命名参数"""
-        return [p for p in self.parameters if p.is_named]
-    
-    def get_required_parameters(self) -> List[ParameterSpec]:
-        """获取必需参数"""
-        return [p for p in self.parameters if p.required]
 
 
 class CommandGroup:
@@ -80,59 +30,24 @@ class CommandGroup:
         self.name = name
         self.parent = parent
         self.description = description
-        self.commands: Dict[str, CommandDefinition] = {}
+        self.commands: Dict[str, Callable] = {}
         self.subgroups: Dict[str, 'CommandGroup'] = {}
-        
-        # 继承父组的配置
-        self.default_config = {
-            'strict_mode': True,
-            'auto_help': True,
-            'case_sensitive': False
-        }
-        if parent:
-            self.default_config.update(parent.default_config)
     
     def command(self, name: str, 
                aliases: Optional[List[str]] = None,
                description: Optional[str] = None,
-               **config_kwargs):
+    ):
         """命令装饰器"""
         def decorator(func: Callable) -> Callable:
             # 验证装饰器
-            DecoratorValidator.validate_function_decorators(func)
-            DecoratorValidator.validate_function_signature(func)
-            
-            # 构建命令定义
-            spec_builder = SpecBuilder()
-            parameters, options, option_groups = spec_builder.build_from_function(func)
-            
-            # 过滤器功能已移除
-            
-            # 合并配置
-            config = self.default_config.copy()
-            config.update(config_kwargs)
-            
-            # 过滤出CommandDefinition支持的配置
-            cmd_config = {
-                k: v for k, v in config.items() 
-                if k in ['strict_mode', 'auto_help', 'case_sensitive']
-            }
-            
-            # 创建命令定义
-            cmd_def = CommandDefinition(
-                name=name,
-                func=func,
-                description=description or func.__doc__,
-                parameters=parameters,
-                options=options,
-                option_groups=option_groups,
-                aliases=aliases or [],
-                filters=[],
-                **cmd_config
-            )
-            
+            command_spec = FuncAnalyser(func).analyze()
+            command_spec.alias = aliases
+            command_spec.description = description
+            command_spec.basename = name
             # 注册命令
-            self._register_command(cmd_def)
+            self._register_command(command_spec)
+            
+            # TODO: 分析部分注解, 自动生成装饰注册器
             
             LOG.debug(f"注册命令: {name} (组: {self.get_full_name()})")
             return func
@@ -148,27 +63,21 @@ class CommandGroup:
         self.subgroups[name] = subgroup
         return subgroup
     
-    def configure(self, **kwargs):
-        """配置命令组"""
-        self.default_config.update(kwargs)
-    
-    def _register_command(self, cmd_def: CommandDefinition):
+    def _register_command(self, command_spec: CommonadSpec):
         """注册命令"""
         # 检查名称冲突
-        all_names = cmd_def.get_all_names()
-        for name in all_names:
-            if name in self.commands:
-                raise CommandRegistrationError(
-                    cmd_def.name,
-                    f"命令名称 '{name}' 已存在"
-                )
+        if command_spec.basename in self.commands:
+            raise CommandRegistrationError(
+                command_spec.basename,
+                f"命令名称 '{command_spec.basename}' 已存在"
+            )
         
         # 注册主名称
-        self.commands[cmd_def.name] = cmd_def
+        self.commands[command_spec.basename] = command_spec
         
         # 注册别名
-        for alias in cmd_def.aliases:
-            self.commands[alias] = cmd_def
+        for alias in command_spec.alias:
+            self.commands[alias] = command_spec
     
     def get_full_name(self) -> str:
         """获取完整组名"""
@@ -176,11 +85,11 @@ class CommandGroup:
             return f"{self.parent.get_full_name()}.{self.name}"
         return self.name
     
-    def find_command(self, name: str) -> Optional[CommandDefinition]:
+    def find_command(self, name: str) -> Optional[CommonadSpec]:
         """查找命令"""
         return self.commands.get(name)
     
-    def get_all_commands(self) -> Dict[str, CommandDefinition]:
+    def get_all_commands(self) -> Dict[str, CommonadSpec]:  
         """获取所有命令（包括子组）"""
         commands = self.commands.copy()
         for subgroup in self.subgroups.values():
@@ -227,14 +136,14 @@ class ModernRegistry:
         self.config.update(kwargs)
         self.root_group.configure(**kwargs)
     
-    def find_command(self, command_text: str) -> Optional[CommandDefinition]:
+    def find_command(self, command_text: str) -> Optional[CommonadSpec]:
         """查找命令
         
         Args:
             command_text: 命令文本，如 "/deploy myapp --env=prod"
             
         Returns:
-            Optional[CommandDefinition]: 找到的命令定义
+            Optional[CommonadSpec]: 找到的命令定义
         """
         # 检查并移除前缀
         if not command_text.startswith(self.config['prefix']):
@@ -251,7 +160,7 @@ class ModernRegistry:
         # 先尝试完整匹配，再尝试前缀匹配
         return self._find_command_recursive(parts, self.root_group)
     
-    def _find_command_recursive(self, parts: List[str], group: CommandGroup) -> Optional[CommandDefinition]:
+    def _find_command_recursive(self, parts: List[str], group: CommandGroup) -> Optional[CommonadSpec]:
         """递归查找命令"""
         if not parts:
             return None
@@ -270,7 +179,7 @@ class ModernRegistry:
         
         return None
     
-    def get_all_commands(self) -> List[CommandDefinition]:
+    def get_all_commands(self) -> List[CommonadSpec]:
         """获取所有命令"""
         all_commands = self.root_group.get_all_commands()
         # 手动去重（因为别名会重复）
@@ -287,7 +196,7 @@ class ModernRegistry:
         commands = self.get_all_commands()
         names = []
         for cmd_def in commands:
-            names.extend(cmd_def.get_all_names())
+            names.extend(cmd_def.basename)
         return sorted(list(set(names)))
     
     def validate_command_text(self, command_text: str) -> tuple[bool, Optional[str]]:

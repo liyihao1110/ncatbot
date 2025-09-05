@@ -80,7 +80,7 @@ class UnifiedRegistry(CommandGroup):
             return func
         return decorator
     
-    def custom(self, filter_func: CustomFilterFunc):
+    def custom(self, filter_func: Callable):
         """自定义过滤器装饰器"""
         def decorator(func: Callable):
             try:

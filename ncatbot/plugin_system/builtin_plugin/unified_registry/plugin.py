@@ -4,6 +4,8 @@ import asyncio
 import inspect
 from typing import Dict, Callable, TYPE_CHECKING, List, Tuple, Optional
 from ncatbot.plugin_system.builtin_mixin import NcatBotPlugin
+from ncatbot.plugin_system.builtin_mixin.func_mixin import Func
+from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.analyzer.param_validator import CommonadSpec
 from ncatbot.plugin_system.event.event import NcatBotEvent
 from ncatbot.core.event import BaseMessageEvent
 from ncatbot.core.event.event_data import BaseEventData
@@ -185,15 +187,15 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         alias_map = self.registry.get_all_aliases()
 
         # 过滤：仅保留被标记为命令的函数（装饰器会设置 __is_command__）
-        filtered_commands: Dict[Tuple[str, ...], Callable] = {}
-        for path, func in command_map.items():
-            if getattr(func, "__is_command__", False):
-                filtered_commands[path] = func
+        filtered_commands: Dict[Tuple[str, ...], CommonadSpec] = {}
+        for path, command in command_map.items():
+            if getattr(command.func, "__is_command__", False):
+                filtered_commands[path] = command
 
-        filtered_aliases: Dict[Tuple[str, ...], Callable] = {}
-        for path, func in alias_map.items():
-            if getattr(func, "__is_command__", False):
-                filtered_aliases[path] = func
+        filtered_aliases: Dict[Tuple[str, ...], CommonadSpec] = {}
+        for path, command in alias_map.items():
+            if getattr(command.func, "__is_command__", False):
+                filtered_aliases[path] = command
 
         # 3) 交给 resolver 构建并做冲突检测
         self._resolver.build_index(filtered_commands, filtered_aliases)

@@ -8,7 +8,7 @@
 """
 
 from dataclasses import dataclass
-from typing import Callable, Tuple, List, Any
+from typing import Callable, Tuple, List, Any, Dict
 
 from ncatbot.utils import get_log
 from ..command_system.analyzer.func_analyzer import FuncAnalyser
@@ -20,7 +20,9 @@ LOG = get_log(__name__)
 @dataclass
 class BindResult:
     ok: bool
-    args: Tuple
+    args: Tuple # 位置参数
+    named_args: Dict[str, Any] # 命名参数
+    options: Dict[str, bool] # 选项
     message: str = ""
 
 

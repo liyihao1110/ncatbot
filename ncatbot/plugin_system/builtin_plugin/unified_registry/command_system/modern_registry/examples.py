@@ -6,7 +6,6 @@
 from typing import Union
 from ncatbot.core.event.message_segment.message_segment import MessageSegment
 from . import registry
-from .type_system import CommonUnionTypes
 
 
 # ============= 基础命令示例 =============
@@ -104,29 +103,6 @@ def deploy_command(event, app_name: str, env="dev", port=8080, workers=1,
 
 
 # ============= 多类型参数示例 =============
-
-@registry.command("mention", description="提及用户或发送消息")
-@registry.param("target", type=CommonUnionTypes.USER_IDENTIFIER, 
-                help="目标用户（用户名或@用户）",
-                type_hints={
-                    str: "用户名或用户ID",
-                    MessageSegment: "@用户"
-                },
-                type_examples={
-                    str: ["Alice", "12345", "用户名"],
-                    MessageSegment: ["[@用户]"]
-                })
-def mention_command(event, target: Union[str, MessageSegment], message: str = "你好"):
-    """提及用户并发送消息
-    
-    Args:
-        target: 目标用户
-        message: 要发送的消息
-    """
-    if isinstance(target, str):
-        return f"📩 发送给用户 {target}: {message}"
-    else:  # MessageSegment
-        return f"📩 发送给 @{target.qq}: {message}"
 
 
 @registry.command("process", description="处理文件或数据")
