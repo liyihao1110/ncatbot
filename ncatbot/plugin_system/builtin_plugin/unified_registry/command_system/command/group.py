@@ -30,6 +30,13 @@ class CommandGroup:
             alias: 直接别名，跳过中间的一大堆 command_group
         """
         def decorator(func: Callable):
+            if self.command_map.get(name, None) is not None:
+                raise ValueError(f"命令已存在: {name}")
+            from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.analyzer.func_analyzer import FuncAnalyser
+            try:
+                FuncAnalyser(func)
+            except Exception as e:
+                raise e
             self.command_map[name] = func
             if alias is not None:
                 setattr(func, "__alias__", alias)
@@ -45,6 +52,9 @@ class CommandGroup:
         Returns:
             CommandGroup: 新创建的子命令组
         """
+        if self.command_group_map.get(name, None) is not None:
+            raise ValueError(f"命令组已存在: {name}")
+        self.command_group_map[name] = CommandGroup(self, name)
         command_group = CommandGroup(self, name)
         self.children.append(command_group)
         return command_group
