@@ -3,7 +3,7 @@ import copy
 import inspect
 import traceback
 import threading
-from typing import Callable, Optional, Type, Literal, Union
+from typing import Callable, Optional, Type, Literal, Union, TypedDict, Unpack
 
 from ncatbot.core.adapter.adapter import Adapter
 from ncatbot.core.api.api import BotAPI
@@ -34,6 +34,19 @@ EVENTS = (
     OFFICIAL_HEARTBEAT_EVENT,
 )
 
+class StartArgs(TypedDict, total=False):
+    bt_uin: Optional[int]
+    root: Optional[str]
+    ws_uri: Optional[str]
+    webui_uri: Optional[str]
+    ws_token: Optional[str]
+    webui_token: Optional[str]
+    ws_listen_ip: Optional[str]
+    remote_mode: Optional[bool]
+    enable_webui_interaction: Optional[bool]
+    debug: Optional[bool]
+    # 以后再加参数直接在这里补一行即可，无需改函数签名
+
 class BotClient:
     def __init__(self, *args, **kwargs):
         self.adapter = Adapter()
@@ -41,7 +54,6 @@ class BotClient:
         self.thread_pool = ThreadPool(max_workers=1, max_per_func=1)
         self.api = BotAPI(self.adapter.send)
         self.crash_flag = False
-        self.mock_mode = False  # 添加这一行
         status.global_api = self.api
         for event_name in EVENTS:
             self.create_official_event_handler_group(event_name)
@@ -185,78 +197,20 @@ class BotClient:
         asyncio.run(self.plugin_loader.unload_all())
         LOG.info("Bot 已经正常退出")
     
-    def run_frontend(
-        self,
-        bt_uin=None,
-        root=None,
-        ws_uri=None,
-        webui_uri=None,
-        ws_token=None,
-        webui_token=None,
-        ws_listen_ip=None,
-        remote_mode=None,
-        enable_webui_interaction=None,
-        debug=None,
-        mock_mode=False,  # 添加这一行
-        *args,
-        **kwargs
-    ):
+    def run_frontend(self, **kwargs: Unpack[StartArgs]):
         try:
-            self.start(
-                bt_uin=bt_uin,
-                root=root,
-                ws_uri=ws_uri,
-                webui_uri=webui_uri,
-                ws_token=ws_token,
-                webui_token=webui_token,
-                ws_listen_ip=ws_listen_ip,
-                remote_mode=remote_mode,
-                enable_webui_interaction=enable_webui_interaction,
-                debug=debug,
-                mock_mode=mock_mode,  # 添加这一行
-                *args,
-                **kwargs
-            )
+            self.start(**kwargs)
         except KeyboardInterrupt:
             self.bot_exit()
         except Exception:
             raise
             
-    def run_backend(
-        self,
-        bt_uin=None,
-        root=None,
-        ws_uri=None,
-        webui_uri=None,
-        ws_token=None,
-        webui_token=None,
-        ws_listen_ip=None,
-        remote_mode=None,
-        enable_webui_interaction=None,
-        debug=None,
-        mock_mode=False,  # 添加这一行
-        *args,
-        **kwargs
-    ):
+    def run_backend(self, **kwargs: Unpack[StartArgs]):
         def run_async_task():
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             try:
-                self.start(
-                    bt_uin=bt_uin,
-                    root=root,
-                    ws_uri=ws_uri,
-                    webui_uri=webui_uri,
-                    ws_token=ws_token,
-                    webui_token=webui_token,
-                    ws_listen_ip=ws_listen_ip,
-                    remote_mode=remote_mode,
-                    enable_webui_interaction=enable_webui_interaction,
-                    debug=debug,
-                    mock_mode=mock_mode,  # 添加这一行
-                    *args,
-                    **kwargs
-                )
+                self.start(**kwargs)
             except Exception as e:
                 LOG.error(f"Bot 启动失败: {e}")
                 LOG.info(traceback.format_exc())
@@ -279,26 +233,20 @@ class BotClient:
             raise NcatBotError("Bot 启动超时", log=True)
         return self.api
             
-    def start(self, mock_mode=False, **kwargs):
-        # 设置 mock 模式
-        self.mock_mode = mock_mode
-        
+    def start(self, **kwargs):
         # 配置参数
         legal_args = [
             "bt_uin", "root", "ws_uri", "webui_uri", "ws_token",
             "webui_token", "ws_listen_ip", "remote_mode",
-            "enable_webui_interaction", "debug", "mock_mode"  # 添加 mock_mode
+            "enable_webui_interaction", "debug", "skip_plugin_load"
         ]
         for key, value in kwargs.items():
             if key not in legal_args:
                 raise NcatBotError(f"非法参数: {key}")
             if value is None:
                 continue
-            if key != "mock_mode":  # mock_mode 不需要写入配置
-                ncatbot_config.update_value(key, value)
         
-        if not mock_mode:
-            ncatbot_config.validate_config()
+        ncatbot_config.validate_config()
             
         # 加载插件
         from ncatbot.plugin_system import EventBus, PluginLoader
@@ -307,33 +255,16 @@ class BotClient:
         
         run_coroutine(self.plugin_loader.load_plugins)
         
-        if mock_mode:
-            LOG.info("Mock 模式启动：跳过 NapCat 服务和 WebSocket 连接")
-            # 在 mock 模式下触发启动事件
-            from ncatbot.core.event.meta import MetaEvent
-            startup_event = MetaEvent({
-                "post_type": "meta_event",
-                "meta_event_type": "lifecycle",
-                "sub_type": "enable",
-                "self_id": "123456789",
-                "time": int(__import__('time').time())
-            })
-            # 同步调用启动处理器
-            import inspect
-            for handler in self.event_handlers[OFFICIAL_STARTUP_EVENT]:
-                if inspect.iscoroutinefunction(handler):
-                    run_coroutine(handler, startup_event)
-                else:
-                    handler(startup_event)
-            return
-            
-        # 启动服务（仅在非 mock 模式下）
-        lanuch_napcat_service()
-        try:
-            asyncio.run(self.adapter.connect_websocket())
-        except NcatBotConnectionError as e:
-            self.bot_exit()
-            raise
+        if self.mock_mode: # MockMixin 中提供
+            self.mock_start()
+        else:
+            # 启动服务（仅在非 mock 模式下）
+            lanuch_napcat_service()
+            try:
+                asyncio.run(self.adapter.connect_websocket())
+            except NcatBotConnectionError as e:
+                self.bot_exit()
+                raise
     
     # 兼容 3xx 版本
     group_event = on_group_message
@@ -351,3 +282,5 @@ class BotClient:
     run_blocking = run_frontend
     run_non_blocking = run_backend
     run = run_frontend
+
+BotClient.run()

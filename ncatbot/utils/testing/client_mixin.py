@@ -16,8 +16,8 @@ class ClientMixin:
     """客户端混入类，为 BotClient 添加测试功能"""
     
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.mock_mode = False
+        # 测试模式默认不加载插件，需要手动加载要测试的插件
+        self.mock_mode = True
         self.event_history: List[Tuple[str, BaseEventData]] = []
         
     def enable_mock_mode(self):
@@ -29,7 +29,29 @@ class ClientMixin:
         """禁用 Mock 模式"""
         self.mock_mode = False
         LOG.info("Mock 模式已禁用")
-        
+    
+    def mock_start(self):
+        LOG.info("Mock 模式启动：跳过 NapCat 服务和 WebSocket 连接")
+        # 在 mock 模式下触发启动事件
+        from ncatbot.core.event.meta import MetaEvent
+        startup_event = MetaEvent({
+            "post_type": "meta_event",
+            "meta_event_type": "lifecycle",
+            "sub_type": "enable",
+            "self_id": "123456789",
+            "time": int(__import__('time').time())
+        })
+        # 同步调用启动处理器
+        import inspect
+        from ncatbot.utils.thread_pool import run_coroutine
+        from ncatbot.utils import OFFICIAL_STARTUP_EVENT
+        for handler in self.event_handlers[OFFICIAL_STARTUP_EVENT]:
+            if inspect.iscoroutinefunction(handler):
+                run_coroutine(handler, startup_event)
+            else:
+                handler(startup_event)
+        return
+
     async def inject_event(self, event: BaseEventData):
         """注入事件到客户端，模拟从适配器接收事件
         

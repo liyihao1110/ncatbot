@@ -19,6 +19,8 @@ from packaging.specifiers import SpecifierSet
 from packaging.version import parse as parse_version
 from logging import getLogger
 
+from ncatbot.utils import ncatbot_config
+
 from .decorator import CompatibleHandler
 from .base_plugin import BasePlugin
 from .event import EventBus
@@ -226,25 +228,33 @@ class PluginLoader:
         # 并发执行所有插件的初始化
         await asyncio.gather(*init_tasks)
 
+    async def load_plugin(self, plugin_class: Type[BasePlugin], **kwargs) -> None:
+        plugin = plugin_class(
+            event_bus=self.event_bus,
+            debug=self._debug,
+            rbac_manager=self.rbac_manager,
+            plugin_loader=self,
+        )
+        self.plugins[plugin.name] = plugin
+        await self._init_plugin_in_thread(plugin)
+        return plugin
+
     async def load_builtin_plugins(self) -> None:
         """加载内置插件。"""
         # 内置插件要在这里声明
         plugins = [SystemManager, UnifiedRegistryPlugin]
         for plugin in plugins:
-            plugin_obj = plugin(
-                event_bus=self.event_bus,
-                debug=self._debug,
-                rbac_manager=self.rbac_manager,
-                plugin_loader=self,
-            )
-            self.plugins[plugin.name] = plugin_obj
-            await self._init_plugin_in_thread(plugin_obj)
+            await self.load_plugin(plugin)
 
     async def load_plugins(self, plugins_path: str = _PLUGINS_DIR, **kwargs) -> None:
         """从目录批量加载。"""
         path = Path(plugins_path or _PLUGINS_DIR).resolve()
         if not path.exists():
             LOG.info("插件目录: %s 不存在……跳过加载插件", path)
+            return
+        
+        if ncatbot_config.plugin.skip_plugin_load:
+            LOG.info("跳过插件加载")
             return
 
         LOG.info("从 %s 导入插件", path)
@@ -261,7 +271,7 @@ class PluginLoader:
         await self.from_class_load_plugins(plugin_classes, **kwargs)
         await self.load_builtin_plugins()
         LOG.info("已加载插件数 [%d]", len(self.plugins))
-        self._load_compatible_data()
+        # self._load_compatible_data()
 
     async def unload_plugin(self, name: str, **kwargs) -> bool:
         """卸载单个插件。"""
@@ -297,20 +307,13 @@ class PluginLoader:
                 LOG.error("在模块中未找到插件 '%s'", name)
                 return False
 
-            new = cls(
-                event_bus=self.event_bus,
-                debug=self._debug,
-                rbac_manager=self.rbac_manager,
-                plugin_loader=self,
-                **kwargs,
-            )
-            await new.__onload__()
+            new = await self.load_plugin(cls)
             
-            # 执行兼容处理
-            for _, func in _iter_callables(new):
-                for handler in CompatibleHandler._subclasses:
-                    if handler.check(func):
-                        handler.handle(new, func, self.event_bus, new)
+            # 执行兼容处理（这玩意应该不需要了）
+            # for _, func in _iter_callables(new):
+            #     for handler in CompatibleHandler._subclasses:
+            #         if handler.check(func):
+            #             handler.handle(new, func, self.event_bus, new)
                         
             self.plugins[name] = new
             LOG.info("插件 '%s' 重载成功", name)
@@ -369,14 +372,14 @@ class PluginLoader:
                         plugin_name, dep_name, constraint, dep.version
                     )
 
-    def _load_compatible_data(self) -> None:
-        """运行兼容处理器。"""
-        for plugin in self.plugins.values():
-            for _, func in _iter_callables(plugin):
-                for handler in CompatibleHandler._subclasses:
-                    if handler.check(func):
-                        # 传入plugin实例
-                        handler.handle(plugin, func, self.event_bus)
+    # def _load_compatible_data(self) -> None:
+    #     """运行兼容处理器。"""
+    #     for plugin in self.plugins.values():
+    #         for _, func in _iter_callables(plugin):
+    #             for handler in CompatibleHandler._subclasses:
+    #                 if handler.check(func):
+    #                     # 传入plugin实例
+    #                     handler.handle(plugin, func, self.event_bus)
 
     def _guess_module(self, plugin_name: str) -> str:
         """根据插件名猜模块名；简单实现，如有需要可扩展。"""
