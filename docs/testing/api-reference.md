@@ -30,7 +30,7 @@ class TestClient(ClientMixin, BotClient):
 **示例:**
 ```python
 client = TestClient()
-client.start(mock_mode=True)
+client.start()
 ```
 
 #### `register_plugin(plugin_class: Type[BasePlugin])`
@@ -448,7 +448,7 @@ async def complete_test_example():
     helper = TestHelper(client)
     
     # 2. 启动客户端
-    client.start(mock_mode=True)
+    client.start()
     
     # 3. 注册插件
     client.register_plugin(MyPlugin)

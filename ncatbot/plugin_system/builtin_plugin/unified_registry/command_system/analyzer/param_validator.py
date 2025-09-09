@@ -1,8 +1,9 @@
 from typing import TYPE_CHECKING, List, Tuple
 from ncatbot.core.event import MessageSegment
 from ncatbot.utils import get_log
-from ..modern_registry.exceptions import CommandRegistrationError
-from .specs import CommonadSpec
+from ..registry.exceptions import CommandRegistrationError
+from ..utils.specs import CommandSpec, OptionSpec, OptionGroupSpec
+from ..utils.specs import ParameterSpec
 import inspect
 if TYPE_CHECKING:
     from .func_analyzer import FuncDesciptor
@@ -18,9 +19,9 @@ class ParamsValidator:
     
     def analyze_params(self):
         # 分析非位置参数
-        options = getattr(self.func, '__command_options__', [])
-        params = getattr(self.func, '__command_params__', [])
-        groups = getattr(self.func, '__command_option_groups__', [])
+        options: List[OptionSpec] = getattr(self.func, '__command_options__', [])
+        params: List[ParameterSpec] = getattr(self.func, '__command_params__', [])
+        groups: List[OptionGroupSpec] = getattr(self.func, '__command_option_groups__', [])
 
         # 构建实际参数名到索引的映射（跳过 self/cls 与 event）
         actual_params = self.actual_params
@@ -34,7 +35,7 @@ class ParamsValidator:
 
         # 校验 param
         for i, spec in enumerate(params):
-            name = spec.get('name')
+            name = spec.name
             if name not in name_to_index:
                 raise CommandRegistrationError(
                     self.func.__name__,
@@ -43,12 +44,12 @@ class ParamsValidator:
                     suggestions=["确保 @param(name=...) 与函数形参名一致", "将命名参数放在参数列表最后"]
                 )
             idx = name_to_index[name]
-            analyzed_params.append({'spec': spec, 'name': name, 'index': idx})
+            analyzed_params.append(spec)
             decorated_param_indexes.add(idx)
 
         # 校验 option（使用 long_name 优先，其次 short_name 作为绑定参数名）
         for i, spec in enumerate(options):
-            bind_name = spec.get('long_name') or spec.get('short_name')
+            bind_name = spec.long_name or spec.short_name
             if not bind_name:
                 raise CommandRegistrationError(
                     self.func.__name__,
@@ -64,12 +65,12 @@ class ParamsValidator:
                     suggestions=["确保选项名与绑定的函数形参名一致", "将选项对应参数放在参数列表最后"]
                 )
             idx = name_to_index[bind_name]
-            analyzed_options.append({'spec': spec, 'name': bind_name, 'index': idx})
+            analyzed_options.append(spec)
             decorated_param_indexes.add(idx)
 
         # 校验 option_group（按 name 绑定）
         for i, spec in enumerate(groups):
-            group_name = spec.get('name')
+            group_name = spec.name
             if not group_name:
                 raise CommandRegistrationError(
                     self.func.__name__,
@@ -85,7 +86,7 @@ class ParamsValidator:
                     suggestions=["确保选项组名与函数形参名一致", "将选项组对应参数放在参数列表最后"]
                 )
             idx = name_to_index[group_name]
-            analyzed_groups.append({'spec': spec, 'name': group_name, 'index': idx, 'choices': spec.get('choices', [])})
+            analyzed_groups.append(spec)
             decorated_param_indexes.add(idx)
 
         # 顺序校验：所有被装饰的参数必须连续出现在末尾
@@ -101,7 +102,7 @@ class ParamsValidator:
                 suggestions=["将所有命名/选项/选项组对应参数移到参数列表最后", "确保它们在末尾连续排列"]
             )
 
-        spec = CommonadSpec(analyzed_options, analyzed_groups, analyzed_params, self.detect_args_type(), self.descriptor.func)
+        spec = CommandSpec(analyzed_options, analyzed_groups, analyzed_params, self.detect_args_type(), self.descriptor.func)
         return spec
     
     def detect_args_type(self) -> Tuple[List[type], List[bool]]:

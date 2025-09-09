@@ -34,7 +34,7 @@ from .pluginsys_err import (
 from .config import config
 from .rbac import RBACManager
 from .builtin_plugin import SystemManager, UnifiedRegistryPlugin
-from ncatbot.utils import get_log
+from ncatbot.utils import get_log, status
 if TYPE_CHECKING:
     import importlib.util
 
@@ -175,6 +175,9 @@ class PluginLoader:
         self.rbac_manager = RBACManager(config.rbac_path)
         self._debug = debug
         self._resolver = _DependencyResolver()
+        
+        # 将rbac_manager注册到全局状态
+        status.global_access_manager = self.rbac_manager
 
         if debug:
             LOG.warning("插件系统已切换为调试模式")

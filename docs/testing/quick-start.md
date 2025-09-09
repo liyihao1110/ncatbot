@@ -8,6 +8,7 @@
 # 导入必要的测试工具
 from ncatbot.utils.testing import TestClient, TestHelper, EventFactory
 from ncatbot.plugin_system import BasePlugin
+from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry import command_registry, param, option
 import asyncio
 ```
 
@@ -25,17 +26,16 @@ class HelloPlugin(BasePlugin):
         super().__init__()
         
     async def on_load(self):
-        # 注册一个简单的命令
-        @self.on_command("hello", aliases=["hi"])
+        # 使用 unified_registry 注册命令
+        @command_registry.command("hello", aliases=["hi"], description="问候")
         async def hello_command(event):
             return "你好！这是来自 HelloPlugin 的问候。"
-        
-        # 注册一个带参数的命令
-        @self.on_command("echo")
-        async def echo_command(event, text: str = ""):
-            if text:
-                return f"你说的是：{text}"
-            return "请提供要回显的文本"
+
+        @command_registry.command("echo", description="回显文本")
+        @param(name="lang", default="zh", help="语言", choices=["zh","en"])
+        @option(short_name="v", long_name="verbose", help="详细输出")
+        async def echo_command(event, text: str, lang: str = "zh", verbose: bool = False):
+            return (f"[{lang}] 你说的是：{text}" + (" (verbose)" if verbose else ""))
 ```
 
 ### 2. 编写测试代码
@@ -48,8 +48,8 @@ async def test_hello_plugin():
     client = TestClient()
     helper = TestHelper(client)
     
-    # 2. 启动客户端（Mock 模式）
-    client.start(mock_mode=True)
+    # 2. 启动客户端（Mock 模式默认开启）
+    client.start()
     
     # 3. 注册要测试的插件
     client.register_plugin(HelloPlugin)
@@ -81,8 +81,8 @@ async def test_hello_plugin():
     
     helper.clear_history()
     
-    # 8. 测试带参数的命令
-    await helper.send_private_message("/echo 测试文本", user_id="test_user")
+    # 8. 测试带参数/选项/命名参数
+    await helper.send_private_message("/echo 测试文本 --lang=zh -v", user_id="test_user")
     reply = helper.get_latest_reply()
     assert reply is not None
     

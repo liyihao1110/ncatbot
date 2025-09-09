@@ -10,9 +10,11 @@
 from dataclasses import dataclass
 from typing import Callable, Tuple, List, Any, Dict
 
+from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.utils.specs import CommandSpec
 from ncatbot.utils import get_log
 from ..command_system.analyzer.func_analyzer import FuncAnalyser
 from ..command_system.lexer.message_tokenizer import MessageTokenizer
+from ncatbot.core.event import BaseMessageEvent
 
 LOG = get_log(__name__)
 
@@ -22,16 +24,13 @@ class BindResult:
     ok: bool
     args: Tuple # 位置参数
     named_args: Dict[str, Any] # 命名参数
-    options: Dict[str, bool] # 选项
     message: str = ""
 
 
 class ArgumentBinder:
-    def bind(self, func: Callable, event, path_words: Tuple[str, ...], prefixes: List[str]) -> BindResult:
+    def bind(self, spec: CommandSpec, event: BaseMessageEvent, path_words: Tuple[str, ...], prefixes: List[str]) -> BindResult:
         try:
-            analyser = FuncAnalyser(func)
-            args_types, is_required_list = analyser.detect_args_type()
-
+            # TODO: 绑定错误回报提示
             # 解析消息为 ParsedCommand（elements 已去除选项/命名参数）
             tokenizer = MessageTokenizer()
             parsed = tokenizer.parse_message(event.message)
@@ -51,80 +50,20 @@ class ArgumentBinder:
                     break
 
             LOG.debug(f"跳过索引: {skip_idx}")
-            self.idx = skip_idx
+            idx = skip_idx
             bound_args: List[Any] = []
+            bound_kwargs: Dict[str, Any] = {}
 
-            def take_text() -> Tuple[bool, str]:
-                if self.idx >= len(elements):
-                    return False, ""
-                el = elements[self.idx]
-                if el.type != "text":
-                    return False, ""
-                self.idx += 1
-                return True, str(el.content)
+            for k, v in parsed.named_params.items():
+                bound_kwargs[k] = v
+            
+            for o in parsed.options:
+                bound_kwargs.update(spec.get_kw_binding(o))
 
-            def take_segment(expected_cls) -> Tuple[bool, Any]:
-                if self.idx >= len(elements):
-                    return False, None
-                el = elements[self.idx]
-                if el.type == "text":
-                    return False, None
-                seg = el.content
-                # 类型校验（MessageSegment 子类名匹配）
-                if expected_cls is not None and not isinstance(seg, expected_cls):
-                    return False, None
-                self.idx += 1
-                return True, seg
+            for element in elements[skip_idx:]:
+                bound_args.append(element.content)
 
-            # 逐个参数绑定
-            for i, tp in enumerate(args_types):
-                # Sentence：吞剩余文本元素
-                # if getattr(tp, "__name__", None) == "Sentence":
-                #     texts: List[str] = []
-                #     while self.idx < len(elements) and elements[self.idx].type == "text":
-                #         texts.append(str(elements[self.idx].content))
-                #         self.idx += 1
-                #     bound_args.append(" ".join(texts))
-                #     continue
-
-                # MessageSegment 子类：取下一个非文本元素
-                if hasattr(tp, "__mro__") and any(c.__name__ == "MessageSegment" for c in getattr(tp, "__mro__", [])):
-                    ok, seg = take_segment(tp)
-                    if not ok:
-                        if not is_required_list[i]:
-                            # 可选参数缺失：使用默认值
-                            default_val = analyser.param_defaults.get(i, None)
-                            bound_args.append(default_val)
-                            continue
-                        return BindResult(False, tuple(), message="缺少非文本参数")
-                    bound_args.append(seg)
-                    continue
-
-                # 基础类型（str/int/float/bool）：从文本元素读取并转换
-                ok, text_val = take_text()
-                if not ok:
-                    if not is_required_list[i]:
-                        default_val = analyser.param_defaults.get(i, None)
-                        bound_args.append(default_val)
-                        continue
-                    return BindResult(False, tuple(), message="缺少文本参数")
-
-                try:
-                    if tp is str:
-                        bound_args.append(text_val)
-                    elif tp is int:
-                        bound_args.append(int(text_val))
-                    elif tp is float:
-                        bound_args.append(float(text_val))
-                    elif tp is bool:
-                        bound_args.append(False if text_val.lower() in ("false", "0", "no") else True)
-                    else:
-                        # 未知类型（按字符串处理）
-                        bound_args.append(text_val)
-                except Exception:
-                    return BindResult(False, tuple(), message="类型转换失败")
-            LOG.debug(f"绑定成功: {bound_args}")
-            return BindResult(True, tuple(bound_args))
+            return BindResult(True, tuple(bound_args), bound_kwargs, "")
         except Exception as e:
             LOG.debug(f"绑定异常: {e}")
             raise e

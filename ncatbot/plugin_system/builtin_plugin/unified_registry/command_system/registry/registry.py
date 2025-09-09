@@ -3,7 +3,7 @@
 核心注册器类，管理命令定义、路由和执行。
 """
 
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Tuple
 
 from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.analyzer.func_analyzer import FuncAnalyser
 from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.utils import CommandSpec
@@ -27,7 +27,7 @@ class CommandGroup:
         self.name = name
         self.parent = parent
         self.description = description
-        self.commands: Dict[str, CommandSpec] = {}
+        self.commands: Dict[Tuple[str, ...], CommandSpec] = {}
         self.subgroups: Dict[str, 'CommandGroup'] = {}
     
     def command(self, name: str, 
@@ -73,31 +73,31 @@ class CommandGroup:
         for alias in command_spec.aliases:
             self.commands[alias] = command_spec
     
-    def get_full_name(self) -> str:
+    def get_full_name(self) -> Tuple[str, ...]:
         """获取完整组名"""
         if self.parent:
-            return f"{self.parent.get_full_name()} {self.name}"
-        return self.name
+            return self.parent.get_full_name() + (self.name,)
+        return (self.name,)
     
-    def get_all_commands(self) -> Dict[str, CommandSpec]:  
+    def get_all_commands(self) -> Dict[Tuple[str, ...], CommandSpec]:  
         """获取所有命令（包括子组）"""
-        commands = self.commands.copy()
+        commands = {(k,): v for k, v in self.commands.items()}
         for subgroup in self.subgroups.values():
             subgroup_commands = subgroup.get_all_commands()
             # 添加组前缀
             for name, cmd_def in subgroup_commands.items():
-                full_name = f"{subgroup.name} {name}"
+                full_name = (subgroup.name,) + name
                 commands[full_name] = cmd_def
         return commands
 
-    def get_all_aliases(self) -> Dict[str, CommandSpec]:
+    def get_all_aliases(self) -> Dict[Tuple[str, ...], CommandSpec]:
         """获取所有别名"""
         aliases = {}
         for command_group in self.subgroups.values():
             aliases.update(command_group.get_all_aliases())
         for command in self.commands.values():
             for alias in command.aliases:
-                aliases[alias] = command
+                aliases[(alias,)] = command
         return aliases
 
 
@@ -120,11 +120,11 @@ class ModernRegistry:
         """创建根级命令组"""
         return self.root_group.group(name, description)
     
-    def get_all_commands(self) -> Dict[str, CommandSpec]:
+    def get_all_commands(self) -> Dict[Tuple[str, ...], CommandSpec]:
         """获取所有命令"""
         return self.root_group.get_all_commands()
     
-    def get_all_aliases(self) -> Dict[str, CommandSpec]:
+    def get_all_aliases(self) -> Dict[Tuple[str, ...], CommandSpec]:
         """获取所有别名"""
         return self.root_group.get_all_aliases()
 

@@ -16,7 +16,7 @@
 """
 
 from .analyzer import FuncAnalyser, get_subclass_recursive
-from .command import CommandGroup, CommandRouter
+from .registry import command_registry
 from .lexer import (
     StringTokenizer, Token, TokenType,
     QuoteState, QuoteMismatchError, InvalidEscapeSequenceError,

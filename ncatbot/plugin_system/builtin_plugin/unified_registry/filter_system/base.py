@@ -37,7 +37,7 @@ class BaseFilter(ABC):
         
         from .registry import filter_registry
         # 将过滤器添加到函数
-        filter_registry.add_function_filter(func, self)
+        filter_registry.add_filter_to_function(func, self)
         return wrapper
     
     def __str__(self) -> str:

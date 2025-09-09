@@ -2,7 +2,10 @@
 
 from typing import TYPE_CHECKING, Callable
 from ncatbot.core import BaseMessageEvent
+from ncatbot.utils import status
+from ncatbot.utils.assets.literals import PermissionGroup
 from .base import BaseFilter
+
 
 if TYPE_CHECKING:
     from ncatbot.core.event import BaseMessageEvent
@@ -26,18 +29,22 @@ class AdminFilter(BaseFilter):
     
     def check(self, event: "BaseMessageEvent") -> bool:
         """检查用户是否有管理员权限"""
-        # TODO: 实现权限检查逻辑
-        # 这里需要实际的权限管理系统接口
-        return True  # 临时返回 True，待后续实现
+        if not status.global_access_manager:
+            return False
+        
+        user_id = event.user_id
+        return status.global_access_manager.user_has_role(user_id, PermissionGroup.ADMIN.value)
 
 class RootFilter(BaseFilter):
     """Root权限过滤器"""
     
     def check(self, event: "BaseMessageEvent") -> bool:
         """检查用户是否有root权限"""
-        # TODO: 实现root权限检查逻辑
-        # 这里需要实际的权限管理系统接口
-        return True  # 临时返回 True，待后续实现
+        if not status.global_access_manager:
+            return False
+        
+        user_id = event.user_id
+        return status.global_access_manager.user_has_role(user_id, PermissionGroup.ROOT.value)
 
 class CustomFilter(BaseFilter):
     """自定义函数过滤器包装器"""

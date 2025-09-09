@@ -23,11 +23,9 @@
         return f"Hello {name}!"
 """
 
-from .registry import ModernRegistry, CommandGroup, CommandDefinition
+from .registry import ModernRegistry, CommandGroup, command_registry
 from .decorators import (
     option, param, option_group,
-    str_param, int_param, bool_param, user_param,
-    text_or_image_param, choice_param
 )
 from .exceptions import (
     CommandRegistrationError, ParameterError, ValidationError,
@@ -47,12 +45,10 @@ __all__ = [
     "registry",
     
     # 核心类
-    "ModernRegistry", "CommandGroup", "CommandDefinition",
+    "ModernRegistry", "CommandGroup", "command_registry",
     
     # 装饰器
     "option", "param", "option_group",
-    "str_param", "int_param", "bool_param", "user_param",
-    "text_or_image_param", "choice_param",
     
     # 异常类
     "CommandRegistrationError", "ParameterError", "ValidationError",
@@ -61,10 +57,6 @@ __all__ = [
     "MutuallyExclusiveError", "MissingRequiredParameterError",
     "TooManyArgumentsError", "ErrorHandler",
     
-    # 类型系统
-    "ParameterType", "OptionType", "UnionType", "CommonUnionTypes",
-    "TypeValidator", "TypeConverter", "BuiltinConverters", "BuiltinValidators",
-    "TypeMeta", "type_registry",
     
     # 规格系统
     "ParameterSpec", "OptionSpec", "OptionGroupSpec", "CommandSpec",

@@ -5,19 +5,16 @@
 
 # 主要组件
 from .plugin import UnifiedRegistryPlugin
-from .registry import filter, register
 
 # 过滤器系统
 from .filter_system import (
     BaseFilter, GroupFilter, PrivateFilter, AdminFilter, RootFilter,
-    CustomFilter, CustomFilterFunc,
-    FilterValidator
+    CustomFilter,
 )
 
 # 命令系统  
 from .command_system import (
     FuncAnalyser, get_subclass_recursive,
-    CommandGroup, CommandRouter
 )
 
 # 向后兼容导出
@@ -42,6 +39,4 @@ __all__ = [
     # 命令相关
     "FuncAnalyser",
     "get_subclass_recursive",
-    "CommandGroup",
-    "CommandRouter",
 ]

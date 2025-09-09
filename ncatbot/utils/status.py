@@ -6,6 +6,7 @@ import logging
 
 if TYPE_CHECKING:
     from ncatbot.core.api import BotAPI
+    from ncatbot.plugin_system.rbac import RBACManager
 
 
 class Status:
@@ -16,6 +17,7 @@ class Status:
         self._lock = Lock()
         self.current_github_proxy = None
         self.global_api: BotAPI = None
+        self.global_access_manager: 'RBACManager' = None
         self._registered_loggers: Set[str] = set()
 
     def set(self, key: str, value: Any) -> None:

@@ -16,8 +16,8 @@ from ncatbot.utils.testing import TestClient
 # 创建测试客户端
 client = TestClient(load_plugin=False)  # 默认不加载任何插件
 
-# 启动客户端（Mock 模式）
-client.start(mock_mode=True)
+# 启动客户端（Mock 模式默认开启）
+client.start()
 
 # 注册需要测试的插件
 from my_plugin import MyPlugin
@@ -174,7 +174,9 @@ async def test_event_handlers():
     @client.on_group_message()
     async def handle_group_msg(event):
         handled_events.append(event)
-        if "ping" in event.message.extract_plain_text():
+        # 提取纯文本
+        text = ''.join(seg.text for seg in event.message.filter_text())
+        if "ping" in text:
             await event.reply("pong")
     
     # 发送测试消息
@@ -182,7 +184,7 @@ async def test_event_handlers():
     
     # 验证处理器被调用
     assert len(handled_events) == 1
-    assert handled_events[0].message.extract_plain_text() == "ping"
+    assert handled_events[0].message.filter_text()[0].text == "ping"
     
     # 验证回复
     reply = helper.get_latest_reply()
@@ -259,7 +261,7 @@ async def test_plugin_interaction():
     client.start(mock_mode=True)
     
     # 插件 A：提供服务
-    class PluginA(BasePlugin):
+    class PluginA(NcatBotPlugin):
         name = "PluginA"
         version = "1.0.0"
         
@@ -270,7 +272,7 @@ async def test_plugin_interaction():
             return self.data
     
     # 插件 B：使用服务
-    class PluginB(BasePlugin):
+    class PluginB(NcatBotPlugin):
         name = "PluginB"
         version = "1.0.0"
         dependencies = {"PluginA": ">=1.0.0"}

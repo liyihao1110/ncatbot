@@ -59,36 +59,19 @@ class ParameterSpec:
         if self.type_examples is None:
             self.type_examples = {}
 
-
-@dataclass
 class CommandSpec:
-    """命令完整规格数据类
-
-    包含命令的所有配置信息，包括选项、选项组和参数。
-    """
-    name: str = ""
-    description: str = ""
-    options: List[OptionSpec] = field(default_factory=list)
-    option_groups: List[OptionGroupSpec] = field(default_factory=list)
-    parameters: List[ParameterSpec] = field(default_factory=list)
-    aliases: List[str] = field(default_factory=list)
-    category: str = "general"
-    hidden: bool = False
-    examples: List[str] = field(default_factory=list)
-
-class CommonadSpec:
     # 彻底分析函数后得到的命令标识器，用于指导参数传递
     def __init__(self, options: List[OptionSpec], option_groups: List[OptionGroupSpec], params: List[ParameterSpec], args_types: List[type], func: Callable):
-        self.options = options
-        self.option_groups = option_groups
-        self.params = params
-        self.args_types = args_types
-        self.func = func
+        self.options: List[OptionSpec] = options
+        self.option_groups: List[OptionGroupSpec] = option_groups
+        self.params: List[ParameterSpec] = params
+        self.args_types: List[type] = args_types
+        self.func: Callable = func
 
         # 必须外部重新设置的属性
-        self.alias = None
+        self.aliases = None
         self.description = None
-        self.basename = None
+        self.name = None
 
     def get_kw_binding(self, option: str) -> dict:
         for value in self.options:

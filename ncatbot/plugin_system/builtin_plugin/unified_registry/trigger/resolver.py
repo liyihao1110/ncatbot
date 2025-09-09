@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Tuple
 
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.analyzer.specs import CommonadSpec
+from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.utils.specs import CommandSpec
 from ncatbot.utils import get_log
 from ..command_system.lexer.tokenizer import Token, TokenType
 
@@ -21,7 +21,7 @@ LOG = get_log(__name__)
 @dataclass
 class CommandEntry:
     path_words: Tuple[str, ...]
-    command: CommonadSpec
+    command: CommandSpec
 
 
 class CommandResolver:
@@ -37,11 +37,11 @@ class CommandResolver:
     def _path_to_norm(self, path: Tuple[str, ...]) -> Tuple[str, ...]:
         return tuple(self._normalize(p) for p in path)
 
-    def build_index(self, commands: Dict[Tuple[str, ...], CommonadSpec], aliases: Dict[Tuple[str, ...], CommonadSpec]) -> None:
+    def build_index(self, commands: Dict[Tuple[str, ...], CommandSpec], aliases: Dict[Tuple[str, ...], CommandSpec]) -> None:
         """构建索引并进行严格冲突检测。"""
         entries: Dict[Tuple[str, ...], CommandEntry] = {}
 
-        def add_entry(path: Tuple[str, ...], command: CommonadSpec):
+        def add_entry(path: Tuple[str, ...], command: CommandSpec):
             norm_path = self._path_to_norm(path)
             if norm_path in entries:
                 raise ValueError(f"命令重复: {' '.join(norm_path)}")

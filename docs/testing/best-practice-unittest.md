@@ -52,7 +52,7 @@ class NcatBotTestCase(AsyncTestCase):
         super().setUp()
         self.client = TestClient()
         self.helper = TestHelper(self.client)
-        self.client.start(mock_mode=True)
+        self.client.start()
         LOG.info(f"开始测试: {self._testMethodName}")
     
     def tearDown(self):

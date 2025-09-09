@@ -277,7 +277,7 @@ class BasePlugin:
         Returns:
             插件实例；若不存在则返回 None。
         """
-        self._loader.get_plugin(name)
+        return self._loader.get_plugin(name)
     
     def list_plugins(self, *, obj: bool = False) -> List[Union[str, 'BasePlugin']]:
         """插件列表

@@ -18,7 +18,7 @@ async def test_hello():
     helper = TestHelper(client)
     
     # 启动并注册插件
-    client.start(mock_mode=True)
+    client.start()
     client.register_plugin(MyPlugin)
     
     # 发送测试消息
@@ -44,7 +44,7 @@ async def test_with_assertions():
     """带断言的测试"""
     client = TestClient()
     helper = TestHelper(client)
-    client.start(mock_mode=True)
+    client.start()
     client.register_plugin(MyPlugin)
     
     # 测试正常情况

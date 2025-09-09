@@ -10,6 +10,7 @@ from ncatbot.plugin_system.event import EventBus
 from ncatbot.plugin_system import BasePlugin
 from ncatbot.utils import get_log
 from .client_mixin import ClientMixin
+from ncatbot.utils.thread_pool import run_coroutine
 
 LOG = get_log("TestClient")
 
@@ -27,7 +28,7 @@ class TestClient(ClientMixin, BotClient):
         LOG.info("TestClient 初始化完成")
     
     def register_plugin(self, plugin_class: Type[BasePlugin]):
-        self.plugin_loader.load_plugin(plugin_class)
+        run_coroutine(self.plugin_loader.load_plugin, plugin_class)
 
     def get_registered_plugins(self) -> List[BasePlugin]:
         return list(self.plugin_loader.plugins.values())

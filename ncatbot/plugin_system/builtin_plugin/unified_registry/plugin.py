@@ -16,7 +16,7 @@ from .command_system.lexer.tokenizer import StringTokenizer, Token
 from .trigger.resolver import CommandResolver
 from .trigger.binder import ArgumentBinder
 from .filter_system import filter_registry, FilterValidator
-from .command_system.registry.registry import CommandGroup
+from .command_system.registry.registry import command_registry
 
 
 if TYPE_CHECKING:
@@ -103,7 +103,7 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
 
     async def _run_pure_filters(self, event: "BaseMessageEvent") -> None:
         """遍历执行纯过滤器函数（不含命令函数）。"""
-        for func in filter_registry.filter_functions:
+        for func in filter_registry._function_filters:
             # 额外防御：若误标记，仍跳过命令函数
             if getattr(func, "__is_command__", False):
                 continue
@@ -126,40 +126,19 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         if match is None:
             return False
 
-        LOG.debug(f"命中命令: {match.func.__name__}")
+        LOG.debug(f"命中命令: {match.command.func.__name__}")
 
-        func = match.func
+        func = match.command.func
         ignore_words = match.path_words  # 用于参数绑定的 ignore 计数
 
         # 参数绑定：复用 FuncAnalyser 约束
-        bind_result: BindResult = self._binder.bind(func, event, ignore_words, self.prefixes)
+        bind_result: BindResult = self._binder.bind(match.command, event, ignore_words, self.prefixes)
         if not bind_result.ok:
             # 绑定失败：可选择静默或提示（最小实现为静默）
             LOG.debug(f"参数绑定失败: {bind_result.message}")
             return False
 
-        # 过滤器校验（命令命中后才执行过滤器）
-        if self._filter_validator is not None:
-            if not self._filter_validator.validate_filters(func, event):
-                return False
-
-        # 执行函数（注入插件实例作为 self）
-        try:
-            plugin = self._find_plugin_for_function(func)
-            args = bind_result.args
-            if plugin:
-                args = (plugin, event, *args)
-            else:
-                args = (event, *args)
-
-            if asyncio.iscoroutinefunction(func):
-                await func(*args)
-            else:
-                func(*args)
-            return True
-        except Exception as e:
-            LOG.error(f"执行命令函数失败: {func.__name__}, 错误: {e}")
-            return False
+        await self._execute_function(func, event, *bind_result.args, **bind_result.named_args)
 
     async def handle_message_event(self, data: NcatBotEvent) -> bool:
         """处理消息事件（命令和过滤器）"""
@@ -168,7 +147,6 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         self.initialize_if_needed()
         await self._run_command(event)
         await self._run_pure_filters(event)
-
         
     def initialize_if_needed(self) -> None:
         """首次触发时构建命令分发表并做严格冲突检测。"""
@@ -190,8 +168,8 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
 
         # 2) 采集命令定义（仅带 __is_command__ 的函数）
         # CommandGroup.get_all_commands 返回 {path_tuple: func}
-        command_map = self.registry.get_all_commands()
-        alias_map = self.registry.get_all_aliases()
+        command_map = command_registry.get_all_commands()
+        alias_map = command_registry.get_all_aliases()
 
         # 过滤：仅保留被标记为命令的函数（装饰器会设置 __is_command__）
         filtered_commands: Dict[Tuple[str, ...], CommandSpec] = {}
@@ -206,8 +184,6 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
 
         # 3) 交给 resolver 构建并做冲突检测
         self._resolver.build_index(filtered_commands, filtered_aliases)
-
-        self._initialized = True
         LOG.debug(f"TriggerEngine 初始化完成：命令={len(filtered_commands)}, 别名={len(filtered_aliases)}")
     
     async def handle_legacy_event(self, data: NcatBotEvent) -> bool:
@@ -222,25 +198,6 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
             pass
         
         return False
-    
-    async def _execute_function(self, func: Callable, *args, **kwargs):
-        """执行函数"""
-        try:
-            # 查找函数所属的插件
-            plugin = self._find_plugin_for_function(func)
-            if plugin:
-                # 将插件实例作为第一个参数
-                args = (plugin,) + args
-            
-            # 执行函数
-            if asyncio.iscoroutinefunction(func):
-                return await func(*args, **kwargs)
-            else:
-                return func(*args, **kwargs)
-                
-        except Exception as e:
-            LOG.error(f"执行函数 {func.__name__} 时发生错误: {e}")
-            return False
     
     def _find_plugin_for_function(self, func: Callable) -> "NcatBotPlugin":
         """查找函数所属的插件"""
@@ -260,5 +217,4 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
     
     def clear_cache(self):
         """清理缓存"""
-        filter_registry.clear_all()
         self.func_plugin_map.clear()

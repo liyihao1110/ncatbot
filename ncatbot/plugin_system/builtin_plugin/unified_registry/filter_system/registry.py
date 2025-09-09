@@ -4,6 +4,7 @@ from typing import Dict, List, Callable, Optional, Union, Any
 from dataclasses import dataclass
 from .base import BaseFilter
 from .builtin import CustomFilter
+from .decorators import group_only, private_only, admin_only, root_only
 from ncatbot.utils import get_log
 
 LOG = get_log(__name__)
@@ -17,7 +18,7 @@ class FilterEntry:
 
 class FilterRegistry:
     """统一过滤器注册器
-    
+    可以用字符串索引 filter 实例
     支持两种注册方式：
     1. filter_registry.register_filter(name, filter_instance)
     2. filter_registry.register(func) 或 @filter_registry 装饰器
@@ -32,7 +33,7 @@ class FilterRegistry:
     def _validate_filter_function(self, func: Callable) -> None:
         # TODO: 验证（自定义）过滤器函数
         pass
-    
+
     # 方式1：实例注册
     def register_filter(self, name: str, filter_instance: BaseFilter, 
                        metadata: Optional[Dict[str, Any]] = None) -> None:
@@ -135,6 +136,27 @@ class FilterRegistry:
     def list_filter_functions(self) -> List[Callable]:
         """列出所有注册的过滤器函数"""
         return self._function_filters.copy()
+
+    # 委托给内置 decorator 注册
+    def group_filter(self):
+        return group_only
+    
+    def private_filter(self):
+        return private_only
+    
+    def admin_filter(self):
+        return admin_only
+    
+    def root_filter(self):
+        return root_only
+    
+    def filters(self, *filters: Union[BaseFilter, str]):
+        """为函数添加多个过滤器"""
+        def wrapper(func: Callable):
+            for filter in filters:
+                self.add_filter_to_function(func, *filters)
+            return func
+        return wrapper
 
 # 全局单例
 filter_registry = FilterRegistry()

@@ -1,5 +1,5 @@
 from typing import Callable, List
-from ..modern_registry.exceptions import CommandRegistrationError
+from ..registry.exceptions import CommandRegistrationError
 from ..utils.specs import OptionSpec, OptionGroupSpec, ParameterSpec
 
 
