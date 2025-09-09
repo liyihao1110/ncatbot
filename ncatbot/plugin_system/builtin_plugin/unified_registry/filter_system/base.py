@@ -1,7 +1,8 @@
 """过滤器基础模块 v2.0"""
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, Any
+from functools import wraps
 
 if TYPE_CHECKING:
     from ncatbot.core.event import BaseMessageEvent
@@ -27,9 +28,17 @@ class BaseFilter(ABC):
         """
         pass
     
-    def __call__(self, event: "BaseMessageEvent") -> bool:
-        """使过滤器实例可调用"""
-        return self.check(event)
+    def __call__(self, func: Callable) -> Callable:
+        """使过滤器实例可作为装饰器使用"""
+        
+        @wraps(func)
+        def wrapper(*args, **kwargs) -> Any:
+            return func(*args, **kwargs)
+        
+        from .registry import filter_registry
+        # 将过滤器添加到函数
+        filter_registry.add_function_filter(func, self)
+        return wrapper
     
     def __str__(self) -> str:
         return f"{self.__class__.__name__}({self.name})"

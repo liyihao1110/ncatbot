@@ -5,7 +5,7 @@ import inspect
 from typing import Dict, Callable, TYPE_CHECKING, List, Tuple, Optional
 from ncatbot.plugin_system.builtin_mixin import NcatBotPlugin
 from ncatbot.plugin_system.builtin_mixin.func_mixin import Func
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.analyzer.specs import CommonadSpec
+from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.utils import CommandSpec
 from ncatbot.plugin_system.event.event import NcatBotEvent
 from ncatbot.core.event import BaseMessageEvent
 from ncatbot.core.event.event_data import BaseEventData
@@ -16,6 +16,7 @@ from .command_system.lexer.tokenizer import StringTokenizer, Token
 from .trigger.resolver import CommandResolver
 from .trigger.binder import ArgumentBinder
 from .filter_system import filter_registry, FilterValidator
+from .command_system.registry.registry import CommandGroup
 
 
 if TYPE_CHECKING:
@@ -59,7 +60,8 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         self.func_plugin_map: Dict[Callable, NcatBotPlugin] = {}
 
         # 触发引擎延迟到首次收到消息时再初始化
-        self.registry = filter_registry
+        self.filter_registry = filter_registry
+        self.command_registry = command_registry
         self._trigger_engine = None
         self._preprocessor = MessagePreprocessor(
             require_prefix=True,
@@ -192,12 +194,12 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         alias_map = self.registry.get_all_aliases()
 
         # 过滤：仅保留被标记为命令的函数（装饰器会设置 __is_command__）
-        filtered_commands: Dict[Tuple[str, ...], CommonadSpec] = {}
+        filtered_commands: Dict[Tuple[str, ...], CommandSpec] = {}
         for path, command in command_map.items():
             if getattr(command.func, "__is_command__", False):
                 filtered_commands[path] = command
 
-        filtered_aliases: Dict[Tuple[str, ...], CommonadSpec] = {}
+        filtered_aliases: Dict[Tuple[str, ...], CommandSpec] = {}
         for path, command in alias_map.items():
             if getattr(command.func, "__is_command__", False):
                 filtered_aliases[path] = command

@@ -1,8 +1,10 @@
 """过滤器装饰器 v2.0"""
 
 from typing import Callable, Union, TYPE_CHECKING
-from .registry import filter_registry
+from .registry import filter_registry, FilterRegistry
 from .builtin import GroupFilter, PrivateFilter, AdminFilter, RootFilter
+from functools import wraps
+from .base import BaseFilter
 
 if TYPE_CHECKING:
     from .base import BaseFilter

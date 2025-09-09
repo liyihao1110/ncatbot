@@ -23,6 +23,8 @@ class FilterRegistry:
     2. filter_registry.register(func) 或 @filter_registry 装饰器
     """
     
+    _function_filters: Dict[Callable, List["BaseFilter"]] = {}
+    
     def __init__(self):
         self._filters: Dict[str, FilterEntry] = {}
         self._function_filters: List[Callable] = []  # 注册的函数过滤器
@@ -150,14 +152,39 @@ class FilterRegistry:
         self._function_filters.clear()
         LOG.debug("已清除所有过滤器")
     
-    # 兼容命令系统的方法
-    def get_all_commands(self):
-        """兼容命令系统 - 返回空字典（过滤器不是命令）"""
-        return {}
+    @classmethod
+    def add_function_filter(cls, func: Callable, filter_obj: "BaseFilter") -> None:
+        """为函数添加过滤器
+        
+        Args:
+            func: 目标函数
+            filter_obj: 过滤器实例
+        """
+        if func not in cls._function_filters:
+            cls._function_filters[func] = []
+        cls._function_filters[func].append(filter_obj)
     
-    def get_all_aliases(self):
-        """兼容命令系统 - 返回空字典（过滤器没有别名）"""
-        return {}
+    @classmethod
+    def get_function_filters(cls, func: Callable) -> List["BaseFilter"]:
+        """获取函数的所有过滤器
+        
+        Args:
+            func: 目标函数
+            
+        Returns:
+            过滤器列表
+        """
+        return cls._function_filters.get(func, [])
+    
+    @classmethod
+    def clear_function_filters(cls, func: Callable) -> None:
+        """清除函数的所有过滤器
+        
+        Args:
+            func: 目标函数
+        """
+        if func in cls._function_filters:
+            del cls._function_filters[func]
 
 # 全局单例
 filter_registry = FilterRegistry()

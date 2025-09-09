@@ -1,6 +1,7 @@
 """内置过滤器实现 v2.0"""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
+from ncatbot.core import BaseMessageEvent
 from .base import BaseFilter
 
 if TYPE_CHECKING:
@@ -41,13 +42,14 @@ class RootFilter(BaseFilter):
 class CustomFilter(BaseFilter):
     """自定义函数过滤器包装器"""
     
-    def __init__(self, filter_func, name: str = None):
+    def __init__(self, filter_func: Callable[[BaseMessageEvent], bool], name: str = None):
         """初始化自定义过滤器
         
         Args:
             filter_func: 过滤器函数，签名为 (event: BaseMessageEvent) -> bool
             name: 过滤器名称
         """
+        
         super().__init__(name or getattr(filter_func, '__name__', 'custom'))
         self.filter_func = filter_func
     
