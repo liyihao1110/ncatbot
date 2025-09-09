@@ -5,7 +5,7 @@ import inspect
 from ncatbot.utils import get_log
 from .sig_validator import SigValidator
 from .param_validator import ParamsValidator
-from .specs import CommonadSpec
+from ..utils.specs import CommonadSpec
 
 LOG = get_log(__name__)
 

@@ -3,16 +3,14 @@
 核心注册器类，管理命令定义、路由和执行。
 """
 
-from typing import Callable, Dict, List, Optional, Any, Union, Type, Tuple
-from dataclasses import dataclass, field
-import inspect
+from typing import Callable, Dict, List, Optional
 
 from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.analyzer.func_analyzer import FuncAnalyser
 from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.utils import CommandSpec
 
 from .exceptions import (
-    CommandRegistrationError, CommandNotFoundError, ArgumentError,
-    ErrorHandler, ErrorContext
+    CommandRegistrationError,
+    ErrorHandler
 )
 from ncatbot.utils import get_log
 
@@ -34,8 +32,7 @@ class CommandGroup:
     
     def command(self, name: str, 
                aliases: Optional[List[str]] = None,
-               description: Optional[str] = None,
-    ):
+               description: Optional[str] = None,):
         """命令装饰器"""
         def decorator(func: Callable) -> Callable:
             # 验证装饰器

@@ -68,6 +68,7 @@ def option_group(
     """
     def decorator(func: Callable) -> Callable:
         # 确保函数有选项列表属性
+        
         if not hasattr(func, '__command_option_groups__'):
             func.__command_option_groups__ = []
         

@@ -28,7 +28,11 @@ class FilterRegistry:
     def __init__(self):
         self._filters: Dict[str, FilterEntry] = {}
         self._function_filters: List[Callable] = []  # 注册的函数过滤器
-        
+    
+    def _validate_filter_function(self, func: Callable) -> None:
+        # TODO: 验证（自定义）过滤器函数
+        pass
+    
     # 方式1：实例注册
     def register_filter(self, name: str, filter_instance: BaseFilter, 
                        metadata: Optional[Dict[str, Any]] = None) -> None:
@@ -131,60 +135,6 @@ class FilterRegistry:
     def list_filter_functions(self) -> List[Callable]:
         """列出所有注册的过滤器函数"""
         return self._function_filters.copy()
-    
-    # 兼容属性
-    @property
-    def filter_functions(self) -> List[Callable]:
-        """兼容旧接口"""
-        return self.list_filter_functions()
-    
-    def remove_filter(self, name: str) -> bool:
-        """移除过滤器"""
-        if name in self._filters:
-            del self._filters[name]
-            LOG.debug(f"移除过滤器: {name}")
-            return True
-        return False
-    
-    def clear_all(self) -> None:
-        """清除所有注册的过滤器和函数"""
-        self._filters.clear()
-        self._function_filters.clear()
-        LOG.debug("已清除所有过滤器")
-    
-    @classmethod
-    def add_function_filter(cls, func: Callable, filter_obj: "BaseFilter") -> None:
-        """为函数添加过滤器
-        
-        Args:
-            func: 目标函数
-            filter_obj: 过滤器实例
-        """
-        if func not in cls._function_filters:
-            cls._function_filters[func] = []
-        cls._function_filters[func].append(filter_obj)
-    
-    @classmethod
-    def get_function_filters(cls, func: Callable) -> List["BaseFilter"]:
-        """获取函数的所有过滤器
-        
-        Args:
-            func: 目标函数
-            
-        Returns:
-            过滤器列表
-        """
-        return cls._function_filters.get(func, [])
-    
-    @classmethod
-    def clear_function_filters(cls, func: Callable) -> None:
-        """清除函数的所有过滤器
-        
-        Args:
-            func: 目标函数
-        """
-        if func in cls._function_filters:
-            del cls._function_filters[func]
 
 # 全局单例
 filter_registry = FilterRegistry()

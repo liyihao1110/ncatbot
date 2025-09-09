@@ -5,7 +5,7 @@
 
 from typing import List, Optional, Dict, Any
 from ..utils.specs import ParameterSpec, OptionSpec, OptionGroupSpec
-from .registry import CommandDefinition, CommandGroup
+from .registry import CommandSpec, CommandGroup
 
 
 class HelpGenerator:
@@ -15,7 +15,7 @@ class HelpGenerator:
         self.max_width = 80
         self.indent = "  "
     
-    def generate_command_help(self, cmd_def: CommandDefinition) -> str:
+    def generate_command_help(self, cmd_def: CommandSpec) -> str:
         """生成单个命令的帮助文档"""
         lines = []
         
@@ -104,7 +104,7 @@ class HelpGenerator:
         
         return "\n".join(lines)
     
-    def generate_command_list(self, commands: List[CommandDefinition]) -> str:
+    def generate_command_list(self, commands: List[CommandSpec]) -> str:
         """生成命令列表"""
         lines = ["📋 所有可用命令:"]
         lines.append("")
@@ -124,7 +124,7 @@ class HelpGenerator:
         
         return "\n".join(lines)
     
-    def _generate_usage(self, cmd_def: CommandDefinition) -> str:
+    def _generate_usage(self, cmd_def: CommandSpec) -> str:
         """生成用法字符串"""
         parts = [f"/{cmd_def.name}"]
         
@@ -252,7 +252,7 @@ class HelpGenerator:
 
         return lines
     
-    def _generate_examples(self, cmd_def: CommandDefinition) -> List[str]:
+    def _generate_examples(self, cmd_def: CommandSpec) -> List[str]:
         """生成使用示例"""
         examples = []
         
@@ -299,7 +299,7 @@ class HelpGenerator:
         return examples
 
 
-def format_error_with_help(error_msg: str, cmd_def: Optional[CommandDefinition] = None) -> str:
+def format_error_with_help(error_msg: str, cmd_def: Optional[CommandSpec] = None) -> str:
     """格式化错误信息并附加帮助提示"""
     lines = [f"❌ {error_msg}"]
     
