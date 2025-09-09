@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 LOG = get_log(__name__)
 
 # 自定义过滤器函数类型
-CustomFilterFunc = Callable
+# CustomFilterFunc = Callable
 
 class CustomFilter(BaseFilter):
     """自定义过滤器包装器
@@ -22,7 +22,7 @@ class CustomFilter(BaseFilter):
     2. 高级过滤器: (manager: UnifiedRegistryPlugin, event: BaseMessageEvent) -> bool
     """
     
-    def __init__(self, filter_func: CustomFilterFunc):
+    def __init__(self, filter_func):
         """初始化自定义过滤器
         
         Args:

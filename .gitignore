@@ -150,6 +150,7 @@ cython_debug/
 .vscode/
 .cursor/
 .idea/
+.history/
 
 # 项目自定义
 test/
@@ -159,3 +160,5 @@ logs/
 napcat/
 data/
 *.DS_Store
+
+

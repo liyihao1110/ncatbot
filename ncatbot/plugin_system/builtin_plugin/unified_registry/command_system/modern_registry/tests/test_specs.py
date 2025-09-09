@@ -8,9 +8,8 @@ import inspect
 from typing import Union
 from unittest.mock import Mock
 
-from ..specs import (
-    ParameterSpec, OptionSpec, OptionGroup, SpecBuilder, 
-    MISSING
+from ..utils.specs import (
+    ParameterSpec, OptionSpec, OptionGroupSpec, CommandSpec
 )
 from ..type_system import UnionType, CommonUnionTypes, OptionType
 from ..exceptions import ParameterError
@@ -324,190 +323,58 @@ class TestOptionSpec:
         assert MessageSegment in union_type.types
 
 
-class TestOptionGroup:
-    """选项组测试"""
-    
-    def test_option_group_creation(self):
-        """测试选项组创建"""
-        group = OptionGroup(
-            group_id=1,
-            name="输出格式",
-            description="选择输出格式",
-            mutually_exclusive=True,
-            required=True
+class TestOptionGroupSpec:
+    """选项组规格测试"""
+
+    def test_option_group_spec_creation(self):
+        """测试选项组规格创建"""
+        group_spec = OptionGroupSpec(
+            choices=["xml", "yaml", "json"],
+            name="format",
+            default="json",
+            description="输出格式"
         )
-        
-        assert group.group_id == 1
-        assert group.name == "输出格式"
-        assert group.description == "选择输出格式"
-        assert group.mutually_exclusive is True
-        assert group.required is True
-        assert len(group.options) == 0
-    
-    def test_add_option_to_group(self):
-        """测试向组添加选项"""
-        group = OptionGroup(
-            group_id=1,
-            mutually_exclusive=True
+
+        assert group_spec.name == "format"
+        assert group_spec.description == "输出格式"
+        assert group_spec.choices == ["xml", "yaml", "json"]
+        assert group_spec.default == "json"
+        assert group_spec.is_required is False
+
+    def test_option_group_spec_option_names(self):
+        """测试选项组规格的选项名称"""
+        group_spec = OptionGroupSpec(
+            choices=["xml", "yaml", "json"],
+            name="format"
         )
-        
-        option = OptionSpec(long_name="--json")
-        group.add_option(option)
-        
-        assert len(group.options) == 1
-        assert option in group.options
-        assert option.group_id == 1
-        assert option.mutually_exclusive is True
-    
-    def test_get_option_names(self):
-        """测试获取组内所有选项名"""
-        group = OptionGroup(group_id=1)
-        
-        option1 = OptionSpec(short_name="-j", long_name="--json")
-        option2 = OptionSpec(long_name="--xml")
-        
-        group.add_option(option1)
-        group.add_option(option2)
-        
-        names = group.get_option_names()
-        assert "-j" in names
-        assert "--json" in names
-        assert "--xml" in names
-        assert len(names) == 3
+
+        expected_names = ["--xml", "--yaml", "--json"]
+        assert group_spec.option_names == expected_names
+
+    def test_option_group_spec_validation(self):
+        """测试选项组规格验证"""
+        # 有效的选项组
+        valid_group = OptionGroupSpec(
+            choices=["xml", "yaml"],
+            name="format",
+            default="xml"
+        )
+        assert valid_group.name == "format"
+
+        # 无效的选项组（缺少名称）
+        with pytest.raises(ValueError):
+            OptionGroupSpec(choices=["xml", "yaml"])
+
+        # 无效的选项组（默认值不在选项中）
+        with pytest.raises(ValueError):
+            OptionGroupSpec(
+                choices=["xml", "yaml"],
+                name="format",
+                default="invalid"
+            )
 
 
-class TestSpecBuilder:
-    """规格构建器测试"""
-    
-    def test_build_from_simple_function(self, sample_function):
-        """测试从简单函数构建规格"""
-        builder = SpecBuilder()
-        parameters, options, option_groups = builder.build_from_function(sample_function)
-        
-        # 应该有3个参数（除了event）: name, age, verbose
-        assert len(parameters) == 3
-        
-        # 检查参数
-        param_names = [p.name for p in parameters]
-        assert "name" in param_names
-        assert "age" in param_names
-        assert "verbose" in param_names
-        
-        # 检查类型推断
-        name_param = next(p for p in parameters if p.name == "name")
-        assert name_param.type == str
-        assert name_param.required is True
-        
-        age_param = next(p for p in parameters if p.name == "age")
-        assert age_param.type == int
-        assert age_param.default == 18
-        assert age_param.required is False
-        
-        verbose_param = next(p for p in parameters if p.name == "verbose")
-        assert verbose_param.type == bool
-        assert verbose_param.default is False
-        assert verbose_param.required is False
-    
-    def test_build_from_decorated_function(self):
-        """测试从装饰器函数构建规格"""
-        # 创建一个带装饰器信息的函数
-        def test_func(event, name: str, count: int = 1):
-            pass
-        
-        # 添加装饰器信息
-        test_func.__command_params__ = [
-            {
-                'name': 'target',
-                'type': [str, MessageSegment],
-                'description': '目标参数',
-                'is_named': True,
-                'is_positional': False
-            }
-        ]
-        
-        test_func.__command_options__ = [
-            {
-                'short_name': '-v',
-                'long_name': '--verbose',
-                'option_type': OptionType.FLAG,
-                'description': '详细输出'
-            }
-        ]
-        
-        test_func.__command_option_groups__ = [
-            {
-                'group_id': 1,
-                'name': '测试组',
-                'mutually_exclusive': True
-            }
-        ]
-        
-        builder = SpecBuilder()
-        parameters, options, option_groups = builder.build_from_function(test_func)
-        
-        # 检查参数构建
-        assert len(parameters) == 2  # name, count
-        
-        # 检查选项构建
-        assert len(options) == 1
-        option = options[0]
-        assert option.short_name == '-v'
-        assert option.long_name == '--verbose'
-        assert option.option_type == OptionType.FLAG
-        
-        # 检查选项组构建
-        assert len(option_groups) == 1
-        group = option_groups[0]
-        assert group.group_id == 1
-        assert group.name == '测试组'
-        assert group.mutually_exclusive is True
-    
-    def test_build_with_varargs(self):
-        """测试带可变参数的函数"""
-        def varargs_func(event, name: str, *args, **kwargs):
-            pass
-        
-        builder = SpecBuilder()
-        parameters, options, option_groups = builder.build_from_function(varargs_func)
-        
-        # 应该识别所有参数类型
-        param_names = [p.name for p in parameters]
-        assert "name" in param_names
-        assert "args" in param_names
-        assert "kwargs" in param_names
-        
-        # 检查可变参数标记
-        args_param = next(p for p in parameters if p.name == "args")
-        assert args_param.is_varargs is True
-        
-        kwargs_param = next(p for p in parameters if p.name == "kwargs")
-        assert kwargs_param.is_kwargs is True
-    
-    def test_merge_decorator_info(self):
-        """测试装饰器信息合并"""
-        builder = SpecBuilder()
-        
-        # 创建基础参数规格
-        param_spec = ParameterSpec(
-            name="test_param",
-            type=str,
-            description="基础描述"
-        )
-        
-        # 装饰器信息
-        decorator_info = {
-            'description': '装饰器描述',
-            'choices': ['a', 'b', 'c'],
-            'examples': ['example1', 'example2']
-        }
-        
-        # 合并信息
-        builder._merge_decorator_info(param_spec, decorator_info)
-        
-        # 验证合并结果
-        assert param_spec.description == '装饰器描述'
-        assert param_spec.choices == ['a', 'b', 'c']
-        assert param_spec.examples == ['example1', 'example2']
+# 移除了过时的 TestSpecBuilder 类，因为 SpecBuilder 类已不存在
 
 
 if __name__ == "__main__":

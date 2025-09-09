@@ -1,3 +1,7 @@
+# This file has been moved to legacy/builtin.py
+# Please import from the new filter system instead:
+# from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import GroupFilter, PrivateFilter, AdminFilter, RootFilter
+
 """内置过滤器实现"""
 
 from typing import TYPE_CHECKING

@@ -2,34 +2,12 @@ from typing import TYPE_CHECKING, List, Tuple
 from ncatbot.core.event import MessageSegment
 from ncatbot.utils import get_log
 from ..modern_registry.exceptions import CommandRegistrationError
+from .specs import CommonadSpec
 import inspect
 if TYPE_CHECKING:
     from .func_analyzer import FuncDesciptor
 
 LOG = get_log(__name__)
-
-class CommonadSpec:
-    # 彻底分析函数后得到的命令标识器，用于指导参数传递
-    def __init__(self, options, option_groups, params, args_types, func):
-        self.options = options
-        self.option_groups = option_groups
-        self.params = params
-        self.args_types = args_types
-        self.func = func
-
-        # 必须外部重新设置的属性
-        self.alias = None
-        self.description = None
-        self.basename = None
-    
-    def get_kw_binding(self, option: str) -> dict:
-        for value in self.options:
-            if value['name'] == option:
-                return {option: True}
-        for value in self.option_groups:
-            if option in value['choices']:
-                return {value['name']: True}
-        return None
 
 
 class ParamsValidator:

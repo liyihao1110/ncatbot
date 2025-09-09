@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Tuple
 
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.analyzer.param_validator import CommonadSpec
+from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.analyzer.specs import CommonadSpec
 from ncatbot.utils import get_log
 from ..command_system.lexer.tokenizer import Token, TokenType
 

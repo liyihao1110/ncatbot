@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 import inspect
 
 from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.analyzer.func_analyzer import FuncAnalyser
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.analyzer.param_validator import CommonadSpec
+from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.analyzer.specs import CommonadSpec
 
 from .decorators import option, param, option_group
 from .exceptions import (

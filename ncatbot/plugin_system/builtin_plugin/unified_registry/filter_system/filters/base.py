@@ -1,3 +1,7 @@
+# This file has been moved to legacy/base.py
+# Please import from the new filter system instead:
+# from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import BaseFilter
+
 """过滤器基础模块"""
 
 from abc import ABC, abstractmethod

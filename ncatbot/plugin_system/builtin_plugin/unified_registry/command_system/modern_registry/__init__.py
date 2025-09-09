@@ -36,12 +36,7 @@ from .exceptions import (
     MutuallyExclusiveError, MissingRequiredParameterError,
     TooManyArgumentsError, ErrorHandler
 )
-from .type_system import (
-    ParameterType, OptionType, UnionType, CommonUnionTypes,
-    TypeValidator, TypeConverter, BuiltinConverters, BuiltinValidators,
-    TypeMeta, type_registry
-)
-from .specs import ParameterSpec, OptionSpec, OptionGroup, SpecBuilder
+from ..utils.specs import ParameterSpec, OptionSpec, OptionGroupSpec, CommandSpec
 from .help_system import HelpGenerator, format_error_with_help
 
 # 创建全局注册实例
@@ -72,7 +67,7 @@ __all__ = [
     "TypeMeta", "type_registry",
     
     # 规格系统
-    "ParameterSpec", "OptionSpec", "OptionGroup", "SpecBuilder",
+    "ParameterSpec", "OptionSpec", "OptionGroupSpec", "CommandSpec",
     
     # 帮助系统
     "HelpGenerator", "format_error_with_help",

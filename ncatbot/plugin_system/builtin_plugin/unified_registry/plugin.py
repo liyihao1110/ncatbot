@@ -5,17 +5,17 @@ import inspect
 from typing import Dict, Callable, TYPE_CHECKING, List, Tuple, Optional
 from ncatbot.plugin_system.builtin_mixin import NcatBotPlugin
 from ncatbot.plugin_system.builtin_mixin.func_mixin import Func
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.analyzer.param_validator import CommonadSpec
+from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.analyzer.specs import CommonadSpec
 from ncatbot.plugin_system.event.event import NcatBotEvent
 from ncatbot.core.event import BaseMessageEvent
 from ncatbot.core.event.event_data import BaseEventData
 from ncatbot.utils import get_log
-from .registry import filter
 from .trigger.binder import BindResult
 from .trigger.preprocessor import MessagePreprocessor, PreprocessResult
 from .command_system.lexer.tokenizer import StringTokenizer, Token
 from .trigger.resolver import CommandResolver
 from .trigger.binder import ArgumentBinder
+from .filter_system import filter_registry, FilterValidator
 
 
 if TYPE_CHECKING:
@@ -51,15 +51,15 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
             timeout=900
         )
         
-        # 设置插件管理器
-        filter.set_plugin_manager(self)
+        # 设置过滤器验证器
+        self._filter_validator = FilterValidator()
         self.prefixes = ["/", "!"]
         
         # 初始化插件映射
         self.func_plugin_map: Dict[Callable, NcatBotPlugin] = {}
 
         # 触发引擎延迟到首次收到消息时再初始化
-        self.registry = filter
+        self.registry = filter_registry
         self._trigger_engine = None
         self._preprocessor = MessagePreprocessor(
             require_prefix=True,
@@ -79,28 +79,33 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         # TODO: 实现大小写敏感（可能永远不会做）
         return s
 
+    async def _execute_function(self, func: Callable, *args, **kwargs):
+        """执行函数
+        :args[0] 是事件对象
+        """
+
+        plugin = self._find_plugin_for_function(func)
+        try:
+            # 使用新的过滤器验证器
+            if hasattr(func, "__filters__"):
+                if not self._filter_validator.validate_filters(func, args[0]):
+                    return False
+            args = (plugin,) + args if plugin else args
+            if asyncio.iscoroutinefunction(func):
+                return await func(*args, **kwargs)
+            else:
+                return func(*args, **kwargs)
+        except Exception as e:
+            LOG.error(f"执行函数 {func.__name__} 时发生错误: {e}")
+            return False
+
     async def _run_pure_filters(self, event: "BaseMessageEvent") -> None:
         """遍历执行纯过滤器函数（不含命令函数）。"""
-        for func in filter.filter_functions:
+        for func in filter_registry.filter_functions:
             # 额外防御：若误标记，仍跳过命令函数
             if getattr(func, "__is_command__", False):
                 continue
-            if filter._filter_validator is not None and not filter._filter_validator.validate_filters(func, event):
-                continue
-            try:
-                plugin = self._find_plugin_for_function(func)
-                if asyncio.iscoroutinefunction(func):
-                    if plugin:
-                        await func(plugin, event)
-                    else:
-                        await func(event)
-                else:
-                    if plugin:
-                        func(plugin, event)
-                    else:
-                        func(event)
-            except Exception as e:
-                LOG.error(f"执行过滤器函数失败: {func.__name__}, 错误: {e}")
+            await self._execute_function(func, event)
 
     async def _run_command(self, event: "BaseMessageEvent") -> None:
                 # 前置检查与提取首段文本（用于前缀与命令词匹配）
@@ -132,8 +137,8 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
             return False
 
         # 过滤器校验（命令命中后才执行过滤器）
-        if filter._filter_validator is not None:
-            if not filter._filter_validator.validate_filters(func, event):
+        if self._filter_validator is not None:
+            if not self._filter_validator.validate_filters(func, event):
                 return False
 
         # 执行函数（注入插件实例作为 self）
@@ -208,11 +213,11 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         event: BaseEventData = data.data
         
         if event.post_type == "notice":
-            for func in filter.registered_notice_commands:
-                await self._execute_function(func, event)
+            # TODO: 实现 notice 事件处理
+            pass
         elif event.post_type == "request":
-            for func in filter.registered_request_commands:
-                await self._execute_function(func, event)
+            # TODO: 实现 request 事件处理
+            pass
         
         return False
     
@@ -253,5 +258,5 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
     
     def clear_cache(self):
         """清理缓存"""
-        filter.clear()
+        filter_registry.clear_all()
         self.func_plugin_map.clear()

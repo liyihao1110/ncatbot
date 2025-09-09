@@ -6,6 +6,7 @@
 from typing import Callable, Any, List, Optional, Dict, Union, Type
 
 from .exceptions import CommandRegistrationError, ParameterError
+from ..utils.specs import OptionSpec, OptionGroupSpec, ParameterSpec
 
 
 # TODO: 融合 option、param 以及函数签名自检测
@@ -35,11 +36,11 @@ def option(short_name: Optional[str] = None,
             func.__command_options__ = []
         
         # 创建选项规格
-        option_spec = {
-            'short_name': short_name,
-            'long_name': long_name,
-            'description': help,
-        }
+        option_spec = OptionSpec(
+            short_name=short_name,
+            long_name=long_name,
+            description=help
+        )
         
         func.__command_options__.append(option_spec)
         return func
@@ -71,12 +72,12 @@ def option_group(
             func.__command_option_groups__ = []
         
         # 创建选项规格
-        option_spec = {
-            'choices': choices,
-            'name': name,
-            'default': default,
-            'description': help,
-        }
+        option_spec = OptionGroupSpec(
+            choices=choices,
+            name=name,
+            default=default,
+            description=help
+        )
         
         func.__command_option_groups__.append(option_spec)
         return func
@@ -127,19 +128,19 @@ def param(name: str,
             func.__command_params__ = []
         
         # 创建参数规格
-        param_spec = {
-            'name': name,
-            'default': default,
-            'required': required,
-            'description': help,
-            'choices': choices,
-            'validator': validator,
-            'examples': examples or [],
-            'type_hints': type_hints or {},
-            'type_examples': type_examples or {},
-            'is_named': True,
-            'is_positional': False
-        }
+        param_spec = ParameterSpec(
+            name=name,
+            default=default,
+            required=required,
+            description=help,
+            choices=choices,
+            validator=validator,
+            examples=examples or [],
+            type_hints=type_hints or {},
+            type_examples=type_examples or {},
+            is_named=True,
+            is_positional=False
+        )
         
         func.__command_params__.append(param_spec)
         return func

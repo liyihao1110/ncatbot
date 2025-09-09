@@ -4,7 +4,7 @@
 """
 
 from typing import List, Optional, Dict, Any
-from .specs import ParameterSpec, OptionSpec, OptionGroup
+from ..utils.specs import ParameterSpec, OptionSpec, OptionGroupSpec
 from .registry import CommandDefinition, CommandGroup
 
 
@@ -229,30 +229,27 @@ class HelpGenerator:
         
         return lines
     
-    def _format_option_group(self, group: OptionGroup, all_options: List[OptionSpec]) -> List[str]:
+    def _format_option_group(self, group: OptionGroupSpec, all_options: List[OptionSpec]) -> List[str]:
         """格式化选项组"""
         lines = []
-        
+
         # 组名
-        group_line = f"{self.indent}{group.name or f'组 {group.group_id}'}"
-        if group.mutually_exclusive:
-            group_line += " (互斥)"
-        if group.required:
+        group_line = f"{self.indent}{group.name}"
+        if group.is_required:
             group_line += " (必选)"
         lines.append(group_line)
-        
+
         # 组描述
         if group.description:
             lines.append(f"{self.indent}{self.indent}{group.description}")
-        
-        # 组内选项
-        group_options = [opt for opt in all_options if opt.group_id == group.group_id]
-        for option in group_options:
-            option_lines = self._format_option(option)
-            # 增加缩进
-            for line in option_lines:
-                lines.append(f"{self.indent}{line}")
-        
+
+        # 组内选项 - 显示所有可选项
+        for choice in group.choices:
+            choice_line = f"{self.indent}--{choice}"
+            if choice == group.default:
+                choice_line += " (默认)"
+            lines.append(choice_line)
+
         return lines
     
     def _generate_examples(self, cmd_def: CommandDefinition) -> List[str]:
