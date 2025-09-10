@@ -3,7 +3,20 @@
 ## 🚀 核心功能文档
 
 ### 插件系统
-- **[FilterRegistry 完整文档](./plugin_system/FilterRegistry-README.md)** - 插件开发核心系统
+
+#### UnifiedRegistry 统一注册系统 🌟
+- **[UnifiedRegistry 完整文档](./plugin_system/UnifiedRegistry-README.md)** - 现代化插件开发系统
+  - [快速开始指南](./plugin_system/UnifiedRegistry-快速开始.md) - 5分钟上手现代化插件开发
+  - [过滤器系统](./plugin_system/UnifiedRegistry-过滤器系统.md) - 权限控制和消息过滤
+  - [命令注册系统](./plugin_system/UnifiedRegistry-命令系统.md) - 声明式命令注册
+  - [参数解析指南](./plugin_system/UnifiedRegistry-参数解析.md) - 现代化命令行参数处理
+  - [最佳实践](./plugin_system/UnifiedRegistry-最佳实践.md) - 专业开发指导
+  - [实战案例](./plugin_system/UnifiedRegistry-实战案例.md) - 真实应用场景
+  - [测试指南](./plugin_system/UnifiedRegistry-测试指南.md) - 插件测试方法
+  - [常见问题解答](./plugin_system/UnifiedRegistry-FAQ.md) - 问题排查解决
+
+#### FilterRegistry 传统系统
+- **[FilterRegistry 完整文档](./plugin_system/FilterRegistry-README.md)** - 传统插件开发系统
   - [快速开始指南](./plugin_system/FilterRegistry-快速开始.md) - 5分钟上手
   - [完整功能指南](./plugin_system/FilterRegistry-完整指南.md) - 所有功能详细说明
   - [最佳实践](./plugin_system/FilterRegistry-最佳实践.md) - 专业开发技巧
