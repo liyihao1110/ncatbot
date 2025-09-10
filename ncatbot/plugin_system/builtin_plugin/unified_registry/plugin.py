@@ -7,6 +7,8 @@ from ncatbot.plugin_system.builtin_mixin import NcatBotPlugin
 from ncatbot.plugin_system.builtin_mixin.func_mixin import Func
 from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.utils import CommandSpec
 from ncatbot.plugin_system.event.event import NcatBotEvent
+from ncatbot.core.event.notice import NoticeEvent
+from ncatbot.core.event.request import RequestEvent
 from ncatbot.core.event import BaseMessageEvent
 from ncatbot.core.event.event_data import BaseEventData
 from ncatbot.utils import get_log
@@ -141,12 +143,12 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
 
         await self._execute_function(func, event, *bind_result.args, **bind_result.named_args)
 
-    async def handle_message_event(self, event: BaseMessageEvent) -> bool:
+    async def handle_message_event(self, event: NcatBotEvent) -> bool:
         """处理消息事件（命令和过滤器）"""
          # 惰性初始化
         self.initialize_if_needed()
-        await self._run_command(event)
-        await self._run_pure_filters(event)
+        await self._run_command(event.data)
+        await self._run_pure_filters(event.data)
         
     def initialize_if_needed(self) -> None:
         """首次触发时构建命令分发表并做严格冲突检测。"""
@@ -186,16 +188,10 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         self._resolver.build_index(filtered_commands, filtered_aliases)
         LOG.debug(f"TriggerEngine 初始化完成：命令={len(filtered_commands)}, 别名={len(filtered_aliases)}")
     
-    async def handle_legacy_event(self, event) -> bool:
+    async def handle_legacy_event(self, event: NcatBotEvent) -> bool:
         """处理通知和请求事件"""
-        if event.post_type == "notice":
-            # TODO: 实现 notice 事件处理
-            pass
-        elif event.post_type == "request":
-            # TODO: 实现 request 事件处理
-            pass
+        event_data = event.data
         
-        return False
     
     def _find_plugin_for_function(self, func: Callable) -> "NcatBotPlugin":
         """查找函数所属的插件"""

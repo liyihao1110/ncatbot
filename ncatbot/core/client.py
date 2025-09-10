@@ -48,7 +48,7 @@ class StartArgs(TypedDict, total=False):
     # 以后再加参数直接在这里补一行即可，无需改函数签名
 
 class BotClient:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, only_private: bool = False):
         self.adapter = Adapter()
         self.event_handlers: dict[str, list] = {}
         self.thread_pool = ThreadPool(max_workers=1, max_per_func=1)
@@ -58,9 +58,9 @@ class BotClient:
         for event_name in EVENTS:
             self.create_official_event_handler_group(event_name)
         
-        self.register_builtin_handler(*args, **kwargs)
+        self.register_builtin_handler(only_private=only_private)
     
-    def register_builtin_handler(self, *args, **kwargs):
+    def register_builtin_handler(self, only_private: bool = False):
         # 注册插件系统事件处理器
         def make_async_handler(event_name):
             async def warpper(event: BaseEventData):
@@ -69,7 +69,7 @@ class BotClient:
                 await self.event_bus.publish(NcatBotEvent(event_name, event))
             return warpper
         
-        if 'only_private' in kwargs and kwargs['only_private']:
+        if only_private:
             self.add_private_message_handler(make_async_handler(OFFICIAL_PRIVATE_MESSAGE_EVENT))
         else:
             self.add_startup_handler(lambda x: LOG.info(f"Bot {x.self_id} 启动成功"))

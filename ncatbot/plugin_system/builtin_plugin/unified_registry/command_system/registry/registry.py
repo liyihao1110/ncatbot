@@ -36,11 +36,14 @@ class CommandGroup:
         """命令装饰器"""
         def decorator(func: Callable) -> Callable:
             # 验证装饰器 - 延迟导入避免循环导入
+            
+            
             from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.analyzer.func_analyzer import FuncAnalyser
             command_spec = FuncAnalyser(func).analyze()
             command_spec.aliases = aliases if aliases else []
             command_spec.description = description if description else ""
             command_spec.name = name
+            func.__is_command__ = True
             # 注册命令
             self._register_command(command_spec)
                         

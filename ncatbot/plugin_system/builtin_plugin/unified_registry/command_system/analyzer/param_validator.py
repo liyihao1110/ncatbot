@@ -44,6 +44,7 @@ class ParamsValidator:
                     suggestions=["确保 @param(name=...) 与函数形参名一致", "将命名参数放在参数列表最后"]
                 )
             idx = name_to_index[name]
+            spec.index = idx
             analyzed_params.append(spec)
             decorated_param_indexes.add(idx)
 

@@ -50,6 +50,7 @@ class ParameterSpec:
     type_examples: Dict[Type, List[str]] = None
     is_named: bool = True
     is_positional: bool = False
+    index: int = -1 # 用于确认参数位置（args_types 中），由分析器设置
 
     def __post_init__(self):
         if self.examples is None:
@@ -80,4 +81,14 @@ class CommandSpec:
         for value in self.option_groups:
             if option in value.choices:
                 return {value.name: option}
+        return None
+    
+    def get_param_binding(self, param: str, value: Any) -> dict:
+        for param_spec in self.params:
+            if param_spec.name == param:
+                target_type = self.args_types[param_spec.index]
+                if target_type == bool:
+                    return {param_spec.name: value.lower() not in ["false", "0"]}
+                else:
+                    return {param_spec.name: target_type(value)}                
         return None

@@ -21,7 +21,7 @@ class CommandSystemError(Exception):
         if self.details:
             result += f"\n详细信息: {self.details}"
         if self.suggestions:
-            result += f"\n建议: {'; '.join(self.suggestions)}"
+            result += f"\n建议: {self.suggestions if isinstance(self.suggestions, str) else '; '.join(self.suggestions)}"
         return result
 
 

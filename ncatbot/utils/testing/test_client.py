@@ -22,11 +22,15 @@ class TestClient(ClientMixin, BotClient):
     
     def __init__(self, load_plugin=False, *args, **kwargs):
         # 不设置 only_private 模式，支持完整功能
-        BotClient.__init__(self, skip_plugin_load=not load_plugin, *args, **kwargs)
+        BotClient.__init__(self, *args, **kwargs)
         ClientMixin.__init__(self, *args, **kwargs)
+        self.skip_plugin_load = not load_plugin
         
         LOG.info("TestClient 初始化完成")
     
+    def start(self, **kwargs):
+        BotClient.start(self, skip_plugin_load=self.skip_plugin_load, **kwargs)
+
     def register_plugin(self, plugin_class: Type[BasePlugin]):
         run_coroutine(self.plugin_loader.load_plugin, plugin_class)
 

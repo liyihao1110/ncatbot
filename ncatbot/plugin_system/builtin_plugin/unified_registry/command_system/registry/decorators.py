@@ -12,6 +12,15 @@ from ..utils.specs import OptionSpec, OptionGroupSpec, ParameterSpec
 # TODO: 融合 option、param 以及函数签名自检测
 # TODO: 支持类型系统
 
+def check_is_command(func: Callable):
+    if hasattr(func, "__is_command__"):
+        raise CommandRegistrationError(
+            func.__name__,
+            "必须注册完参数后才能注册命令",
+            details="必须注册完参数后才能注册命令",
+            suggestions="将注册命令的装饰器移到最上方"
+        )
+
 def option(short_name: Optional[str] = None, 
           long_name: Optional[str] = None,
           help: str = ""):
@@ -31,6 +40,7 @@ def option(short_name: Optional[str] = None,
         @option("v", "verbose", help="详细输出")
     """
     def decorator(func: Callable) -> Callable:
+        check_is_command(func)
         # 确保函数有选项列表属性
         if not hasattr(func, '__command_options__'):
             func.__command_options__ = []
@@ -68,7 +78,7 @@ def option_group(
     """
     def decorator(func: Callable) -> Callable:
         # 确保函数有选项列表属性
-        
+        check_is_command(func)
         if not hasattr(func, '__command_option_groups__'):
             func.__command_option_groups__ = []
         
@@ -117,13 +127,7 @@ def param(name: str,
     """
     def decorator(func: Callable) -> Callable:
         # 确保函数有参数列表属性
-        if hasattr(func, "__is_command__"):
-            raise CommandRegistrationError(
-                func.__name__,
-                "必须注册完参数后才能注册命令",
-                details="必须注册完参数后才能注册命令",
-                suggestions="将注册命令的装饰器移到最上方"
-            )
+        check_is_command(func)
             
         if not hasattr(func, '__command_params__'):
             func.__command_params__ = []

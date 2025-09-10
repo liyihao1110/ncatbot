@@ -19,6 +19,18 @@ from ncatbot.core.event import BaseMessageEvent
 LOG = get_log(__name__)
 
 
+class InvalidOptionError(Exception):
+    def __init__(self, option_name: str):
+        self.option_name = option_name
+        super().__init__(f"选项 '{option_name}' 无效")
+
+
+class InvalidParamError(Exception):
+    def __init__(self, param_name: str):
+        self.param_name = param_name
+        super().__init__(f"参数 '{param_name}' 无效")
+
+
 @dataclass
 class BindResult:
     ok: bool
@@ -55,13 +67,23 @@ class ArgumentBinder:
             bound_kwargs: Dict[str, Any] = {}
 
             for k, v in parsed.named_params.items():
-                bound_kwargs[k] = v
+                result = spec.get_param_binding(k, v)
+                if result is None:
+                    raise InvalidParamError(k)
+                bound_kwargs.update(result)
             
             for o in parsed.options:
-                bound_kwargs.update(spec.get_kw_binding(o))
+                result = spec.get_kw_binding(o)
+                if result is None:
+                    raise InvalidOptionError(o)
+                bound_kwargs.update(result)
 
-            for element in elements[skip_idx:]:
-                bound_args.append(element.content)
+            for idx, element in enumerate(elements[skip_idx:]):
+                content = element.content
+                if spec.args_types[idx] == bool:
+                    bound_args.append(content.lower() not in ["false", "0"])
+                else:
+                    bound_args.append(spec.args_types[idx](content))
 
             return BindResult(True, tuple(bound_args), bound_kwargs, "")
         except Exception as e:
