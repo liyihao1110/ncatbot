@@ -31,6 +31,10 @@ class CommandResolver:
         # 哈希索引：规范化路径字符串 → CommandEntry
         self._index: Dict[Tuple[str, ...], CommandEntry] = {}
 
+    def clear(self):
+        """清除索引"""
+        self._index.clear()
+
     def _normalize(self, s: str) -> str:
         return s if self.case_sensitive else s.lower()
 

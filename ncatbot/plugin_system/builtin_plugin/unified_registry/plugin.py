@@ -19,6 +19,7 @@ from .trigger.resolver import CommandResolver
 from .trigger.binder import ArgumentBinder
 from .filter_system import filter_registry, FilterValidator
 from .command_system.registry.registry import command_registry
+from .legacy_registry import legacy_registry    
 
 
 if TYPE_CHECKING:
@@ -190,8 +191,14 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
     
     async def handle_legacy_event(self, event: NcatBotEvent) -> bool:
         """处理通知和请求事件"""
-        event_data = event.data
-        
+        event_data: BaseEventData = event.data
+        if event_data.post_type == "notice":
+            for func in legacy_registry._notice_event:
+                await func(event_data)
+        elif event_data.post_type == "request":
+            for func in legacy_registry._request_event:
+                await func(event_data)
+        return True
     
     def _find_plugin_for_function(self, func: Callable) -> "NcatBotPlugin":
         """查找函数所属的插件"""
@@ -209,6 +216,8 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         
         return None
     
-    def clear_cache(self):
+    def clear(self):
         """清理缓存"""
         self.func_plugin_map.clear()
+        self._initialized = False
+        self._resolver.clear()

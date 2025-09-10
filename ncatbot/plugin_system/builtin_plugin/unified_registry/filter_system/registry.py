@@ -166,5 +166,10 @@ class FilterRegistry:
             return func
         return wrapper
 
+    def clear(self):
+        """清除所有注册的过滤器"""
+        self._filters.clear()
+        self._function_filters.clear()
+
 # 全局单例
 filter_registry = FilterRegistry()
