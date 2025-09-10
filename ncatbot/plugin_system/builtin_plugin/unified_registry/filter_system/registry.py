@@ -4,7 +4,6 @@ from typing import Dict, List, Callable, Optional, Union, Any
 from dataclasses import dataclass
 from .base import BaseFilter
 from .builtin import CustomFilter
-from .decorators import group_only, private_only, admin_only, root_only
 from ncatbot.utils import get_log
 
 LOG = get_log(__name__)
@@ -55,18 +54,23 @@ class FilterRegistry:
         LOG.debug(f"注册过滤器实例: {name} -> {filter_instance}")
     
     # 方式2：函数注册
-    def register(self, func: Callable = None, name: str = None):
+    def register(self, func_or_name = None, name: str = None):
         """注册过滤器函数或用作装饰器
         
         Args:
-            func: 过滤器函数
-            name: 过滤器名称
+            func_or_name: 过滤器函数或过滤器名称
+            name: 过滤器名称（当第一个参数是函数时使用）
             
         Returns:
             装饰器或注册的函数
         """
         def _register(f: Callable) -> Callable:
-            filter_name = name or f.__name__
+            # 确定过滤器名称
+            if isinstance(func_or_name, str):
+                filter_name = func_or_name  # 装饰器模式：@register("name")
+            else:
+                filter_name = name or f.__name__  # 直接调用模式或无名称装饰器
+                
             custom_filter = CustomFilter(f, filter_name)
             self.register_filter(filter_name, custom_filter)
             
@@ -77,12 +81,12 @@ class FilterRegistry:
             f.__is_filter__ = True
             return f
         
-        if func is None:
-            # 用作装饰器: @filter_registry.register("name")
+        if func_or_name is None or isinstance(func_or_name, str):
+            # 用作装饰器: @filter_registry.register() 或 @filter_registry.register("name")
             return _register
         else:
             # 直接调用: filter_registry.register(func)
-            return _register(func)
+            return _register(func_or_name)
     
     def __call__(self, func: Callable = None, name: str = None):
         """使注册器实例可调用，等同于 register 方法"""
@@ -139,15 +143,19 @@ class FilterRegistry:
 
     # 委托给内置 decorator 注册
     def group_filter(self):
+        from .decorators import group_only
         return group_only
     
     def private_filter(self):
+        from .decorators import private_only
         return private_only
     
     def admin_filter(self):
+        from .decorators import admin_only
         return admin_only
     
     def root_filter(self):
+        from .decorators import root_only
         return root_only
     
     def filters(self, *filters: Union[BaseFilter, str]):

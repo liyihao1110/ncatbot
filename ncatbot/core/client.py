@@ -282,5 +282,3 @@ class BotClient:
     run_blocking = run_frontend
     run_non_blocking = run_backend
     run = run_frontend
-
-BotClient.run()

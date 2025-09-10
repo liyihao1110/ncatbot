@@ -87,6 +87,7 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         """
 
         plugin = self._find_plugin_for_function(func)
+        print("插件:", self._find_plugin_for_function(func))
         try:
             # 使用新的过滤器验证器
             if hasattr(func, "__filters__"):
@@ -140,9 +141,8 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
 
         await self._execute_function(func, event, *bind_result.args, **bind_result.named_args)
 
-    async def handle_message_event(self, data: NcatBotEvent) -> bool:
+    async def handle_message_event(self, event: BaseMessageEvent) -> bool:
         """处理消息事件（命令和过滤器）"""
-        event: BaseMessageEvent = data.data
          # 惰性初始化
         self.initialize_if_needed()
         await self._run_command(event)
@@ -186,10 +186,8 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         self._resolver.build_index(filtered_commands, filtered_aliases)
         LOG.debug(f"TriggerEngine 初始化完成：命令={len(filtered_commands)}, 别名={len(filtered_aliases)}")
     
-    async def handle_legacy_event(self, data: NcatBotEvent) -> bool:
+    async def handle_legacy_event(self, event) -> bool:
         """处理通知和请求事件"""
-        event: BaseEventData = data.data
-        
         if event.post_type == "notice":
             # TODO: 实现 notice 事件处理
             pass

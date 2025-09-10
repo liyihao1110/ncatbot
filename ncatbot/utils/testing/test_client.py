@@ -40,7 +40,7 @@ class TestClient(ClientMixin, BotClient):
             plugin: 要移除的插件实例
         """
         if plugin in self.get_registered_plugins():
-            self.plugin_loader.unload_plugin(plugin.name)
+            run_coroutine(self.plugin_loader.unload_plugin, plugin.name)
             LOG.info(f"插件 {plugin.name} 已从测试客户端移除")
         else:
             LOG.warning(f"插件 {plugin.name} 未在测试客户端中注册")    

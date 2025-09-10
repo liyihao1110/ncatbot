@@ -69,7 +69,7 @@ class CommandSpec:
         self.func: Callable = func
 
         # 必须外部重新设置的属性
-        self.aliases = None
+        self.aliases = []  # 默认为空列表而不是None
         self.description = None
         self.name = None
 

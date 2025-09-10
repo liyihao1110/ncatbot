@@ -5,7 +5,7 @@ import inspect
 from ncatbot.utils import get_log
 from .sig_validator import SigValidator
 from .param_validator import ParamsValidator
-from ..utils.specs import CommonadSpec
+from ..utils.specs import CommandSpec
 
 LOG = get_log(__name__)
 
@@ -45,10 +45,10 @@ class FuncAnalyser:
     def __init__(self, func: Callable):
         self.func_descriptor = FuncDesciptor(func)
 
-    def analyze(self) -> CommonadSpec:
+    def analyze(self) -> CommandSpec:
         self.sig_validator = SigValidator(self.func_descriptor)
-        self.params_validator = ParamsValidator(self.func_descriptor, self.actual_params)
         self.actual_args_start_index, self.actual_params = self.sig_validator.analyze_signature()
+        self.params_validator = ParamsValidator(self.func_descriptor, self.actual_params)
         return self.params_validator.analyze_params()
     
     
