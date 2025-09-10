@@ -420,25 +420,11 @@ class TestEventConcurrency:
         for i in range(10):
             mock_event = EventFactory.create_private_message(message=f"/concurrent task{i}", user_id=f"user{i}")
             events.append(mock_event)
+        await asyncio.gather(*[unified_plugin.handle_message_event(event) for event in events])
         
-        # 3. 并发处理
-            with patch.object(unified_plugin, '_execute_function') as mock_execute:
-                # 模拟并发执行
-                async def concurrent_execute(func, event, *args, **kwargs):
-                    if asyncio.iscoroutinefunction(func):
-                        return await func(event, *args, **kwargs)
-                    else:
-                        return func(event, *args, **kwargs)
-                
-                mock_execute.side_effect = concurrent_execute
-                
-                # 并发处理所有事件
-                tasks = [unified_plugin.handle_message_event(event) for event in events]
-                await asyncio.gather(*tasks)
-                
-                # 验证所有任务都被处理
-                assert len(execution_count) == 10
-                assert all(f"task{i}" in execution_count for i in range(10))
+        # 验证所有任务都被处理
+        assert len(execution_count) == 10
+        assert all(f"task{i}" in execution_count for i in range(10))
     
     @pytest.mark.asyncio
     async def test_event_queue_handling(self, unified_plugin, clean_registries):
@@ -461,20 +447,20 @@ class TestEventConcurrency:
             events.append(mock_event)
         
         # 3. 顺序处理（不并发）
-            with patch.object(unified_plugin, '_execute_function') as mock_execute:
-                async def sequential_execute(func, event, *args, **kwargs):
-                    return await func(event, *args, **kwargs)
-                
-                mock_execute.side_effect = sequential_execute
-                
-                # 顺序处理事件
-                for event in events:
-                    await unified_plugin.handle_message_event(event)
-                
-                # 验证执行顺序
-                assert len(execution_order) == 10  # 5个start + 5个end
-                
-                # 验证顺序正确性
-                for i in range(5):
-                    assert f"start_order{i}" in execution_order
-                    assert f"end_order{i}" in execution_order
+        with patch.object(unified_plugin, '_execute_function') as mock_execute:
+            async def sequential_execute(func, event, *args, **kwargs):
+                return await func(event, *args, **kwargs)
+            
+            mock_execute.side_effect = sequential_execute
+            
+            # 顺序处理事件
+            for event in events:
+                await unified_plugin.handle_message_event(event)
+            
+            # 验证执行顺序
+            assert len(execution_order) == 10  # 5个start + 5个end
+            
+            # 验证顺序正确性
+            for i in range(5):
+                assert f"start_order{i}" in execution_order
+                assert f"end_order{i}" in execution_order

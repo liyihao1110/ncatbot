@@ -40,7 +40,6 @@ class CommandResolver:
     def build_index(self, commands: Dict[Tuple[str, ...], CommandSpec], aliases: Dict[Tuple[str, ...], CommandSpec]) -> None:
         """构建索引并进行严格冲突检测。"""
         entries: Dict[Tuple[str, ...], CommandEntry] = {}
-
         def add_entry(path: Tuple[str, ...], command: CommandSpec):
             norm_path = self._path_to_norm(path)
             if norm_path in entries:

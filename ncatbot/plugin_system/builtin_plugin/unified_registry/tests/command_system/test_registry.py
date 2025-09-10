@@ -74,12 +74,12 @@ class TestCommandGroup:
         
         # 主名称和别名都应该注册
         assert "status" in group.commands
-        assert "st" in group.commands  
-        assert "stat" in group.commands
+        assert "st" in group.aliases  
+        assert "stat" in group.aliases
         
         # 所有名称应该指向同一个命令规格
-        assert group.commands["status"] is group.commands["st"]
-        assert group.commands["status"] is group.commands["stat"]
+        assert group.commands["status"] is group.aliases["st"]
+        assert group.commands["status"] is group.aliases["stat"]
         
         # 验证别名设置
         command_spec = group.commands["status"]
@@ -228,7 +228,7 @@ class TestModernRegistry:
         # 验证命令注册
         assert "list" in user_group.commands
         assert "add" in user_group.commands
-        assert "create" in user_group.commands  # 别名
+        assert "create" in user_group.aliases  # 别名
         
         # 验证层级结构
         assert user_group.parent is admin_group

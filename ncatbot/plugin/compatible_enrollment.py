@@ -1,7 +1,7 @@
-from ncatbot.plugin_system.builtin_plugin.unified_registry import register
+from ncatbot.plugin_system.builtin_plugin.unified_registry import filter_registry, command_registry
 
 class CompatibleEnrollment:
-    group_event = register.group_event
-    private_event = register.private_event
-    notice_event = register.notice_event
-    request_event = register.request_event
+    group_event = filter_registry.group_filter
+    private_event = filter_registry.private_filter
+    notice_event = None
+    request_event = None

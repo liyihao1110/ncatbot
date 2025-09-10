@@ -14,8 +14,8 @@ class AliasFilter(Filter):
         if event.raw_message.startswith("/" + self.name):
             return True
         if self.aliases is not None:
-            for alias in self.aliases:
-                if event.raw_message.startswith("/" + alias):
+            for aliases in self.aliases:
+                if event.raw_message.startswith("/" + aliases):
                     return True
         return False
     

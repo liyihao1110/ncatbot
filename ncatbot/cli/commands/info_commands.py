@@ -6,7 +6,7 @@ from typing import Optional
 
 from ncatbot.cli.commands.registry import registry
 from ncatbot.cli.utils.colors import (
-    alias,
+    aliases,
     category,
     command,
     description,
@@ -39,7 +39,7 @@ def show_command_help(command_name: Optional[str] = None) -> None:
         print(registry.get_help(command_name))
         return
 
-    # Check if command_name is an alias
+    # Check if command_name is an aliases
     cmd_name = command_name
     if command_name in registry.aliases:
         cmd_name = registry.aliases[command_name]
@@ -58,7 +58,7 @@ def show_command_help(command_name: Optional[str] = None) -> None:
     if cmd.help_text and cmd.help_text != cmd.description:
         print(f"{header('详细说明:')} {description(cmd.help_text)}")
     if cmd.aliases:
-        print(f"{header('别名:')} {', '.join([alias(a) for a in cmd.aliases])}")
+        print(f"{header('别名:')} {', '.join([aliases(a) for a in cmd.aliases])}")
 
 
 @registry.register(
@@ -125,7 +125,7 @@ def show_categories(filter_category: str = None) -> None:
         for i, (cmd_name, cmd) in enumerate(commands, 1):
             alias_text = ""
             if cmd.aliases:
-                aliases = [alias(a) for a in cmd.aliases]
+                aliases = [aliases(a) for a in cmd.aliases]
                 alias_text = f" (别名: {', '.join(aliases)})"
             print(
                 f"{i}. {command(cmd.usage)} - {description(cmd.description)}{alias_text}"

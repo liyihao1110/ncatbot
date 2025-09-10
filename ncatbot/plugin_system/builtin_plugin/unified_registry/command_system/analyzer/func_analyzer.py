@@ -24,7 +24,7 @@ def get_subclass_recursive(cls: type) -> List[type]:
 class FuncDesciptor:
     def __init__(self, func: Callable):
         self.func = func
-        self.alias = getattr(func, "__alias__", [])
+        self.aliases = getattr(func, "__aliases__", [])
         
         # 生成 metadata 以便代码更易于理解
         self.func_name = func.__name__

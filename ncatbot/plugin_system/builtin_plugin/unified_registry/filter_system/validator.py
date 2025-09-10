@@ -23,7 +23,7 @@ class FilterValidator:
             bool: True 表示通过所有过滤器，False 表示被拦截
         """
         filters: List[BaseFilter] = getattr(func, "__filters__", [])
-        
+                
         if not filters:
             # 没有过滤器的函数默认通过
             return True

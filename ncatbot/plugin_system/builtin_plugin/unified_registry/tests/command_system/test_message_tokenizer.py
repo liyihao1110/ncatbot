@@ -12,6 +12,7 @@ from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.lexer.
 from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.lexer.tokenizer import (
     Token, TokenType, NonTextToken, ParsedCommand
 )
+from ncatbot.core.event.message_segment import Image
 
 
 class MockMessageSegment:
@@ -203,7 +204,7 @@ class TestNonTextToken:
     
     def test_non_text_token_creation(self):
         """测试非文本Token创建"""
-        image_segment = MockImageSegment("test.jpg")
+        image_segment = Image("test.jpg")
         token = NonTextToken(image_segment, 5)
         
         assert token.type == TokenType.NON_TEXT_ELEMENT

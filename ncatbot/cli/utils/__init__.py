@@ -8,7 +8,7 @@ from ncatbot.cli.utils.cli_exceptions import CLIExit
 from ncatbot.cli.utils.colors import (
     Colors,
     ColorScheme,
-    alias,
+    aliases,
     category,
     colorize,
     command,
@@ -60,7 +60,7 @@ __all__ = [
     "category",
     "description",
     "usage",
-    "alias",
+    "aliases",
     "error",
     "success",
     "warning",

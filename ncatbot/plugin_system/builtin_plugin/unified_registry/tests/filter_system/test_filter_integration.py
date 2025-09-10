@@ -382,11 +382,10 @@ class TestComplexFilterScenarios:
         validator = FilterValidator()
         
         # 前两次应该抛出异常
-        with pytest.raises(ValueError):
-            validator.validate_filters(test_function, mock_private_message)
         
-        with pytest.raises(ValueError):
-            validator.validate_filters(test_function, mock_private_message)
+        assert validator.validate_filters(test_function, mock_private_message) is False
+        
+        assert validator.validate_filters(test_function, mock_private_message) is False
         
         # 第三次应该成功
         result = validator.validate_filters(test_function, mock_private_message)

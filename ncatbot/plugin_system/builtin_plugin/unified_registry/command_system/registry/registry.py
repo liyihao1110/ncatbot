@@ -27,6 +27,7 @@ class CommandGroup:
         self.parent = parent
         self.description = description
         self.commands: Dict[Tuple[str, ...], CommandSpec] = {}
+        self.aliases: Dict[Tuple[str, ...], CommandSpec] = {}
         self.subgroups: Dict[str, 'CommandGroup'] = {}
     
     def command(self, name: str, 
@@ -70,8 +71,8 @@ class CommandGroup:
         self.commands[command_spec.name] = command_spec
         
         # 注册别名
-        for alias in command_spec.aliases:
-            self.commands[alias] = command_spec
+        for aliases in command_spec.aliases:
+            self.aliases[aliases] = command_spec
     
     def get_full_name(self) -> Tuple[str, ...]:
         """获取完整组名"""
@@ -92,13 +93,13 @@ class CommandGroup:
 
     def get_all_aliases(self) -> Dict[Tuple[str, ...], CommandSpec]:
         """获取所有别名"""
-        aliases = {}
+        all_aliases = {}
         for command_group in self.subgroups.values():
-            aliases.update(command_group.get_all_aliases())
+            all_aliases.update(command_group.get_all_aliases())
         for command in self.commands.values():
-            for alias in command.aliases:
-                aliases[(alias,)] = command
-        return aliases
+            for aliases in command.aliases:
+                all_aliases[(aliases,)] = command
+        return all_aliases
 
 
 class ModernRegistry:

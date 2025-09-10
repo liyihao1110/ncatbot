@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from ncatbot.cli.utils.colors import (
     Colors,
 )
-from ncatbot.cli.utils.colors import alias as alias_color
+from ncatbot.cli.utils.colors import aliases as alias_color
 from ncatbot.cli.utils.colors import category as cat_color
 from ncatbot.cli.utils.colors import command as cmd_color
 from ncatbot.cli.utils.colors import description as desc_color
@@ -76,8 +76,8 @@ class CommandRegistry:
 
             # Register aliases
             if aliases:
-                for alias in aliases:
-                    self.aliases[alias] = name
+                for aliases in aliases:
+                    self.aliases[aliases] = name
 
             # Register category
             if category:
@@ -91,7 +91,7 @@ class CommandRegistry:
 
     def execute(self, command_name: str, *args, **kwargs) -> Any:
         """Execute a command by name"""
-        # Check if the command is an alias
+        # Check if the command is an aliases
         if command_name in self.aliases:
             command_name = self.aliases[command_name]
 

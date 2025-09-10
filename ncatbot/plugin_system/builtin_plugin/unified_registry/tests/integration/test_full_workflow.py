@@ -58,17 +58,11 @@ class TestFullWorkflow:
         mock_event = EventFactory.create_private_message(message="/greet Alice 25", user_id="test_user")
         
         # 3. 模拟参数绑定和执行
-        with patch.object(unified_plugin, '_run_command') as mock_run_command:
-            # 模拟成功的命令执行
-            async def mock_execute():
-                return await unified_plugin._execute_function(greet_command, mock_event, "Alice", age=25)
+        await unified_plugin.handle_message_event(mock_event)
             
-            mock_run_command.side_effect = mock_execute
-            
-            await unified_plugin.handle_message_event(mock_event)
-            
-            # 验证命令被调用
-            mock_run_command.assert_called_once()
+        assert "Hello Alice" in "".join(execution_results)
+        assert "25 years old" in "".join(execution_results)
+    
     
     @pytest.mark.asyncio
     async def test_filtered_command_workflow(self, unified_plugin, clean_registries, mock_status_manager):
@@ -180,23 +174,20 @@ class TestFullWorkflow:
         status_command.__is_command__ = True
         
         # 2. 测试主命令名
-        mock_event = EventFactory.create_private_message(message="/status", user_id="test_user")
-        
-        with patch.object(unified_plugin, '_execute_function') as mock_execute:
-            mock_execute.return_value = "System status: OK"
-            
-            await unified_plugin.handle_message_event(mock_event)
-            mock_execute.assert_called()
-        
-        # 3. 测试别名
+        mock_event_1 = EventFactory.create_private_message(message="/status", user_id="test_user")
+        await unified_plugin.handle_message_event(mock_event_1)
+        assert "status_checked" in execution_log
         execution_log.clear()
-        mock_event = EventFactory.create_private_message(message="/st", user_id="test_user")
+        mock_event_2 = EventFactory.create_private_message(message="/st", user_id="test_user")
+        await unified_plugin.handle_message_event(mock_event_2)
+        assert "status_checked" in execution_log
+        assert "status_checked" in execution_log
+        execution_log.clear()
+        mock_event_3 = EventFactory.create_private_message(message="/stat", user_id="test_user")
+        await unified_plugin.handle_message_event(mock_event_3)
+        assert "status_checked" in execution_log
+        assert "status_checked" in execution_log
         
-        with patch.object(unified_plugin, '_execute_function') as mock_execute:
-            mock_execute.return_value = "System status: OK"
-            
-            await unified_plugin.handle_message_event(mock_event)
-            mock_execute.assert_called()
     
     @pytest.mark.asyncio
     async def test_filter_only_workflow(self, unified_plugin, clean_registries):
@@ -309,20 +300,20 @@ class TestAsyncWorkflow:
             events.append(mock_event)
         
         # 3. 并发处理
-            with patch.object(unified_plugin, '_execute_function') as mock_execute:
-                # 模拟并发执行
-                async def concurrent_execute(func, event, *args, **kwargs):
-                    return await func(event, *args, **kwargs)
-                
-                mock_execute.side_effect = concurrent_execute
-                
-                # 并发处理所有消息
-                tasks = [unified_plugin.handle_message_event(event) for event in events]
-                await asyncio.gather(*tasks)
-                
-                # 验证所有任务都被执行
-                assert len(execution_count) == 5
-                assert all(f"task{i}" in execution_count for i in range(5))
+        with patch.object(unified_plugin, '_execute_function') as mock_execute:
+            # 模拟并发执行
+            async def concurrent_execute(func, event, *args, **kwargs):
+                return await func(event, *args, **kwargs)
+            
+            mock_execute.side_effect = concurrent_execute
+            
+            # 并发处理所有消息
+            tasks = [unified_plugin.handle_message_event(event) for event in events]
+            await asyncio.gather(*tasks)
+            
+            # 验证所有任务都被执行
+            assert len(execution_count) == 5
+            assert all(f"task{i}" in execution_count for i in range(5))
 
 
 class TestWorkflowWithRealComponents:

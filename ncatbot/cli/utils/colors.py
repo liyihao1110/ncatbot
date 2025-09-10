@@ -49,7 +49,7 @@ class ColorScheme:
     CATEGORY = Colors.BOLD + Colors.YELLOW
     DESCRIPTION = Colors.WHITE
     USAGE = Colors.CYAN
-    ALIAS = Colors.MAGENTA
+    aliases = Colors.MAGENTA
     ERROR = Colors.RED
     SUCCESS = Colors.GREEN
     WARNING = Colors.YELLOW
@@ -125,9 +125,9 @@ def usage(text: str) -> str:
     return colorize(text, ColorScheme.USAGE)
 
 
-def alias(text: str) -> str:
-    """Format text as an alias."""
-    return colorize(text, ColorScheme.ALIAS)
+def aliases(text: str) -> str:
+    """Format text as an aliases."""
+    return colorize(text, ColorScheme.aliases)
 
 
 def error(text: str) -> str:

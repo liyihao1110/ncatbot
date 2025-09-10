@@ -10,12 +10,14 @@ from .plugin import UnifiedRegistryPlugin
 from .filter_system import (
     BaseFilter, GroupFilter, PrivateFilter, AdminFilter, RootFilter,
     CustomFilter,
+    filter_registry,
 )
 
 # 命令系统  
 from .command_system import (
-    FuncAnalyser, get_subclass_recursive,
+    FuncAnalyser, get_subclass_recursive, command_registry,
 )
+
 
 # 向后兼容导出
 __all__ = [
@@ -23,8 +25,8 @@ __all__ = [
     "UnifiedRegistryPlugin",
     
     # 全局注册实例
-    "filter", 
-    "register",
+    "command_registry", 
+    "filter_registry",
     
     # 过滤器相关
     "BaseFilter",

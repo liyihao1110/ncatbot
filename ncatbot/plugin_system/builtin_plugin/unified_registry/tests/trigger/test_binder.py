@@ -10,79 +10,8 @@ from ncatbot.plugin_system.builtin_plugin.unified_registry.trigger.binder import
     ArgumentBinder, BindResult
 )
 from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.utils.specs import CommandSpec
-
-
-class TestBindResult:
-    """绑定结果测试"""
-    
-    def test_bind_result_creation(self):
-        """测试绑定结果创建"""
-        result = BindResult(
-            ok=True,
-            args=("arg1", "arg2"),
-            named_args={"key": "value"},
-            message="Success"
-        )
-        
-        assert result.ok is True
-        assert result.args == ("arg1", "arg2")
-        assert result.named_args == {"key": "value"}
-        assert result.message == "Success"
-    
-    def test_bind_result_default_message(self):
-        """测试绑定结果默认消息"""
-        result = BindResult(
-            ok=False,
-            args=(),
-            named_args={}
-        )
-        
-        assert result.ok is False
-        assert result.args == ()
-        assert result.named_args == {}
-        assert result.message == ""
-
-
-class MockMessageSegment:
-    """模拟消息段"""
-    
-    def __init__(self, seg_type: str, content):
-        self.type = seg_type
-        self.content = content
-
-
-class MockTextSegment(MockMessageSegment):
-    """模拟文本消息段"""
-    
-    def __init__(self, text: str):
-        super().__init__("text", text)
-
-
-class MockAtSegment(MockMessageSegment):
-    """模拟@消息段"""
-    
-    def __init__(self, qq: str):
-        super().__init__("at", qq)
-
-
-class MockMessageArray:
-    """模拟消息数组"""
-    
-    def __init__(self, *segments):
-        self.messages = list(segments)
-
-
-class MockMessageEvent:
-    """模拟消息事件"""
-    
-    def __init__(self, message_content):
-        if isinstance(message_content, str):
-            # 简单文本消息
-            self.message = MockMessageArray(MockTextSegment(message_content))
-        else:
-            # 复杂消息
-            self.message = message_content
-
+from ncatbot.utils.testing import EventFactory
+from ncatbot.core.event.message_segment import MessageArray, Text, At, Image
 
 class TestArgumentBinder:
     """参数绑定器测试"""
@@ -101,7 +30,7 @@ class TestArgumentBinder:
         mock_spec.get_kw_binding.return_value = {}
         
         # 创建简单消息事件
-        event = MockMessageEvent("hello world")
+        event = EventFactory.create_group_message("hello world")
         
         # 绑定参数
         result = binder.bind(mock_spec, event, ("hello",), ["/"])
@@ -120,10 +49,10 @@ class TestArgumentBinder:
         # 命令：/admin user ban target_user
         # 路径词：("admin", "user", "ban")
         # 应该跳过前三个词，绑定"target_user"
-        event = MockMessageEvent("/admin user ban target_user")
+        event = EventFactory.create_group_message("/admin user ban target_user")
         
         result = binder.bind(mock_spec, event, ("admin", "user", "ban"), ["/"])
-        
+        print(result.named_args, result.args)
         assert result.ok is True
         assert "target_user" in result.args
     
@@ -157,7 +86,7 @@ class TestArgumentBinder:
             m.setattr("ncatbot.plugin_system.builtin_plugin.unified_registry.trigger.binder.MessageTokenizer", 
                      lambda: mock_tokenizer)
             
-            event = MockMessageEvent("deploy myapp --env=production --timeout=30")
+            event = EventFactory.create_group_message("deploy myapp --env=production --timeout=30")
             result = binder.bind(mock_spec, event, ("deploy",), ["/"])
             
             assert result.ok is True
@@ -192,7 +121,7 @@ class TestArgumentBinder:
             m.setattr("ncatbot.plugin_system.builtin_plugin.unified_registry.trigger.binder.MessageTokenizer", 
                      lambda: mock_tokenizer)
             
-            event = MockMessageEvent("deploy app -v --force")
+            event = EventFactory.create_group_message("deploy app -v --force")
             result = binder.bind(mock_spec, event, ("deploy",), ["/"])
             
             assert result.ok is True
@@ -209,12 +138,12 @@ class TestArgumentBinder:
         mock_spec.get_kw_binding.return_value = {}
         
         # 创建包含非文本元素的消息
-        text1 = MockTextSegment("/send ")
-        at_segment = MockAtSegment("123456")
-        text2 = MockTextSegment(" urgent message")
+        text1 = Text("/send ")
+        at_segment = At("123456")
+        text2 = Text(" urgent message")
         
-        message_array = MockMessageArray(text1, at_segment, text2)
-        event = MockMessageEvent(message_array)
+        message_array = MessageArray(text1, at_segment, text2)
+        event = EventFactory.create_group_message(message_array)
         
         # 模拟解析结果
         from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.lexer.tokenizer import ParsedCommand
@@ -257,7 +186,7 @@ class TestArgumentBinder:
         ]
         
         for message_text, prefixes, path_words in test_cases:
-            event = MockMessageEvent(message_text)
+            event = EventFactory.create_group_message(message_text)
             
             # 模拟简单解析
             from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.lexer.tokenizer import ParsedCommand
@@ -290,7 +219,7 @@ class TestArgumentBinder:
         mock_spec = Mock()
         mock_spec.get_kw_binding.side_effect = Exception("Spec error")
         
-        event = MockMessageEvent("test message")
+        event = EventFactory.create_group_message("test message --output")
         
         # 应该捕获并处理异常
         with pytest.raises(Exception):
@@ -303,7 +232,7 @@ class TestArgumentBinder:
         mock_spec = Mock()
         mock_spec.get_kw_binding.return_value = {}
         
-        event = MockMessageEvent("")
+        event = EventFactory.create_group_message(MessageArray())
         
         # 模拟空解析结果
         from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.lexer.tokenizer import ParsedCommand
@@ -335,7 +264,7 @@ class TestArgumentBinder:
         
         # 消息: "/test arg"
         # 路径词: ("admin", "user") - 不匹配
-        event = MockMessageEvent("/test arg")
+        event = EventFactory.create_group_message("/test arg")
         
         from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.lexer.tokenizer import ParsedCommand
         
@@ -369,7 +298,7 @@ class TestArgumentBinder:
         
         # 消息: "/admin user ban target extra"
         # 路径词: ("admin", "user") - 部分匹配
-        event = MockMessageEvent("/admin user ban target extra")
+        event = EventFactory.create_group_message("/admin user ban target extra")
         
         from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.lexer.tokenizer import ParsedCommand
         
@@ -413,7 +342,7 @@ class TestArgumentBinderEdgeCases:
         
         # 创建很长的参数列表
         long_args = " ".join([f"arg{i}" for i in range(100)])
-        event = MockMessageEvent(f"/test {long_args}")
+        event = EventFactory.create_group_message(f"/test {long_args}")
         
         from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.lexer.tokenizer import ParsedCommand
         
@@ -445,7 +374,7 @@ class TestArgumentBinderEdgeCases:
         mock_spec = Mock()
         mock_spec.get_kw_binding.return_value = {}
         
-        event = MockMessageEvent("/测试 参数一 参数二")
+        event = EventFactory.create_group_message("/测试 参数一 参数二")
         
         from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.lexer.tokenizer import ParsedCommand
         
@@ -480,7 +409,7 @@ class TestArgumentBinderEdgeCases:
         mock_spec.get_kw_binding.return_value = {}
         
         # 包含特殊字符的参数
-        event = MockMessageEvent('/test "quoted arg" arg@with@symbols')
+        event = EventFactory.create_group_message('/test "quoted arg" arg@with@symbols')
         
         from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.lexer.tokenizer import ParsedCommand
         
@@ -514,7 +443,7 @@ class TestArgumentBinderEdgeCases:
         mock_spec = Mock()
         mock_spec.get_kw_binding.return_value = {}
         
-        event = MockMessageEvent("mixed content message")
+        event = EventFactory.create_group_message("mixed content message")
         
         from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.lexer.tokenizer import ParsedCommand
         
@@ -551,7 +480,7 @@ class TestArgumentBinderEdgeCases:
         mock_spec = Mock()
         mock_spec.get_kw_binding.side_effect = KeyError("Missing option")
         
-        event = MockMessageEvent("/test --unknown-option")
+        event = EventFactory.create_group_message("/test --unknown-option")
         
         from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.lexer.tokenizer import ParsedCommand
         
@@ -585,7 +514,7 @@ class TestArgumentBinderIntegration:
         mock_spec.get_kw_binding.return_value = {"verbose": True, "force": True}
         
         # 复杂命令：/deploy myapp --env=prod -v --force "config.json"
-        event = MockMessageEvent("/deploy myapp --env=prod -v --force config.json")
+        event = EventFactory.create_group_message("/deploy myapp --env=prod -v --force config.json")
         
         from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.lexer.tokenizer import ParsedCommand
         
@@ -632,7 +561,7 @@ class TestArgumentBinderIntegration:
         mock_spec.get_kw_binding.return_value = {}
         
         # 相同输入应该产生一致的结果
-        event = MockMessageEvent("/test arg1 arg2")
+        event = EventFactory.create_group_message("/test arg1 arg2")
         
         from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.lexer.tokenizer import ParsedCommand
         

@@ -13,15 +13,7 @@ from ncatbot.plugin_system.builtin_plugin.unified_registry.trigger.binder import
 from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.lexer.tokenizer import (
     StringTokenizer, Token, TokenType
 )
-
-
-class MockMessageEvent:
-    """模拟消息事件"""
-    
-    def __init__(self, message_text: str):
-        self.message = Mock()
-        self.message.messages = [Mock(msg_seg_type="text", text=message_text)]
-
+from ncatbot.utils.testing import EventFactory
 
 class TestTriggerSystemIntegration:
     """触发器系统整体集成测试"""
@@ -50,7 +42,7 @@ class TestTriggerSystemIntegration:
         resolver.build_index(commands, {})
         
         # 3. 创建测试事件
-        event = MockMessageEvent("/ban testuser")
+        event = EventFactory.create_group_message("/ban testuser")
         
         # 4. 执行完整流程
         
@@ -124,7 +116,7 @@ class TestTriggerSystemIntegration:
         resolver.build_index(commands, aliases)
         
         # 测试复杂命令: !admin u ban @user123 --reason=spam --duration=24h
-        event = MockMessageEvent("!admin u ban @user123 --reason=spam --duration=24h")
+        event = EventFactory.create_group_message("!admin u ban @user123 --reason=spam --duration=24h")
         
         # 流程执行
         
@@ -185,7 +177,7 @@ class TestTriggerSystemIntegration:
         )
         
         # 无前缀的消息
-        event = MockMessageEvent("hello world")
+        event = EventFactory.create_group_message("hello world")
         
         # 预处理应该失败
         preprocess_result = preprocessor.precheck(event)
@@ -207,7 +199,7 @@ class TestTriggerSystemIntegration:
         # 构建空索引
         resolver.build_index({}, {})
         
-        event = MockMessageEvent("/nonexistent command")
+        event = EventFactory.create_group_message("/nonexistent command")
         
         # 预处理成功
         preprocess_result = preprocessor.precheck(event)
@@ -242,7 +234,7 @@ class TestTriggerSystemIntegration:
         resolver.build_index(commands, {})
         
         # 复杂命令: /deploy "my app" --env=production -v --force
-        event = MockMessageEvent('/deploy "my app" --env=production -v --force')
+        event = EventFactory.create_group_message('/deploy "my app" --env=production -v --force')
         
         # 执行流程
         preprocess_result = preprocessor.precheck(event)
@@ -316,7 +308,7 @@ class TestTriggerErrorScenarios:
         mock_spec = Mock()
         mock_spec.get_kw_binding.side_effect = Exception("Binding error")
         
-        event = MockMessageEvent("/test arg")
+        event = EventFactory.create_group_message("/test arg -v")
         
         # 应该抛出异常
         with pytest.raises(Exception):
@@ -335,7 +327,7 @@ class TestTriggerErrorScenarios:
         )
         
         # 带有未匹配引号的消息
-        event = MockMessageEvent('/test "unmatched quote')
+        event = EventFactory.create_group_message('/test "unmatched quote')
         
         preprocess_result = preprocessor.precheck(event)
         assert preprocess_result is not None
@@ -394,7 +386,7 @@ class TestTriggerPerformanceIntegration:
         # 创建复杂长消息
         complex_message = '/deploy app --env=production --config="very long config file path with spaces.json" --timeout=300 --retries=3 -v --force --debug'
         
-        event = MockMessageEvent(complex_message)
+        event = EventFactory.create_group_message(complex_message)
         
         # 预处理应该快速完成
         preprocess_result = preprocessor.precheck(event)
@@ -526,7 +518,7 @@ class TestTriggerRealWorldScenarios:
         ]
         
         for cmd_text in test_commands:
-            event = MockMessageEvent(cmd_text)
+            event = EventFactory.create_group_message(cmd_text)
             
             preprocess_result = preprocessor.precheck(event)
             assert preprocess_result is not None
@@ -576,7 +568,7 @@ class TestTriggerRealWorldScenarios:
         ]
         
         for cmd_text in help_commands:
-            event = MockMessageEvent(cmd_text)
+            event = EventFactory.create_group_message(cmd_text)
             
             preprocess_result = preprocessor.precheck(event)
             if preprocess_result is None:

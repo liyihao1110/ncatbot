@@ -37,12 +37,12 @@ class TestGroupFilter:
         filter_instance = GroupFilter()
         
         # 应用过滤器
-        decorated_func = filter_instance(sample_command_function)
-        
+        filter_instance(sample_command_function)
+                
         # 函数应该有过滤器标记
-        assert hasattr(decorated_func, '__filters__')
-        assert len(decorated_func.__filters__) > 0
-        assert any(isinstance(f, GroupFilter) for f in decorated_func.__filters__)
+        assert hasattr(sample_command_function, '__filters__')
+        assert len(sample_command_function.__filters__) > 0
+        assert any(isinstance(f, GroupFilter) for f in sample_command_function.__filters__)
 
 
 class TestPrivateFilter:

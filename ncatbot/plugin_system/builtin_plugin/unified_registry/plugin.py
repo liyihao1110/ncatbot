@@ -181,7 +181,7 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         for path, command in alias_map.items():
             if getattr(command.func, "__is_command__", False):
                 filtered_aliases[path] = command
-
+                
         # 3) 交给 resolver 构建并做冲突检测
         self._resolver.build_index(filtered_commands, filtered_aliases)
         LOG.debug(f"TriggerEngine 初始化完成：命令={len(filtered_commands)}, 别名={len(filtered_aliases)}")
