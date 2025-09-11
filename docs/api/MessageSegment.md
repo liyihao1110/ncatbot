@@ -280,6 +280,7 @@ seg.to_dict() == {
 ### 互动类
 
 #### Rps（猜拳）、Dice（骰子）、Shake（窗口抖动）、Poke（戳一戳）、Anonymous（匿名）
+
 ```python
 from ncatbot.core.event.message_segment import Rps, Dice, Shake, Poke, Anonymous
 Rps().to_dict() == {"type": "rps", "data": {}}
