@@ -10,6 +10,8 @@ NcatBot 提供了一套完整的测试框架，位于 `ncatbot.utils.testing` �
 
 `TestClient` 是专门为测试设计的客户端，继承自 `BotClient` 并添加了测试功能。
 
+**⚠️ 注意：一次运行只允许启动一次 TestClient，插件加载也必须在最开始进行，测试过程中禁止重新启动 TestClient 或操作插件**
+
 ```python
 from ncatbot.utils.testing import TestClient
 
@@ -32,9 +34,35 @@ client.unregister_plugin(plugin_instance)
 ```
 
 #### 主要特性：
+
 - 自动启用 Mock 模式，跳过 WebSocket 连接
 - 支持按需加载插件
 - 提供插件管理功能
+
+#### 错误示例
+
+```python
+from ncatbot.utils.testing import TestClient
+from my_plugin import MyPlugin
+
+def test_1():
+    client = TestClient()
+    client.start()
+    client.register_plugin(MyPlugin)
+    # Do something 1
+
+def test_2():
+    client = TestClient()
+    client.start()
+    client.register_plugin(MyPlugin)
+    # Do something 2
+
+if __name__ == "__main__":
+    test_1()
+    test_2()
+```
+
+一次运行中，进行了两次 TestClient 的启动，两次注册了插件，违反了 TestClient 的单例原则。
 
 ### 2. TestHelper - 测试辅助类
 

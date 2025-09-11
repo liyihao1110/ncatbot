@@ -153,6 +153,7 @@ cython_debug/
 .history/
 
 # 项目自定义
+verify_docs/
 test/
 test3xx/
 plugins/

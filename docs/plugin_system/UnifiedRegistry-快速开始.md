@@ -22,8 +22,6 @@ class HelloPlugin(NcatBotPlugin):
     description = "我的第一个 UnifiedRegistry 插件"
     
     async def on_load(self):
-        """插件加载时注册命令"""
-        # 在这里注册命令函数
         pass
 ```
 
@@ -80,9 +78,6 @@ class HelloPlugin(NcatBotPlugin):
 class HelloPlugin(NcatBotPlugin):
     # 其他代码
 
-    async def on_load(self):
-        pass
-
     # 仅群聊可用
     @group_only
     @command_registry.command("groupinfo")
@@ -118,9 +113,6 @@ class HelloPlugin(NcatBotPlugin):
 class HelloPlugin(NcatBotPlugin):
     # 其他代码
 
-    async def on_load(self):
-        pass
-
     @command_registry.command("deploy", description="部署应用")
     @option(short_name="v", long_name="verbose", help="显示详细信息")
     @option(short_name="f", long_name="force", help="强制部署")
@@ -153,9 +145,6 @@ class HelloPlugin(NcatBotPlugin):
 class HelloPlugin(NcatBotPlugin):
     # 其他代码
 
-    async def on_load(self):
-        pass
-
     @command_registry.command("status", aliases=["stat", "st"], description="查看状态")
     def status_cmd(self, event: BaseMessageEvent):
         """查看机器人状态（支持多个别名）"""
@@ -173,10 +162,6 @@ from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorat
 
 class HelloPlugin(NcatBotPlugin):
     # 其他代码
-
-    async def on_load(self):
-        pass
-
     @group_only
     async def status_cmd(self, event: BaseMessageEvent):
         await event.reply("收到一条群聊消息")

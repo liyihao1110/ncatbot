@@ -29,6 +29,8 @@ class TestClient(ClientMixin, BotClient):
         LOG.info("TestClient 初始化完成")
     
     def start(self, **kwargs):
+        if "bt_uin" not in kwargs:
+            kwargs["bt_uin"] = "123456789"
         BotClient.start(self, skip_plugin_load=self.skip_plugin_load, **kwargs)
 
     def register_plugin(self, plugin_class: Type[BasePlugin]):

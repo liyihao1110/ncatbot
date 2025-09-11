@@ -22,9 +22,6 @@ class HelloPlugin(BasePlugin):
     name = "HelloPlugin"
     version = "1.0.0"
     
-    def __init__(self):
-        super().__init__()
-        
     async def on_load(self):
         pass
 
