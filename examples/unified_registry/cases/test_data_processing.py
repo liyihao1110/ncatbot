@@ -11,17 +11,7 @@ async def run_data_processing_tests():
 
     client.register_plugin(DataProcessingPlugin)
 
-    csv_data = "col1,col2\n1,2\n3,4"
-    await helper.send_private_message(f"/csv_analyze '{csv_data}' --header")
-    helper.assert_reply_sent("CSV数据分析:")
-    helper.assert_reply_sent("总行数: 2")
-    helper.clear_history()
-
-    await helper.send_private_message("/json_format '{""a"":1}'")
-    helper.assert_reply_sent("JSON格式化完成")
-    helper.clear_history()
-
-    await helper.send_private_message("/text_stats 'hello world'\n'line2'")
+    await helper.send_private_message('/text_stats "hello world\nline2"')
     helper.assert_reply_sent("文本统计:")
     helper.clear_history()
 

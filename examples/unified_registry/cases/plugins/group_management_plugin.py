@@ -15,13 +15,20 @@ class GroupManagementPlugin(NcatBotPlugin):
     description = "群聊管理功能"
 
     async def on_load(self):
-        pass
+        self.muted_users = set()
+        self.group_settings = {
+            "g1": {
+                "mute_users": set(),
+                "settings": {}
+            }
+        }
 
     @group_only
     @admin_only
     @command_registry.command("mute", description="禁言用户")
     @param(name="duration", default=60, help="禁言时长（秒）")
     async def mute_cmd(self, event: BaseMessageEvent, user_id: str, duration: int = 60):
+        
         if duration < 1 or duration > 86400:
             await event.reply("❌ 禁言时长必须在1秒到24小时之间")
             return

@@ -88,7 +88,12 @@ class GroupManagementPlugin(NcatBotPlugin):
 
     async def on_load(self):
         self.muted_users = set()
-        self.group_settings = {}
+        self.group_settings = {
+            "g1": {
+                "mute_users": set(),
+                "settings": {}
+            }
+        }
 
     @group_only
     @admin_only
@@ -239,55 +244,6 @@ class DataProcessingPlugin(NcatBotPlugin):
     
     async def on_load(self):
         self.datasets = {}
-
-    @command_registry.command("csv_analyze", description="分析CSV数据")
-    @option(short_name="h", long_name="header", help="包含标题行")
-    async def csv_analyze_cmd(self, event: BaseMessageEvent, data: str, header: bool = False):
-        """分析CSV格式数据"""
-        try:
-            lines = data.strip().split('\n')
-            if header and lines:
-                headers = lines[0].split(',')
-                data_lines = lines[1:]
-            else:
-                headers = [f"列{i+1}" for i in range(len(lines[0].split(',')))] if lines else []
-                data_lines = lines
-            
-            if not data_lines:
-                await event.reply("❌ 没有数据行")
-                return
-            
-            # 基础统计
-            total_rows = len(data_lines)
-            total_cols = len(headers)
-            
-            analysis = f"📊 CSV数据分析:\n"
-            analysis += f"📝 总行数: {total_rows}\n"
-            analysis += f"📋 总列数: {total_cols}\n"
-            analysis += f"🏷️ 列名: {', '.join(headers[:5])}{'...' if len(headers) > 5 else ''}"
-            
-            await event.reply(analysis)
-            
-        except Exception as e:
-            await event.reply(f"❌ 数据分析失败: {e}")
-    
-    @command_registry.command("json_format", description="格式化JSON数据")
-    @option(short_name="c", long_name="compact", help="紧凑格式")
-    async def json_format_cmd(self, event: BaseMessageEvent, json_data: str, compact: bool = False):
-        """格式化JSON数据"""
-        try:
-            import json
-            data = json.loads(json_data)
-            
-            if compact:
-                formatted = json.dumps(data, ensure_ascii=False, separators=(',', ':'))
-            else:
-                formatted = json.dumps(data, ensure_ascii=False, indent=2)
-            
-            await event.reply(f"✅ JSON格式化完成:\n```json\n{formatted}\n```")
-            
-        except json.JSONDecodeError as e:
-            await event.reply(f"❌ JSON格式错误: {e}")
     
     @command_registry.command("text_stats", description="文本统计")
     async def text_stats_cmd(self, event: BaseMessageEvent, text: str):
