@@ -39,7 +39,7 @@ class HelloPlugin(NcatBotPlugin):
 
 ```
 
-hello_plugin/__init__.py：
+hello_plugin/\_\_init\_\_.py：
 ```python
 from .hello_plugin import HelloPlugin
 

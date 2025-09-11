@@ -1,11 +1,15 @@
 # NCatBot 文档中心
 
 ## 🚀 快速开始
-- [最小可运行示例](./quick_start/MinimalExamples.md) — 插件 / run_backend / run_frontend
+- [快速开始（最小示例）](./quick_start/README.md) — 插件 / run_backend / run_frontend
 - [API 快速上手（事件）](./api/QuickStart_Events.md)
 
 ## 📚 API 文档
 - [API 索引](./api/README.md)
+- 消息模型
+  - [消息段（MessageSegment）](./api/MessageSegment.md)
+  - [消息容器（MessageArray）](./api/MessageArray.md)
+  - [合并转发（ForwardMessage）](./api/ForwardMessage.md)
 
 ## 🔧 配置与启动
 - [配置与启动（Config & Startup）](./config/ConfigAndStartup.md) — config.yaml、StartArgs 覆盖、程序化设置与安全提示

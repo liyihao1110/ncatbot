@@ -1,5 +1,4 @@
 import asyncio
-import copy
 import inspect
 import traceback
 import threading
