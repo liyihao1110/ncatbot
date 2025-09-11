@@ -82,8 +82,10 @@ class ArgumentBinder:
                 content = element.content
                 if spec.args_types[idx] == bool:
                     bound_args.append(content.lower() not in ["false", "0"])
-                else:
+                elif spec.args_types[idx] in (str, float, int):
                     bound_args.append(spec.args_types[idx](content))
+                else:
+                    bound_args.append(element.content)
 
             return BindResult(True, tuple(bound_args), bound_kwargs, "")
         except Exception as e:

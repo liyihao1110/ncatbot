@@ -11,12 +11,18 @@
   - `test_full_example.py`：完整插件示例（集成态）
   - `test_external_funcs.py`：类外/类内命令与管理员命令
 - `test_readme.py`：对应 `UnifiedRegistry-README.md` “快速开始”片段的验证
- - `filters/`：对应 `UnifiedRegistry-过滤器系统.md` 的验证
-   - `plugins/`：过滤器相关演示插件
-   - `test_builtin_filters.py`：内置过滤器与 on_message
-   - `test_combo_filters.py`：组合装饰器与一次性注册多个过滤器
-   - `test_custom_filters.py`：自定义过滤器与按名称绑定
-   - `test_level_and_cooldown.py`：过滤器类与冷却时间示例
+- `filters/`：对应 `UnifiedRegistry-过滤器系统.md` 的验证
+  - `plugins/`：过滤器相关演示插件
+  - `test_builtin_filters.py`：内置过滤器与 on_message
+  - `test_combo_filters.py`：组合装饰器与一次性注册多个过滤器
+  - `test_custom_filters.py`：自定义过滤器与按名称绑定
+  - `test_level_and_cooldown.py`：过滤器类与冷却时间示例
+ - `params/`：对应 `UnifiedRegistry-参数解析.md` 的验证
+   - `plugins/`：参数解析相关演示插件
+   - `test_basic_syntax.py`：基础参数与引用字符串
+   - `test_options_and_named.py`：选项、命名参数、选项组与组合语法
+   - `test_types_and_errors.py`：类型转换、布尔值与错误处理
+   - `test_media_and_advanced.py`：非文本元素（图片/@用户）与补充场景
 
 ## 运行前准备（PowerShell）
 
@@ -71,6 +77,26 @@ python -m examples.unified_registry.filters.test_custom_filters
 - 运行 过滤器系统-过滤器类 与 冷却时间
 ```powershell
 python -m examples.unified_registry.filters.test_level_and_cooldown
+```
+
+- 运行 参数解析-基础语法与引用
+```powershell
+python -m examples.unified_registry.params.test_basic_syntax
+```
+
+- 运行 参数解析-选项与命名参数
+```powershell
+python -m examples.unified_registry.params.test_options_and_named
+```
+
+- 运行 参数解析-类型与错误处理
+```powershell
+python -m examples.unified_registry.params.test_types_and_errors
+```
+
+- 运行 参数解析-非文本元素与高级
+```powershell
+python -m examples.unified_registry.params.test_media_and_advanced
 ```
 
 ## 说明
