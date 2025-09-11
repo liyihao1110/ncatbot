@@ -191,7 +191,7 @@ async def time_filter_command(event: BaseMessageEvent):
 # 插件类外，除了装饰器，还可以使用函数添加自定义过滤器
 filter_registry.add_filter_to_function(
     time_check_command, 
-    CustomFilter(time_filter, name="keyword_filter")
+    "keyword_filter"
 )
 ```
 

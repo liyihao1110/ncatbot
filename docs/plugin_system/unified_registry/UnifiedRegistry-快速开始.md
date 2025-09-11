@@ -135,7 +135,7 @@ class HelloPlugin(NcatBotPlugin):
 - `/deploy myapp` -> "正在部署 myapp 到 dev 环境"
 - `/deploy myapp --env=prod -v` -> "正在部署 myapp 到 prod 环境\n详细信息: 开始部署流程..."
 - `/deploy myapp --force` -> "正在部署 myapp 到 dev 环境 (强制模式)"
-- `/deploy --force myapp` -> "正在部署 myapp 到 dev 环境 (强制模式)\n详细信息: 开始部署流程..."（同上条指令）
+- `/deploy --force myapp` -> "正在部署 myapp 到 dev 环境 (强制模式)"
 
 ### 6. 命令别名
 
