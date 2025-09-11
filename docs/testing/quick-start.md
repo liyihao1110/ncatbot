@@ -113,7 +113,7 @@ if __name__ == "__main__":
 
 1. **TestClient**: 测试专用的客户端，自动启用 Mock 模式
    - `register_plugin()`: 注册需要测试的插件
-   - `start(mock_mode=True)`: 启动客户端，跳过真实连接
+   - `start()`: 启动客户端，跳过真实连接
 
 2. **TestHelper**: 简化测试操作的辅助类
    - `send_private_message()`: 模拟发送私聊消息

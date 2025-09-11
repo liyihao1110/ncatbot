@@ -22,7 +22,7 @@ async def run_all_tests():
     # 共享的测试环境
     client = TestClient()
     helper = TestHelper(client)
-    client.start(mock_mode=True)
+    client.start()
     client.register_plugin(HelloPlugin)
     
     # 测试结果统计

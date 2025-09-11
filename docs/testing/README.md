@@ -43,7 +43,7 @@ async def test_my_plugin():
     helper = TestHelper(client)
     
     # 启动客户端并注册插件
-    client.start(mock_mode=True)
+    client.start()
     client.register_plugin(MyPlugin)
     
     # 发送测试消息

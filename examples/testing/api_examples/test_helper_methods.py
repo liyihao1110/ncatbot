@@ -35,8 +35,11 @@ async def main():
     print(f"最新回复: {latest}")
     
     # 获取倒数第二个回复
-    second_last = helper.get_latest_reply(-2)
-    print(f"倒数第二个回复: {second_last}")
+    try:
+        second_last = helper.get_latest_reply(-2)
+    except IndexError:
+        # 第二个回复不存在
+        pass
     
     # 断言回复
     try:

@@ -76,8 +76,8 @@ class CommandSpec:
 
     def get_kw_binding(self, option: str) -> dict:
         for value in self.options:
-            if value.name == option:
-                return {option: True}
+            if value.name == option or value.short_name == option:
+                return {value.name: True}
         for value in self.option_groups:
             if option in value.choices:
                 return {value.name: option}

@@ -21,7 +21,7 @@ async def interactive_test():
     """交互式测试模式"""
     client = TestClient()
     helper = TestHelper(client)
-    client.start(mock_mode=True)
+    client.start()
     client.register_plugin(HelloPlugin)
     
     print("🎮 交互式测试模式")

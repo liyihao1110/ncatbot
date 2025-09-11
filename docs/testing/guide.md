@@ -194,7 +194,7 @@ mock_api.set_response("/get_user_info", dynamic_response)
 async def test_event_handlers():
     client = TestClient()
     helper = TestHelper(client)
-    client.start(mock_mode=True)
+    client.start()
     
     # 注册自定义事件处理器
     handled_events = []
@@ -228,7 +228,7 @@ from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorat
 async def test_permissions():
     client = TestClient()
     helper = TestHelper(client)
-    client.start(mock_mode=True)
+    client.start()
     
     # 创建需要权限的插件
     class AdminPlugin(BasePlugin):
@@ -264,7 +264,7 @@ async def test_permissions():
 async def test_plugin_interaction():
     client = TestClient()
     helper = TestHelper(client)
-    client.start(mock_mode=True)
+    client.start()
     
     # 插件 A：提供服务
     class PluginA(NcatBotPlugin):

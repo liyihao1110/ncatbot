@@ -81,7 +81,7 @@ async def run_all_tests():
     # 共享的测试环境
     client = TestClient()
     helper = TestHelper(client)
-    client.start(mock_mode=True)
+    client.start()
     client.register_plugin(MyPlugin)
     
     # 测试结果统计
@@ -140,7 +140,7 @@ async def interactive_test():
     """交互式测试模式"""
     client = TestClient()
     helper = TestHelper(client)
-    client.start(mock_mode=True)
+    client.start()
     client.register_plugin(MyPlugin)
     
     print("🎮 交互式测试模式")
@@ -185,7 +185,7 @@ async def performance_test():
     """性能测试"""
     client = TestClient()
     helper = TestHelper(client)
-    client.start(mock_mode=True)
+    client.start()
     client.register_plugin(MyPlugin)
     
     # 测试参数
@@ -230,7 +230,7 @@ def plugin_test(plugin_class):
             # 设置测试环境
             client = TestClient()
             helper = TestHelper(client)
-            client.start(mock_mode=True)
+            client.start()
             client.register_plugin(plugin_class)
             
             try:
@@ -262,7 +262,7 @@ async def data_driven_test():
     """数据驱动的测试"""
     client = TestClient()
     helper = TestHelper(client)
-    client.start(mock_mode=True)
+    client.start()
     client.register_plugin(MyPlugin)
     
     # 测试数据
@@ -319,7 +319,7 @@ async def test_with_mock():
     """使用 Mock 的测试"""
     client = TestClient()
     helper = TestHelper(client)
-    client.start(mock_mode=True)
+    client.start()
     
     # 创建带 Mock 的插件
     class WeatherPlugin(BasePlugin):
@@ -379,7 +379,7 @@ async def test_with_logging():
     """带详细日志的测试"""
     client = TestClient()
     helper = TestHelper(client)
-    client.start(mock_mode=True)
+    client.start()
     client.register_plugin(MyPlugin)
     
     # 测试并查看日志
@@ -400,7 +400,7 @@ async def debug_test():
     """方便断点调试的测试"""
     client = TestClient()
     helper = TestHelper(client)
-    client.start(mock_mode=True)
+    client.start()
     client.register_plugin(MyPlugin)
     
     # 在这里设置断点

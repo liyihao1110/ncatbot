@@ -13,7 +13,7 @@ async def performance_test():
     """性能测试"""
     client = TestClient()
     helper = TestHelper(client)
-    client.start(mock_mode=True)
+    client.start()
     client.register_plugin(HelloPlugin)
     
     # 测试参数
