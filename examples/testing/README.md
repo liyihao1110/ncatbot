@@ -18,10 +18,8 @@
 .\.venv\Scripts\activate
 
 # 运行特定示例
-python verify_docs/quick_start/hello_plugin_test.py
+python.exe -m examples.testing.unittest_tests.test_calculator_plugin 
 
-# 运行 unittest 测试
-python -m unittest verify_docs/unittest_tests/test_calculator_plugin.py
 ```
 
 ## 验证状态
