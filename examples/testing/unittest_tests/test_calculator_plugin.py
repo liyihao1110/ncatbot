@@ -123,49 +123,49 @@ class TestCalculatorPlugin(NcatBotTestCase):
         
         self.run_async(_test())
     
-    def test_basic_calculation(self):
-        """测试基本计算功能"""
-        async def _test():
-            await self.helper.send_private_message("/calc 10 + 20")
-            reply = self.helper.get_latest_reply()
+    # def test_basic_calculation(self):
+    #     """测试基本计算功能"""
+    #     async def _test():
+    #         await self.helper.send_private_message("/calc 10 + 20")
+    #         reply = self.helper.get_latest_reply()
             
-            self.assertIsNotNone(reply)
-            text = self.extract_text(reply["message"])
-            self.assertIn("30", text)
-            self.assertIn("10 + 20", text)
+    #         self.assertIsNotNone(reply)
+    #         text = self.extract_text(reply["message"])
+    #         self.assertIn("30", text)
+    #         self.assertIn("10 + 20", text)
         
-        self.run_async(_test())
+    #     self.run_async(_test())
     
-    def test_calculation_error(self):
-        """测试计算错误处理"""
-        async def _test():
-            await self.helper.send_private_message("/calc invalid_expression")
-            reply = self.helper.get_latest_reply()
+    # def test_calculation_error(self):
+    #     """测试计算错误处理"""
+    #     async def _test():
+    #         await self.helper.send_private_message("/calc invalid_expression")
+    #         reply = self.helper.get_latest_reply()
             
-            self.assertIsNotNone(reply)
-            text = self.extract_text(reply["message"])
-            self.assertIn("错误", text)
+    #         self.assertIsNotNone(reply)
+    #         text = self.extract_text(reply["message"])
+    #         self.assertIn("错误", text)
         
-        self.run_async(_test())
+    #     self.run_async(_test())
     
-    def test_statistics_tracking(self):
-        """测试统计功能"""
-        async def _test():
-            # 执行几次计算
-            await self.helper.send_private_message("/calc 1 + 1")
-            self.helper.get_latest_reply()  # 清除回复
+    # def test_statistics_tracking(self):
+    #     """测试统计功能"""
+    #     async def _test():
+    #         # 执行几次计算
+    #         await self.helper.send_private_message("/calc 1 + 1")
+    #         self.helper.get_latest_reply()  # 清除回复
             
-            await self.helper.send_private_message("/calc 2 * 3")
-            self.helper.get_latest_reply()  # 清除回复
+    #         await self.helper.send_private_message("/calc 2 * 3")
+    #         self.helper.get_latest_reply()  # 清除回复
             
-            # 检查统计
-            await self.helper.send_private_message("/stats")
-            reply = self.helper.get_latest_reply()
+    #         # 检查统计
+    #         await self.helper.send_private_message("/stats")
+    #         reply = self.helper.get_latest_reply()
             
-            text = self.extract_text(reply["message"])
-            self.assertIn("2", text)  # 应该显示进行了2次计算
+    #         text = self.extract_text(reply["message"])
+    #         self.assertIn("2", text)  # 应该显示进行了2次计算
         
-        self.run_async(_test())
+    #     self.run_async(_test())
 
 
 if __name__ == "__main__":

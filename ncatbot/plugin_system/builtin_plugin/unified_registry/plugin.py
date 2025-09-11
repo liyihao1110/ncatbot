@@ -40,9 +40,7 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
     version = "2.0.0"
     
     async def on_load(self) -> None:
-        """插件加载时的初始化"""
-        LOG.info("统一注册插件加载中...")
-        
+        """插件加载时的初始化"""        
         # 订阅事件
         self.event_bus.subscribe(
             "re:ncatbot.group_message_event|ncatbot.private_message_event", 
@@ -77,8 +75,6 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         )
         self._binder = ArgumentBinder()
         self._initialized = False
-        await super().on_load()
-        LOG.info("统一注册插件加载完成")
     
     def _normalize_case(self, s: str) -> str:
         # TODO: 实现大小写敏感（可能永远不会做）

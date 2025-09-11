@@ -243,8 +243,10 @@ class BotClient:
         for key, value in kwargs.items():
             if key not in legal_args:
                 raise NcatBotError(f"非法参数: {key}")
-            if value is None:
+            elif value is None:
                 continue
+            else:
+                ncatbot_config.update_value(key, value)
         
         ncatbot_config.validate_config()
             

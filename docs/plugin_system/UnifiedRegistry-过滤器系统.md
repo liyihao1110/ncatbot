@@ -97,6 +97,19 @@ class MyPlugin(NcatBotPlugin):
 **功能**: 只允许 Root 用户使用的命令
 **使用场景**: 系统级操作、调试功能、危险操作等
 
+### 4. TrueFilter - 消息专用过滤器
+
+用于在发送消息时回调一个指定的函数。
+
+```python
+from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorators import on_message
+
+@on_message
+def on_message_callback(event: BaseMessageEvent):
+    await event.reply("收到一条消息")
+```
+
+
 ## 🔗 过滤器组合使用
 
 ### 组合装饰器

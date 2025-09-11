@@ -46,6 +46,11 @@ class RootFilter(BaseFilter):
         user_id = event.user_id
         return status.global_access_manager.user_has_role(user_id, PermissionGroup.ROOT.value)
 
+class TrueFilter(BaseFilter):
+    """True过滤器, 用于注册发送消息时调用的功能"""
+    def check(self, event: "BaseMessageEvent") -> bool:
+        return True
+
 class CustomFilter(BaseFilter):
     """自定义函数过滤器包装器"""
     

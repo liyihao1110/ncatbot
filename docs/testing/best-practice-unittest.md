@@ -17,27 +17,33 @@ import unittest
 import asyncio
 from typing import List, Type
 from ncatbot.utils.testing import TestClient, TestHelper
-from ncatbot.plugin_system import BasePlugin
+from ncatbot.plugin_system import NcatBotPlugin
 from ncatbot.utils import get_log
+from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorators import on_message
+from ncatbot.core.event import BaseMessageEvent
+from ncatbot.core.event.message_segment import MessageArray
 
 LOG = get_log("PluginTest")
 
 # ============== 插件定义部分 ==============
-
-class CalculatorPlugin(BasePlugin):
+class CalculatorPlugin(NcatBotPlugin):
     """简单计算器插件 - 用于演示测试"""
     
     name = "CalculatorPlugin"
     version = "1.0.0"
     description = "提供基本数学计算功能的演示插件"
     
-    async def handle_message(self, event):
+    async def on_load(self):
+        self.calculation_count = 0
+
+    @on_message
+    async def handle_message(self, event: BaseMessageEvent):
         """处理消息事件"""
-        message_text = self.extract_text(event.get("message", []))
+        message_text = self.extract_text(event.message)
         
         # 处理问候命令
         if message_text.strip() == "/hello":
-            await self.send_reply(event, "你好！我是计算器插件 🧮")
+            await event.reply("你好！我是计算器插件 🧮")
             return
         
         # 处理计算命令
@@ -48,10 +54,10 @@ class CalculatorPlugin(BasePlugin):
         
         # 处理统计命令
         if message_text.strip() == "/stats":
-            await self.send_reply(event, f"已进行 {self.calculation_count} 次计算")
+            await event.reply(f"已进行 {self.calculation_count} 次计算")
             return
     
-    async def _handle_calculation(self, event, expression):
+    async def _handle_calculation(self, event: BaseMessageEvent, expression: str):
         """处理数学计算"""
         try:
             # 简单的安全计算（仅支持基本运算符）
@@ -61,19 +67,16 @@ class CalculatorPlugin(BasePlugin):
             
             result = eval(expression)
             self.calculation_count += 1
-            
-            await self.send_reply(event, f"计算结果：{expression} = {result}")
+            await event.reply(f"计算结果：{expression} = {result}")
+            return
             
         except Exception as e:
-            await self.send_reply(event, f"计算错误：{str(e)}")
+            await event.reply(f"计算错误：{str(e)}")
     
-    def extract_text(self, message_segments):
+    def extract_text(self, message_array: MessageArray):
         """提取消息中的文本内容"""
-        text = ""
-        for seg in message_segments:
-            if isinstance(seg, dict) and seg.get("type") == "text":
-                text += seg.get("data", {}).get("text", "")
-        return text
+        return "".join([seg.text for seg in message_array.filter_text()])
+
 
 # ============== 测试基类定义 ==============
 
@@ -102,7 +105,7 @@ class AsyncTestCase(unittest.TestCase):
 class NcatBotTestCase(AsyncTestCase):
     """NcatBot 插件测试基类"""
     
-    test_plugins: List[Type[BasePlugin]] = []
+    test_plugins: List[Type[NcatBotPlugin]] = []
     client: TestClient = None
     helper: TestHelper = None
     

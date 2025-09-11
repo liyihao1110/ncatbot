@@ -433,7 +433,8 @@ class RBACManager:
     manager: _RBACManager = None
     def __init__(self, path):
         if os.path.exists(path):
-            self.manager = _RBACManager.from_dict(json.load(open(path, "r", encoding="utf-8")))
+            with open(path, "r", encoding="utf-8") as f:
+                self.manager = _RBACManager.from_dict(json.load(f))
         else:
             self.manager = _RBACManager(default_role=PermissionGroup.USER.value)
             

@@ -14,7 +14,6 @@ class SystemManager(NcatBotPlugin):
     description = "ncatbot 系统管理插件"
 
     async def on_load(self) -> None:
-        LOG.debug("SystemManager 加载")
         # self.register_user_func("ncs", self.get_status, prefix="/ncs")
         # self.register_user_func("nch", self.get_help, prefix="/nch")
         self.register_admin_command("ncatbot_status", self.get_status, aliases=["ncs"])

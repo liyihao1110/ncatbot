@@ -2,7 +2,7 @@
 
 from typing import Callable, Union, TYPE_CHECKING
 from .registry import filter_registry, FilterRegistry
-from .builtin import GroupFilter, PrivateFilter, AdminFilter, RootFilter
+from .builtin import GroupFilter, PrivateFilter, AdminFilter, RootFilter, TrueFilter
 from functools import wraps
 from .base import BaseFilter
 
@@ -38,6 +38,10 @@ def admin_only(func: Callable) -> Callable:
 def root_only(func: Callable) -> Callable:
     """Root专用装饰器"""
     return filter_registry.add_filter_to_function(func, RootFilter())
+
+def on_message(func: Callable) -> Callable:
+    """消息专用装饰器"""
+    return filter_registry.add_filter_to_function(func, TrueFilter())
 
 # 组合装饰器
 def admin_group_only(func: Callable) -> Callable:

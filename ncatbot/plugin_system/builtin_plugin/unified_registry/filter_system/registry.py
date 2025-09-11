@@ -105,6 +105,7 @@ class FilterRegistry:
         """
         if not hasattr(func, "__filters__"):
             setattr(func, "__filters__", [])
+            self._function_filters.append(func)
         
         filter_list: List[BaseFilter] = getattr(func, "__filters__")
         

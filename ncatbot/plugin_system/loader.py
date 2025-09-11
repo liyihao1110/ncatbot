@@ -248,16 +248,18 @@ class PluginLoader:
         plugins = [SystemManager, UnifiedRegistryPlugin]
         for plugin in plugins:
             await self.load_plugin(plugin)
+        LOG.info("已加载内置插件数 [%d]", len(self.plugins))
 
     async def load_plugins(self, plugins_path: str = _PLUGINS_DIR, **kwargs) -> None:
         """从目录批量加载。"""
         path = Path(plugins_path or _PLUGINS_DIR).resolve()
+        await self.load_builtin_plugins()
         if not path.exists():
             LOG.info("插件目录: %s 不存在……跳过加载插件", path)
             return
         
         if ncatbot_config.plugin.skip_plugin_load:
-            LOG.info("跳过插件加载")
+            LOG.info("跳过外部插件加载")
             return
 
         LOG.info("从 %s 导入插件", path)
@@ -272,7 +274,6 @@ class PluginLoader:
                     plugin_classes.append(cls)
 
         await self.from_class_load_plugins(plugin_classes, **kwargs)
-        await self.load_builtin_plugins()
         LOG.info("已加载插件数 [%d]", len(self.plugins))
         # self._load_compatible_data()
 
