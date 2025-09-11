@@ -44,7 +44,7 @@ def wrong_cmd(self, event: BaseMessageEvent):
 
 ### Q3: 如何在命令中访问插件的属性和方法？
 
-**A:** 使用 `self` 参数可以访问插件实例的所有属性和方法：
+**A:** 功能函数被定义为类方法时，使用 `self` 参数可以访问插件实例的所有属性和方法：
 
 ```python
 class MyPlugin(NcatBotPlugin):
@@ -54,15 +54,17 @@ class MyPlugin(NcatBotPlugin):
         self.config = {"max_users": 100}
     
     async def on_load(self):
-        @command_registry.command("count")
-        def count_cmd(self, event: BaseMessageEvent):
-            self.counter += 1  # 访问插件属性
-            return f"计数: {self.counter}"
-        
-        @command_registry.command("reset")
-        def reset_cmd(self, event: BaseMessageEvent):
-            self._reset_counter()  # 调用插件方法
-            return "计数已重置"
+        pass
+
+    @command_registry.command("count")
+    def count_cmd(self, event: BaseMessageEvent):
+        self.counter += 1  # 访问插件属性
+        return f"计数: {self.counter}"
+    
+    @command_registry.command("reset")
+    def reset_cmd(self, event: BaseMessageEvent):
+        self._reset_counter()  # 调用插件方法
+        return "计数已重置"
     
     def _reset_counter(self):
         """插件的私有方法"""
@@ -75,15 +77,7 @@ class MyPlugin(NcatBotPlugin):
 
 **A:** 检查以下几个常见原因：
 
-1. **函数没有标记为命令**：确保添加了 `__is_command__` 标记
-```python
-@command_registry.command("test")
-def test_cmd(self, event: BaseMessageEvent):
-    return "测试"
-# 装饰器会自动添加 test_cmd.__is_command__ = True
-```
-
-2. **插件没有正确加载**：确保插件在 `on_load` 中注册命令
+1. **插件没有正确加载**：确保注册命令的代码被执行，一般来说，注册代码会在定义函数时执行。
 ```python
 async def on_load(self):
     # 保持轻量
@@ -94,7 +88,7 @@ def hello_cmd(self, event: BaseMessageEvent):
     return "Hello"
 ```
 
-3. **命令名称冲突**：检查是否有重复的命令名或别名
+2. **命令名称冲突**：检查是否有重复的命令名或别名，报错信息往往会给出提示。
 
 ### Q5: 如何处理命令参数的默认值？
 
@@ -155,57 +149,9 @@ def debug_filter(event: BaseMessageEvent) -> bool:
     return result
 ```
 
-### Q8: 如何创建复杂的权限控制？
-
-**A:** 组合多个过滤器或创建自定义过滤器：
-
-```python
-# 方法1: 组合现有过滤器
-@admin_only
-@group_only
-@command_registry.command("admin_group_cmd")
-def admin_group_cmd(self, event: BaseMessageEvent):
-    return "管理员群聊命令"
-
-# 方法2: 自定义过滤器
-class VipFilter(BaseFilter):
-    def __init__(self, min_level: int = 5):
-        super().__init__(f"vip_level_{min_level}")
-        self.min_level = min_level
-    
-    def check(self, event: BaseMessageEvent) -> bool:
-        user_level = self.get_user_level(event.user_id)
-        return user_level >= self.min_level
-
-@command_registry.command("vip_cmd")
-def vip_cmd(self, event: BaseMessageEvent):
-    return "VIP功能"
-
-# 添加自定义过滤器
-filter_registry.add_filter_to_function(vip_cmd, VipFilter(min_level=10))
-```
-
-### Q9: 过滤器错误如何调试？
-
-**A:** 启用调试日志并检查过滤器执行：
-
-```python
-from ncatbot.utils import get_log
-LOG = get_log(__name__)
-
-def my_filter(event: BaseMessageEvent) -> bool:
-    try:
-        result = complex_check(event)
-        LOG.debug(f"过滤器检查结果: {result}")
-        return result
-    except Exception as e:
-        LOG.error(f"过滤器执行错误: {e}")
-        return False  # 出错时的默认行为
-```
-
 ## 🔄 参数解析问题
 
-### Q10: 参数类型转换失败怎么办？
+### Q8: 参数类型转换失败怎么办？
 
 **A:** 提供错误处理和用户友好的提示：
 
@@ -222,7 +168,7 @@ def safe_calc_cmd(self, event: BaseMessageEvent, a: str, b: str):
         return f"❌ 参数错误: '{a}' 或 '{b}' 不是有效数字\n💡 请输入数字，例如: /safe_calc 1.5 2.3"
 ```
 
-### Q11: 如何处理包含空格的参数？
+### Q9: 如何处理包含空格的参数？
 
 **A:** 使用引号包围参数：
 
@@ -236,7 +182,7 @@ def say_cmd(self, event: BaseMessageEvent, message: str):
 # /say '包含 空格 的 消息'      -> "机器人说: 包含 空格 的 消息"
 ```
 
-### Q12: 选项和参数的区别是什么？
+### Q10: 选项和参数的区别是什么？
 
 **A:** 
 
@@ -263,7 +209,7 @@ def backup_cmd(self, event: BaseMessageEvent,
 
 ## 🐛 错误处理问题
 
-### Q13: 如何提供用户友好的错误信息？
+### Q11: 如何提供用户友好的错误信息？
 
 **A:** 使用清晰的错误格式和建议：
 
@@ -308,173 +254,11 @@ def complex_operation_cmd(self, event: BaseMessageEvent, data: str):
         return "❌ 系统错误，请稍后重试"
 ```
 
-## 🔧 开发和调试
-
-### Q15: 如何调试插件的命令注册？
-
-**A:** 查看注册状态和冲突：
-
-```python
-async def on_load(self):
-    # 注册命令
-    @command_registry.command("debug_test")
-    def debug_test_cmd(self, event: BaseMessageEvent):
-        return "调试测试"
-    
-    # 检查注册状态
-    all_commands = command_registry.get_all_commands()
-    LOG.debug(f"已注册的命令: {list(all_commands.keys())}")
-    
-    # 检查是否成功注册
-    if ("debug_test",) in all_commands:
-        LOG.info("debug_test 命令注册成功")
-    else:
-        LOG.error("debug_test 命令注册失败")
-```
-
-### Q16: 插件间如何共享数据？
-
-**A:** 使用插件系统的依赖机制：
-
-```python
-class DataProviderPlugin(NcatBotPlugin):
-    name = "DataProviderPlugin"
-    
-    def __init__(self):
-        super().__init__()
-        self.shared_data = {"global_count": 0}
-    
-    def get_data(self, key: str):
-        return self.shared_data.get(key)
-    
-    def set_data(self, key: str, value):
-        self.shared_data[key] = value
-
-class DataConsumerPlugin(NcatBotPlugin):
-    name = "DataConsumerPlugin"
-    dependencies = {"DataProviderPlugin": ">=1.0.0"}
-    
-    async def on_load(self):
-        @command_registry.command("get_global")
-        def get_global_cmd(self, event: BaseMessageEvent):
-            provider = self.get_plugin("DataProviderPlugin")
-            if provider:
-                count = provider.get_data("global_count")
-                return f"全局计数: {count}"
-            return "数据提供插件未找到"
-```
-
-### Q17: 如何实现命令的条件启用？
-
-**A:** 使用动态过滤器或配置检查：
-
-```python
-class ConditionalPlugin(NcatBotPlugin):
-    def __init__(self):
-        super().__init__()
-        self.features_enabled = {
-            "advanced_mode": False,
-            "debug_mode": True
-        }
-    
-    async def on_load(self):
-        pass
-
-    # 条件性注册命令（加载期仅根据配置决定是否声明命令）
-    if self.features_enabled.get("advanced_mode"):
-        @command_registry.command("advanced_cmd")
-        def advanced_cmd(self, event: BaseMessageEvent):
-            return "高级功能已启用"
-    
-    # 运行时条件检查
-    @command_registry.command("debug_info")
-    def debug_info_cmd(self, event: BaseMessageEvent):
-        if not self.features_enabled.get("debug_mode"):
-            return "❌ 调试模式未启用"
-        return "🔧 调试信息: ..."
-```
-
 ## ⚠️ 常见陷阱
 
 ### Q18: 为什么修改代码后命令没有更新？
 
-**A:** 可能的原因：
-
-1. **插件缓存**：重启机器人或重新加载插件
-2. **注册顺序**：确保命令在 `on_load` 中注册
-3. **代码错误**：检查控制台的错误信息
-
-### Q19: 内存泄漏和性能问题
-
-**A:** 注意以下几点：
-
-```python
-class PerformantPlugin(NcatBotPlugin):
-    def __init__(self):
-        super().__init__()
-        self.cache = {}
-        self.max_cache_size = 1000
-    
-    async def on_load(self):
-        @command_registry.command("cached_operation")
-        def cached_operation_cmd(self, event: BaseMessageEvent, key: str):
-            # 缓存大小控制
-            if len(self.cache) > self.max_cache_size:
-                # 清理一半缓存
-                items = list(self.cache.items())
-                self.cache = dict(items[len(items)//2:])
-            
-            # 使用缓存
-            if key in self.cache:
-                return f"缓存结果: {self.cache[key]}"
-            
-            result = self.expensive_operation(key)
-            self.cache[key] = result
-            return f"新结果: {result}"
-```
-
-### Q20: 如何处理插件的配置更新？
-
-**A:** 实现配置热重载：
-
-```python
-class ConfigurablePlugin(NcatBotPlugin):
-    def __init__(self):
-        super().__init__()
-        self.config = self.load_config()
-    
-    def load_config(self):
-        """加载配置（可以从文件、数据库等）"""
-        return {
-            "max_users": 100,
-            "timeout": 30,
-            "features": ["basic", "advanced"]
-        }
-    
-    async def on_load(self):
-        @admin_only
-        @command_registry.command("reload_config")
-        def reload_config_cmd(self, event: BaseMessageEvent):
-            try:
-                old_config = self.config.copy()
-                self.config = self.load_config()
-                
-                # 比较配置变化
-                changes = []
-                for key, value in self.config.items():
-                    if key not in old_config or old_config[key] != value:
-                        changes.append(f"{key}: {old_config.get(key, '无')} -> {value}")
-                
-                if changes:
-                    return f"✅ 配置已重载\n变更:\n" + "\n".join(changes)
-                else:
-                    return "✅ 配置已重载（无变更）"
-                    
-            except Exception as e:
-                return f"❌ 配置重载失败: {e}"
-```
-
----
+**A:** 不支持热重载，需要重启机器人或重新加载插件。
 
 ## 🆘 获取更多帮助
 

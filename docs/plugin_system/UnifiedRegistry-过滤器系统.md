@@ -4,6 +4,8 @@
 
 过滤器系统是 UnifiedRegistry 的核心安全和权限控制机制。它允许您在命令执行前进行各种检查，如权限验证、消息类型过滤、自定义条件判断等。
 
+过滤器系统也可以用来定义**非命令的功能**，如果一个函数没有被 `@command_registry.command` 装饰，但是有装饰器装饰。当消息事件发生时，只要能通过过滤器，那么这个函数就会被调用。
+
 ## 🎯 核心概念
 
 ### 过滤器工作原理
@@ -21,7 +23,7 @@
 
 ## 🔧 内置过滤器详解
 
-### 1. GroupFilter - 群聊过滤器
+### 1. GroupFilter/PrivateFilter - 群聊过滤器/私聊过滤器
 
 ```python
 from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import GroupFilter
@@ -29,84 +31,67 @@ from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorat
 
 class MyPlugin(NcatBotPlugin):
     async def on_load(self):
-        # 方式1: 使用装饰器（推荐）
-        @group_only
-        @command_registry.command("groupcmd")
-        def group_command(self, event: BaseMessageEvent):
-            return "这是群聊专用命令"
+        pass
+
+    # 可以在插件类中定义
+    @group_only
+    async def group_message(self, event: BaseMessageEvent):
+        await event.reply("收到一条群聊消息")
+    
+# 也可以在插件类外定义
+@private_only
+async def private_message(event: BaseMessageEvent):
+    await event.reply("收到一条私聊消息")
         
-        # 方式2: 使用过滤器实例
-        @command_registry.command("groupcmd2")
-        def group_command2(self, event: BaseMessageEvent):
-            return "另一个群聊命令"
-        
-        # 手动添加过滤器
-        from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import filter_registry
-        filter_registry.add_filter_to_function(group_command2, GroupFilter())
 ```
 
 **功能**: 只允许在群聊中使用的命令
 **使用场景**: 群管理、群游戏、群公告等
 
-### 2. PrivateFilter - 私聊过滤器
 
-```python
-from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorators import private_only
+### 2. AdminFilter - 管理员过滤器
 
-class MyPlugin(NcatBotPlugin):
-    async def on_load(self):
-        @private_only
-        @command_registry.command("secret")
-        def secret_command(self, event: BaseMessageEvent):
-            return "这是私聊专用命令"
-        
-        @private_only
-        @command_registry.command("profile")
-        def profile_command(self, event: BaseMessageEvent):
-            return f"您的用户ID: {event.user_id}"
-```
-
-**功能**: 只允许在私聊中使用的命令
-**使用场景**: 个人设置、隐私查询、账户管理等
-
-### 3. AdminFilter - 管理员过滤器
+只允许 **Bot管理员** 使用的命令。
 
 ```python
 from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorators import admin_only
 
 class MyPlugin(NcatBotPlugin):
     async def on_load(self):
-        @admin_only
-        @command_registry.command("ban")
-        def ban_command(self, event: BaseMessageEvent, user_id: str):
-            return f"已封禁用户: {user_id}"
-        
-        @admin_only
-        @command_registry.command("config")
-        def config_command(self, event: BaseMessageEvent, key: str, value: str):
-            return f"已设置配置 {key} = {value}"
+        pass
+
+    # 可以和 command 组合使用，作为额外的判断条件
+    @admin_only
+    @command_registry.command("ban")
+    async def ban_command(self, event: BaseMessageEvent, user_id: str):
+        await event.reply(f"已封禁用户: {user_id}")
+    
+    # 也可以单独使用，消息只要满足过滤器就触发回调
+    @admin_only
+    async def admin_message(self, event: BaseMessageEvent):
+        await event.reply("收到一条管理员消息")
 ```
 
 **功能**: 只允许管理员使用的命令
 **前置条件**: 需要配置权限管理系统
 **使用场景**: 系统管理、用户管理、配置修改等
 
-### 4. RootFilter - Root权限过滤器
+### 3. RootFilter - Root权限过滤器
+
+只允许 **Root用户** 使用的命令。（root 用户只能在代码里指定）
 
 ```python
 from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorators import root_only
 
 class MyPlugin(NcatBotPlugin):
     async def on_load(self):
-        @root_only
-        @command_registry.command("shutdown")
-        def shutdown_command(self, event: BaseMessageEvent):
-            return "正在关闭机器人..."
-        
-        @root_only
-        @command_registry.command("debug")
-        def debug_command(self, event: BaseMessageEvent):
-            return "调试信息: ..."
+        pass
+
+    @root_only
+    @command_registry.command("shutdown")
+    def shutdown_command(self, event: BaseMessageEvent):
+        return "正在关闭机器人..."
+    
 ```
 
 **功能**: 只允许 Root 用户使用的命令
@@ -123,69 +108,78 @@ from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorat
 
 class MyPlugin(NcatBotPlugin):
     async def on_load(self):
-        # 管理员 + 群聊
-        @admin_group_only  # 等同于 @admin_only + @group_only
-        @command_registry.command("grouppromote")
-        def group_promote_command(self, event: BaseMessageEvent, user_id: str):
-            return f"在群聊中提升用户权限: {user_id}"
+        pass
+
+    # 管理员 + 群聊
+    @admin_group_only  # 等同于 @admin_only + @group_only
+    @command_registry.command("grouppromote")
+    def group_promote_command(self, event: BaseMessageEvent, user_id: str):
+        return f"在群聊中提升用户权限: {user_id}"
+    
+    # 管理员 + 私聊
+    @admin_private_only  # 等同于 @admin_only + @private_only
+    @command_registry.command("adminpanel")
+    def admin_panel_command(self, event: BaseMessageEvent):
+        return "管理员私聊面板"
+    
+    # 手动组合多个过滤器
+    @admin_only
+    @group_only
+    async def group_admin_command(self, event: BaseMessageEvent):
+        await event.reply("收到一条管理员发送的群聊消息")
         
-        # 管理员 + 私聊
-        @admin_private_only  # 等同于 @admin_only + @private_only
-        @command_registry.command("adminpanel")
-        def admin_panel_command(self, event: BaseMessageEvent):
-            return "管理员私聊面板"
-        
-        # 手动组合多个过滤器
-        @admin_only
-        @group_only
-        @command_registry.command("groupadmin")
-        def group_admin_command(self, event: BaseMessageEvent):
-            return "群管理员命令"
 ```
 
-### 多过滤器执行顺序
+### 一次性注册多个过滤器
 
 ```python
+from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import filter_registry
 class MyPlugin(NcatBotPlugin):
     async def on_load(self):
-        # 过滤器按从上到下的顺序执行
-        @admin_only      # 第二个执行
-        @group_only      # 第一个执行
-        @command_registry.command("order")
-        def order_command(self, event: BaseMessageEvent):
-            """执行顺序: group_only -> admin_only -> 命令函数"""
-            return "多重过滤器命令"
+        pass
+
+    # 过滤器按从上到下的顺序执行
+    @filter_registry.filters("admin_only", "group_only")
+    @command_registry.command("order")
+    def order_command(self, event: BaseMessageEvent):
+        """执行顺序: group_only -> admin_only -> 命令函数"""
+        return "多重过滤器命令"
 ```
 
 ## 🛠️ 自定义过滤器
 
 ### 1. 使用 CustomFilter
 
+自定义过滤器时，过滤器函数**只接受一个 `BaseMessageEvent` 对象作为参数**。返回 `bool` 类型，表示是否通过过滤器。
+
 ```python
 from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import CustomFilter
 from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import filter_registry
 
+@filter_registry.register("time_filter")
+def time_filter(event: BaseMessageEvent) -> bool:
+    import datetime
+    current_hour = datetime.datetime.now().hour
+    return 9 <= current_hour <= 22  # 只在9:00-22:00之间可用
+
+@filter_registry.register("keyword_filter")
+def keyword_filter(event: BaseMessageEvent) -> bool:
+    return "机器人" in (event.raw_message or "")
+
 class MyPlugin(NcatBotPlugin):
     async def on_load(self):
-        # 时间过滤器
-        def time_filter(event: BaseMessageEvent) -> bool:
-            import datetime
-            current_hour = datetime.datetime.now().hour
-            return 9 <= current_hour <= 22  # 只在9:00-22:00之间可用
-        
-        # 关键词过滤器
-        def keyword_filter(event: BaseMessageEvent) -> bool:
-            return "机器人" in (event.raw_message or "")
-        
-        @command_registry.command("timecheck")
-        def time_check_command(self, event: BaseMessageEvent):
-            return "当前时间允许使用此命令"
-        
-        # 添加自定义过滤器
-        filter_registry.add_filter_to_function(
-            time_check_command, 
-            CustomFilter(time_filter, name="time_filter")
-        )
+        pass
+
+
+@filter_registry.filters("time_filter")
+def time_filter_command(event: BaseMessageEvent):
+    return "当前时间允许使用此命令"
+
+# 插件类外，除了装饰器，还可以使用函数添加自定义过滤器
+filter_registry.add_filter_to_function(
+    time_check_command, 
+    CustomFilter(time_filter, name="keyword_filter")
+)
 ```
 
 ### 2. 注册过滤器函数
@@ -193,22 +187,24 @@ class MyPlugin(NcatBotPlugin):
 ```python
 from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import filter_registry
 
+# 注册过滤器函数，注意一般不能在类中注册，过滤器函数不接受 self 参数
+@filter_registry.register("vip_filter")
+def vip_filter(event: BaseMessageEvent) -> bool:
+    # 检查用户是否为VIP（这里只是示例）
+    vip_users = ["123456", "789012"]
+    return event.user_id in vip_users
+
 class MyPlugin(NcatBotPlugin):
     async def on_load(self):
-        # 注册过滤器函数
-        @filter_registry.register("vip_filter")
-        def vip_filter(event: BaseMessageEvent) -> bool:
-            # 检查用户是否为VIP（这里只是示例）
-            vip_users = ["123456", "789012"]
-            return event.user_id in vip_users
+        pass
         
-        # 使用注册的过滤器
-        @command_registry.command("vip")
-        def vip_command(self, event: BaseMessageEvent):
-            return "VIP专属功能"
+    # 使用注册的过滤器
+    @command_registry.command("vip")
+    def vip_command(self, event: BaseMessageEvent):
+        return "VIP专属功能"
         
-        # 通过名称添加过滤器
-        filter_registry.add_filter_to_function(vip_command, "vip_filter")
+    # 通过名称添加过滤器
+    filter_registry.add_filter_to_function(vip_command, "vip_filter")
 ```
 
 ### 3. 创建过滤器类
@@ -234,109 +230,37 @@ class LevelFilter(BaseFilter):
 
 class MyPlugin(NcatBotPlugin):
     async def on_load(self):
-        @command_registry.command("highlevel")
-        def high_level_command(self, event: BaseMessageEvent):
-            return "高等级用户专用命令"
+        pass
+
+    # 过滤器类可以直接作为装饰器使用
+    @LevelFilter(min_level=5)
+    async def high_level_command(self, event: BaseMessageEvent):
+        await event.reply("收到一条高等级用户的消息")
         
-        # 添加等级过滤器
-        filter_registry.add_filter_to_function(
-            high_level_command, 
-            LevelFilter(min_level=5)
-        )
-```
-
-## 📋 过滤器最佳实践
-
-### 1. 过滤器设计原则
-
-```python
-class MyPlugin(NcatBotPlugin):
-    async def on_load(self):
-        # ✅ 好的做法：单一职责
-        def is_weekend(event: BaseMessageEvent) -> bool:
-            import datetime
-            return datetime.datetime.now().weekday() >= 5
-        
-        def is_daytime(event: BaseMessageEvent) -> bool:
-            import datetime
-            hour = datetime.datetime.now().hour
-            return 6 <= hour <= 18
-        
-        # ❌ 避免：复合条件在一个过滤器中
-        def weekend_and_daytime(event: BaseMessageEvent) -> bool:
-            # 不推荐：功能混合
-            pass
-```
-
-### 2. 错误处理
-
-```python
-class MyPlugin(NcatBotPlugin):
-    async def on_load(self):
-        def safe_filter(event: BaseMessageEvent) -> bool:
-            try:
-                # 可能出错的逻辑
-                return self.check_some_condition(event)
-            except Exception as e:
-                # 记录错误但不阻止命令执行
-                LOG.error(f"过滤器执行错误: {e}")
-                return True  # 默认允许通过
-```
-
-## 🔍 过滤器调试
-
-### 查看过滤器执行
-
-```python
-from ncatbot.utils import get_log
-
-LOG = get_log(__name__)
-
-class MyPlugin(NcatBotPlugin):
-    async def on_load(self):
-        def debug_filter(event: BaseMessageEvent) -> bool:
-            result = event.user_id != "blocked_user"
-            LOG.debug(f"用户 {event.user_id} 过滤器结果: {result}")
-            return result
-        
-        @command_registry.command("test")
-        def test_command(self, event: BaseMessageEvent):
-            return "测试命令"
-        
-        filter_registry.add_filter_to_function(
-            test_command, 
-            CustomFilter(debug_filter, name="debug_filter")
-        )
 ```
 
 ## 📚 常用过滤器模式
 
-### 1. 时间段控制
+### 1. 冷却时间控制
 
 ```python
-class MyPlugin(NcatBotPlugin):
-    async def on_load(self):
-        pass
+from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import CustomFilter
+from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import filter_registry
 
-    def working_hours_filter(event: BaseMessageEvent) -> bool:
-        """工作时间过滤器 (9:00-18:00)"""
-        import datetime
-        hour = datetime.datetime.now().hour
-        return 9 <= hour <= 18
+@filter_registry.register("cooldown")
+def cooldown_filter(event: BaseMessageEvent) -> bool:
+    """冷却时间过滤器 (60秒)"""
+    import time
+    user_id = event.user_id
+    current_time = time.time()
     
-    @command_registry.command("work")
-    def work_command(self, event: BaseMessageEvent):
-        return "工作时间专用命令"
+    if user_id in self.last_use:
+        if current_time - self.last_use[user_id] < 60:
+            return False  # 还在冷却中
     
-    filter_registry.add_filter_to_function(
-        work_command, 
-        CustomFilter(working_hours_filter, name="working_hours")
-    )
-```
+    self.last_use[user_id] = current_time
+    return True
 
-### 2. 冷却时间控制
-
-```python
 class MyPlugin(NcatBotPlugin):
     def __init__(self):
         super().__init__()
@@ -345,27 +269,12 @@ class MyPlugin(NcatBotPlugin):
     async def on_load(self):
         pass
 
-    def cooldown_filter(event: BaseMessageEvent) -> bool:
-        """冷却时间过滤器 (60秒)"""
-        import time
-        user_id = event.user_id
-        current_time = time.time()
-        
-        if user_id in self.last_use:
-            if current_time - self.last_use[user_id] < 60:
-                return False  # 还在冷却中
-        
-        self.last_use[user_id] = current_time
-        return True
-    
+
+    @filter_registry.filters("cooldown")
     @command_registry.command("limited")
     def limited_command(self, event: BaseMessageEvent):
         return "有冷却限制的命令"
     
-    filter_registry.add_filter_to_function(
-        limited_command, 
-        CustomFilter(cooldown_filter, name="cooldown")
-    )
 ```
 
 ## 🚦 下一步

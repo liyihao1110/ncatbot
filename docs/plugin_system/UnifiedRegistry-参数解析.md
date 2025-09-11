@@ -243,8 +243,8 @@ class MyPlugin(NcatBotPlugin):
 ```
 
 **布尔值识别规则**:
-- **True**: `true`, `True`, `1`, `yes`, `on`, `enable`
-- **False**: `false`, `False`, `0`, `no`, `off`, `disable`
+- **True**: any other value
+- **False**: `false`, `False`, `0`
 
 **使用示例**:
 - `/toggle logging true` → "功能 'logging' 已启用"
@@ -306,31 +306,6 @@ class MyPlugin(NcatBotPlugin):
 
 **使用方式**: `/mention "你好" @某用户`
 
-### 3. 混合元素处理
-
-```python
-class MyPlugin(NcatBotPlugin):
-    async def on_load(self):
-        pass
-
-    @command_registry.command("post")
-    def post_cmd(self, event: BaseMessageEvent, title: str, content: str = ""):
-        """发布内容（支持文本和图片混合）"""
-        result = f"📝 发布: {title}"
-        if content:
-            result += f"\n内容: {content}"
-        
-        # 检查消息中的非文本元素
-        for segment in event.message.messages:
-            if hasattr(segment, 'msg_seg_type'):
-                if segment.msg_seg_type == 'image':
-                    result += "\n📷 包含图片"
-                elif segment.msg_seg_type == 'at':
-                    result += f"\n👤 提及了用户"
-        
-        return result
-```
-
 ## 🔧 高级语法特性
 
 ### 1. 转义字符支持
@@ -349,10 +324,12 @@ class MyPlugin(NcatBotPlugin):
 ```
 
 **使用示例**:
-- `/format "第一行\\n第二行"` → "格式化结果:\n第一行\n第二行"
-- `/format "名称:\\t值"` → "格式化结果:\n名称:\t值"
+- `/format "第一行\n第二行"`
+- `/format "名称\t值"`
 
 ### 2. 引号嵌套
+
+TODO: 支持性存疑
 
 ```python
 class MyPlugin(NcatBotPlugin):
@@ -366,8 +343,8 @@ class MyPlugin(NcatBotPlugin):
 ```
 
 **使用示例**:
-- `/quote "他说: \"你好\""` → "引用内容: 他说: \"你好\""
-- `/quote '包含"双引号"的文本'` → "引用内容: 包含\"双引号\"的文本"
+- `/quote "他说: \"你好\""` → "引用内容: 他说: "你好""
+- `/quote '包含"双引号"的文本'` → "引用内容: 包含"双引号"的文本"
 
 ### 3. 复杂命令行
 
@@ -416,50 +393,10 @@ class MyPlugin(NcatBotPlugin):
 | 转义字符 | `\"`, `\\` | `"say \"hi\""` | 转义特殊字符 |
 | 非文本元素 | `[图片]`, `@用户` | `analyze [图片]` | 消息中的媒体元素 |
 
-## 🔍 调试和故障排除
+## 🔍 未来期望特性
 
-### 1. 参数解析调试
-
-```python
-from ncatbot.utils import get_log
-
-LOG = get_log(__name__)
-
-class MyPlugin(NcatBotPlugin):
-    async def on_load(self):
-        pass
-
-    @command_registry.command("debug")
-    def debug_cmd(self, event: BaseMessageEvent, *args, **kwargs):
-        """调试参数解析"""
-        LOG.debug(f"接收到的参数: args={args}, kwargs={kwargs}")
-        
-        result = "参数解析调试:\n"
-        result += f"位置参数: {args}\n"
-        result += f"关键字参数: {kwargs}\n"
-        result += f"原始消息: {event.raw_message}"
-        
-        return result
-```
-
-### 2. 类型转换错误处理
-
-```python
-class MyPlugin(NcatBotPlugin):
-    async def on_load(self):
-        pass
-
-    @command_registry.command("safe_calc")
-    def safe_calc_cmd(self, event: BaseMessageEvent, a: str, b: str):
-        """安全的计算命令，手动处理类型转换"""
-        try:
-            num_a = float(a)
-            num_b = float(b)
-            result = num_a + num_b
-            return f"✅ {num_a} + {num_b} = {result}"
-        except ValueError:
-            return f"❌ 无法将 '{a}' 或 '{b}' 转换为数字"
-```
+- 通过类型注解而非装饰器来定义参数
+- 支持可变参数和额外命名参数
 
 ## 🚦 下一步
 

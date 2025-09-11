@@ -4,12 +4,6 @@
 
 本指南将帮助您快速掌握 UnifiedRegistry 的基本用法，从零开始创建一个功能完整的插件。
 
-## 📋 前置要求
-
-- 已安装 NCatBot
-- 基本的 Python 编程知识
-- 了解 QQ 机器人的基本概念
-
 ## 🚀 第一个插件
 
 ### 1. 基础设置
@@ -169,6 +163,24 @@ class HelloPlugin(NcatBotPlugin):
 ```
 
 **使用方式**: `/status`, `/stat`, `/st` 都可以触发同一个命令
+
+### 7. 纯过滤器功能
+
+只要收到的消息能够通过过滤器，那么这个函数就会被调用。
+
+```python
+from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorators import group_only
+
+class HelloPlugin(NcatBotPlugin):
+    # 其他代码
+
+    async def on_load(self):
+        pass
+
+    @group_only
+    async def status_cmd(self, event: BaseMessageEvent):
+        await event.reply("收到一条群聊消息")
+```
 
 ## 🎯 完整插件示例
 
