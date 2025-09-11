@@ -288,6 +288,43 @@ class MyPlugin(NcatBotPlugin):
 - `/admin user ban 123` → "已封禁用户: 123"
 - `/admin user unban 123` → "已解封用户: 123"
 
+### 3. 组命令别名（端点别名直达）
+
+命令组中的“端点命令”可以声明 `aliases`。这些别名会被提升为“根级别别名”，从而允许你绕过冗长的组前缀，直接触发端点命令。
+
+```python
+class MyPlugin(NcatBotPlugin):
+    async def on_load(self):
+        pass
+
+    # 创建用户组
+    user_group = command_registry.group("user", description="用户管理命令")
+
+    @user_group.command("list", aliases=["ul"], description="列出所有用户")
+    async def user_list_cmd(self, event: BaseMessageEvent):
+        await event.reply("用户列表: user1, user2, user3")
+
+    @user_group.command("info", aliases=["ui"], description="查看用户信息")
+    async def user_info_cmd(self, event: BaseMessageEvent, user_id: str):
+        await event.reply(f"用户 {user_id} 的信息")
+
+    # 嵌套组：admin -> user
+    admin_group = command_registry.group("admin", description="管理功能")
+    user_admin = admin_group.group("user", description="用户管理")
+
+    @user_admin.command("ban", aliases=["aub"], description="封禁用户")
+    async def ban_user_cmd(self, event: BaseMessageEvent, user_id: str):
+        await event.reply(f"已封禁用户: {user_id}")
+
+    @user_admin.command("unban", aliases=["aun"], description="解封用户")
+    async def unban_user_cmd(self, event: BaseMessageEvent, user_id: str):
+        await event.reply(f"已解封用户: {user_id}")
+```
+
+**使用方式**:
+- 组路径调用：`/user list`、`/user info 123`、`/admin user ban 123`、`/admin user unban 123`
+- 别名直达：`/ul`、`/ui 123`、`/aub 123`、`/aun 123`
+
 ## 🔧 高级功能
 
 ### 1. 复杂参数组合
