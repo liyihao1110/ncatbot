@@ -42,6 +42,7 @@ def get_napcat_version():
     """从GitHub获取 napcat 版本号"""
     github_proxy_url = get_proxy_url()
     version_url = f"{github_proxy_url}https://raw.githubusercontent.com/NapNeko/NapCatQQ/main/package.json"
+    LOG.info(f"正在获取版号信息... {version_url}")
     version_response = get(version_url)
     if version_response.status_code == 200:
         version = version_response.json()["version"]
@@ -88,7 +89,7 @@ def install_napcat_windows(type: str):
         check_windows_qq_version()
         return True
     except Exception as e:
-        LOG.error("安装失败:", e)
+        LOG.error("安装失败: " + str(e))
         return False
 
 
@@ -131,7 +132,7 @@ def install_napcat_linux(type: str):
             LOG.error("执行一键安装脚本失败, 请检查命令行输出")
             raise Exception("执行一键安装脚本失败")
     except Exception as e:
-        LOG.error("执行一键安装脚本失败，错误信息:", e)
+        LOG.error("执行一键安装脚本失败，错误信息: " + str(e))
         raise e
 
 

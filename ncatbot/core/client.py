@@ -262,7 +262,7 @@ class BotClient:
         
         run_coroutine(self.plugin_loader.load_plugins)
         
-        if self.mock_mode: # MockMixin 中提供
+        if getattr(self, "mock_mode", False): # MockMixin 中提供
             self.mock_start()
         else:
             # 启动服务（仅在非 mock 模式下）

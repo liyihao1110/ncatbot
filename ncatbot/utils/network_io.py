@@ -44,7 +44,7 @@ def get_proxy_url():
     import requests
     if status.current_github_proxy is not None:
         return status.current_github_proxy
-    TIMEOUT = 5
+    TIMEOUT = 10
     github_proxy_urls = [
         "https://ghfast.top/",
         # "https://github.7boe.top/",
@@ -57,31 +57,23 @@ def get_proxy_url():
         # "https://git.886.be/",
         # "https://gh-proxy.com/",
     ]
-    result_queue = Queue(maxsize=1)
+    available_proxy = []
 
     def check_proxy(url):
         try:
             response = requests.get(url, timeout=TIMEOUT)
             if response.status_code == 200:
-                result_queue.put(url)
+                return url
         except TimeoutError as e:
             _log.warning(f"请求失败: {url}, 错误: {e}")
+            return None
+        except Exception as e:
+            return None
+    
+    url = check_proxy(github_proxy_urls[0])
+    if url is not None:
+        available_proxy.append(url)
 
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        for url in github_proxy_urls:
-            executor.submit(check_proxy, url)
-            for i in range(10):
-                time.sleep(TIMEOUT / 10)
-                if status.exit:
-                    return
-        executor._threads.clear()
-
-    available_proxy = []
-    try:
-        while True:
-            available_proxy.append(result_queue.get(block=True, timeout=0.1))
-    except Exception:
-        pass
     if len(available_proxy) > 0:
         status.current_github_proxy = available_proxy[0]
         return available_proxy[0]

@@ -57,12 +57,12 @@ def config_napcat():
         else:
             for server_config in original_data["network"]["websocketServers"]:
                 if server_config["port"] == int(urlparse(ncatbot_config.napcat.ws_uri).port):
-                    LOG.error(
-                        f"原配置对应的端口 {server_config['port']} 已经存在, 请更改端口"
-                    )
-                    raise ValueError(
-                        f"原配置对应的端口 {server_config['port']} 已经存在, 请更改端口"
-                    )
+                    if input("原配置对应的端口 " + str(server_config["port"]) + " 已经存在, 是否强制覆盖配置 (y/n): ").lower() == "y":
+                        original_data["network"]["websocketServers"].remove(server_config)
+                    else:
+                        raise ValueError(
+                            f"原配置对应的端口 {server_config['port']} 已经存在, 请更改端口"
+                        )
             original_data["network"]["websocketServers"].append(expected_server_config)
 
         try:

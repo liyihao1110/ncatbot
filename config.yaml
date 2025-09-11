@@ -1,6 +1,6 @@
 root: '123456' # Bot 管理员 QQ 号
 bt_uin: '123456' # Bot QQ 号
-enable_webui_interaction: true # 启用 webui 交互
+enable_webui_interaction: false # 启用 webui 交互
 check_ncatbot_update: true # 检查 NcatBot 更新
 skip_ncatbot_install_check: false # 跳过 NcatBot 安装检查
 debug: false # 调试模式, 开启将会打印更多调试信息

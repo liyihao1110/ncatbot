@@ -110,16 +110,16 @@ class NapCatConfig(BaseConfig):
 
     ws_uri: str = "ws://localhost:3001"
     """WebSocket URI 地址"""
-    ws_token: str = ""
+    ws_token: str = "ncatbot"
     """WebSocket 令牌"""
     ws_listen_ip: str = "localhost"
     """WebSocket 监听 IP"""
     webui_uri: str = "http://localhost:6099"
     """WebUI URI 地址"""
     webui_token: str = "napcat"
-    """WebUI 监听"""
-    webui_listen_ip: str = "0.0.0.0"
     """WebUI 令牌"""
+    enable_webui: bool = False
+    """是否启用 WebUI"""
     check_napcat_update: bool = False
     """是否检查 NapCat 更新"""
     stop_napcat: bool = False
@@ -162,11 +162,31 @@ class NapCatConfig(BaseConfig):
         self.webui_host = parsed.hostname
         self.webui_port = parsed.port
 
+    def _security_check(self) -> None:
+        def strong_password_check(password: str) -> bool:
+            # 包含 数字、大小写字母、特殊符号，至少 12 位
+            special_chars = "!@#$%^&*()_+-=[]{}|;:,.<>?"
+            return len(password) >= 12 and \
+                 any(char.isdigit() for char in password) and \
+                 any(char.isalpha() for char in password) and \
+                 any(char in special_chars for char in password)
+        
+        if self.ws_listen_ip == "0.0.0.0":
+            if not strong_password_check(self.ws_token):
+                logger.error("WS 令牌强度不足，请修改为强密码，或者修改 ws_listen_ip 本地监听 `localhost`")
+                raise ValueError("WS 令牌强度不足, 请修改为强密码, 或者修改 ws_listen_ip 本地监听 `localhost`")
+
+        if self.enable_webui:   
+            if not strong_password_check(self.webui_token):
+                logger.error("WebUI 令牌强度不足，请修改为强密码")
+                raise ValueError("WebUI 令牌强度不足, 请修改为强密码")
+
     def validate(self) -> None:
         """验证配置，生成自动获取配置，并更新状态"""
         self._standardize_ws_uri()
         self._standardize_webui_uri()
-        
+        self._security_check()
+
         if self.ws_host not in ["localhost", "127.0.0.1"]:
             logger.info("NapCat 服务不是本地的，请确保远程服务配置正确")
             time.sleep(1)
@@ -217,8 +237,8 @@ class Config(BaseConfig):
     """根用户 QQ 号"""
     bt_uin: str = _default_bt_uin
     """机器人 QQ 号"""
-    enable_webui_interaction: bool = True
-    """是否启用 WebUI 交互"""
+    enable_webui_interaction: bool = False
+    """是否启用 WebUI"""
     debug: bool = False
     """是否启用调试模式, 调试模式会打印部分异常的堆栈信息"""
 

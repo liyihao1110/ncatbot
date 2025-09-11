@@ -10,14 +10,16 @@ from .base_plugin import BasePlugin
 from .event import NcatBotEvent, EventBus
 from .loader import PluginLoader
 from .builtin_mixin import NcatBotPlugin
-from .decorator import *
+from .builtin_plugin.unified_registry import filter_registry, command_registry
+from .decorator import CompatibleHandler
 
 __all__ = [
     'BasePlugin',
     'NcatBotEvent',
     'EventBus',
     'PluginLoader',
-    'register_server',
-    'register_handler',
     'NcatBotPlugin',
+    'CompatibleHandler',
+    'filter_registry',
+    'command_registry',
 ]
