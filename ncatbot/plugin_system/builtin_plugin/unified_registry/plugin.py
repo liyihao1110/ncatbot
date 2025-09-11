@@ -86,7 +86,6 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         """
 
         plugin = self._find_plugin_for_function(func)
-        print("插件:", self._find_plugin_for_function(func))
         try:
             # 使用新的过滤器验证器
             if hasattr(func, "__filters__"):

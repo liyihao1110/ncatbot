@@ -543,7 +543,15 @@ class RBACManager:
                 raise IndexError(f"权限路径 {permissions_path} 不存在")
         self.manager.assign_permissions_to_user(user_name, permissions_path, mode)
         self.manager.unassign_permissions_to_user(user_name, permissions_path, 'black' if mode == 'white' else 'white')
-        
+    
+    def unassign_role_to_user(self, user_name: str, role_name: str):
+        if not self.user_exists(user_name):
+            raise IndexError(f"用户 {user_name} 不存在")
+        if not self.role_exists(role_name):
+            raise IndexError(f"角色 {role_name} 不存在")
+        if self.user_has_role(user_name, role_name):
+            self.manager.unassign_role_to_user(role_name, user_name)
+
     def unassign_permissions_to_role(self, role_name: str, permissions_path: str):
         self.manager.unassign_permissions_to_role(role_name, permissions_path, 'black')
         

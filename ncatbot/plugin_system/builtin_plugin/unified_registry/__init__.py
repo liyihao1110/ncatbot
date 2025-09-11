@@ -13,6 +13,9 @@ from .filter_system import (
     filter_registry,
 )
 
+# 过滤器装饰器
+from .filter_system.decorators import admin_only, root_only, private_only, group_only
+
 # 命令系统  
 from .command_system import (
     FuncAnalyser, get_subclass_recursive, command_registry,
@@ -27,6 +30,10 @@ __all__ = [
     # 全局注册实例
     "command_registry", 
     "filter_registry",
+    "admin_only",
+    "root_only",
+    "private_only",
+    "group_only",
     
     # 过滤器相关
     "BaseFilter",

@@ -226,7 +226,7 @@ class PluginLoader:
             # 收集初始化任务
             init_tasks.append(self._init_plugin_in_thread(plugin))
 
-        self.plugins = temp
+        self.plugins.update(temp)
         self._validate_versions()
         # 并发执行所有插件的初始化
         await asyncio.gather(*init_tasks)

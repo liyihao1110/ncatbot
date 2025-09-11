@@ -8,7 +8,7 @@ napcat:
   ws_uri: ws://localhost:3001
   webui_uri: http://localhost:6099
   webui_token: napcat
-  ws_token: ''
+  ws_token: '1234'
   ws_listen_ip: localhost
   remote_mode: false
   check_napcat_update: false

@@ -24,6 +24,9 @@
   - [测试指南](./plugin_system/FilterRegistry-测试指南.md) - 质量保证方法
   - [常见问题解答](./plugin_system/FilterRegistry-FAQ.md) - 问题排查解决
 
+### 配置与启动
+- **[配置与启动（Config & Startup）](./config/ConfigAndStartup.md)** - config.yaml 字段、StartArgs 覆盖、程序化设置与安全提示
+
 ### 其他系统文档
 - [事件总线系统](./plugin_system/EventBus.md)
 - [装饰器系统](./plugin_system/Decorator.md)
