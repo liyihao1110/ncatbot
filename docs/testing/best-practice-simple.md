@@ -362,38 +362,6 @@ async def test_with_mock():
 asyncio.run(test_with_mock())
 ```
 
-### 4. 上下文管理器
-
-```python
-from contextlib import asynccontextmanager
-
-@asynccontextmanager
-async def test_plugin(plugin_class):
-    """测试插件的上下文管理器"""
-    client = TestClient()
-    helper = TestHelper(client)
-    client.start(mock_mode=True)
-    client.register_plugin(plugin_class)
-    
-    try:
-        yield client, helper
-    finally:
-        # 清理
-        helper.clear_history()
-        print("测试环境已清理")
-
-async def test_with_context():
-    """使用上下文管理器的测试"""
-    async with test_plugin(MyPlugin) as (client, helper):
-        # 在上下文中进行测试
-        await helper.send_private_message("/hello")
-        reply = helper.get_latest_reply()
-        assert reply is not None
-        print("✅ 上下文测试通过")
-
-asyncio.run(test_with_context())
-```
-
 ## 调试技巧
 
 ### 1. 详细日志输出

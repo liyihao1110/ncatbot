@@ -1,8 +1,10 @@
 import asyncio
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Union, TYPE_CHECKING
 from .event_factory import EventFactory
 from .mock_api import MockAPIAdapter
 from ncatbot.utils import get_log
+if TYPE_CHECKING:
+    from ncatbot.core.event.message_segment import MessageArray
 
 LOG = get_log("TestHelper")
 
@@ -20,7 +22,7 @@ class TestHelper:
             
     async def send_group_message(
         self,
-        message: str,
+        message: Union[str, MessageArray],
         group_id: str = "123456789",
         user_id: str = "987654321",
         nickname: str = "TestUser",
@@ -39,7 +41,7 @@ class TestHelper:
         
     async def send_private_message(
         self,
-        message: str,
+        message: Union[str, MessageArray],
         user_id: str = "987654321",
         nickname: str = "TestUser",
         **kwargs

@@ -195,6 +195,8 @@ async def test_event_handlers():
 ### 2. 测试权限系统
 
 ```python
+from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorators import admin_only
+
 async def test_permissions():
     client = TestClient()
     helper = TestHelper(client)
@@ -206,14 +208,16 @@ async def test_permissions():
         version = "1.0.0"
         
         async def on_load(self):
-            @self.on_admin_command("admin_only")
-            async def admin_cmd(event):
-                return "管理员命令执行成功"
+            pass
+
+        @admin_only
+        async def admin_cmd(self, event: BaseMessageEvent):
+            await event.reply("管理员命令执行成功")
     
     client.register_plugin(AdminPlugin)
     
     # 普通用户测试
-    await helper.send_private_message("/admin_only", user_id="normal_user")
+    await helper.send_private_message("admin_cmd", user_id="normal_user")
     helper.assert_no_reply()  # 应该没有回复
     
     # 设置管理员权限
@@ -222,37 +226,11 @@ async def test_permissions():
     
     # 管理员测试
     helper.clear_history()
-    await helper.send_private_message("/admin_only", user_id="admin_user")
+    await helper.send_private_message("admin_cmd", user_id="admin_user")
     helper.assert_reply_sent("管理员命令执行成功")
 ```
 
-### 3. 测试定时任务
-
-```python
-async def test_scheduled_tasks():
-    client = TestClient()
-    client.start(mock_mode=True)
-    
-    task_executed = False
-    
-    class ScheduledPlugin(BasePlugin):
-        name = "ScheduledPlugin"
-        version = "1.0.0"
-        
-        async def on_load(self):
-            @self.on_interval(seconds=1)
-            async def periodic_task():
-                nonlocal task_executed
-                task_executed = True
-    
-    client.register_plugin(ScheduledPlugin)
-    
-    # 等待任务执行
-    await asyncio.sleep(1.5)
-    assert task_executed, "定时任务应该已执行"
-```
-
-### 4. 测试插件间交互
+### 3. 测试插件间交互
 
 ```python
 async def test_plugin_interaction():
@@ -278,13 +256,15 @@ async def test_plugin_interaction():
         dependencies = {"PluginA": ">=1.0.0"}
         
         async def on_load(self):
-            @self.on_command("get_data")
-            async def get_data_cmd(event):
-                plugin_a = self.get_plugin("PluginA")
-                if plugin_a:
-                    data = plugin_a.get_data()
-                    return f"获取到数据：{data}"
-                return "PluginA 未找到"
+            pass
+
+        @self.on_command("get_data")
+        async def get_data_cmd(event):
+            plugin_a = self.get_plugin("PluginA")
+            if plugin_a:
+                data = plugin_a.get_data()
+                return f"获取到数据：{data}"
+            return "PluginA 未找到"
     
     # 注册插件
     client.register_plugin(PluginA)

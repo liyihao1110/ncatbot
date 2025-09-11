@@ -26,16 +26,18 @@ class HelloPlugin(BasePlugin):
         super().__init__()
         
     async def on_load(self):
-        # 使用 unified_registry 注册命令
-        @command_registry.command("hello", aliases=["hi"], description="问候")
-        async def hello_command(event):
-            return "你好！这是来自 HelloPlugin 的问候。"
+        pass
 
-        @command_registry.command("echo", description="回显文本")
-        @param(name="lang", default="zh", help="语言", choices=["zh","en"])
-        @option(short_name="v", long_name="verbose", help="详细输出")
-        async def echo_command(event, text: str, lang: str = "zh", verbose: bool = False):
-            return (f"[{lang}] 你说的是：{text}" + (" (verbose)" if verbose else ""))
+    # 使用 unified_registry 注册命令
+    @command_registry.command("hello", aliases=["hi"], description="问候")
+    async def hello_command(self, event: BaseMessageEvent):
+        return "你好！这是来自 HelloPlugin 的问候。"
+
+    @command_registry.command("echo", description="回显文本")
+    @param(name="lang", default="zh", help="语言", choices=["zh","en"])
+    @option(short_name="v", long_name="verbose", help="详细输出")
+    async def echo_command(self, event: BaseMessageEvent, text: str, lang: str = "zh", verbose: bool = False):
+        return (f"[{lang}] 你说的是：{text}" + (" (verbose)" if verbose else ""))
 ```
 
 ### 2. 编写测试代码

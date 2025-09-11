@@ -62,7 +62,7 @@ for plugin in plugins:
 
 #### `unregister_plugin(plugin: BasePlugin)`
 
-从测试客户端卸载插件。
+从测试客户端卸载插件。（**通过装饰器等注册的命令无法被卸载**）
 
 **参数:**
 - `plugin` (BasePlugin): 要卸载的插件实例
