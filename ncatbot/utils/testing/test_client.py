@@ -36,15 +36,6 @@ class TestClient(ClientMixin, BotClient):
 
     def register_plugin(self, plugin_class: Type[BasePlugin]):
         run_coroutine(self.plugin_loader.load_plugin, plugin_class)
-
-    def get_registered_plugins(self) -> List[BasePlugin]:
-        return list(self.plugin_loader.plugins.values())
-    
-    def get_plugin(self, type: Type[T]) -> T:
-        for plugin in self.get_registered_plugins():
-            if isinstance(plugin, type):
-                return plugin
-        raise ValueError(f"插件 {type.__name__} 未找到")
     
     def unregister_plugin(self, plugin: BasePlugin):
         """从测试客户端移除插件
