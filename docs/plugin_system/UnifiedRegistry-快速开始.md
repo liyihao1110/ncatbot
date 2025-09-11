@@ -36,14 +36,14 @@ class HelloPlugin(NcatBotPlugin):
     # 其他代码
 
     @command_registry.command("hello")
-    def hello_cmd(self, event: BaseMessageEvent):
+    async def hello_cmd(self, event: BaseMessageEvent):
         """简单的问候命令"""
-        return "你好！我是机器人。"
+        await event.reply("你好！我是机器人。")
 
     @command_registry.command("ping")
-    def ping_cmd(self, event: BaseMessageEvent):
+    async def ping_cmd(self, event: BaseMessageEvent):
         """检查机器人状态"""
-        return "pong!"
+        await event.reply("pong!")
 ```
 
 **使用方式**: 
@@ -57,15 +57,15 @@ class HelloPlugin(NcatBotPlugin):
     # 其他代码
 
     @command_registry.command("echo")
-    def echo_cmd(self, event: BaseMessageEvent, text: str):
+    async def echo_cmd(self, event: BaseMessageEvent, text: str):
         """回显用户输入的文本"""
-        return f"你说的是: {text}"
+        await event.reply(f"你说的是: {text}")
 
     @command_registry.command("add")
-    def add_cmd(self, event: BaseMessageEvent, a: int, b: int):
+    async def add_cmd(self, event: BaseMessageEvent, a: int, b: int):
         """计算两个数的和"""
         result = a + b
-        return f"{a} + {b} = {result}"
+        await event.reply(f"{a} + {b} = {result}")
 ```
 
 **使用方式**:
@@ -81,23 +81,23 @@ class HelloPlugin(NcatBotPlugin):
     # 仅群聊可用
     @group_only
     @command_registry.command("groupinfo")
-    def group_info_cmd(self, event: BaseMessageEvent):
+    async def group_info_cmd(self, event: BaseMessageEvent):
         """获取群聊信息"""
-        return f"当前群聊ID: {event.group_id}"
+        await event.reply(f"当前群聊ID: {event.group_id}")
 
     # 仅私聊可用
     @private_only
     @command_registry.command("private")
-    def private_cmd(self, event: BaseMessageEvent):
+    async def private_cmd(self, event: BaseMessageEvent):
         """私聊专用命令"""
-        return "这是一个私聊命令"
+        await event.reply("这是一个私聊命令")
 
     # 仅 Bot 管理员可用
     @admin_only
     @command_registry.command("admin")
-    def admin_cmd(self, event: BaseMessageEvent):
+    async def admin_cmd(self, event: BaseMessageEvent):
         """管理员专用命令"""
-        return "你是管理员！"
+        await event.reply("你是管理员！")
 ```
 
 ### 5. 复杂参数和选项
@@ -117,7 +117,7 @@ class HelloPlugin(NcatBotPlugin):
     @option(short_name="v", long_name="verbose", help="显示详细信息")
     @option(short_name="f", long_name="force", help="强制部署")
     @param(name="env", default="dev", help="部署环境")
-    def deploy_cmd(self, event: BaseMessageEvent, app_name: str, 
+    async def deploy_cmd(self, event: BaseMessageEvent, app_name: str, 
                 env: str = "dev", verbose: bool = False, force: bool = False):
         """部署应用到指定环境"""
         result = f"正在部署 {app_name} 到 {env} 环境"
@@ -128,7 +128,7 @@ class HelloPlugin(NcatBotPlugin):
         if verbose:
             result += "\n详细信息: 开始部署流程..."
             
-        return result
+        await event.reply(result)
 ```
 
 **使用方式**:
@@ -146,9 +146,9 @@ class HelloPlugin(NcatBotPlugin):
     # 其他代码
 
     @command_registry.command("status", aliases=["stat", "st"], description="查看状态")
-    def status_cmd(self, event: BaseMessageEvent):
+    async def status_cmd(self, event: BaseMessageEvent):
         """查看机器人状态（支持多个别名）"""
-        return "机器人运行正常"
+        await event.reply("机器人运行正常")
 ```
 
 **使用方式**: `/status`, `/stat`, `/st` 都可以触发同一个命令
@@ -187,41 +187,42 @@ class MyFirstPlugin(NcatBotPlugin):
     
     # 简单问候
     @command_registry.command("hello", aliases=["hi"], description="问候命令")
-    def hello_cmd(self, event: BaseMessageEvent):
-        return f"你好！用户 {event.user_id}"
+    async def hello_cmd(self, event: BaseMessageEvent):
+        await event.reply(f"你好！用户 {event.user_id}")
     
     # 计算器
     @command_registry.command("calc", description="简单计算器")
-    def calc_cmd(self, event: BaseMessageEvent, a: int, op: str, b: int):
+    async def calc_cmd(self, event: BaseMessageEvent, a: int, op: str, b: int):
         if op == "add":
-            return f"{a} + {b} = {a + b}"
+            await event.reply(f"{a} + {b} = {a + b}")
         elif op == "sub":
-            return f"{a} - {b} = {a - b}"
+            await event.reply(f"{a} - {b} = {a - b}")
         elif op == "mul":
-            return f"{a} * {b} = {a * b}"
+            await event.reply(f"{a} * {b} = {a * b}")
         elif op == "div":
             if b == 0:
-                return "错误：除数不能为0"
-            return f"{a} / {b} = {a / b}"
+                await event.reply("错误：除数不能为0")
+            else:
+                await event.reply(f"{a} / {b} = {a / b}")
         else:
-            return "支持的操作: add, sub, mul, div"
+            await event.reply("支持的操作: add, sub, mul, div")
     
     # 群聊管理
     @group_only
     @admin_only
     @command_registry.command("announce", description="发布公告")
     @option(short_name="a", long_name="all", help="发送给所有群员")
-    def announce_cmd(self, event: BaseMessageEvent, message: str, all: bool = False):
+    async def announce_cmd(self, event: BaseMessageEvent, message: str, all: bool = False):
         result = f"公告: {message}"
         if all:
             result += " [发送给所有群员]"
-        return result
+        await event.reply(result)
     
     # 带默认值的命令
     @command_registry.command("greet", description="个性化问候")
     @param(name="name", default="朋友", help="要问候的名字")
-    def greet_cmd(self, event: BaseMessageEvent, name: str = "朋友"):
-        return f"你好，{name}！欢迎使用机器人。"
+    async def greet_cmd(self, event: BaseMessageEvent, name: str = "朋友"):
+        await event.reply(f"你好，{name}！欢迎使用机器人。")
 ```
 
 ## 💡 额外示例：普通函数注册 (Bonus)
@@ -233,15 +234,15 @@ from ncatbot.core.event import BaseMessageEvent
 
 # 在插件类外定义命令函数
 @command_registry.command("outside")
-def outside_command(event: BaseMessageEvent):
+async def outside_command(event: BaseMessageEvent):
     """插件类外的命令函数"""
-    return "这是在插件类外定义的命令"
+    await event.reply("这是在插件类外定义的命令")
 
 @admin_only
 @command_registry.command("external_admin")
-def external_admin_cmd(event: BaseMessageEvent, action: str):
+async def external_admin_cmd(event: BaseMessageEvent, action: str):
     """外部的管理员命令"""
-    return f"执行管理员操作: {action}"
+    await event.reply(f"执行管理员操作: {action}")
 
 class MyPlugin(NcatBotPlugin):
     name = "MyPlugin"
@@ -252,8 +253,8 @@ class MyPlugin(NcatBotPlugin):
 
     # 类内的命令
     @command_registry.command("inside")
-    def inside_cmd(self, event: BaseMessageEvent):
-        return "这是类内的命令"
+    async def inside_cmd(self, event: BaseMessageEvent):
+        await event.reply("这是类内的命令")
 ```
 
 **注意**: 普通函数没有 `self` 参数，所以无法访问插件实例的属性和方法。推荐使用插件类成员方法。
@@ -272,7 +273,7 @@ class MyPlugin(NcatBotPlugin):
 1. **类型注解必须**: 除 `self` 外的所有参数都必须有类型注解
 2. **装饰器顺序**: 过滤器装饰器要在 `@command_registry.command()` 之前
 3. **参数顺序**: `@option` 和 `@param` 装饰器要在命令装饰器之前
-4. **返回值**: 命令函数应该返回字符串，这将作为机器人的回复
+4. **回复方式**: 命令函数应为 `async def` 且通常无返回值，请使用 `await event.reply(...)` 异步回复
 
 ---
 

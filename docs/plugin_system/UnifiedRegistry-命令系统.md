@@ -33,14 +33,14 @@ class MyPlugin(NcatBotPlugin):
         pass
 
     @command_registry.command("hello")
-    def hello_cmd(self, event: BaseMessageEvent):
+    async def hello_cmd(self, event: BaseMessageEvent):
         """简单的问候命令"""
-        return "Hello, World!"
+        await event.reply("Hello, World!")
     
     @command_registry.command("ping")
-    def ping_cmd(self, event: BaseMessageEvent):
+    async def ping_cmd(self, event: BaseMessageEvent):
         """检查机器人状态"""
-        return "pong!"
+        await event.reply("pong!")
 ```
 
 **⚠️ 重要提醒**: 除 `self` 外的所有参数都必须有类型注解。
@@ -53,12 +53,12 @@ class MyPlugin(NcatBotPlugin):
         pass
     
     @command_registry.command("info", description="获取机器人信息")
-    def info_cmd(self, event: BaseMessageEvent):
-        return "这是一个示例机器人"
+    async def info_cmd(self, event: BaseMessageEvent):
+        await event.reply("这是一个示例机器人")
     
     @command_registry.command("version", description="查看版本信息")
-    def version_cmd(self, event: BaseMessageEvent):
-        return f"插件版本: {self.version}"
+    async def version_cmd(self, event: BaseMessageEvent):
+        await event.reply(f"插件版本: {self.version}")
 ```
 
 ### 3. 命令别名
@@ -69,13 +69,13 @@ class MyPlugin(NcatBotPlugin):
         pass
     
     @command_registry.command("status", aliases=["stat", "st"], description="查看状态")
-    def status_cmd(self, event: BaseMessageEvent):
+    async def status_cmd(self, event: BaseMessageEvent):
         """支持多个别名的命令"""
-        return "机器人运行正常"
+        await event.reply("机器人运行正常")
     
     @command_registry.command("help", aliases=["h", "?"], description="帮助信息")
-    def help_cmd(self, event: BaseMessageEvent):
-        return "可用命令: status, help, ping"
+    async def help_cmd(self, event: BaseMessageEvent):
+        await event.reply("可用命令: status, help, ping")
 ```
 
 ### 4. 类外命令
@@ -89,9 +89,9 @@ class MyPlugin(NcatBotPlugin):
 
 # 
 @command_registry.command("status", aliases=["stat", "st"], description="查看状态")
-def status_cmd(event: BaseMessageEvent):
+async def status_cmd(event: BaseMessageEvent):
     """支持多个别名的命令"""
-    return "机器人运行正常"
+    await event.reply("机器人运行正常")
 ```
 
 **使用方式**: `/status`, `/stat`, `/st` 都会触发同一个命令
@@ -107,25 +107,25 @@ class MyPlugin(NcatBotPlugin):
         pass
     
     @command_registry.command("echo")
-    def echo_cmd(self, event: BaseMessageEvent, text: str):
+    async def echo_cmd(self, event: BaseMessageEvent, text: str):
         """字符串参数"""
-        return f"你说的是: {text}"
+        await event.reply(f"你说的是: {text}")
     
     @command_registry.command("add")
-    def add_cmd(self, event: BaseMessageEvent, a: int, b: int):
+    async def add_cmd(self, event: BaseMessageEvent, a: int, b: int):
             """整数参数"""
-            return f"{a} + {b} = {a + b}"
+            await event.reply(f"{a} + {b} = {a + b}")
         
     @command_registry.command("calculate")
-    def calc_cmd(self, event: BaseMessageEvent, x: float, y: float):
+    async def calc_cmd(self, event: BaseMessageEvent, x: float, y: float):
         """浮点数参数"""
-        return f"{x} * {y} = {x * y}"
+        await event.reply(f"{x} * {y} = {x * y}")
     
     @command_registry.command("toggle")
-    def toggle_cmd(self, event: BaseMessageEvent, enabled: bool):
+    async def toggle_cmd(self, event: BaseMessageEvent, enabled: bool):
         """布尔参数"""
         status = "开启" if enabled else "关闭"
-        return f"功能已{status}"
+        await event.reply(f"功能已{status}")
 ```
 
 **使用示例**:
@@ -142,14 +142,14 @@ class MyPlugin(NcatBotPlugin):
         pass
     
     @command_registry.command("greet")
-        def greet_cmd(self, event: BaseMessageEvent, name: str = "朋友"):
+        async def greet_cmd(self, event: BaseMessageEvent, name: str = "朋友"):
             """带默认值的参数"""
-            return f"你好，{name}！"
+            await event.reply(f"你好，{name}！")
         
     @command_registry.command("repeat")
-    def repeat_cmd(self, event: BaseMessageEvent, text: str, count: int = 1):
+    async def repeat_cmd(self, event: BaseMessageEvent, text: str, count: int = 1):
         """多个参数，部分有默认值"""
-        return "\n".join([text] * count)
+        await event.reply("\n".join([text] * count))
 ```
 
 **使用示例**:
@@ -174,14 +174,14 @@ class MyPlugin(NcatBotPlugin):
     @command_registry.command("deploy", description="部署应用")
     @option(short_name="v", long_name="verbose", help="显示详细信息")
     @option(short_name="f", long_name="force", help="强制部署")
-    def deploy_cmd(self, event: BaseMessageEvent, app_name: str, 
+    async def deploy_cmd(self, event: BaseMessageEvent, app_name: str, 
                     verbose: bool = False, force: bool = False):
         result = f"部署应用: {app_name}"
         if force:
             result += " (强制模式)"
         if verbose:
             result += "\n详细信息: 开始部署流程..."
-        return result
+        await event.reply(result)
 ```
 
 **使用方式**:
@@ -201,8 +201,8 @@ class MyPlugin(NcatBotPlugin):
     @command_registry.command("config", description="配置设置")
     @param(name="env", default="dev", help="运行环境")
     @param(name="port", default=8080, help="端口号")
-    def config_cmd(self, event: BaseMessageEvent, env: str = "dev", port: int = 8080):
-        return f"配置: 环境={env}, 端口={port}"
+    async def config_cmd(self, event: BaseMessageEvent, env: str = "dev", port: int = 8080):
+        await event.reply(f"配置: 环境={env}, 端口={port}")
 ```
 
 **使用方式**:
@@ -221,8 +221,8 @@ class MyPlugin(NcatBotPlugin):
 
     @command_registry.command("export", description="导出数据")
     @option_group(choices=["json", "csv", "xml"], name="format", default="json", help="输出格式")
-    def export_cmd(self, event: BaseMessageEvent, data_type: str, format: str = "json"):
-        return f"导出 {data_type} 数据为 {format} 格式"
+    async def export_cmd(self, event: BaseMessageEvent, data_type: str, format: str = "json"):
+        await event.reply(f"导出 {data_type} 数据为 {format} 格式")
 ```
 
 **使用方式**:
@@ -243,19 +243,19 @@ class MyPlugin(NcatBotPlugin):
     user_group = command_registry.group("user", description="用户管理命令")
     
     @user_group.command("list", description="列出所有用户")
-    def user_list_cmd(self, event: BaseMessageEvent):
-        return "用户列表: user1, user2, user3"
+    async def user_list_cmd(self, event: BaseMessageEvent):
+        await event.reply("用户列表: user1, user2, user3")
     
     @user_group.command("info", description="查看用户信息")
-    def user_info_cmd(self, event: BaseMessageEvent, user_id: str):
-        return f"用户 {user_id} 的信息"
+    async def user_info_cmd(self, event: BaseMessageEvent, user_id: str):
+        await event.reply(f"用户 {user_id} 的信息")
     
     # 创建系统管理命令组
     system_group = command_registry.group("system", description="系统管理")
     
     @system_group.command("status", description="系统状态")
-    def system_status_cmd(self, event: BaseMessageEvent):
-        return "系统运行正常"
+    async def system_status_cmd(self, event: BaseMessageEvent):
+        await event.reply("系统运行正常")
 ```
 
 **使用方式**:
@@ -276,12 +276,12 @@ class MyPlugin(NcatBotPlugin):
     user_admin = admin_group.group("user", description="用户管理")
     
     @user_admin.command("ban", description="封禁用户")
-    def ban_user_cmd(self, event: BaseMessageEvent, user_id: str):
-        return f"已封禁用户: {user_id}"
+    async def ban_user_cmd(self, event: BaseMessageEvent, user_id: str):
+        await event.reply(f"已封禁用户: {user_id}")
     
     @user_admin.command("unban", description="解封用户")
-    def unban_user_cmd(self, event: BaseMessageEvent, user_id: str):
-        return f"已解封用户: {user_id}"
+    async def unban_user_cmd(self, event: BaseMessageEvent, user_id: str):
+        await event.reply(f"已解封用户: {user_id}")
 ```
 
 **使用方式**:
@@ -302,7 +302,7 @@ class MyPlugin(NcatBotPlugin):
     @option(short_name="e", long_name="encrypt", help="加密备份")
     @param(name="path", default="/backup", help="备份路径")
     @param(name="exclude", default="", help="排除文件")
-    def backup_cmd(self, event: BaseMessageEvent, database: str,
+    async def backup_cmd(self, event: BaseMessageEvent, database: str,
                     path: str = "/backup", exclude: str = "",
                     compress: bool = False, encrypt: bool = False):
         result = f"备份数据库 {database} 到 {path}"
@@ -318,7 +318,7 @@ class MyPlugin(NcatBotPlugin):
         if features:
             result += f" ({', '.join(features)})"
         
-        return result
+        await event.reply(result)
 ```
 
 **使用方式**:
@@ -335,14 +335,14 @@ class MyPlugin(NcatBotPlugin):
     
     @command_registry.command("send", description="发送消息")
     @option(short_name="a", long_name="all", help="发送给所有人")
-    def send_cmd(self, event: BaseMessageEvent, message: str, 
+    async def send_cmd(self, event: BaseMessageEvent, message: str, 
                     target: str = "", all: bool = False):
         if all:
-            return f"广播消息: {message}"
+            await event.reply(f"广播消息: {message}")
         elif target:
-            return f"发送给 {target}: {message}"
+            await event.reply(f"发送给 {target}: {message}")
         else:
-            return f"发送消息: {message} (默认发送给当前用户)"
+            await event.reply(f"发送消息: {message} (默认发送给当前用户)")
 ```
 
 ## 📋 装饰器使用最佳实践
@@ -359,8 +359,8 @@ class MyPlugin(NcatBotPlugin):
     @command_registry.command("admin")  # 命令注册器其次
     @option("v", "verbose")        # 参数装饰器在最后
     @param("level", default=1)
-    def admin_cmd(self, event: BaseMessageEvent, level: int = 1, verbose: bool = False):
-        return f"管理员命令，级别: {level}"
+    async def admin_cmd(self, event: BaseMessageEvent, level: int = 1, verbose: bool = False):
+        await event.reply(f"管理员命令，级别: {level}")
     
     # ❌ 错误的顺序（会导致错误）
     # @command_registry.command("wrong")
@@ -378,12 +378,12 @@ class MyPlugin(NcatBotPlugin):
     @command_registry.command("create_user")
     @param("role", default="user", help="用户角色")
     @option("s", "send_email", help="发送欢迎邮件")
-    def create_user_cmd(self, event: BaseMessageEvent, username: str, 
+    async def create_user_cmd(self, event: BaseMessageEvent, username: str, 
                         role: str = "user", send_email: bool = False):
         result = f"创建用户: {username}, 角色: {role}"
         if send_email:
             result += " (已发送欢迎邮件)"
-        return result
+        await event.reply(result)
 ```
 
 ## 🔍 错误处理和调试
@@ -396,21 +396,23 @@ class MyPlugin(NcatBotPlugin):
         pass
 
     @command_registry.command("divide")
-    def divide_cmd(self, event: BaseMessageEvent, a: float, b: float):
+    async def divide_cmd(self, event: BaseMessageEvent, a: float, b: float):
         """除法命令，包含错误处理"""
         if b == 0:
-            return "错误: 除数不能为0"
+            await event.reply("错误: 除数不能为0")
+            return
         
         result = a / b
-        return f"{a} ÷ {b} = {result}"
+        await event.reply(f"{a} ÷ {b} = {result}")
     
     @command_registry.command("age")
-    def age_cmd(self, event: BaseMessageEvent, age: int):
+    async def age_cmd(self, event: BaseMessageEvent, age: int):
         """年龄验证"""
         if age < 0 or age > 150:
-            return "错误: 请输入有效的年龄 (0-150)"
+            await event.reply("错误: 请输入有效的年龄 (0-150)")
+            return
         
-        return f"您的年龄是: {age}"
+        await event.reply(f"您的年龄是: {age}")
 ```
 
 ### 2. 调试信息
@@ -425,17 +427,17 @@ class MyPlugin(NcatBotPlugin):
         pass
 
     @command_registry.command("debug")
-    def debug_cmd(self, event: BaseMessageEvent, action: str):
+    async def debug_cmd(self, event: BaseMessageEvent, action: str):
         """带调试信息的命令"""
         LOG.debug(f"用户 {event.user_id} 执行调试命令: {action}")
         
         if action == "info":
-            return f"调试信息: 用户ID={event.user_id}, 时间={event.time}"
+            await event.reply(f"调试信息: 用户ID={event.user_id}, 时间={event.time}")
         elif action == "status":
-            return "调试状态: 正常"
+            await event.reply("调试状态: 正常")
         else:
             LOG.warning(f"未知的调试动作: {action}")
-            return "未知的调试动作"
+            await event.reply("未知的调试动作")
 ```
 
 ## 📊 命令注册总结

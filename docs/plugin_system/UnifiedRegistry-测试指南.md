@@ -55,18 +55,19 @@ class TestPlugin(NcatBotPlugin):
         pass
 
     @command_registry.command("hello")
-    def hello_cmd(self, event: BaseMessageEvent):
-        return "你好！"
+    async def hello_cmd(self, event: BaseMessageEvent):
+        await event.reply("你好！")
     
     @command_registry.command("echo")
-    def echo_cmd(self, event: BaseMessageEvent, text: str):
-        return f"回声: {text}"
+    async def echo_cmd(self, event: BaseMessageEvent, text: str):
+        await event.reply(f"回声: {text}")
     
     @command_registry.command("calc")
-    def calc_cmd(self, event: BaseMessageEvent, a: int, b: int, op: str = "add"):
+    async def calc_cmd(self, event: BaseMessageEvent, a: int, b: int, op: str = "add"):
         if op == "add":
-            return f"结果: {a + b}"
-        return f"不支持的操作: {op}"
+            await event.reply(f"结果: {a + b}")
+        else:
+            await event.reply(f"不支持的操作: {op}")
 
 async def test_commands():
     client = TestClient()
@@ -109,13 +110,13 @@ class FilterTestPlugin(NcatBotPlugin):
     async def on_load(self):
         @group_only
         @command_registry.command("group_cmd")
-        def group_cmd(self, event: BaseMessageEvent):
-            return "这是群聊命令"
+        async def group_cmd(self, event: BaseMessageEvent):
+            await event.reply("这是群聊命令")
         
         @admin_only
         @command_registry.command("admin_cmd")
-        def admin_cmd(self, event: BaseMessageEvent):
-            return "管理员命令"
+        async def admin_cmd(self, event: BaseMessageEvent):
+            await event.reply("管理员命令")
 
 async def test_filters():
     client = TestClient()

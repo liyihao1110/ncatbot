@@ -41,25 +41,25 @@ class MyPlugin(NcatBotPlugin):
 
     # 简单命令（注意：除self外的所有参数必须有类型注解）
     @command_registry.command("hello")
-    def hello_cmd(self, event: BaseMessageEvent):
-        return "Hello, World!"
+    async def hello_cmd(self, event: BaseMessageEvent):
+        await event.reply("Hello, World!")
     
     # 带权限的命令
     @group_only
     @command_registry.command("kick")
-    def kick_cmd(self, event: BaseMessageEvent, user_id: str):
-        return f"踢出用户: {user_id}"
+    async def kick_cmd(self, event: BaseMessageEvent, user_id: str):
+        await event.reply(f"踢出用户: {user_id}")
     
     # 复杂参数命令
     @admin_only
     @command_registry.command("deploy")
     @option(short_name="v", long_name="verbose", help="详细输出")
     @param(name="env", default="dev", help="部署环境")
-    def deploy_cmd(self, event: BaseMessageEvent, app_name: str, env: str = "dev", verbose: bool = False):
+    async def deploy_cmd(self, event: BaseMessageEvent, app_name: str, env: str = "dev", verbose: bool = False):
         result = f"部署 {app_name} 到 {env} 环境"
         if verbose:
             result += " (详细模式)"
-        return result
+        await event.reply(result)
 ```
 
 ## 📚 文档导航

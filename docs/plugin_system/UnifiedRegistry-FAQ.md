@@ -4,19 +4,19 @@
 
 ### Q1: 为什么我的命令函数参数必须有类型注解？
 
-**A:** UnifiedRegistry 的命令系统依赖类型注解来进行自动类型转换和参数验证。除了 `self` 参数外，所有其他参数都必须有类型注解。
+**A:** UnifiedRegistry 的命令系统依赖类型注解来进行自动类型转换和参数验证。除了 `self` 参数外，所有其他参数都必须有类型注解。命令函数推荐为 `async def`，且通过 `await event.reply(...)` 进行异步回复，不再通过 return 返回文本。
 
 ```python
 # ❌ 错误：缺少类型注解
 
 @command_registry.command("bad")
-def bad_cmd(self, event, text):  # 缺少类型注解
-    return text
+async def bad_cmd(self, event, text):  # 缺少类型注解
+    await event.reply(text)
 
-# ✅ 正确：完整的类型注解
+# ✅ 正确：完整的类型注解，并使用异步回复
 @command_registry.command("good")
-def good_cmd(self, event: BaseMessageEvent, text: str):
-    return text
+async def good_cmd(self, event: BaseMessageEvent, text: str):
+    await event.reply(text)
 ```
 
 ### Q2: 装饰器的顺序有什么要求？
@@ -26,20 +26,21 @@ def good_cmd(self, event: BaseMessageEvent, text: str):
 1. 过滤器装饰器（如 `@admin_only`, `@group_only`）
 2. 命令注册装饰器（`@command_registry.command()`）
 3. 参数装饰器（`@option`, `@param`）
+4. 函数体内通过 `await event.reply(...)` 进行异步回复
 
 ```python
 # ✅ 正确的顺序
 @admin_only                    # 1. 过滤器
 @command_registry.command("deploy")  # 2. 命令注册
 @option("v", "verbose")        # 3. 参数装饰器
-def deploy_cmd(self, event: BaseMessageEvent, verbose: bool = False):
-    return "部署完成"
+async def deploy_cmd(self, event: BaseMessageEvent, verbose: bool = False):
+    await event.reply("部署完成")
 
 # ❌ 错误的顺序
 @command_registry.command("wrong")
 @admin_only  # 过滤器应该在命令注册之前
-def wrong_cmd(self, event: BaseMessageEvent):
-    return "错误"
+async def wrong_cmd(self, event: BaseMessageEvent):
+    await event.reply("错误")
 ```
 
 ### Q3: 如何在命令中访问插件的属性和方法？
@@ -57,14 +58,14 @@ class MyPlugin(NcatBotPlugin):
         pass
 
     @command_registry.command("count")
-    def count_cmd(self, event: BaseMessageEvent):
+    async def count_cmd(self, event: BaseMessageEvent):
         self.counter += 1  # 访问插件属性
-        return f"计数: {self.counter}"
+        await event.reply(f"计数: {self.counter}")
     
     @command_registry.command("reset")
-    def reset_cmd(self, event: BaseMessageEvent):
+    async def reset_cmd(self, event: BaseMessageEvent):
         self._reset_counter()  # 调用插件方法
-        return "计数已重置"
+        await event.reply("计数已重置")
     
     def _reset_counter(self):
         """插件的私有方法"""
@@ -96,8 +97,8 @@ def hello_cmd(self, event: BaseMessageEvent):
 
 ```python
 @command_registry.command("greet")
-def greet_cmd(self, event: BaseMessageEvent, name: str = "朋友"):
-    return f"你好，{name}！"
+async def greet_cmd(self, event: BaseMessageEvent, name: str = "朋友"):
+    await event.reply(f"你好，{name}！")
 
 # 使用方式：
 # /greet          -> "你好，朋友！"
@@ -109,8 +110,8 @@ def greet_cmd(self, event: BaseMessageEvent, name: str = "朋友"):
 ```python
 @command_registry.command("deploy")
 @param(name="env", default="dev", help="部署环境")
-def deploy_cmd(self, event: BaseMessageEvent, app: str, env: str = "dev"):
-    return f"部署 {app} 到 {env} 环境"
+async def deploy_cmd(self, event: BaseMessageEvent, app: str, env: str = "dev"):
+    await event.reply(f"部署 {app} 到 {env} 环境")
 
 # 使用方式：
 # /deploy myapp              -> "部署 myapp 到 dev 环境"
@@ -124,8 +125,8 @@ def deploy_cmd(self, event: BaseMessageEvent, app: str, env: str = "dev"):
 ```python
 # ✅ 正确的别名设置
 @command_registry.command("status", aliases=["stat", "st"])
-def status_cmd(self, event: BaseMessageEvent):
-    return "状态正常"
+async def status_cmd(self, event: BaseMessageEvent):
+    await event.reply("状态正常")
 
 # ❌ 常见错误
 @command_registry.command("status", aliases="stat")  # 应该是列表
@@ -157,15 +158,15 @@ def debug_filter(event: BaseMessageEvent) -> bool:
 
 ```python
 @command_registry.command("safe_calc")
-def safe_calc_cmd(self, event: BaseMessageEvent, a: str, b: str):
+async def safe_calc_cmd(self, event: BaseMessageEvent, a: str, b: str):
     """安全的计算命令，手动处理类型转换"""
     try:
         num_a = float(a)
         num_b = float(b)
         result = num_a + num_b
-        return f"结果: {result}"
+        await event.reply(f"结果: {result}")
     except ValueError:
-        return f"❌ 参数错误: '{a}' 或 '{b}' 不是有效数字\n💡 请输入数字，例如: /safe_calc 1.5 2.3"
+        await event.reply(f"❌ 参数错误: '{a}' 或 '{b}' 不是有效数字\n💡 请输入数字，例如: /safe_calc 1.5 2.3")
 ```
 
 ### Q9: 如何处理包含空格的参数？
@@ -174,8 +175,8 @@ def safe_calc_cmd(self, event: BaseMessageEvent, a: str, b: str):
 
 ```python
 @command_registry.command("say")
-def say_cmd(self, event: BaseMessageEvent, message: str):
-    return f"机器人说: {message}"
+async def say_cmd(self, event: BaseMessageEvent, message: str):
+    await event.reply(f"机器人说: {message}")
 
 # 使用方式：
 # /say "hello world"           -> "机器人说: hello world"
@@ -193,12 +194,12 @@ def say_cmd(self, event: BaseMessageEvent, message: str):
 @command_registry.command("backup")
 @option(short_name="v", long_name="verbose", help="详细输出")  # 布尔选项
 @param(name="path", default="/backup", help="备份路径")        # 有值的参数
-def backup_cmd(self, event: BaseMessageEvent, 
+async def backup_cmd(self, event: BaseMessageEvent, 
                path: str = "/backup", verbose: bool = False):
     result = f"备份到 {path}"
     if verbose:
         result += " (详细模式)"
-    return result
+    await event.reply(result)
 
 # 使用方式：
 # /backup                      -> "备份到 /backup"
@@ -215,16 +216,16 @@ def backup_cmd(self, event: BaseMessageEvent,
 
 ```python
 @command_registry.command("divide")
-def divide_cmd(self, event: BaseMessageEvent, a: float, b: float):
+async def divide_cmd(self, event: BaseMessageEvent, a: float, b: float):
     # 参数验证
     if b == 0:
-        return "❌ 错误: 除数不能为0\n💡 请确保第二个数字不是0"
+        await event.reply("❌ 错误: 除数不能为0\n💡 请确保第二个数字不是0")
     
     try:
         result = a / b
-        return f"✅ {a} ÷ {b} = {result}"
+        await event.reply(f"✅ {a} ÷ {b} = {result}")
     except Exception as e:
-        return f"❌ 计算失败\n🔧 详细错误: {e}\n💡 请检查输入的数字格式"
+        await event.reply(f"❌ 计算失败\n🔧 详细错误: {e}\n💡 请检查输入的数字格式")
 ```
 
 ### Q14: 如何记录和调试错误？
@@ -236,22 +237,22 @@ from ncatbot.utils import get_log
 LOG = get_log(__name__)
 
 @command_registry.command("complex_operation")
-def complex_operation_cmd(self, event: BaseMessageEvent, data: str):
+async def complex_operation_cmd(self, event: BaseMessageEvent, data: str):
     user_id = event.user_id
     LOG.info(f"用户 {user_id} 开始复杂操作: {data}")
     
     try:
         result = self.process_complex_data(data)
         LOG.info(f"用户 {user_id} 操作成功: {result}")
-        return f"✅ 操作完成: {result}"
+        await event.reply(f"✅ 操作完成: {result}")
     
     except ValueError as e:
         LOG.warning(f"用户 {user_id} 输入错误: {e}")
-        return f"❌ 输入错误: {e}\n💡 请检查输入格式"
+        await event.reply(f"❌ 输入错误: {e}\n💡 请检查输入格式")
     
     except Exception as e:
         LOG.error(f"用户 {user_id} 操作失败: {e}", exc_info=True)
-        return "❌ 系统错误，请稍后重试"
+        await event.reply("❌ 系统错误，请稍后重试")
 ```
 
 ## ⚠️ 常见陷阱

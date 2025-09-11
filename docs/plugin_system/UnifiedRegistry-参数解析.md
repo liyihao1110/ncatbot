@@ -35,8 +35,8 @@ class MyPlugin(NcatBotPlugin):
         pass
     
     @command_registry.command("echo")
-    def echo_cmd(self, event: BaseMessageEvent, text: str):
-        return f"你说的是: {text}"
+    async def echo_cmd(self, event: BaseMessageEvent, text: str):
+        await event.reply(f"你说的是: {text}")
 ```
 
 **使用示例**:
@@ -51,13 +51,13 @@ class MyPlugin(NcatBotPlugin):
         pass
     
     @command_registry.command("calc")
-    def calc_cmd(self, event: BaseMessageEvent, a: int, op: str, b: int):
+    async def calc_cmd(self, event: BaseMessageEvent, a: int, op: str, b: int):
         if op == "add":
-            return f"{a} + {b} = {a + b}"
+            await event.reply(f"{a} + {b} = {a + b}")
         elif op == "sub":
-            return f"{a} - {b} = {a - b}"
+            await event.reply(f"{a} - {b} = {a - b}")
         else:
-            return "支持的操作: add, sub"
+            await event.reply("支持的操作: add, sub")
 ```
 
 **使用示例**:
@@ -72,8 +72,8 @@ class MyPlugin(NcatBotPlugin):
         pass
 
     @command_registry.command("say")
-    def say_cmd(self, event: BaseMessageEvent, message: str):
-        return f"机器人说: {message}"
+    async def say_cmd(self, event: BaseMessageEvent, message: str):
+        await event.reply(f"机器人说: {message}")
 ```
 
 **使用示例**:
@@ -96,7 +96,7 @@ class MyPlugin(NcatBotPlugin):
     @option(short_name="l", help="长格式显示")
     @option(short_name="a", help="显示隐藏文件")
     @option(short_name="h", help="人类可读格式")
-    def list_cmd(self, event: BaseMessageEvent, path: str = ".", 
+    async def list_cmd(self, event: BaseMessageEvent, path: str = ".", 
                     l: bool = False, a: bool = False, h: bool = False):
         result = f"列出目录: {path}"
         
@@ -111,7 +111,7 @@ class MyPlugin(NcatBotPlugin):
         if options:
             result += f" ({', '.join(options)})"
         
-        return result
+        await event.reply(result)
 ```
 
 **使用示例**:
@@ -131,7 +131,7 @@ class MyPlugin(NcatBotPlugin):
     @option(long_name="compress", help="压缩备份文件")
     @option(long_name="encrypt", help="加密备份文件")
     @option(long_name="verify", help="验证备份完整性")
-    def backup_cmd(self, event: BaseMessageEvent, source: str,
+    async def backup_cmd(self, event: BaseMessageEvent, source: str,
                     compress: bool = False, encrypt: bool = False, verify: bool = False):
         result = f"备份 {source}"
         
@@ -146,7 +146,7 @@ class MyPlugin(NcatBotPlugin):
         if features:
             result += f" [{', '.join(features)}]"
         
-        return result
+        await event.reply(result)
 ```
 
 **使用示例**:
@@ -167,9 +167,9 @@ class MyPlugin(NcatBotPlugin):
     @param(name="env", default="dev", help="部署环境")
     @param(name="port", default=8080, help="端口号")
     @param(name="workers", default=4, help="工作进程数")
-    def deploy_cmd(self, event: BaseMessageEvent, app: str,
+    async def deploy_cmd(self, event: BaseMessageEvent, app: str,
                     env: str = "dev", port: int = 8080, workers: int = 4):
-        return f"部署 {app}: 环境={env}, 端口={port}, 进程={workers}"
+        await event.reply(f"部署 {app}: 环境={env}, 端口={port}, 进程={workers}")
 ```
 
 **使用示例**:
@@ -189,7 +189,7 @@ class MyPlugin(NcatBotPlugin):
     @option(short_name="f", long_name="force", help="强制执行")
     @param(name="output", default="result.txt", help="输出文件")
     @param(name="format", default="json", help="输出格式")
-    def process_cmd(self, event: BaseMessageEvent, input_file: str,
+    async def process_cmd(self, event: BaseMessageEvent, input_file: str,
                     output: str = "result.txt", format: str = "json",
                     verbose: bool = False, force: bool = False):
         result = f"处理文件: {input_file} → {output} ({format}格式)"
@@ -199,7 +199,7 @@ class MyPlugin(NcatBotPlugin):
         if force:
             result += " [强制模式]"
         
-        return result
+        await event.reply(result)
 ```
 
 **使用示例**:
@@ -217,12 +217,12 @@ class MyPlugin(NcatBotPlugin):
         pass
 
     @command_registry.command("math")
-    def math_cmd(self, event: BaseMessageEvent, a: int, b: float, c: bool):
+    async def math_cmd(self, event: BaseMessageEvent, a: int, b: float, c: bool):
         """演示不同类型的自动转换"""
         result = f"整数: {a} (类型: {type(a).__name__})\n"
         result += f"浮点数: {b} (类型: {type(b).__name__})\n"
         result += f"布尔值: {c} (类型: {type(c).__name__})"
-        return result
+        await event.reply(result)
 ```
 
 **使用示例**:
@@ -237,9 +237,9 @@ class MyPlugin(NcatBotPlugin):
         pass
 
     @command_registry.command("toggle")
-    def toggle_cmd(self, event: BaseMessageEvent, feature: str, enabled: bool):
+    async def toggle_cmd(self, event: BaseMessageEvent, feature: str, enabled: bool):
         status = "启用" if enabled else "禁用"
-        return f"功能 '{feature}' 已{status}"
+        await event.reply(f"功能 '{feature}' 已{status}")
 ```
 
 **布尔值识别规则**:
@@ -259,15 +259,16 @@ class MyPlugin(NcatBotPlugin):
         pass
 
     @command_registry.command("divide")
-    def divide_cmd(self, event: BaseMessageEvent, a: float, b: float):
+    async def divide_cmd(self, event: BaseMessageEvent, a: float, b: float):
         """带错误处理的数学运算"""
         try:
             if b == 0:
-                return "❌ 错误: 除数不能为0"
+                await event.reply("❌ 错误: 除数不能为0")
+                return
             result = a / b
-            return f"✅ {a} ÷ {b} = {result}"
+            await event.reply(f"✅ {a} ÷ {b} = {result}")
         except Exception as e:
-            return f"❌ 计算错误: {e}"
+            await event.reply(f"❌ 计算错误: {e}")
 ```
 
 ## 🖼️ 非文本元素处理
@@ -282,9 +283,9 @@ class MyPlugin(NcatBotPlugin):
         pass
 
     @command_registry.command("analyze")
-    def analyze_cmd(self, event: BaseMessageEvent, description: str, image: Image):
+    async def analyze_cmd(self, event: BaseMessageEvent, description: str, image: Image):
         """分析图片（示例，实际需要图片处理逻辑）"""
-        return f"分析图片: {description}\n图片信息: {image.file}"
+        await event.reply(f"分析图片: {description}\n图片信息: {image.file}")
 ```
 
 **使用方式**: `/analyze "这是一张风景图" [图片]`
@@ -299,9 +300,9 @@ class MyPlugin(NcatBotPlugin):
         pass
 
     @command_registry.command("mention")
-    def mention_cmd(self, event: BaseMessageEvent, message: str, user: At):
+    async def mention_cmd(self, event: BaseMessageEvent, message: str, user: At):
         """提及用户"""
-        return f"发送消息给 @{user.qq}: {message}"
+        await event.reply(f"发送消息给 @{user.qq}: {message}")
 ```
 
 **使用方式**: `/mention "你好" @某用户`
@@ -316,11 +317,11 @@ class MyPlugin(NcatBotPlugin):
         pass
 
     @command_registry.command("format")
-    def format_cmd(self, event: BaseMessageEvent, text: str):
+    async def format_cmd(self, event: BaseMessageEvent, text: str):
         """支持转义字符的格式化"""
         # 处理常见转义字符
         formatted = text.replace('\\n', '\n').replace('\\t', '\t')
-        return f"格式化结果:\n{formatted}"
+        await event.reply(f"格式化结果:\n{formatted}")
 ```
 
 **使用示例**:
@@ -337,9 +338,9 @@ class MyPlugin(NcatBotPlugin):
         pass
 
     @command_registry.command("quote")
-    def quote_cmd(self, event: BaseMessageEvent, text: str):
+    async def quote_cmd(self, event: BaseMessageEvent, text: str):
         """处理引号嵌套"""
-        return f"引用内容: {text}"
+        await event.reply(f"引用内容: {text}")
 ```
 
 **使用示例**:
@@ -358,7 +359,7 @@ class MyPlugin(NcatBotPlugin):
     @option(short_name="c", long_name="clean")
     @param(name="output", default="dist")
     @param(name="target", default="all")
-    def build_cmd(self, event: BaseMessageEvent, project: str,
+    async def build_cmd(self, event: BaseMessageEvent, project: str,
                   output: str = "dist", target: str = "all",
                   verbose: bool = False, clean: bool = False):
         """复杂的构建命令"""
@@ -371,7 +372,7 @@ class MyPlugin(NcatBotPlugin):
         if verbose:
             result += "\n📝 详细输出模式"
         
-        return result
+        await event.reply(result)
 ```
 
 **使用示例**:

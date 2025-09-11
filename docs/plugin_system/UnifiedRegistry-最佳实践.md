@@ -35,18 +35,18 @@ class WellOrganizedPlugin(NcatBotPlugin):
         LOG.info(f"{self.name} 加载完成")
     
     @command_registry.command("hello", description="基础问候命令")
-    def hello_cmd(self, event: BaseMessageEvent):
+    async def hello_cmd(self, event: BaseMessageEvent):
         self.stats["command_count"] += 1
-        return "你好！"
+        await event.reply("你好！")
     
     @admin_only
     @command_registry.command("stats", description="查看统计信息")
-    def stats_cmd(self, event: BaseMessageEvent):
-        return f"命令使用次数: {self.stats['command_count']}"
+    async def stats_cmd(self, event: BaseMessageEvent):
+        await event.reply(f"命令使用次数: {self.stats['command_count']}")
     
     @command_registry.command("calc", description="简单计算器")
-    def calc_cmd(self, event: BaseMessageEvent, a: int, b: int):
-        return f"结果: {a + b}"
+    async def calc_cmd(self, event: BaseMessageEvent, a: int, b: int):
+        await event.reply(f"结果: {a + b}")
 ```
 
 #### ❌ 避免的组织方式
@@ -80,21 +80,21 @@ class NamingBestPractices(NcatBotPlugin):
 
     # 动词+名词格式，语义清晰
     @command_registry.command("create_user", description="创建新用户")
-    def create_user_cmd(self, event: BaseMessageEvent, username: str):
-        return f"创建用户: {username}"
+    async def create_user_cmd(self, event: BaseMessageEvent, username: str):
+        await event.reply(f"创建用户: {username}")
     
     @command_registry.command("delete_user", description="删除用户")
-    def delete_user_cmd(self, event: BaseMessageEvent, username: str):
-        return f"删除用户: {username}"
+    async def delete_user_cmd(self, event: BaseMessageEvent, username: str):
+        await event.reply(f"删除用户: {username}")
     
     @command_registry.command("list_users", description="列出所有用户")
-    def list_users_cmd(self, event: BaseMessageEvent):
-        return "用户列表: ..."
+    async def list_users_cmd(self, event: BaseMessageEvent):
+        await event.reply("用户列表: ...")
     
     # 使用别名提供简短版本
     @command_registry.command("get_info", aliases=["info", "i"], description="获取信息")
-    def get_info_cmd(self, event: BaseMessageEvent):
-        return "系统信息: ..."
+    async def get_info_cmd(self, event: BaseMessageEvent):
+        await event.reply("系统信息: ...")
 ```
 
 #### ❌ 避免的命名方式
@@ -123,26 +123,27 @@ class FilterReuseExample(NcatBotPlugin):
         @admin_only
         @group_only
         @command_registry.command("ban_user")
-        def ban_user_cmd(event: BaseMessageEvent, user_id: str):
-            return f"封禁用户: {user_id}"
+        async def ban_user_cmd(event: BaseMessageEvent, user_id: str):
+            await event.reply(f"封禁用户: {user_id}")
+            
         
         @admin_only
         @group_only
         @command_registry.command("unban_user")
-        def unban_user_cmd(event: BaseMessageEvent, user_id: str):
-            return f"解封用户: {user_id}"
+        async def unban_user_cmd(event: BaseMessageEvent, user_id: str):
+            await event.reply(f"解封用户: {user_id}")
     
     def _register_system_management(self):
         """系统管理命令（仅管理员）"""
         @admin_only
         @command_registry.command("system_status")
-        def system_status_cmd(event: BaseMessageEvent):
-            return "系统状态正常"
+        async def system_status_cmd(event: BaseMessageEvent):
+            await event.reply("系统状态正常")
         
         @admin_only
         @command_registry.command("restart_service")
-        def restart_service_cmd(event: BaseMessageEvent, service: str):
-            return f"重启服务: {service}"
+        async def restart_service_cmd(event: BaseMessageEvent, service: str):
+            await event.reply(f"重启服务: {service}")
 ```
 
 ## 📝 代码质量提升
@@ -157,14 +158,14 @@ class SingleResponsibilityExample(NcatBotPlugin):
         pass
 
     @command_registry.command("user_info")
-    def user_info_cmd(self, event: BaseMessageEvent, user_id: str):
+    async def user_info_cmd(self, event: BaseMessageEvent, user_id: str):
         """获取用户信息（职责单一）"""
         user_data = self._get_user_data(user_id)
         if not user_data:
-            return "❌ 用户不存在"
+            await event.reply("❌ 用户不存在")
         
         formatted_info = self._format_user_info(user_data)
-        return formatted_info
+        await event.reply(formatted_info)
     
     def _get_user_data(self, user_id: str) -> dict:
         """获取用户数据（单一职责）"""
@@ -194,13 +195,13 @@ class StateManagementExample(NcatBotPlugin):
         }
 
     @command_registry.command("start_session")
-    def start_session_cmd(self, event: BaseMessageEvent):
+    async def start_session_cmd(self, event: BaseMessageEvent):
         """开始用户会话"""
         user_id = event.user_id
         
         # 检查现有会话
         if user_id in self.user_sessions:
-            return "❌ 您已有活跃会话，请先结束当前会话"
+            await event.reply("❌ 您已有活跃会话，请先结束当前会话")
         
         # 创建新会话
         import time
@@ -209,22 +210,22 @@ class StateManagementExample(NcatBotPlugin):
             "operations": 0
         }
         
-        return "✅ 会话已开始"
+        await event.reply("✅ 会话已开始")
     
     @command_registry.command("end_session")
-    def end_session_cmd(self, event: BaseMessageEvent):
+    async def end_session_cmd(self, event: BaseMessageEvent):
         """结束用户会话"""
         user_id = event.user_id
         
         if user_id not in self.user_sessions:
-            return "❌ 您没有活跃的会话"
+            await event.reply("❌ 您没有活跃的会话")
         
         # 清理会话
         session = self.user_sessions.pop(user_id)
         import time
         duration = time.time() - session["start_time"]
         
-        return f"✅ 会话已结束\n⏱️ 持续时间: {duration:.1f}秒\n📊 操作次数: {session['operations']}"
+        await event.reply(f"✅ 会话已结束\n⏱️ 持续时间: {duration:.1f}秒\n📊 操作次数: {session['operations']}")
 ```
 
 ## 📋 装饰器使用规范
@@ -246,7 +247,7 @@ class DecoratorOrderExample(NcatBotPlugin):
     @param("env", default="dev")         # 5. 参数装饰器
     def deploy_cmd(self, event: BaseMessageEvent, app: str, 
                     env: str = "dev", verbose: bool = False):
-        return f"部署 {app} 到 {env}"
+        await event.reply(f"部署 {app} 到 {env}")
 ```
 
 ### 2. 参数命名一致性
@@ -261,13 +262,13 @@ class ConsistentNamingExample(NcatBotPlugin):
     # 在整个插件中保持一致的参数命名，否则会报错
     @command_registry.command("create_item")
     @param("category", default="default", help="物品分类")
-    def create_item_cmd(self, event: BaseMessageEvent, name: str, category: str = "default"):
-        return f"创建物品: {name} (分类: {category})"
+    async def create_item_cmd(self, event: BaseMessageEvent, name: str, category: str = "default"):
+        await event.reply(f"创建物品: {name} (分类: {category})")
     
     @command_registry.command("delete_item")
     @param("category", default="default", help="物品分类")  # 相同参数使用相同名称
-    def delete_item_cmd(self, event: BaseMessageEvent, name: str, category: str = "default"):
-        return f"删除物品: {name} (分类: {category})"
+    async def delete_item_cmd(self, event: BaseMessageEvent, name: str, category: str = "default"):
+        await event.reply(f"删除物品: {name} (分类: {category})")
 ```
 
 ## 🚦 下一步
