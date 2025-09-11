@@ -4,7 +4,8 @@ TestClient - 直接可用的测试客户端
 集成了 ClientMixin 的所有功能，提供开箱即用的测试环境
 """
 
-from typing import List, Type
+from typing import List, Type, TypeVar
+T = TypeVar('T')
 from ncatbot.core.client import BotClient
 from ncatbot.plugin_system.event import EventBus
 from ncatbot.plugin_system import BasePlugin
@@ -38,6 +39,12 @@ class TestClient(ClientMixin, BotClient):
 
     def get_registered_plugins(self) -> List[BasePlugin]:
         return list(self.plugin_loader.plugins.values())
+    
+    def get_plugin(self, type: Type[T]) -> T:
+        for plugin in self.get_registered_plugins():
+            if isinstance(plugin, type):
+                return plugin
+        raise ValueError(f"插件 {type.__name__} 未找到")
     
     def unregister_plugin(self, plugin: BasePlugin):
         """从测试客户端移除插件

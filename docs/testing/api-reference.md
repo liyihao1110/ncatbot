@@ -60,6 +60,21 @@ for plugin in plugins:
     print(f"插件: {plugin.name} v{plugin.version}")
 ```
 
+#### `get_plugin(type: Type[T]) -> T`
+
+获取已注册的插件实例。
+
+**参数:**
+- `type` (Type[T]): 插件类型
+
+**返回:**
+- T: 插件实例（有类型注解）
+
+**示例:**
+```python
+plugin = client.get_plugin(CalculatorPlugin)
+```
+
 #### `unregister_plugin(plugin: BasePlugin)`
 
 从测试客户端卸载插件。（**通过装饰器等注册的命令无法被卸载**）

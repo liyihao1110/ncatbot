@@ -79,6 +79,27 @@ class CalculatorPlugin(NcatBotPlugin):
 
 
 # ============== 测试基类定义 ==============
+class AsyncTestCase(unittest.TestCase):
+    """支持异步测试的基础类"""
+    
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+        self.addCleanup(self.loop.close)
+    
+    def run_async(self, coro):
+        """运行异步协程"""
+        return self.loop.run_until_complete(coro)
+    
+    def tearDown(self):
+        # 清理未完成的任务
+        pending = asyncio.all_tasks(self.loop)
+        for task in pending:
+            task.cancel()
+        if pending:
+            self.loop.run_until_complete(
+                asyncio.gather(*pending, return_exceptions=True)
+            )
 
 class AsyncTestCase(unittest.TestCase):
     """支持异步测试的基础类"""
@@ -102,10 +123,11 @@ class AsyncTestCase(unittest.TestCase):
                 asyncio.gather(*pending, return_exceptions=True)
             )
 
+
 class NcatBotTestCase(AsyncTestCase):
     """NcatBot 插件测试基类"""
     
-    test_plugins: List[Type[NcatBotPlugin]] = []
+    test_plugins: List[Type[BasePlugin]] = []
     client: TestClient = None
     helper: TestHelper = None
     
@@ -150,15 +172,7 @@ class NcatBotTestCase(AsyncTestCase):
             if isinstance(seg, dict) and seg.get("type") == "text":
                 text += seg.get("data", {}).get("text", "")
         return text
-    
-    def get_plugin(self, plugin_class):
-        """获取已加载的插件实例"""
-        for plugin in self.client.get_registered_plugins():
-            if isinstance(plugin, plugin_class):
-                return plugin
-        raise ValueError(f"插件 {plugin_class.__name__} 未找到")
 
-# ============== 具体测试类 ==============
 
 class TestCalculatorPlugin(NcatBotTestCase):
     """计算器插件的测试类"""
@@ -167,7 +181,7 @@ class TestCalculatorPlugin(NcatBotTestCase):
     
     def setUp(self):
         super().setUp()
-        self.plugin = self.get_plugin(CalculatorPlugin)
+        self.plugin = self.client.get_plugin(CalculatorPlugin)
     
     def test_plugin_metadata(self):
         """测试插件元数据"""
@@ -217,6 +231,8 @@ class TestCalculatorPlugin(NcatBotTestCase):
         """测试统计功能"""
         async def _test():
             # 执行几次计算
+            self.client.get_plugin(CalculatorPlugin).calculation_count = 0
+
             await self.helper.send_private_message("/calc 1 + 1")
             self.helper.get_latest_reply()  # 清除回复
             
@@ -231,6 +247,7 @@ class TestCalculatorPlugin(NcatBotTestCase):
             self.assertIn("2", text)  # 应该显示进行了2次计算
         
         self.run_async(_test())
+
 
 if __name__ == "__main__":
     unittest.main()
