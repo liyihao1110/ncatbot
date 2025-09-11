@@ -180,7 +180,7 @@ async def say_cmd(self, event: BaseMessageEvent, message: str):
 
 # 使用方式：
 # /say "hello world"           -> "机器人说: hello world"
-# /say '包含 空格 的 消息'      -> "机器人说: 包含 空格 的 消息"
+# /say "包含 空格 的 消息"      -> "机器人说: 包含 空格 的 消息"
 ```
 
 ### Q10: 选项和参数的区别是什么？

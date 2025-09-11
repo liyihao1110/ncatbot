@@ -17,12 +17,18 @@
   - `test_combo_filters.py`：组合装饰器与一次性注册多个过滤器
   - `test_custom_filters.py`：自定义过滤器与按名称绑定
   - `test_level_and_cooldown.py`：过滤器类与冷却时间示例
- - `params/`：对应 `UnifiedRegistry-参数解析.md` 的验证
-   - `plugins/`：参数解析相关演示插件
-   - `test_basic_syntax.py`：基础参数与引用字符串
-   - `test_options_and_named.py`：选项、命名参数、选项组与组合语法
-   - `test_types_and_errors.py`：类型转换、布尔值与错误处理
-   - `test_media_and_advanced.py`：非文本元素（图片/@用户）与补充场景
+- `params/`：对应 `UnifiedRegistry-参数解析.md` 的验证
+  - `plugins/`：参数解析相关演示插件
+  - `test_basic_syntax.py`：基础参数与引用字符串
+  - `test_options_and_named.py`：选项、命名参数、选项组与组合语法
+  - `test_types_and_errors.py`：类型转换、布尔值与错误处理
+  - `test_media_and_advanced.py`：非文本元素（图片/@用户）与补充场景
+- `commands/`：对应 `UnifiedRegistry-命令系统.md` 的验证
+  - `plugins/`：命令系统相关演示插件
+  - `test_basic_and_alias.py`：基础命令与别名
+  - `test_external_command.py`：类外命令
+  - `test_groups.py`：命令分组与嵌套
+  - `test_complex.py`：复杂功能（backup/send）
 
 ## 运行前准备（PowerShell）
 
@@ -97,6 +103,26 @@ python -m examples.unified_registry.params.test_types_and_errors
 - 运行 参数解析-非文本元素与高级
 ```powershell
 python -m examples.unified_registry.params.test_media_and_advanced
+```
+
+- 运行 命令系统-基础与别名
+```powershell
+python -m examples.unified_registry.commands.test_basic_and_alias
+```
+
+- 运行 命令系统-类外命令
+```powershell
+python -m examples.unified_registry.commands.test_external_command
+```
+
+- 运行 命令系统-分组与嵌套
+```powershell
+python -m examples.unified_registry.commands.test_groups
+```
+
+- 运行 命令系统-复杂功能
+```powershell
+python -m examples.unified_registry.commands.test_complex
 ```
 
 ## 说明
