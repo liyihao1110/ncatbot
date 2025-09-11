@@ -1,7 +1,5 @@
 from typing import Callable, List
-from ..registry.exceptions import CommandRegistrationError
-from ..utils.specs import OptionSpec, OptionGroupSpec, ParameterSpec
-
+from ..utils import CommandRegistrationError, OptionSpec, OptionGroupSpec, ParameterSpec
 
 class DecoratorValidator:
     """装饰器验证器

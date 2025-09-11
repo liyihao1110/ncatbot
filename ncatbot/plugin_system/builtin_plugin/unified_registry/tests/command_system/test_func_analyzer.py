@@ -10,7 +10,7 @@ from unittest.mock import Mock
 from ncatbot.core.event import BaseMessageEvent
 
 from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.analyzer.func_analyzer import (
-    FuncAnalyser, get_subclass_recursive, FuncDesciptor
+    FuncAnalyser, get_subclass_recursive, FuncSpec
 )
 
 
@@ -88,7 +88,7 @@ class TestFuncDescriptor:
             """简单函数"""
             pass
         
-        descriptor = FuncDesciptor(simple_func)
+        descriptor = FuncSpec(simple_func)
         
         assert descriptor.func is simple_func
         assert descriptor.func_name == "simple_func"
@@ -105,7 +105,7 @@ class TestFuncDescriptor:
             """带参数的函数"""
             pass
         
-        descriptor = FuncDesciptor(func_with_params)
+        descriptor = FuncSpec(func_with_params)
         
         assert descriptor.func_name == "func_with_params"
         assert len(descriptor.param_list) == 4
@@ -125,7 +125,7 @@ class TestFuncDescriptor:
         
         func_with_alias.__aliases__ = ["alias1", "alias2"]
         
-        descriptor = FuncDesciptor(func_with_alias)
+        descriptor = FuncSpec(func_with_alias)
         assert descriptor.aliases == ["alias1", "alias2"]
     
     def test_descriptor_no_aliases(self):
@@ -133,7 +133,7 @@ class TestFuncDescriptor:
         def func_no_alias():
             pass
         
-        descriptor = FuncDesciptor(func_no_alias)
+        descriptor = FuncSpec(func_no_alias)
         assert descriptor.aliases == []
     
     def test_descriptor_complex_signature(self):
@@ -142,7 +142,7 @@ class TestFuncDescriptor:
             """复杂函数签名"""
             pass
         
-        descriptor = FuncDesciptor(complex_func)
+        descriptor = FuncSpec(complex_func)
         
         assert descriptor.func_name == "complex_func"
         assert len(descriptor.param_list) >= 4  # event, *args, name, **kwargs

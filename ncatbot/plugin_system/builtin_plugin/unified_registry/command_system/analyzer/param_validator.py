@@ -1,18 +1,15 @@
 from typing import TYPE_CHECKING, List, Tuple
 from ncatbot.core.event import MessageSegment
 from ncatbot.utils import get_log
-from ..registry.exceptions import CommandRegistrationError
-from ..utils.specs import CommandSpec, OptionSpec, OptionGroupSpec
-from ..utils.specs import ParameterSpec
+from ..utils import CommandRegistrationError
+from ..utils import CommandSpec, OptionSpec, OptionGroupSpec, ParameterSpec, FuncSpec
 import inspect
-if TYPE_CHECKING:
-    from .func_analyzer import FuncDesciptor
 
 LOG = get_log(__name__)
 
 
 class ParamsValidator:
-    def __init__(self, descriptor: "FuncDesciptor", actual_params: List[inspect.Parameter]):
+    def __init__(self, descriptor: "FuncSpec", actual_params: List[inspect.Parameter]):
         self.descriptor = descriptor
         self.actual_params = actual_params
         self.func = descriptor.func

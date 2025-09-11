@@ -1,14 +1,12 @@
 from ncatbot.utils import get_log
+from ..utils import FuncSpec
 from ncatbot.core.event import BaseMessageEvent
-from typing import TYPE_CHECKING
 import inspect
-if TYPE_CHECKING:
-    from .func_analyzer import FuncDesciptor
 
 LOG = get_log(__name__)
 
 class SigValidator:
-    def __init__(self, descriptor: "FuncDesciptor"):
+    def __init__(self, descriptor: "FuncSpec"):
         self.descriptor = descriptor
 
     def analyze_signature(self):

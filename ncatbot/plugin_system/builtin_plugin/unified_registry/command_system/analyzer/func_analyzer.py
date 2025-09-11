@@ -1,11 +1,10 @@
 """函数分析器模块"""
 
 from typing import Callable, List
-import inspect
 from ncatbot.utils import get_log
 from .sig_validator import SigValidator
 from .param_validator import ParamsValidator
-from ..utils.specs import CommandSpec
+from ..utils import CommandSpec, FuncSpec
 
 LOG = get_log(__name__)
 
@@ -21,19 +20,7 @@ def get_subclass_recursive(cls: type) -> List[type]:
     """
     return [cls] + [subcls for subcls in cls.__subclasses__() for subcls in get_subclass_recursive(subcls)]
 
-class FuncDesciptor:
-    def __init__(self, func: Callable):
-        self.func = func
-        self.aliases = getattr(func, "__aliases__", [])
-        
-        # 生成 metadata 以便代码更易于理解
-        self.func_name = func.__name__
-        self.func_module = func.__module__
-        self.func_qualname = func.__qualname__
-        self.signature = inspect.signature(func)
-        self.param_list = list(self.signature.parameters.values())
-        self.param_names = [param.name for param in self.param_list]
-        self.param_annotations = [param.annotation for param in self.param_list]
+
 
 class FuncAnalyser:
     """函数分析器
@@ -43,7 +30,7 @@ class FuncAnalyser:
     """
     
     def __init__(self, func: Callable):
-        self.func_descriptor = FuncDesciptor(func)
+        self.func_descriptor = FuncSpec(func)
 
     def analyze(self) -> CommandSpec:
         self.sig_validator = SigValidator(self.func_descriptor)

@@ -5,9 +5,7 @@
 
 from typing import Callable, Any, List, Optional, Dict, Union, Type
 
-from .exceptions import CommandRegistrationError, ParameterError
-from ..utils.specs import OptionSpec, OptionGroupSpec, ParameterSpec
-
+from ..utils import CommandRegistrationError, OptionSpec, OptionGroupSpec, ParameterSpec
 
 # TODO: 融合 option、param 以及函数签名自检测
 # TODO: 支持类型系统

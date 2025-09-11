@@ -27,7 +27,7 @@ from .registry import ModernRegistry, CommandGroup, command_registry
 from .decorators import (
     option, param, option_group,
 )
-from .exceptions import (
+from ..utils import (
     CommandRegistrationError, ParameterError, ValidationError,
     CommandNotFoundError, ArgumentError, OptionError,
     TypeConversionError, MultiTypeConversionError,
