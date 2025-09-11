@@ -23,8 +23,7 @@ class QABotPlugin(NcatBotPlugin):
     author = "示例作者"
     description = "简单的问答机器人"
     
-    def __init__(self):
-        super().__init__()
+    async def on_load(self):
         # 预设问答库
         self.qa_database = {
             "你好": "你好！我是问答机器人，有什么可以帮助你的吗？",
@@ -32,9 +31,6 @@ class QABotPlugin(NcatBotPlugin):
             "时间": "请检查你的设备时间，或者使用 /time 命令。",
             "帮助": "可用命令：/ask <问题>、/add_qa <问题> <答案>、/list_qa"
         }
-    
-    async def on_load(self):
-        pass
 
     @command_registry.command("ask", description="询问问题")
     async def ask_cmd(self, event: BaseMessageEvent, question: str):
@@ -89,14 +85,10 @@ class GroupManagementPlugin(NcatBotPlugin):
     name = "GroupManagementPlugin"
     version = "1.0.0"
     description = "群聊管理功能"
-    
-    def __init__(self):
-        super().__init__()
-        self.muted_users = set()  # 简单的禁言列表
-        self.group_settings = {}  # 群设置
-    
+
     async def on_load(self):
-        pass
+        self.muted_users = set()
+        self.group_settings = {}
 
     @group_only
     @admin_only
@@ -163,12 +155,8 @@ class InfoQueryPlugin(NcatBotPlugin):
     version = "1.0.0"
     description = "信息查询服务"
     
-    def __init__(self):
-        super().__init__()
-        self.cache = {}  # 简单缓存
-    
     async def on_load(self):
-        pass
+        self.cache = {}
 
     @command_registry.command("weather", description="查询天气")
     @param(name="units", default="metric", help="温度单位")
@@ -249,12 +237,8 @@ class DataProcessingPlugin(NcatBotPlugin):
     version = "1.0.0"
     description = "数据处理和分析工具"
     
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.datasets = {}  # 存储数据集
-    
     async def on_load(self):
-        pass
+        self.datasets = {}
 
     @command_registry.command("csv_analyze", description="分析CSV数据")
     @option(short_name="h", long_name="header", help="包含标题行")
@@ -338,7 +322,7 @@ class WebAPIPlugin(NcatBotPlugin):
     description = "Web API集成示例"
     
     async def on_load(self):
-        pass
+        self.cache = {}
 
     @command_registry.command("random_quote", description="获取随机名言")
     async def random_quote_cmd(self, event: BaseMessageEvent):

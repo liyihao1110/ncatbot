@@ -29,6 +29,13 @@
   - `test_external_command.py`：类外命令
   - `test_groups.py`：命令分组与嵌套
   - `test_complex.py`：复杂功能（backup/send）
+ - `cases/`：对应 `UnifiedRegistry-实战案例.md` 的验证
+   - `plugins/`：实战案例相关演示插件
+   - `test_qa_bot.py`：简单问答机器人
+   - `test_group_management.py`：群管理功能
+   - `test_info_query.py`：信息查询服务
+   - `test_data_processing.py`：数据处理与分析
+   - `test_web_api.py`：Web API 集成（模拟）
 
 ## 运行前准备（PowerShell）
 
@@ -123,6 +130,31 @@ python -m examples.unified_registry.commands.test_groups
 - 运行 命令系统-复杂功能
 ```powershell
 python -m examples.unified_registry.commands.test_complex
+```
+
+- 运行 实战案例-问答机器人
+```powershell
+python -m examples.unified_registry.cases.test_qa_bot
+```
+
+- 运行 实战案例-群管理
+```powershell
+python -m examples.unified_registry.cases.test_group_management
+```
+
+- 运行 实战案例-信息查询
+```powershell
+python -m examples.unified_registry.cases.test_info_query
+```
+
+- 运行 实战案例-数据处理
+```powershell
+python -m examples.unified_registry.cases.test_data_processing
+```
+
+- 运行 实战案例-Web API（模拟）
+```powershell
+python -m examples.unified_registry.cases.test_web_api
 ```
 
 ## 说明
