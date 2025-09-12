@@ -75,11 +75,11 @@ class GroupMessageEvent(BaseMessageEvent):
     def ban_sync(self, ban_duration: int = 30):
         return status.global_api.set_group_ban_sync(self.group_id, self.user_id, ban_duration)
     
-    async def reply(self, text: str=None, image: str=None, at: bool=True, rtf: "MessageChain"=None):
-        return await status.global_api.post_group_msg(self.group_id, text, self.user_id if at else None, reply=self.message_id, image=image, rtf=rtf)
+    async def reply(self, text: str=None, image: str=None, at: bool=True, space: bool=True, rtf: "MessageChain"=None):
+        return await status.global_api.post_group_msg(self.group_id, (" " if space else "") + text, self.user_id if at else None, reply=self.message_id, image=image, rtf=rtf)
 
-    def reply_sync(self, text: str=None, image: str=None, at: bool=True, rtf: "MessageChain"=None):
-        return status.global_api.post_group_msg_sync(self.group_id, text, self.user_id if at else None, reply=self.message_id, image=image, rtf=rtf)
+    def reply_sync(self, text: str=None, image: str=None, at: bool=True, space: bool=True, rtf: "MessageChain"=None):
+        return status.global_api.post_group_msg_sync(self.group_id, (" " if space else "") + text, self.user_id if at else None, reply=self.message_id, image=image, rtf=rtf)
     
 class PrivateMessageEvent(BaseMessageEvent):
     message_type: Literal["private"] = None # 上级会获取

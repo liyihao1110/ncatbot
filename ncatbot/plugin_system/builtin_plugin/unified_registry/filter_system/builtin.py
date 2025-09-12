@@ -33,7 +33,8 @@ class AdminFilter(BaseFilter):
             return False
         
         user_id = event.user_id
-        return status.global_access_manager.user_has_role(user_id, PermissionGroup.ADMIN.value)
+        return status.global_access_manager.user_has_role(user_id, PermissionGroup.ADMIN.value) \
+            or status.global_access_manager.user_has_role(user_id, PermissionGroup.ROOT.value)
 
 class RootFilter(BaseFilter):
     """Root权限过滤器"""
