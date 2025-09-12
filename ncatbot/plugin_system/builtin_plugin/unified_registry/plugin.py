@@ -1,17 +1,13 @@
 """统一注册插件"""
 
 import asyncio
-import inspect
 from typing import Dict, Callable, TYPE_CHECKING, List, Tuple, Optional
-from ncatbot.plugin_system import NcatBotPlugin
-from ncatbot.plugin_system.builtin_mixin.func_mixin import Func
 from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.utils import CommandSpec
 from ncatbot.plugin_system.event.event import NcatBotEvent
-from ncatbot.core.event.notice import NoticeEvent
-from ncatbot.core.event.request import RequestEvent
 from ncatbot.core.event import BaseMessageEvent
 from ncatbot.core.event.event_data import BaseEventData
 from ncatbot.utils import get_log
+from ...builtin_mixin import NcatBotPlugin
 from .trigger.binder import BindResult
 from .trigger.preprocessor import MessagePreprocessor, PreprocessResult
 from .command_system.lexer.tokenizer import StringTokenizer, Token
