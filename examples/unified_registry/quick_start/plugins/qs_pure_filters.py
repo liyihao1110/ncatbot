@@ -1,5 +1,5 @@
-from ncatbot.plugin_system.builtin_mixin import NcatBotPlugin
-from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorators import group_only
+from ncatbot.plugin_system import NcatBotPlugin
+from ncatbot.plugin_system import group_only
 from ncatbot.core.event import BaseMessageEvent
 
 

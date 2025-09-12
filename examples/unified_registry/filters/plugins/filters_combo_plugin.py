@@ -1,6 +1,6 @@
-from ncatbot.plugin_system.builtin_mixin import NcatBotPlugin
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry import command_registry
-from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorators import (
+from ncatbot.plugin_system import NcatBotPlugin
+from ncatbot.plugin_system import command_registry
+from ncatbot.plugin_system import (
     admin_group_only, admin_private_only, group_only, admin_only
 )
 from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import filter_registry

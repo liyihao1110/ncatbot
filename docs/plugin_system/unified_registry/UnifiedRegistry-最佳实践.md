@@ -11,10 +11,10 @@
 #### ✅ 推荐的插件结构
 
 ```python
-from ncatbot.plugin_system.builtin_mixin import NcatBotPlugin
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry import command_registry
-from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorators import group_only, admin_only
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry.decorators import option, param
+from ncatbot.plugin_system import NcatBotPlugin
+from ncatbot.plugin_system import command_registry
+from ncatbot.plugin_system import group_only, admin_only
+from ncatbot.plugin_system import option, param
 from ncatbot.core.event import BaseMessageEvent
 from ncatbot.utils import get_log
 

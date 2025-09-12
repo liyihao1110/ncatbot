@@ -12,7 +12,7 @@ from ncatbot.plugin_system.builtin_plugin.unified_registry import UnifiedRegistr
 from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import (
     filter_registry, GroupFilter, PrivateFilter, AdminFilter, CustomFilter
 )
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry import command_registry
+from ncatbot.plugin_system import command_registry
 from ncatbot.core.event import BaseMessageEvent
 from ncatbot.utils.testing import EventFactory
 

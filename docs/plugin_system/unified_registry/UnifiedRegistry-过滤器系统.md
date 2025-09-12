@@ -27,7 +27,7 @@
 
 ```python
 from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import GroupFilter
-from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorators import group_only
+from ncatbot.plugin_system import group_only
 
 class MyPlugin(NcatBotPlugin):
     async def on_load(self):
@@ -54,7 +54,7 @@ async def private_message(event: BaseMessageEvent):
 只允许 **Bot管理员** 使用的命令。
 
 ```python
-from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorators import admin_only
+from ncatbot.plugin_system import admin_only
 
 class MyPlugin(NcatBotPlugin):
     async def on_load(self):
@@ -81,7 +81,7 @@ class MyPlugin(NcatBotPlugin):
 只允许 **Root用户** 使用的命令。（root 用户只能在代码里指定）
 
 ```python
-from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorators import root_only
+from ncatbot.plugin_system import root_only
 
 class MyPlugin(NcatBotPlugin):
     async def on_load(self):
@@ -102,7 +102,7 @@ class MyPlugin(NcatBotPlugin):
 用于在发送消息时回调一个指定的函数。
 
 ```python
-from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorators import on_message
+from ncatbot.plugin_system import on_message
 
 @on_message
 async def on_message_callback(event: BaseMessageEvent):
@@ -115,7 +115,7 @@ async def on_message_callback(event: BaseMessageEvent):
 ### 组合装饰器
 
 ```python
-from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorators import (
+from ncatbot.plugin_system import (
     group_only, admin_only, private_only, admin_group_only, admin_private_only
 )
 

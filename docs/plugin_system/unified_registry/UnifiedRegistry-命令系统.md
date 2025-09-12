@@ -25,7 +25,7 @@ UnifiedRegistry 的命令系统提供了现代化的命令注册和管理功能�
 ### 1. 简单命令注册
 
 ```python
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry import command_registry
+from ncatbot.plugin_system import command_registry
 from ncatbot.core.event import BaseMessageEvent
 
 class MyPlugin(NcatBotPlugin):
@@ -165,7 +165,7 @@ class MyPlugin(NcatBotPlugin):
 ### 1. 选项装饰器 (@option)
 
 ```python
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry.decorators import option
+from ncatbot.plugin_system import option
 
 class MyPlugin(NcatBotPlugin):
     async def on_load(self):
@@ -192,7 +192,7 @@ class MyPlugin(NcatBotPlugin):
 ### 2. 命名参数 (@param)
 
 ```python
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry.decorators import param
+from ncatbot.plugin_system import param
 
 class MyPlugin(NcatBotPlugin):
     async def on_load(self):
@@ -213,7 +213,7 @@ class MyPlugin(NcatBotPlugin):
 ### 3. 选项组 (@option_group)
 
 ```python
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry.decorators import option_group
+from ncatbot.plugin_system import option_group
 
 class MyPlugin(NcatBotPlugin):
     async def on_load(self):
@@ -389,7 +389,7 @@ class MyPlugin(NcatBotPlugin):
 通过该接口直接或间接注册的命令均会受到自定义前缀的影响。
 
 ```python
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry import command_registry
+from ncatbot.plugin_system import command_registry
 
 my_registry = command_registry.get_registry(prefixes=["", "!"]) # 无前缀触发或者 ! 触发
 

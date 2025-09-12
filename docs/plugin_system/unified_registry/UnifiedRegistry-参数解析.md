@@ -27,7 +27,7 @@ UnifiedRegistry 的参数解析系统是一个强大的现代化命令行参数�
 ### 1. 简单参数
 
 ```python
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry import command_registry
+from ncatbot.plugin_system import command_registry
 from ncatbot.core.event import BaseMessageEvent
 
 class MyPlugin(NcatBotPlugin):
@@ -85,7 +85,7 @@ class MyPlugin(NcatBotPlugin):
 ### 1. 短选项
 
 ```python
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry.decorators import option
+from ncatbot.plugin_system import option
 
 class MyPlugin(NcatBotPlugin):
     async def on_load(self):
@@ -156,7 +156,7 @@ class MyPlugin(NcatBotPlugin):
 ### 3. 参数赋值
 
 ```python
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry.decorators import param
+from ncatbot.plugin_system import param
 
 class MyPlugin(NcatBotPlugin):
     async def on_load(self):

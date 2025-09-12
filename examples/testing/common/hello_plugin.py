@@ -3,7 +3,7 @@ HelloPlugin - 用于测试文档验证的简单插件
 """
 from ncatbot.plugin_system.builtin_mixin.ncatbot_plugin import NcatBotPlugin
 from ncatbot.core.event import BaseMessageEvent
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry import command_registry, param, option
+from ncatbot.plugin_system import command_registry, param, option
 
 
 class HelloPlugin(NcatBotPlugin):

@@ -223,7 +223,7 @@ async def test_event_handlers():
 ### 2. 测试权限系统
 
 ```python
-from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorators import admin_only
+from ncatbot.plugin_system import admin_only
 
 async def test_permissions():
     client = TestClient()

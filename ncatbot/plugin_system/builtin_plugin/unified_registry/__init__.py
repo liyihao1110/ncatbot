@@ -14,7 +14,8 @@ from .filter_system import (
 )
 
 # 过滤器装饰器
-from .filter_system.decorators import admin_only, root_only, private_only, group_only
+from .filter_system.decorators import admin_only, root_only, private_only, group_only, on_message
+from .command_system.registry import option, param, option_group
 
 # 命令系统  
 from .command_system import (
@@ -30,10 +31,16 @@ __all__ = [
     # 全局注册实例
     "command_registry", 
     "filter_registry",
+
+    # 装饰器
     "admin_only",
     "root_only",
     "private_only",
     "group_only",
+    "on_message",
+    "option",
+    "param",
+    "option_group",
     
     # 过滤器相关
     "BaseFilter",

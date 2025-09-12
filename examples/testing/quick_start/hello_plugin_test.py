@@ -5,7 +5,7 @@
 
 from ncatbot.utils.testing import TestClient, TestHelper, EventFactory
 from ncatbot.plugin_system import BasePlugin
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry import command_registry, param, option
+from ncatbot.plugin_system import command_registry, param, option
 import asyncio
 
 # 导入通用插件

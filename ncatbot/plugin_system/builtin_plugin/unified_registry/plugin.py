@@ -3,7 +3,7 @@
 import asyncio
 import inspect
 from typing import Dict, Callable, TYPE_CHECKING, List, Tuple, Optional
-from ncatbot.plugin_system.builtin_mixin import NcatBotPlugin
+from ncatbot.plugin_system import NcatBotPlugin
 from ncatbot.plugin_system.builtin_mixin.func_mixin import Func
 from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.utils import CommandSpec
 from ncatbot.plugin_system.event.event import NcatBotEvent

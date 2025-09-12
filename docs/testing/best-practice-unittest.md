@@ -19,7 +19,7 @@ from typing import List, Type
 from ncatbot.utils.testing import TestClient, TestHelper
 from ncatbot.plugin_system import NcatBotPlugin
 from ncatbot.utils import get_log
-from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorators import on_message
+from ncatbot.plugin_system import on_message
 from ncatbot.core.event import BaseMessageEvent
 from ncatbot.core.event.message_segment import MessageArray
 

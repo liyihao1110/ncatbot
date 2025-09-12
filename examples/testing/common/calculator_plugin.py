@@ -3,7 +3,7 @@ CalculatorPlugin - 用于演示 unittest 测试的计算器插件
 来源: docs/testing/best-practice-unittest.md
 """
 from ncatbot.plugin_system import NcatBotPlugin
-from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorators import on_message
+from ncatbot.plugin_system import on_message
 from ncatbot.core.event import BaseMessageEvent
 from ncatbot.core.event.message_segment import MessageArray
 

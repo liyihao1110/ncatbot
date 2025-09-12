@@ -13,7 +13,7 @@ from ncatbot.plugin_system.builtin_plugin.unified_registry.plugin import Unified
 from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import (
     GroupFilter, PrivateFilter, AdminFilter, filter_registry
 )
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry import command_registry
+from ncatbot.plugin_system import command_registry
 from ncatbot.utils.testing import EventFactory
 from .conftest import AsyncTestCase
 

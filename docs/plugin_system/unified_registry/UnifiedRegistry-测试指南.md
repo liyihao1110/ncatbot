@@ -7,7 +7,7 @@
 ```python
 import asyncio
 from ncatbot.utils.testing import TestClient, TestHelper
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry import command_registry
+from ncatbot.plugin_system import command_registry
 from ncatbot.core.event import BaseMessageEvent
 
 async def test_plugin():
@@ -101,7 +101,7 @@ def assert_reply_contains(helper, expected_text):
 ### 2. 过滤器测试
 
 ```python
-from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorators import group_only, admin_only
+from ncatbot.plugin_system import group_only, admin_only
 
 class FilterTestPlugin(NcatBotPlugin):
     name = "FilterTestPlugin"

@@ -9,10 +9,10 @@
 ### 1. 基础设置
 
 ```python
-from ncatbot.plugin_system.builtin_mixin import NcatBotPlugin
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry import command_registry
-from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorators import group_only, private_only, admin_only
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry.decorators import option, param
+from ncatbot.plugin_system import NcatBotPlugin
+from ncatbot.plugin_system import command_registry
+from ncatbot.plugin_system import group_only, private_only, admin_only
+from ncatbot.plugin_system import option, param
 from ncatbot.core.event import BaseMessageEvent
 
 class HelloPlugin(NcatBotPlugin):
@@ -158,7 +158,7 @@ class HelloPlugin(NcatBotPlugin):
 只要收到的消息能够通过过滤器，那么这个函数就会被调用。
 
 ```python
-from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorators import group_only
+from ncatbot.plugin_system import group_only
 
 class HelloPlugin(NcatBotPlugin):
     # 其他代码
@@ -170,10 +170,10 @@ class HelloPlugin(NcatBotPlugin):
 ## 🎯 完整插件示例
 
 ```python
-from ncatbot.plugin_system.builtin_mixin import NcatBotPlugin
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry import command_registry
-from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system.decorators import group_only, admin_only
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry.decorators import option, param
+from ncatbot.plugin_system import NcatBotPlugin
+from ncatbot.plugin_system import command_registry
+from ncatbot.plugin_system import group_only, admin_only
+from ncatbot.plugin_system import option, param
 from ncatbot.core.event import BaseMessageEvent
 
 class MyFirstPlugin(NcatBotPlugin):

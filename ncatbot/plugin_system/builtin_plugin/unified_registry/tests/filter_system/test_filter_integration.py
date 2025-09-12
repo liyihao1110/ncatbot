@@ -134,7 +134,7 @@ class TestFilterWithCommand:
     @pytest.mark.asyncio
     async def test_filter_command_integration(self, unified_plugin, mock_group_message, clean_registries):
         """测试过滤器与命令的集成"""
-        from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry import command_registry
+        from ncatbot.plugin_system import command_registry
         
         # 注册带过滤器的命令
         @command_registry.command("admin_cmd")
@@ -158,7 +158,7 @@ class TestFilterWithCommand:
     @pytest.mark.asyncio
     async def test_filter_command_rejection(self, unified_plugin, mock_private_message, clean_registries):
         """测试过滤器拒绝命令执行"""
-        from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry import command_registry
+        from ncatbot.plugin_system import command_registry
         
         # 注册带群聊过滤器的命令
         @command_registry.command("group_only_cmd")

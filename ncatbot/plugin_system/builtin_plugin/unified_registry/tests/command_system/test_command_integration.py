@@ -7,7 +7,7 @@ import pytest
 import asyncio
 from unittest.mock import Mock, patch
 
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry import command_registry
+from ncatbot.plugin_system import command_registry
 from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.analyzer.func_analyzer import FuncAnalyser
 from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.lexer.tokenizer import StringTokenizer, AdvancedCommandParser
 from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.lexer.message_tokenizer import MessageTokenizer
