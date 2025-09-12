@@ -68,7 +68,7 @@ class CommandResolver:
         self._index = entries
         LOG.debug(f"Resolver 索引构建完成: {len(self._index)}")
 
-    def resolve_from_tokens(self, tokens: List[Token]) -> Optional[CommandEntry]:
+    def resolve_from_tokens(self, tokens: List[Token]) -> Optional[Tuple[str, CommandEntry]]:
         """从首段 tokens 解析命令。
 
         策略：仅接收 TokenType.WORD/QUOTED_STRING 序列作为命令词；
@@ -83,13 +83,20 @@ class CommandResolver:
                 break
 
         if not words:
-            return None
-
+            return None, None
         # 尝试从最长到最短匹配（兼容 allow_hierarchical=true 的场景）
         for k in range(len(words), 0, -1):
             candidate = tuple(self._normalize(w) for w in words[:k])
             if candidate in self._index:
-                return self._index[candidate]
-        return None
+                return "", self._index[candidate]
+
+        if words[0].startswith(("!", "/")):
+            prefix = words[0][0]
+            words[0] = words[0][1:]
+            for k in range(len(words), 0, -1):
+                candidate = tuple(self._normalize(w) for w in words[:k])
+                if candidate in self._index:
+                    return prefix, self._index[candidate]
+        return None, None
 
 

@@ -18,8 +18,9 @@ from .exceptions import (
     TooManyArgumentsError,
     ErrorHandler,
 )
-
+ALLOWED_PREFIXES = ["!", "/", ""]
 __all__ = [
+    "ALLOWED_PREFIXES",
     "CommandSpec", 
     "OptionSpec",
     "OptionGroupSpec",

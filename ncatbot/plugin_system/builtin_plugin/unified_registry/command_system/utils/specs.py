@@ -87,6 +87,7 @@ class CommandSpec:
         self.aliases = []  # 默认为空列表而不是None
         self.description = None
         self.name = None
+        self.prefixes = []
 
     def get_kw_binding(self, option: str) -> dict:
         for value in self.options:

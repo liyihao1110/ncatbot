@@ -15,7 +15,14 @@ async def run_external_command_tests():
         await helper.send_private_message(cmd)
         helper.assert_reply_sent("机器人运行正常")
         helper.clear_history()
+    
+    await helper.send_private_message("non_prefix_hello")
+    helper.assert_reply_sent("Hello, World!")
+    helper.clear_history()
 
+    await helper.send_private_message("!my_group my_group_hello")
+    helper.assert_reply_sent("Hello, Group World!")
+    helper.clear_history()
     print("\n✅ external_command 测试通过")
 
 

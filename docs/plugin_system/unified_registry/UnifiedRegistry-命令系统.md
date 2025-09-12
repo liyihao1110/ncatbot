@@ -382,6 +382,30 @@ class MyPlugin(NcatBotPlugin):
             await event.reply(f"发送消息: {message} (默认发送给当前用户)")
 ```
 
+### 3. 自定义前缀
+
+可以通过 `command_registry.get_registry(prefixes=["!", "/"])` 来设置自定义前缀。
+
+通过该接口直接或间接注册的命令均会受到自定义前缀的影响。
+
+```python
+from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.registry import command_registry
+
+my_registry = command_registry.get_registry(prefixes=["", "!"]) # 无前缀触发或者 ! 触发
+
+my_group = my_registry.group("my_group", description="无前缀组")
+
+@my_registry.command("non_prefix_hello")
+async def non_prefix_hello_cmd(event: BaseMessageEvent):
+    await event.reply("Hello, World!")
+
+@my_group.command("my_group_hello")
+async def my_group_hello_cmd(event: BaseMessageEvent):
+    await event.reply("Hello, Group World!")
+```
+
+- 使用方式: `non_prefix_hello`, `!my_group my_group_hello`
+
 ## 📋 装饰器使用最佳实践
 
 ### 1. 装饰器顺序

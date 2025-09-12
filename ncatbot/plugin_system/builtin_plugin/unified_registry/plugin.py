@@ -65,7 +65,7 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         self.command_registry = command_registry
         self._trigger_engine = None
         self._preprocessor = MessagePreprocessor(
-            require_prefix=True,
+            require_prefix=False,
             prefixes=self.prefixes,
             case_sensitive=False,
         )
@@ -121,8 +121,8 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         tokens: List[Token] = tokenizer.tokenize()
 
         # 从首段 token 流解析命令（严格无前缀冲突则应唯一）
-        match = self._resolver.resolve_from_tokens(tokens)
-        if match is None:
+        prefix, match = self._resolver.resolve_from_tokens(tokens)
+        if match is None or prefix not in match.command.prefixes:
             return False
 
         LOG.debug(f"命中命令: {match.command.func.__name__}")
@@ -131,7 +131,7 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         ignore_words = match.path_words  # 用于参数绑定的 ignore 计数
 
         # 参数绑定：复用 FuncAnalyser 约束
-        bind_result: BindResult = self._binder.bind(match.command, event, ignore_words, self.prefixes)
+        bind_result: BindResult = self._binder.bind(match.command, event, ignore_words, [prefix])
         if not bind_result.ok:
             # 绑定失败：可选择静默或提示（最小实现为静默）
             LOG.debug(f"参数绑定失败: {bind_result.message}")
