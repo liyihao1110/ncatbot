@@ -166,6 +166,8 @@ class Adapter:
                 await callback(event)
             except Exception as e:
                 LOG.error(f"处理事件时出错: {e}")
+        else:
+            LOG.warning(f"未找到事件回调: {post_type}")
 
     async def cleanup(self):
         """清理资源"""
