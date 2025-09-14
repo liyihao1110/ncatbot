@@ -235,43 +235,37 @@ class EventBus:
             result_queues[hid] = result_queue
             
             # 提交任务到线程池
-            LOG.debug(f"提交任务到线程池: {handler.__name__}, {hid}")
+            LOG.info(f"提交任务到线程池: {handler.__name__}, {hid}")
             self.task_queue.put((self._run_handler, handler, event, timeout, result_queue, hid))
-        
-        # 异步等待所有任务完成并收集结果
-        try:
-            for hid, queue in result_queues.items():
-                try:
-                    # LOG.debug(f"等待任务 {hid} {id(queue)} 完成")
-                    result = queue.get(timeout=timeout)
-                    # LOG.debug(f"任务 {hid} 完成")
-                    if isinstance(result, Exception):
-                        LOG.error(f"任务 {handler_meta[hid].__name__} {hid} 发生错误: {result}")
-                        if isinstance(result, TimeoutError):
-                            event.add_exception(HandlerTimeoutError(
-                                meta_data=handler_meta[hid],
-                                handler=hid,
-                                time=timeout
-                            ))
-                        else:
-                            event.add_exception(result)
+            try:
+                result = result_queue.get(timeout=timeout)
+                if isinstance(result, Exception):
+                    LOG.error(f"任务 {handler_meta[hid].__name__} {hid} 发生错误: {result}")
+                    if isinstance(result, TimeoutError):
+                        event.add_exception(HandlerTimeoutError(
+                            meta_data=handler_meta[hid],
+                            handler=hid,
+                            time=timeout
+                        ))
                     else:
-                        event._results.append(result)
-                except asyncio.TimeoutError:
+                        event.add_exception(result)
+                else:
+                    event._results.append(result)
+            except asyncio.TimeoutError:
                     LOG.error(f"任务 {hid} 超时")
                     event.add_exception(HandlerTimeoutError(
                         meta_data=handler_meta[hid],
                         handler=hid,
                         time=timeout
                     ))
-        finally:
+            finally:
             # 清理结果队列
-            try:
-                for hid in result_queues:
+                try:
                     del self.result_queues[hid]
-            except Exception as e:
-                LOG.error(f"清理结果队列时发生错误: {e}")
-                LOG.info(traceback.format_exc())
+                except Exception as e:
+                    LOG.error(f"清理结果队列时发生错误: {e}")
+                    LOG.info(traceback.format_exc())
+        
         try:
             for e in event.exceptions:
                 LOG.error(str(e))
