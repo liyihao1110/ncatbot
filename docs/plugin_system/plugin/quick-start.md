@@ -86,6 +86,6 @@ class MyPlugin(NcatBotPlugin):
 ## 插件类的一些属性
 
 - `self.api`：用于调用 NcatBot API，[API 参考](../../api/README.md)
-- `self._time_task_scheduler`：定时任务调度器，[定时任务](../../plugin_system/time_task_mixin.md)
-- `self.config`：用于存放插件的一些配置数据，[配置](../../plugin_system/config_mixin.md)
+- `self._time_task_scheduler`：定时任务调度器，[定时任务](./time_task_mixin.md)
+- `self.config`：用于存放插件的一些配置数据，[配置](./config_mixin.md)
 
