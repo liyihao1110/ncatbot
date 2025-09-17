@@ -6,6 +6,9 @@ from ncatbot.utils import get_log
 LOG = get_log("ncatbot.plugin_system")
 
 class NcatBotPlugin(BasePlugin, ConfigMixin, TimeTaskMixin):
+    def __init__(self, *args, **kwargs):
+        BasePlugin.__init__(self, *args, **kwargs)
+
     async def on_load(self) -> None:
         LOG.info(f"插件 {self.name} 加载成功")
 

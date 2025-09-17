@@ -16,6 +16,10 @@
 
 ## 🧩 插件系统
 
+### 插件类注册
+
+- [创建插件类](./plugin_system/plugin/quick-start.md)
+
 ### UnifiedRegistry 统一注册系统
 - **[UnifiedRegistry 总览](./plugin_system/unified_registry/UnifiedRegistry-README.md)**
   - [快速开始](./plugin_system/unified_registry/UnifiedRegistry-快速开始.md)

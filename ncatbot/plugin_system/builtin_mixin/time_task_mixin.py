@@ -5,7 +5,9 @@ import re
 import time
 import asyncio
 import functools
+import threading
 from schedule import Scheduler
+from ncatbot.utils.thread_pool import run_coroutine
 
 class TimeTaskScheduler:
     """
@@ -24,6 +26,13 @@ class TimeTaskScheduler:
     def __init__(self):
         self._scheduler = Scheduler()
         self._jobs = []
+        threading.Thread(target=self.loop, daemon=True).start()
+        
+
+    def loop(self):
+        while True:
+            self.step()
+            time.sleep(0.2)
 
     def _parse_time(self, time_str: str) -> dict:
         """
@@ -205,7 +214,7 @@ class TimeTaskScheduler:
                 # 执行任务
                 try:
                     if asyncio.iscoroutinefunction(job_info["func"]):
-                        asyncio.run_coroutine_threadsafe(job_info["func"](*final_args, **final_kwargs), asyncio.get_event_loop())
+                        run_coroutine(job_info["func"], *final_args, **final_kwargs)
                     else:
                         job_info["func"](*final_args, **final_kwargs)
                     job_info["run_count"] += 1
@@ -328,7 +337,8 @@ class TimeTaskMixin:
     - 支持动态参数生成
     """
 
-    _time_task_scheduler: TimeTaskScheduler
+    _time_task_scheduler: TimeTaskScheduler = TimeTaskScheduler()
+
     # TODO 防止某些任务导致调度器饿死(超时机制)
     @final
     def add_scheduled_task(
