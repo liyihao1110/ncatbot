@@ -198,3 +198,9 @@ def install_or_update_napcat():
             LOG.info("当前 napcat 已是最新版本")
     else:
         return True
+
+def main():
+    install_napcat("install")
+    
+if __name__ == '__main__':
+    main()
