@@ -235,7 +235,7 @@ class EventBus:
             result_queues[hid] = result_queue
             
             # 提交任务到线程池
-            LOG.info(f"提交任务到线程池: {handler.__name__}, {hid}")
+            LOG.debug(f"提交任务到线程池: {handler.__name__}, {hid}")
             self.task_queue.put((self._run_handler, handler, event, timeout, result_queue, hid))
             try:
                 result = result_queue.get(timeout=timeout)
