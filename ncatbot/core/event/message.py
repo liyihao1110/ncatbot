@@ -1,5 +1,5 @@
 from typing import Union, Literal, TYPE_CHECKING
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from ncatbot.core.event.event_data import MessageEventData
 from ncatbot.utils import status
 from ncatbot.core.event.sender import PrivateSender, GroupSender
@@ -7,7 +7,8 @@ from ncatbot.core.event.sender import PrivateSender, GroupSender
 if TYPE_CHECKING:
     from ncatbot.core.legacy import MessageChain
 
-class BaseMessageEvent(MessageEventData):
+
+class BaseMessageEvent(MessageEventData, ABC):
     message_type: Literal["private", "group"] = None # 上级会获取
     sub_type: str = None # 下级会细化 Literal, 上级会获取
     
@@ -15,11 +16,11 @@ class BaseMessageEvent(MessageEventData):
         return hasattr(self, "group_id")
     
     @abstractmethod
-    async def reply(self):
+    async def reply(self, *args, **kwargs):
         pass
     
     @abstractmethod
-    def reply_sync(self):
+    def reply_sync(self, *args, **kwargs):
         pass
     
     def get_core_properties_str(self):
