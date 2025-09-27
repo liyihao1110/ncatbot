@@ -10,19 +10,11 @@ from ..utils import (
     CommandRegistrationError,
     ErrorHandler,
     CommandSpec,
-    ALLOWED_PREFIXES,
 )
 from ncatbot.utils import get_log
 
 LOG = get_log(__name__)
 
-def check_prefixes(prefixes: Optional[List[str]]) -> List[str]:
-    """检查前缀"""
-    if prefixes is None:
-        return
-    for prefix in prefixes:
-        if prefix not in ALLOWED_PREFIXES:
-            raise ValueError(f"Invalid prefix: {prefix}")
 
 class CommandGroup:
     """命令组
@@ -48,8 +40,7 @@ class CommandGroup:
         """命令装饰器"""
         def decorator(func: Callable) -> Callable:
             # 验证装饰器 - 延迟导入避免循环导入
-            
-            check_prefixes(prefixes)
+
             command_spec = FuncAnalyser(func).analyze()
             command_spec.aliases = aliases if aliases else []
             command_spec.description = description if description else ""
@@ -68,14 +59,12 @@ class CommandGroup:
         """创建子命令组"""
         if name in self.subgroups:
             return self.subgroups[name]
-        check_prefixes(prefixes)
         subgroup = CommandGroup(name, parent=self, description=description, prefixes=prefixes if prefixes else self.prefixes)
         self.subgroups[name] = subgroup
         return subgroup
     
     def set_prefixes(self, prefixes: List[str]):
         """设置前缀"""
-        check_prefixes(prefixes)
         self.prefixes = prefixes
     
     def _register_command(self, command_spec: CommandSpec):
@@ -131,7 +120,6 @@ class ModernRegistry:
     error_handler = ErrorHandler()
 
     def __init__(self, prefixes: Optional[List[str]] = None):
-        check_prefixes(prefixes)
         self.prefixes: List[str] = prefixes if prefixes else ["/"]
         LOG.debug("现代化命令注册器初始化完成")
     
@@ -154,8 +142,11 @@ class ModernRegistry:
     @classmethod
     def get_registry(cls, prefixes: Optional[List[str]] = None) -> "ModernRegistry":
         """获取注册器"""
-        return cls(prefixes)        
+        new_registry = cls(prefixes)
+        command_registries.append(new_registry)
+        return new_registry
 
 
 # 创建全局实例
 command_registry = ModernRegistry()
+command_registries = [command_registry]

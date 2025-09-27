@@ -19,7 +19,7 @@ class SystemManager(NcatBotPlugin):
         pass
 
     @command_registry.command("ncatbot_status", aliases=["ncs"])
-    @admin_only
+    @root_only
     async def get_status(self, event: BaseMessageEvent) -> None:
         text = f"ncatbot 状态:\n"
         text += f"插件数量: {len(self._loader.plugins)}\n"
@@ -31,6 +31,7 @@ class SystemManager(NcatBotPlugin):
         await event.reply(text)
 
     @command_registry.command("ncatbot_help", aliases=["nch"])
+    @root_only
     async def get_help(self, event: BaseMessageEvent) -> None:
         text = f"ncatbot 帮助:\n"
         text += f"/ncs 查看ncatbot状态\n"

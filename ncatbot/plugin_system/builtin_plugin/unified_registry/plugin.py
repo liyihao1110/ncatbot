@@ -14,7 +14,7 @@ from .command_system.lexer.tokenizer import StringTokenizer, Token
 from .trigger.resolver import CommandResolver
 from .trigger.binder import ArgumentBinder
 from .filter_system import filter_registry, FilterValidator
-from .command_system.registry.registry import command_registry
+from .command_system.registry.registry import command_registry, command_registries
 from .legacy_registry import legacy_registry    
 
 
@@ -51,7 +51,6 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         
         # 设置过滤器验证器
         self._filter_validator = FilterValidator()
-        self.prefixes = ["/", "!"]
         
         # 初始化插件映射
         self.func_plugin_map: Dict[Callable, NcatBotPlugin] = {}
@@ -60,15 +59,6 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         self.filter_registry = filter_registry
         self.command_registry = command_registry
         self._trigger_engine = None
-        self._preprocessor = MessagePreprocessor(
-            require_prefix=False,
-            prefixes=self.prefixes,
-            case_sensitive=False,
-        )
-        self._resolver = CommandResolver(
-            allow_hierarchical=False,
-            case_sensitive=False,
-        )
         self._binder = ArgumentBinder()
         self._initialized = False
     
@@ -149,6 +139,25 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
 
         self._initialized = True
 
+        self.prefixes = list(dict.fromkeys(prefix
+                                           for registry in command_registries
+                                           for prefix in registry.prefixes))
+        if "" in self.prefixes:
+            self.prefixes.remove("")
+        LOG.info(f"命令前缀集合: {self.prefixes}")
+
+        self._preprocessor = MessagePreprocessor(
+            require_prefix=False,
+            prefixes=self.prefixes,
+            case_sensitive=False,
+        )
+
+        self._resolver = CommandResolver(
+            allow_hierarchical=False,
+            prefixes=self.prefixes,
+            case_sensitive=False,
+        )
+
         # 1) 检查消息级前缀集合冲突
         norm_prefixes = [self._normalize_case(p) for p in self._preprocessor.prefixes]
         for i, p1 in enumerate(norm_prefixes):
@@ -162,6 +171,8 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
 
         # 2) 采集命令定义（仅带 __is_command__ 的函数）
         # CommandGroup.get_all_commands 返回 {path_tuple: func}
+
+        # TODO: 这里的原始逻辑就是只处理了command_registry中的所有命令与别称，不确定是否需要修改
         command_map = command_registry.get_all_commands()
         alias_map = command_registry.get_all_aliases()
 

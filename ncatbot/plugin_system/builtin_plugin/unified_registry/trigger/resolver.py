@@ -25,9 +25,10 @@ class CommandEntry:
 
 
 class CommandResolver:
-    def __init__(self, *, case_sensitive: bool, allow_hierarchical: bool) -> None:
+    def __init__(self, *, case_sensitive: bool, prefixes: list[str], allow_hierarchical: bool) -> None:
         self.case_sensitive = case_sensitive
         self.allow_hierarchical = allow_hierarchical
+        self.prefixes_tuple = tuple(prefix for prefix in prefixes)
         # 哈希索引：规范化路径字符串 → CommandEntry
         self._index: Dict[Tuple[str, ...], CommandEntry] = {}
 
@@ -90,7 +91,7 @@ class CommandResolver:
             if candidate in self._index:
                 return "", self._index[candidate]
 
-        if words[0].startswith(("!", "/")):
+        if words[0].startswith(self.prefixes_tuple):
             prefix = words[0][0]
             words[0] = words[0][1:]
             for k in range(len(words), 0, -1):
