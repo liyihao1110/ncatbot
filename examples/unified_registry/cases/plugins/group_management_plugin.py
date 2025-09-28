@@ -1,7 +1,7 @@
 from ncatbot.plugin_system import NcatBotPlugin
 from ncatbot.plugin_system import command_registry
 from ncatbot.plugin_system import option, param
-from ncatbot.plugin_system import group_only, admin_only
+from ncatbot.plugin_system import group_filter, admin_filter
 from ncatbot.core.event import BaseMessageEvent
 from ncatbot.utils import get_log
 
@@ -23,8 +23,8 @@ class GroupManagementPlugin(NcatBotPlugin):
             }
         }
 
-    @group_only
-    @admin_only
+    @group_filter
+    @admin_filter
     @command_registry.command("mute", description="禁言用户")
     @param(name="duration", default=60, help="禁言时长（秒）")
     async def mute_cmd(self, event: BaseMessageEvent, user_id: str, duration: int = 60):
@@ -36,8 +36,8 @@ class GroupManagementPlugin(NcatBotPlugin):
         LOG.info(f"管理员 {event.user_id} 禁言用户 {user_id} {duration}秒")
         await event.reply(f"🔇 已禁言用户 {user_id}，时长 {duration} 秒")
 
-    @group_only
-    @admin_only
+    @group_filter
+    @admin_filter
     @command_registry.command("unmute", description="解除禁言")
     async def unmute_cmd(self, event: BaseMessageEvent, user_id: str):
         if user_id in self.muted_users:
@@ -47,8 +47,8 @@ class GroupManagementPlugin(NcatBotPlugin):
         else:
             await event.reply("❌ 该用户未被禁言")
 
-    @group_only
-    @admin_only
+    @group_filter
+    @admin_filter
     @command_registry.command("kick", description="踢出用户")
     @option(short_name="b", long_name="ban", help="同时拉黑用户")
     async def kick_cmd(self, event: BaseMessageEvent, user_id: str, ban: bool = False):
@@ -56,7 +56,7 @@ class GroupManagementPlugin(NcatBotPlugin):
         LOG.info(f"管理员 {event.user_id} {action}用户 {user_id}")
         await event.reply(f"👢 已{action}用户 {user_id}")
 
-    @group_only
+    @group_filter
     @command_registry.command("group_info", description="查看群信息")
     async def group_info_cmd(self, event: BaseMessageEvent):
         group_id = event.group_id

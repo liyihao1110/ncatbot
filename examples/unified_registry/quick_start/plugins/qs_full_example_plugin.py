@@ -1,6 +1,6 @@
 from ncatbot.plugin_system import NcatBotPlugin
 from ncatbot.plugin_system import command_registry
-from ncatbot.plugin_system import group_only, admin_only
+from ncatbot.plugin_system import group_filter, admin_filter
 from ncatbot.plugin_system import option, param
 from ncatbot.core.event import BaseMessageEvent
 
@@ -34,8 +34,8 @@ class QSFullExamplePlugin(NcatBotPlugin):
         else:
             await event.reply("支持的操作: add, sub, mul, div")
 
-    @group_only
-    @admin_only
+    @group_filter
+    @admin_filter
     @command_registry.command("announce", description="发布公告")
     @option(short_name="a", long_name="all", help="发送给所有群员")
     async def announce_cmd(self, event: BaseMessageEvent, message: str, all: bool = False):

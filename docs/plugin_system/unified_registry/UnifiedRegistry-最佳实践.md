@@ -13,7 +13,7 @@
 ```python
 from ncatbot.plugin_system import NcatBotPlugin
 from ncatbot.plugin_system import command_registry
-from ncatbot.plugin_system import group_only, admin_only
+from ncatbot.plugin_system import group_filter, admin_filter
 from ncatbot.plugin_system import option, param
 from ncatbot.core.event import BaseMessageEvent
 from ncatbot.utils import get_log
@@ -39,7 +39,7 @@ class WellOrganizedPlugin(NcatBotPlugin):
         self.stats["command_count"] += 1
         await event.reply("你好！")
     
-    @admin_only
+    @admin_filter
     @command_registry.command("stats", description="查看统计信息")
     async def stats_cmd(self, event: BaseMessageEvent):
         await event.reply(f"命令使用次数: {self.stats['command_count']}")
@@ -120,27 +120,27 @@ class FilterReuseExample(NcatBotPlugin):
     def _register_user_management(self):
         # 注意这里的命令属于类外命令，无法进行 self 传参
         """用户管理命令（管理员+群聊）"""
-        @admin_only
-        @group_only
+        @admin_filter
+        @group_filter
         @command_registry.command("ban_user")
         async def ban_user_cmd(event: BaseMessageEvent, user_id: str):
             await event.reply(f"封禁用户: {user_id}")
             
         
-        @admin_only
-        @group_only
+        @admin_filter
+        @group_filter
         @command_registry.command("unban_user")
         async def unban_user_cmd(event: BaseMessageEvent, user_id: str):
             await event.reply(f"解封用户: {user_id}")
     
     def _register_system_management(self):
         """系统管理命令（仅管理员）"""
-        @admin_only
+        @admin_filter
         @command_registry.command("system_status")
         async def system_status_cmd(event: BaseMessageEvent):
             await event.reply("系统状态正常")
         
-        @admin_only
+        @admin_filter
         @command_registry.command("restart_service")
         async def restart_service_cmd(event: BaseMessageEvent, service: str):
             await event.reply(f"重启服务: {service}")
@@ -240,8 +240,8 @@ class DecoratorOrderExample(NcatBotPlugin):
         pass
 
     # 正确顺序：过滤器 → 命令注册 → 参数装饰器
-    @admin_only                           # 1. 过滤器在最上面
-    @group_only                          # 2. 多个过滤器可以堆叠
+    @admin_filter                           # 1. 过滤器在最上面
+    @group_filter                          # 2. 多个过滤器可以堆叠
     @command_registry.command("deploy")  # 3. 命令注册器
     @option("v", "verbose")              # 4. 选项装饰器
     @param("env", default="dev")         # 5. 参数装饰器

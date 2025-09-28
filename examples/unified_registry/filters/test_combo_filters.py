@@ -35,7 +35,7 @@ async def run_combo_filters_tests():
     finally:
         status.global_access_manager = original_manager
 
-    # filters("admin_only", "group_only") + 命令
+    # filters("admin_filter", "group_filter") + 命令
     original_manager = status.global_access_manager
     class _AdminManager2:
         def user_has_role(self, user_id, role):

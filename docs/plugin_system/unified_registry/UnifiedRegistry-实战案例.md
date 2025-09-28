@@ -79,7 +79,7 @@ class QABotPlugin(NcatBotPlugin):
 ### 2. 群管理功能插件
 
 ```python
-from ncatbot.plugin_system import group_only, admin_only
+from ncatbot.plugin_system import group_filter, admin_filter
 
 class GroupManagementPlugin(NcatBotPlugin):
     name = "GroupManagementPlugin"
@@ -95,8 +95,8 @@ class GroupManagementPlugin(NcatBotPlugin):
             }
         }
 
-    @group_only
-    @admin_only
+    @group_filter
+    @admin_filter
     @command_registry.command("mute", description="禁言用户")
     @param(name="duration", default=60, help="禁言时长（秒）")
     async def mute_cmd(self, event: BaseMessageEvent, user_id: str, duration: int = 60):
@@ -111,8 +111,8 @@ class GroupManagementPlugin(NcatBotPlugin):
         # 这里应该调用真实的禁言API
         await event.reply(f"🔇 已禁言用户 {user_id}，时长 {duration} 秒")
     
-    @group_only
-    @admin_only
+    @group_filter
+    @admin_filter
     @command_registry.command("unmute", description="解除禁言")
     async def unmute_cmd(self, event: BaseMessageEvent, user_id: str):
         """解除用户禁言"""
@@ -123,8 +123,8 @@ class GroupManagementPlugin(NcatBotPlugin):
         else:
             await event.reply("❌ 该用户未被禁言")
     
-    @group_only
-    @admin_only
+    @group_filter
+    @admin_filter
     @command_registry.command("kick", description="踢出用户")
     @option(short_name="b", long_name="ban", help="同时拉黑用户")
     async def kick_cmd(self, event: BaseMessageEvent, user_id: str, ban: bool = False):
@@ -135,7 +135,7 @@ class GroupManagementPlugin(NcatBotPlugin):
         # 这里应该调用真实的踢人API
         await event.reply(f"👢 已{action}用户 {user_id}")
     
-    @group_only
+    @group_filter
     @command_registry.command("group_info", description="查看群信息")
     async def group_info_cmd(self, event: BaseMessageEvent):
         """查看群信息"""

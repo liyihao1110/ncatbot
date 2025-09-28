@@ -20,7 +20,10 @@ def get_napcat_dir():
     if platform.system() == "Windows":
         return WINDOWS_NAPCAT_DIR
     elif platform.system() == "Linux":
-        return LINUX_NAPCAT_DIR
+        target_dir = LINUX_NAPCAT_DIR
+        if os.path.exists(target_dir):
+            return target_dir
+        return os.path.expanduser("~/Napcat/opt/QQ/resources/app/app_launcher/napcat")
     else:
         LOG.warning("不支持的系统类型: %s, 可能需要自行适配", platform.system())
         LOG.warning("默认使用工作目录下 napcat/ 目录")

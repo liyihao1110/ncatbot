@@ -416,7 +416,7 @@ class MyPlugin(NcatBotPlugin):
         pass
 
     # ✅ 正确的装饰器顺序
-    @admin_only                    # 过滤器在最上面
+    @admin_filter                    # 过滤器在最上面
     @command_registry.command("admin")  # 命令注册器其次
     @option("v", "verbose")        # 参数装饰器在最后
     @param("level", default=1)
@@ -425,7 +425,7 @@ class MyPlugin(NcatBotPlugin):
     
     # ❌ 错误的顺序（会导致错误）
     # @command_registry.command("wrong")
-    # @admin_only  # 过滤器装饰器应该在命令装饰器之前
+    # @admin_filter  # 过滤器装饰器应该在命令装饰器之前
 ```
 
 ### 2. 参数命名规范

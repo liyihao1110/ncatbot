@@ -26,18 +26,6 @@ from ncatbot.core.adapter.nc.utils import (
 LOG = get_log("ncatbot.core.adapter.nc.install")    
 
 
-def get_napcat_dir():
-    """获取 napcat 安装目录"""
-    if platform.system() == "Windows":
-        return WINDOWS_NAPCAT_DIR
-    elif platform.system() == "Linux":
-        return LINUX_NAPCAT_DIR
-    else:
-        LOG.warning("不支持的系统类型: %s, 可能需要自行适配", platform.system())
-        LOG.warning("默认使用工作目录下 napcat/ 目录")
-        return os.path.join(os.getcwd(), "napcat")
-
-
 def get_napcat_version():
     """从GitHub获取 napcat 版本号"""
     github_proxy_url = get_proxy_url()

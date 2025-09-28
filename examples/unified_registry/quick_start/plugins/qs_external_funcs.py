@@ -1,6 +1,6 @@
 from ncatbot.plugin_system import NcatBotPlugin
 from ncatbot.plugin_system import command_registry
-from ncatbot.plugin_system import admin_only
+from ncatbot.plugin_system import admin_filter
 from ncatbot.core.event import BaseMessageEvent
 
 
@@ -9,7 +9,7 @@ async def outside_command(event: BaseMessageEvent):
     await event.reply("这是在插件类外定义的命令")
 
 
-@admin_only
+@admin_filter
 @command_registry.command("external_admin")
 async def external_admin_cmd(event: BaseMessageEvent, action: str):
     await event.reply(f"执行管理员操作: {action}")

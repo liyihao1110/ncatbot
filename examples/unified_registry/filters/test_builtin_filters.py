@@ -12,17 +12,17 @@ async def run_builtin_filters_tests():
 
     client.register_plugin(BuiltinFiltersPlugin)
 
-    # group_only 触发（任意群聊文本即可）
+    # group_filter 触发（任意群聊文本即可）
     await helper.send_group_message("任意群聊消息")
     helper.assert_reply_sent("收到一条群聊消息")
     helper.clear_history()
 
-    # private_only 触发
+    # private_filter 触发
     await helper.send_private_message("任意私聊消息")
     helper.assert_reply_sent("收到一条私聊消息")
     helper.clear_history()
 
-    # admin_only 命令（ban）
+    # admin_filter 命令（ban）
     original_manager = status.global_access_manager
     class _MockManager:
         def user_has_role(self, user_id, role):
@@ -44,7 +44,7 @@ async def run_builtin_filters_tests():
     finally:
         status.global_access_manager = original_manager
 
-    # admin_only 纯过滤函数
+    # admin_filter 纯过滤函数
     original_manager = status.global_access_manager
     class _AdminManager2:
         def user_has_role(self, user_id, role):
@@ -57,7 +57,7 @@ async def run_builtin_filters_tests():
     finally:
         status.global_access_manager = original_manager
 
-    # root_only 命令
+    # root_filter 命令
     # 将当前用户模拟为 root（沿用权限接口，直接返回 True）
     original_manager = status.global_access_manager
     class _RootManager:

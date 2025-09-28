@@ -223,7 +223,7 @@ async def test_event_handlers():
 ### 2. 测试权限系统
 
 ```python
-from ncatbot.plugin_system import admin_only
+from ncatbot.plugin_system import admin_filter
 
 async def test_permissions():
     client = TestClient()
@@ -238,7 +238,7 @@ async def test_permissions():
         async def on_load(self):
             pass
 
-        @admin_only
+        @admin_filter
         async def admin_cmd(self, event: BaseMessageEvent):
             await event.reply("管理员命令执行成功")
     

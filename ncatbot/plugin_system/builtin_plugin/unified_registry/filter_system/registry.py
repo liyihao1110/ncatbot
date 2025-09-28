@@ -144,20 +144,20 @@ class FilterRegistry:
 
     # 委托给内置 decorator 注册
     def group_filter(self):
-        from .decorators import group_only
-        return group_only
+        from .decorators import group_filter
+        return group_filter
     
     def private_filter(self):
-        from .decorators import private_only
-        return private_only
+        from .decorators import private_filter
+        return private_filter
     
     def admin_filter(self):
-        from .decorators import admin_only
-        return admin_only
+        from .decorators import admin_filter
+        return admin_filter
     
     def root_filter(self):
-        from .decorators import root_only
-        return root_only
+        from .decorators import root_filter
+        return root_filter
     
     def filters(self, *filters: Union[BaseFilter, str]):
         """为函数添加多个过滤器"""
@@ -171,6 +171,12 @@ class FilterRegistry:
         """清除所有注册的过滤器"""
         self._filters.clear()
         self._function_filters.clear()
+    
+    # 兼容
+    admin_only = admin_filter
+    root_only = root_filter
+    private_only = private_filter
+    group_only = group_filter
 
 # 全局单例
 filter_registry = FilterRegistry()

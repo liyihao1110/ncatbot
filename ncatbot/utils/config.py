@@ -11,12 +11,29 @@ from typing import Any, List, Optional, Self, TextIO
 
 import rich  # 这东西真需要吗
 import yaml
+import random
+import string
 from ncatbot.utils.logger import get_log
 from ncatbot.utils.status import status
 
 logger = get_log("Config")
 CONFIG_PATH = os.getenv("NCATBOT_CONFIG_PATH", os.path.join(os.getcwd(), "config.yaml"))
 
+def strong_password_check(password: str) -> bool:
+    # 包含 数字、大小写字母、特殊符号，至少 12 位
+    special_chars = "!@#$%^&*()_+-=[]{}|;:,.<>?"
+    return len(password) >= 12 and \
+            any(char.isdigit() for char in password) and \
+            any(char.isalpha() for char in password) and \
+            any(char in special_chars for char in password)
+
+def generate_strong_password(length=16):
+    special_chars = "!@#$%^&*()_+-=[]{}|;:,.<>?"
+    all_chars = string.ascii_letters + string.digits + special_chars
+    while True:
+        password = ''.join(random.choice(all_chars) for _ in range(length))
+        if strong_password_check(password):
+            return password
 
 @dataclass(frozen=False)
 class BaseConfig:
@@ -70,6 +87,17 @@ class BaseConfig:
     def asdict(self) -> dict[str, Any]:
         """将实例转换为字典。"""
         return asdict(self)
+
+    def save(self) -> None:
+        """保存当前配置到默认路径。"""
+        data = self.asdict()
+        try:
+            with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+                yaml.dump(data, f, allow_unicode=True, sort_keys=False)
+            logger.info(f"配置已保存到 {CONFIG_PATH}")
+        except Exception as e:
+            logger.error(f"保存配置失败: {e}")
+            raise ValueError(f"保存配置失败: {e}") from e
 
     def __replace__(self, **kwargs: Any) -> Self:
         """替换属性值。
@@ -161,23 +189,26 @@ class NapCatConfig(BaseConfig):
         self.webui_port = parsed.port
 
     def _security_check(self) -> None:
-        def strong_password_check(password: str) -> bool:
-            # 包含 数字、大小写字母、特殊符号，至少 12 位
-            special_chars = "!@#$%^&*()_+-=[]{}|;:,.<>?"
-            return len(password) >= 12 and \
-                 any(char.isdigit() for char in password) and \
-                 any(char.isalpha() for char in password) and \
-                 any(char in special_chars for char in password)
-        
         if self.ws_listen_ip == "0.0.0.0":
             if not strong_password_check(self.ws_token):
                 logger.error("WS 令牌强度不足，请修改为强密码，或者修改 ws_listen_ip 本地监听 `localhost`")
-                raise ValueError("WS 令牌强度不足, 请修改为强密码, 或者修改 ws_listen_ip 本地监听 `localhost`")
+                if input("WS 令牌强度不足，是否修改为强密码？(y/n): ").lower() == 'y':
+                    pwd = generate_strong_password()
+                    logger.info(f"已生成强密码: {pwd}")
+                    self.ws_token = pwd
+                    self.save()
+                else:
+                    raise ValueError("WS 令牌强度不足, 请修改为强密码, 或者修改 ws_listen_ip 本地监听 `localhost`")
 
         if self.enable_webui:   
             if not strong_password_check(self.webui_token):
-                logger.error("WebUI 令牌强度不足，请修改为强密码")
-                raise ValueError("WebUI 令牌强度不足, 请修改为强密码")
+                if input("WebUI 令牌强度不足，是否修改为强密码？(y/n): ").lower() == 'y':
+                    pwd = generate_strong_password()
+                    logger.info(f"已生成强密码: {pwd}")
+                    self.webui_token = pwd
+                    self.save()
+                else:
+                    raise ValueError("WebUI 令牌强度不足, 请修改为强密码")
 
     def validate(self) -> None:
         """验证配置，生成自动获取配置，并更新状态"""
@@ -252,7 +283,15 @@ class Config(BaseConfig):
 
     # 暂时没用的
 
-
+    def asdict(self) -> dict[str, Any]:
+        """将实例转换为字典。"""
+        napcat = self.napcat.asdict()
+        plugin = self.plugin.asdict()
+        base = {
+            k: v for k, v in self.__dict__.items() if isinstance(v, (str, int, bool, type(None), tuple, list))
+        }
+        return {"napcat": napcat, "plugin": plugin, **base}
+    
     @classmethod
     def create_from_file(cls, path: str) -> "Config":
         """从 YAML 文件加载配置。
@@ -340,8 +379,8 @@ class Config(BaseConfig):
         self.plugin.validate()
         self.napcat.validate()
 
-    @staticmethod
-    def load() -> "Config":
+    @classmethod
+    def load(cls) -> "Config":
         """从默认路径加载配置。
 
         Returns:
@@ -353,58 +392,7 @@ class Config(BaseConfig):
         except Exception as e:
             logger.error(f"加载配置失败: {e}")
             cfg = Config()
-        return cfg        
-
-    def save_permanent_config(self, key: str, value: Any) -> None:
-        """有些配置是永久性的，需要保存到文件中。
-        Args:
-            key: 配置键
-            value: 配置值
-        """
-        try:
-            # 读取现有配置文件
-            try:
-                with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-                    conf_dict = yaml.safe_load(f) or {}
-            except FileNotFoundError:
-                logger.warning(f"配置文件 {CONFIG_PATH} 不存在，将创建新文件")
-                conf_dict = {}
-
-            # 处理嵌套键 (例如 "napcat.ws_token")
-            if "." in key:
-                parts = key.split(".")
-                section, subkey = parts[0], parts[1]
-
-                # 确保该部分存在
-                if section not in conf_dict:
-                    conf_dict[section] = {}
-
-                # 更新子键
-                conf_dict[section][subkey] = value
-                logger.info(f"已更新配置项 {section}.{subkey}")
-            else:
-                # 直接更新顶级键
-                conf_dict[key] = value
-                logger.info(f"已更新配置项 {key}")
-
-            # 更新内存中的配置值
-            if "." in key:
-                parts = key.split(".")
-                section, subkey = parts[0], parts[1]
-                if hasattr(self, section) and hasattr(getattr(self, section), subkey):
-                    setattr(getattr(self, section), subkey, value)
-            elif hasattr(self, key):
-                setattr(self, key, value)
-
-            # 写回配置文件
-            with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-                yaml.dump(conf_dict, f, allow_unicode=True, sort_keys=False)
-
-            logger.info(f"配置已保存到 {CONFIG_PATH}")
-
-        except Exception as e:
-            logger.error(f"保存配置失败: {e}")
-            raise ValueError(f"保存配置失败: {e}") from e
+        return cfg
 
     def update_config(self, **kwargs: Any) -> None:
         """更新配置。"""
