@@ -12,8 +12,6 @@ NAPCAT_CLI_URL = (
 )
 PYPI_URL = "https://mirrors.aliyun.com/pypi/simple/"
 
-NAPCAT_CLI_PATH = f"{LINUX_NAPCAT_DIR}/napcat_cli"
-
 REQUEST_SUCCESS = "ok"
 NAPCAT_WEBUI_SALT = "napcat"
 
@@ -107,7 +105,6 @@ __all__ = [
     "INSTALL_SCRIPT_URL",
     "NAPCAT_CLI_URL",
     "PYPI_URL",
-    "NAPCAT_CLI_PATH",
     "REQUEST_SUCCESS",
     "OFFICIAL_GROUP_MESSAGE_EVENT",
     "OFFICIAL_PRIVATE_MESSAGE_EVENT",
