@@ -8,7 +8,7 @@ LOG = get_log("ncatbot.core.event.request")
 class RequestEvent(BaseEventData):
     post_type: Literal["request"] = None
     request_type: Literal["friend", "group"] = None
-    commnet: str = None # 验证信息
+    comment: str = None # 验证信息
     flag: str = None # 验证 flag
     
     async def approve(self, approve: bool = True, remark: str = None, reason: str = None):

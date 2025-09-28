@@ -110,22 +110,20 @@ class NapCatConfig(BaseConfig):
 
     ws_uri: str = "ws://localhost:3001"
     """WebSocket URI 地址"""
-    ws_token: str = "ncatbot"
+    ws_token: str = "NcatBot"
     """WebSocket 令牌"""
     ws_listen_ip: str = "localhost"
     """WebSocket 监听 IP"""
     webui_uri: str = "http://localhost:6099"
     """WebUI URI 地址"""
-    webui_token: str = "napcat"
+    webui_token: str = "NcatBot"
     """WebUI 令牌"""
-    enable_webui: bool = False
+    enable_webui: bool = True
     """是否启用 WebUI"""
     check_napcat_update: bool = False
     """是否检查 NapCat 更新"""
     stop_napcat: bool = False
     """退出时是否停止 NapCat"""
-    suppress_client_initial_error: bool = False
-    """是否抑制客户端初始错误"""
     remote_mode: bool = False
     """是否启用远程模式"""
     report_self_message: bool = False
@@ -237,7 +235,7 @@ class Config(BaseConfig):
     """根用户 QQ 号"""
     bt_uin: str = _default_bt_uin
     """机器人 QQ 号"""
-    enable_webui_interaction: bool = False
+    enable_webui_interaction: bool = True
     """是否启用 WebUI"""
     debug: bool = False
     """是否启用调试模式, 调试模式会打印部分异常的堆栈信息"""

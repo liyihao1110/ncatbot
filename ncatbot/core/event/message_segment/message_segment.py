@@ -12,6 +12,7 @@ from dataclasses import dataclass, field, fields
 from urllib.parse import urljoin
 from typing import Literal, Union, Any, TYPE_CHECKING, TypeVar, Dict, Type, Iterable
 from ncatbot.utils import get_log, NcatBotError, status
+from ncatbot.utils.thread_pool import run_coroutine
 if TYPE_CHECKING:
     from ncatbot.core.event.message_segment.message_array import MessageArray
     from ncatbot.core.event.event_data import MessageEventData
@@ -190,6 +191,12 @@ class DownloadableMessageSegment(MessageSegment):
             LOG.error(f"不支持的协议: {self.file}")
             return None
         return path
+
+    async def download(self, dir, name: str=None):
+        return await self.download_to(dir, name)
+
+    def download_sync(self, dir: str, name: str=None):
+        return run_coroutine(self.download, dir, name)
 
 @dataclass(repr=False)
 class PlainText(MessageSegment):
