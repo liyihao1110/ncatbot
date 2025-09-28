@@ -132,11 +132,12 @@ class MessageAPI(BaseAPI):
         status = MessageAPIReturnStatus(result)
         return status.message_id
     
-    async def forward_group_single_msg(self, group_id: Union[str, int], message_id: Union[str, int]) -> str:
+    async def forward_group_single_msg(self, group_id: Union[str, int], message_id: Union[str, int]) -> None:
         """向群聊转发单条消息（顶级接口，一般不开放使用）"""
         result = await self.async_callback("/forward_group_single_msg", {"group_id": group_id, "message_id": message_id})
-        status = MessageAPIReturnStatus(result)
-        return status.message_id
+        APIReturnStatus.raise_if_failed(result)
+        # status = MessageAPIReturnStatus(result)
+        # return status.message_id
     
     async def group_poke(self, group_id: Union[str, int], user_id: Union[str, int]) -> None:
         """群戳一戳"""
@@ -244,8 +245,9 @@ class MessageAPI(BaseAPI):
     async def forward_private_single_msg(self, user_id: Union[str, int], message_id: Union[str, int]) -> str:
         """向私聊转发单条消息（顶级接口，一般不开放使用）"""
         result = await self.async_callback("/forward_private_single_msg", {"user_id": user_id, "message_id": message_id})
-        status = MessageAPIReturnStatus(result)
-        return status.message_id
+        APIReturnStatus.raise_if_failed(result)
+        # status = MessageAPIReturnStatus(result)
+        # return status.message_id
     
     async def friend_poke(self, user_id: Union[str, int]) -> None:
         """私戳一戳"""

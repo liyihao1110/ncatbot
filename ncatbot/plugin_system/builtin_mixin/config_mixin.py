@@ -47,8 +47,15 @@ class ConfigMixin(CommandMixin):
             self._registered_configs: Dict[str, Config] = {}
         return self._registered_configs
     
-    def register_config(self, name: str, default_value: Any, description: str = "", value_type: Union[str, type] = str, metadata: Dict[str, Any] = None):
+    def register_config(self, name: str, default_value: Any = None, description: str = "", value_type: Union[str, type] = str, metadata: Dict[str, Any] = None, *args, **kwargs):
         # TODO: 自动生成描述
+        # 兼容旧版
+        if "default" in kwargs:
+            default_value = kwargs["default"]
+        
+        if default_value is None:
+            raise TypeError("ConfigMixin.register_config() missing 1 required positional argument: 'default_value'")
+        
         if not hasattr(self, "_registered_configs"):
             self._registered_configs: Dict[str, Config] = dict()
             self.register_command(f"config.{self.name}", self._configurator, permission=PermissionGroup.ADMIN.value)
