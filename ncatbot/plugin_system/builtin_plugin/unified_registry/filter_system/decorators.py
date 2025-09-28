@@ -51,3 +51,15 @@ def admin_group_only(func: Callable) -> Callable:
 def admin_private_only(func: Callable) -> Callable:
     """管理员私聊专用装饰器"""
     return filter_registry.add_filter_to_function(func, PrivateFilter(), AdminFilter())
+
+def on_request(func: Callable) -> Callable:
+    """请求专用装饰器"""
+    from ..legacy_registry import legacy_registry
+    legacy_registry._request_event.append(func)
+    return func
+
+def on_notice(func: Callable) -> Callable:
+    """通知专用装饰器"""
+    from ..legacy_registry import legacy_registry
+    legacy_registry._notice_event.append(func)
+    return func

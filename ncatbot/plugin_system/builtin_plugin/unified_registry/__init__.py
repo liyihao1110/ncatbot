@@ -14,7 +14,7 @@ from .filter_system import (
 )
 
 # 过滤器装饰器
-from .filter_system.decorators import admin_only, root_only, private_only, group_only, on_message
+from .filter_system.decorators import admin_only, root_only, private_only, group_only, on_message, on_notice, on_request
 from .command_system.registry import option, param, option_group
 
 # 命令系统  
@@ -33,6 +33,8 @@ __all__ = [
     "filter_registry",
 
     # 装饰器
+    "on_request",
+    "on_notice",
     "admin_only",
     "root_only",
     "private_only",

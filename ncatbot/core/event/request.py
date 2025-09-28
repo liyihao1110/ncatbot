@@ -11,6 +11,12 @@ class RequestEvent(BaseEventData):
     comment: str = None # 验证信息
     flag: str = None # 验证 flag
     
+    def is_friend_request(self) -> bool:
+        return self.request_type == "friend"
+
+    def is_group_request(self) -> bool:
+        return self.request_type == "group"
+    
     async def approve(self, approve: bool = True, remark: str = None, reason: str = None):
         """通过或者拒绝验证
         Args:
