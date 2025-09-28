@@ -24,18 +24,8 @@ NcatBot 是基于 onebot11协议 的 Python SDK, 它提供了一套方便易用�
 
 ## 如何使用
 
-### 用户使用
 
-针对没有计算机基础的用户群体, 可以直接下载我们的**一键安装包**安装 NcatBot 运行时环境, 并使用他人发布的插件.
-
-[阅读文档了解更多](https://docs.ncatbot.xyz/guide/onestepi/)
-
-### 开发者使用
-
-请**认真阅读**[文档](https://docs.ncatbot.xyz/). 文档中包含详细的**开发指南**和**示例项目及其解析**.
-
-[插件仓库地址](https://github.com/ncatbot/NcatBot-Plugins).
-
+认真阅读本仓库 `docs/` 下的文档
 
 ## 欢迎来玩
 
@@ -45,7 +35,7 @@ NcatBot 是基于 onebot11协议 的 Python SDK, 它提供了一套方便易用�
 
 - 遇到任何困难时, 请先按照以下顺序尝试自己解决:
 
-  1. **仔细阅读**[文档](https://docs.ncatbot.xyz/).
+  1. **仔细阅读**[文档](./docs/README.md).
   2. 询问 [DeepSeek](https://chat.deepseek.com), [Kimi](https://kimi.ai) 等人工智能.
   3. 搜索本项目的 [Issue 列表](https://github.com/liyihao1110/ncatbot/issues).
 - 如果以上方法都无法解决你的问题, 那么:

@@ -51,3 +51,9 @@ def admin_group_filter(func: Callable) -> Callable:
 def admin_private_filter(func: Callable) -> Callable:
     """管理员私聊专用装饰器"""
     return filter_registry.add_filter_to_function(func, PrivateFilter(), AdminFilter())
+
+# 兼容
+admin_only = admin_filter
+root_only = root_filter
+private_only = private_filter
+group_only = group_filter

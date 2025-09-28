@@ -33,6 +33,10 @@ __all__ = [
     "filter_registry",
 
     # 装饰器
+    "root_only",
+    "admin_only",
+    "private_only",
+    "group_only",
     "admin_filter",
     "root_filter",
     "private_filter",

@@ -171,6 +171,12 @@ class FilterRegistry:
         """清除所有注册的过滤器"""
         self._filters.clear()
         self._function_filters.clear()
+    
+    # 兼容
+    admin_only = admin_filter
+    root_only = root_filter
+    private_only = private_filter
+    group_only = group_filter
 
 # 全局单例
 filter_registry = FilterRegistry()

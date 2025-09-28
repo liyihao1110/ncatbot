@@ -1,5 +1,5 @@
 from ..builtin_mixin import NcatBotPlugin
-from .unified_registry import command_registry, filter_registry, admin_filter, root_filter
+from .unified_registry import command_registry, filter_registry, root_filter
 from .unified_registry.command_system.registry import option_group
 from ncatbot.core.event import BaseMessageEvent, At
 from typing import List
@@ -19,7 +19,7 @@ class SystemManager(NcatBotPlugin):
         pass
 
     @command_registry.command("ncatbot_status", aliases=["ncs"])
-    @admin_filter
+    @root_filter
     async def get_status(self, event: BaseMessageEvent) -> None:
         text = f"ncatbot 状态:\n"
         text += f"插件数量: {len(self._loader.plugins)}\n"
@@ -31,6 +31,7 @@ class SystemManager(NcatBotPlugin):
         await event.reply(text)
 
     @command_registry.command("ncatbot_help", aliases=["nch"])
+    @root_filter
     async def get_help(self, event: BaseMessageEvent) -> None:
         text = f"ncatbot 帮助:\n"
         text += f"/ncs 查看ncatbot状态\n"

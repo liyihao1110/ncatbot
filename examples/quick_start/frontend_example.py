@@ -3,8 +3,8 @@ from ncatbot.utils import config
 from ncatbot.plugin_system import on_message
 
 # 基础配置（示例）
-config.set_bot_uin("1550507358")
-config.set_root("3051561876")
+config.set_bot_uin("123456")
+config.set_root("234567")
 
 bot = BotClient()
 
