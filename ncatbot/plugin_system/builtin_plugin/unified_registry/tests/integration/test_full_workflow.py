@@ -70,7 +70,7 @@ class TestFullWorkflow:
         execution_log = []
         
         # 1. 注册带过滤器的命令
-        @command_registry.command("admin_only", description="管理员专用命令")
+        @command_registry.command("admin_filter", description="管理员专用命令")
         def admin_command(event: BaseMessageEvent):
             execution_log.append("admin_command_executed")
             return "Admin operation completed"
@@ -83,7 +83,7 @@ class TestFullWorkflow:
         # 3. 测试非管理员用户
         mock_status_manager.user_has_role.return_value = False
         
-        mock_event = EventFactory.create_private_message(message="/admin_only", user_id="normal_user")
+        mock_event = EventFactory.create_private_message(message="/admin_filter", user_id="normal_user")
         
         await unified_plugin.handle_message_event(mock_event)
         
@@ -94,7 +94,7 @@ class TestFullWorkflow:
         execution_log.clear()
         mock_status_manager.user_has_role.return_value = True
         
-        mock_event = EventFactory.create_private_message(message="/admin_only", user_id="admin_user")
+        mock_event = EventFactory.create_private_message(message="/admin_filter", user_id="admin_user")
         
         with patch.object(unified_plugin, '_execute_function') as mock_execute:
             mock_execute.return_value = "Admin operation completed"

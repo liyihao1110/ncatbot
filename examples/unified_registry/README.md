@@ -7,7 +7,7 @@
 - `quick_start/`
   - `plugins/`：快速开始文档涉及到的演示插件
   - `test_basic.py`：基础、参数、选项、别名
-  - `test_permissions_and_filters.py`：group_only/private_only/admin_only 与纯过滤器
+  - `test_permissions_and_filters.py`：group_filter/private_filter/admin_filter 与纯过滤器
   - `test_full_example.py`：完整插件示例（集成态）
   - `test_external_funcs.py`：类外/类内命令与管理员命令
 - `test_readme.py`：对应 `UnifiedRegistry-README.md` “快速开始”片段的验证

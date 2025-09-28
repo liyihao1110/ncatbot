@@ -289,7 +289,7 @@ class TestFilterRegistryIntegration:
         
         # 1. 注册过滤器实例
         group_filter = GroupFilter()
-        registry.register_filter("group_only", group_filter)
+        registry.register_filter("group_filter", group_filter)
         
         # 2. 注册过滤器函数
         @registry.register("time_check")
@@ -300,10 +300,10 @@ class TestFilterRegistryIntegration:
         def target_function(event):
             return "result"
         
-        registry.add_filter_to_function(target_function, "group_only", "time_check")
+        registry.add_filter_to_function(target_function, "group_filter", "time_check")
         
         # 4. 验证结果
-        assert "group_only" in registry._filters
+        assert "group_filter" in registry._filters
         assert "time_check" in registry._filters
         assert hasattr(target_function, '__filters__')
         assert len(target_function.__filters__) == 2

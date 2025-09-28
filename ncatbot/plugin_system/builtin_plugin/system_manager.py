@@ -1,5 +1,5 @@
 from ..builtin_mixin import NcatBotPlugin
-from .unified_registry import command_registry, filter_registry, admin_only, root_only
+from .unified_registry import command_registry, filter_registry, admin_filter, root_filter
 from .unified_registry.command_system.registry import option_group
 from ncatbot.core.event import BaseMessageEvent, At
 from typing import List
@@ -19,7 +19,7 @@ class SystemManager(NcatBotPlugin):
         pass
 
     @command_registry.command("ncatbot_status", aliases=["ncs"])
-    @admin_only
+    @admin_filter
     async def get_status(self, event: BaseMessageEvent) -> None:
         text = f"ncatbot 状态:\n"
         text += f"插件数量: {len(self._loader.plugins)}\n"
@@ -40,7 +40,7 @@ class SystemManager(NcatBotPlugin):
 
     @command_registry.command("set_admin", aliases=["sa"])
     @option_group(choices=["add", "remove"], name="set", default="add", help="设置管理员")
-    @root_only
+    @root_filter
     async def set_admin(self, event: BaseMessageEvent, user_id: str, set: str = "add") -> None:
         if user_id.startswith('At'):
             user_id = user_id.split('=')[1].split('"')[1]

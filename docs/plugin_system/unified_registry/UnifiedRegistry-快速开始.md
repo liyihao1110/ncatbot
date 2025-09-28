@@ -11,7 +11,7 @@
 ```python
 from ncatbot.plugin_system import NcatBotPlugin
 from ncatbot.plugin_system import command_registry
-from ncatbot.plugin_system import group_only, private_only, admin_only
+from ncatbot.plugin_system import group_filter, private_filter, admin_filter
 from ncatbot.plugin_system import option, param
 from ncatbot.core.event import BaseMessageEvent
 
@@ -79,21 +79,21 @@ class HelloPlugin(NcatBotPlugin):
     # 其他代码
 
     # 仅群聊可用
-    @group_only
+    @group_filter
     @command_registry.command("groupinfo")
     async def group_info_cmd(self, event: BaseMessageEvent):
         """获取群聊信息"""
         await event.reply(f"当前群聊ID: {event.group_id}")
 
     # 仅私聊可用
-    @private_only
+    @private_filter
     @command_registry.command("private")
     async def private_cmd(self, event: BaseMessageEvent):
         """私聊专用命令"""
         await event.reply("这是一个私聊命令")
 
     # 仅 Bot 管理员可用
-    @admin_only
+    @admin_filter
     @command_registry.command("admin")
     async def admin_cmd(self, event: BaseMessageEvent):
         """管理员专用命令"""
@@ -158,11 +158,11 @@ class HelloPlugin(NcatBotPlugin):
 只要收到的消息能够通过过滤器，那么这个函数就会被调用。
 
 ```python
-from ncatbot.plugin_system import group_only
+from ncatbot.plugin_system import group_filter
 
 class HelloPlugin(NcatBotPlugin):
     # 其他代码
-    @group_only
+    @group_filter
     async def status_cmd(self, event: BaseMessageEvent):
         await event.reply("收到一条群聊消息")
 ```
@@ -172,7 +172,7 @@ class HelloPlugin(NcatBotPlugin):
 ```python
 from ncatbot.plugin_system import NcatBotPlugin
 from ncatbot.plugin_system import command_registry
-from ncatbot.plugin_system import group_only, admin_only
+from ncatbot.plugin_system import group_filter, admin_filter
 from ncatbot.plugin_system import option, param
 from ncatbot.core.event import BaseMessageEvent
 
@@ -208,8 +208,8 @@ class MyFirstPlugin(NcatBotPlugin):
             await event.reply("支持的操作: add, sub, mul, div")
     
     # 群聊管理
-    @group_only
-    @admin_only
+    @group_filter
+    @admin_filter
     @command_registry.command("announce", description="发布公告")
     @option(short_name="a", long_name="all", help="发送给所有群员")
     async def announce_cmd(self, event: BaseMessageEvent, message: str, all: bool = False):
@@ -238,7 +238,7 @@ async def outside_command(event: BaseMessageEvent):
     """插件类外的命令函数"""
     await event.reply("这是在插件类外定义的命令")
 
-@admin_only
+@admin_filter
 @command_registry.command("external_admin")
 async def external_admin_cmd(event: BaseMessageEvent, action: str):
     """外部的管理员命令"""

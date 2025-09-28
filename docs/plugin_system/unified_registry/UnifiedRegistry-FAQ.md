@@ -23,14 +23,14 @@ async def good_cmd(self, event: BaseMessageEvent, text: str):
 
 **A:** 装饰器必须按特定顺序使用：
 
-1. 过滤器装饰器（如 `@admin_only`, `@group_only`）
+1. 过滤器装饰器（如 `@admin_filter`, `@group_filter`）
 2. 命令注册装饰器（`@command_registry.command()`）
 3. 参数装饰器（`@option`, `@param`）
 4. 函数体内通过 `await event.reply(...)` 进行异步回复
 
 ```python
 # ✅ 正确的顺序
-@admin_only                    # 1. 过滤器
+@admin_filter                    # 1. 过滤器
 @command_registry.command("deploy")  # 2. 命令注册
 @option("v", "verbose")        # 3. 参数装饰器
 async def deploy_cmd(self, event: BaseMessageEvent, verbose: bool = False):
@@ -38,7 +38,7 @@ async def deploy_cmd(self, event: BaseMessageEvent, verbose: bool = False):
 
 # ❌ 错误的顺序
 @command_registry.command("wrong")
-@admin_only  # 过滤器应该在命令注册之前
+@admin_filter  # 过滤器应该在命令注册之前
 async def wrong_cmd(self, event: BaseMessageEvent):
     await event.reply("错误")
 ```

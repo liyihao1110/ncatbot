@@ -13,7 +13,7 @@ async def run_permissions_and_filters_tests():
 
     client.register_plugin(QSPermissionsPlugin)
 
-    # group_only: 群聊可用
+    # group_filter: 群聊可用
     await helper.send_group_message("/groupinfo", group_id="10001")
     helper.assert_reply_sent("当前群聊ID: 10001")
     helper.clear_history()
@@ -22,7 +22,7 @@ async def run_permissions_and_filters_tests():
     helper.assert_no_reply()
     helper.clear_history()
 
-    # private_only: 私聊可用
+    # private_filter: 私聊可用
     await helper.send_private_message("/private")
     helper.assert_reply_sent("这是一个私聊命令")
     helper.clear_history()
@@ -31,7 +31,7 @@ async def run_permissions_and_filters_tests():
     helper.assert_no_reply()
     helper.clear_history()
 
-    # admin_only: 仅管理员
+    # admin_filter: 仅管理员
     original_manager = status.global_access_manager
     class _MockManager:
         def user_has_role(self, user_id, role):

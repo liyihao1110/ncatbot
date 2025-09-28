@@ -199,6 +199,8 @@ class GroupAPI(BaseAPI):
     # --------------
     # region 群文件
     # --------------
+    # TODO 文件夹 ID 处理还没做
+    # TODO 部分数据结构还不完善
     async def post_group_file(self, group_id: Union[str, int], image: str = None, record: str=None, video: str=None, file: str=None) -> str:
         count = sum(1 for arg in [image, record, video, file] if arg is not None)
         if count != 1:

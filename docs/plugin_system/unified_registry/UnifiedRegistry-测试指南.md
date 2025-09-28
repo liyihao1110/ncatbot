@@ -101,19 +101,19 @@ def assert_reply_contains(helper, expected_text):
 ### 2. 过滤器测试
 
 ```python
-from ncatbot.plugin_system import group_only, admin_only
+from ncatbot.plugin_system import group_filter, admin_filter
 
 class FilterTestPlugin(NcatBotPlugin):
     name = "FilterTestPlugin"
     version = "1.0.0"
     
     async def on_load(self):
-        @group_only
+        @group_filter
         @command_registry.command("group_cmd")
         async def group_cmd(self, event: BaseMessageEvent):
             await event.reply("这是群聊命令")
         
-        @admin_only
+        @admin_filter
         @command_registry.command("admin_cmd")
         async def admin_cmd(self, event: BaseMessageEvent):
             await event.reply("管理员命令")

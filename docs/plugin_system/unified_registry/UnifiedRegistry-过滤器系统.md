@@ -27,19 +27,19 @@
 
 ```python
 from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import GroupFilter
-from ncatbot.plugin_system import group_only
+from ncatbot.plugin_system import group_filter
 
 class MyPlugin(NcatBotPlugin):
     async def on_load(self):
         pass
 
     # 可以在插件类中定义
-    @group_only
+    @group_filter
     async def group_message(self, event: BaseMessageEvent):
         await event.reply("收到一条群聊消息")
     
 # 也可以在插件类外定义
-@private_only
+@private_filter
 async def private_message(event: BaseMessageEvent):
     await event.reply("收到一条私聊消息")
         
@@ -54,20 +54,20 @@ async def private_message(event: BaseMessageEvent):
 只允许 **Bot管理员** 使用的命令。
 
 ```python
-from ncatbot.plugin_system import admin_only
+from ncatbot.plugin_system import admin_filter
 
 class MyPlugin(NcatBotPlugin):
     async def on_load(self):
         pass
 
     # 可以和 command 组合使用，作为额外的判断条件
-    @admin_only
+    @admin_filter
     @command_registry.command("ban")
     async def ban_command(self, event: BaseMessageEvent, user_id: str):
         await event.reply(f"已封禁用户: {user_id}")
     
     # 也可以单独使用，消息只要满足过滤器就触发回调
-    @admin_only
+    @admin_filter
     async def admin_message(self, event: BaseMessageEvent):
         await event.reply("收到一条管理员消息")
 ```
@@ -81,13 +81,13 @@ class MyPlugin(NcatBotPlugin):
 只允许 **Root用户** 使用的命令。（root 用户只能在代码里指定）
 
 ```python
-from ncatbot.plugin_system import root_only
+from ncatbot.plugin_system import root_filter
 
 class MyPlugin(NcatBotPlugin):
     async def on_load(self):
         pass
 
-    @root_only
+    @root_filter
     @command_registry.command("shutdown")
     async def shutdown_command(self, event: BaseMessageEvent):
         await event.reply("正在关闭机器人...")
@@ -116,7 +116,7 @@ async def on_message_callback(event: BaseMessageEvent):
 
 ```python
 from ncatbot.plugin_system import (
-    group_only, admin_only, private_only, admin_group_only, admin_private_only
+    group_filter, admin_filter, private_filter, admin_group_filter, admin_private_filter
 )
 
 class MyPlugin(NcatBotPlugin):
@@ -124,20 +124,20 @@ class MyPlugin(NcatBotPlugin):
         pass
 
     # 管理员 + 群聊
-    @admin_group_only  # 等同于 @admin_only + @group_only
+    @admin_group_filter  # 等同于 @admin_filter + @group_filter
     @command_registry.command("grouppromote")
     async def group_promote_command(self, event: BaseMessageEvent, user_id: str):
         await event.reply(f"在群聊中提升用户权限: {user_id}")
     
     # 管理员 + 私聊
-    @admin_private_only  # 等同于 @admin_only + @private_only
+    @admin_private_filter  # 等同于 @admin_filter + @private_filter
     @command_registry.command("adminpanel")
     async def admin_panel_command(self, event: BaseMessageEvent):
         await event.reply("管理员私聊面板")
     
     # 手动组合多个过滤器
-    @admin_only
-    @group_only
+    @admin_filter
+    @group_filter
     async def group_admin_command(self, event: BaseMessageEvent):
         await event.reply("收到一条管理员发送的群聊消息")
         
@@ -152,10 +152,10 @@ class MyPlugin(NcatBotPlugin):
         pass
 
     # 过滤器按从上到下的顺序执行
-    @filter_registry.filters("admin_only", "group_only")
+    @filter_registry.filters("admin_filter", "group_filter")
     @command_registry.command("order")
     async def order_command(self, event: BaseMessageEvent):
-        """执行顺序: group_only -> admin_only -> 命令函数"""
+        """执行顺序: group_filter -> admin_filter -> 命令函数"""
         await event.reply("多重过滤器命令")
 ```
 

@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch
 from ncatbot.core.event import BaseMessageEvent, GroupMessageEvent, PrivateMessageEvent
 from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import (
     filter_registry, GroupFilter, PrivateFilter, AdminFilter, CustomFilter,
-    group_only, private_only, admin_only
+    group_filter, private_filter, admin_filter
 )
 
 
@@ -161,20 +161,20 @@ class TestFilterWithCommand:
         from ncatbot.plugin_system import command_registry
         
         # 注册带群聊过滤器的命令
-        @command_registry.command("group_only_cmd")
-        def group_only_command(event: BaseMessageEvent):
+        @command_registry.command("group_filter_cmd")
+        def group_filter_command(event: BaseMessageEvent):
             return "Should not execute"
-        group_only_command.__is_command__ = True
+        group_filter_command.__is_command__ = True
         
         # 添加群聊过滤器
         group_filter = GroupFilter()
-        filter_registry.add_filter_to_function(group_only_command, group_filter)
+        filter_registry.add_filter_to_function(group_filter_command, group_filter)
         
         # 模拟执行（私聊消息应该被拒绝）
         with patch.object(unified_plugin, '_filter_validator') as mock_validator:
             mock_validator.validate_filters.return_value = False
             
-            result = await unified_plugin._execute_function(group_only_command, mock_private_message)
+            result = await unified_plugin._execute_function(group_filter_command, mock_private_message)
             
             # 应该被过滤器拒绝
             assert result is False
@@ -183,9 +183,9 @@ class TestFilterWithCommand:
 class TestFilterDecorators:
     """过滤器装饰器测试"""
     
-    def test_group_only_decorator(self, mock_group_message, mock_private_message, clean_registries):
+    def test_group_filter_decorator(self, mock_group_message, mock_private_message, clean_registries):
         """测试群聊专用装饰器"""
-        @group_only
+        @group_filter
         def group_function(event: BaseMessageEvent):
             return "group only"
         
@@ -194,9 +194,9 @@ class TestFilterDecorators:
         assert len(group_function.__filters__) > 0
         assert any(isinstance(f, GroupFilter) for f in group_function.__filters__)
     
-    def test_private_only_decorator(self, mock_private_message, mock_group_message, clean_registries):
+    def test_private_filter_decorator(self, mock_private_message, mock_group_message, clean_registries):
         """测试私聊专用装饰器"""
-        @private_only
+        @private_filter
         def private_function(event: BaseMessageEvent):
             return "private only"
         
@@ -205,9 +205,9 @@ class TestFilterDecorators:
         assert len(private_function.__filters__) > 0
         assert any(isinstance(f, PrivateFilter) for f in private_function.__filters__)
     
-    def test_admin_only_decorator(self, mock_private_message, mock_status_manager, clean_registries):
+    def test_admin_filter_decorator(self, mock_private_message, mock_status_manager, clean_registries):
         """测试管理员专用装饰器"""
-        @admin_only
+        @admin_filter
         def admin_function(event: BaseMessageEvent):
             return "admin only"
         
@@ -218,8 +218,8 @@ class TestFilterDecorators:
     
     def test_chained_decorators(self, mock_group_message, mock_status_manager, clean_registries):
         """测试链式装饰器"""
-        @admin_only
-        @group_only
+        @admin_filter
+        @group_filter
         def admin_group_function(event: BaseMessageEvent):
             return "admin group only"
         

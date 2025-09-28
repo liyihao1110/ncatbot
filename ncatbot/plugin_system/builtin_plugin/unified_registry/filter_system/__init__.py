@@ -10,7 +10,7 @@
     from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import filter_registry
     from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import GroupFilter
     
-    filter_registry.register_filter("group_only", GroupFilter())
+    filter_registry.register_filter("group_filter", GroupFilter())
     
     # 方式2: 注册过滤器函数
     @filter_registry.register("time_check")
@@ -19,13 +19,13 @@
         return datetime.datetime.now().hour < 22
     
     # 方式3: 直接应用到命令
-    from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import filter, group_only
+    from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import filter, group_filter
     
     @filter(GroupFilter(), AdminFilter())
     def admin_group_command(event):
         return "管理员群聊命令"
     
-    @group_only
+    @group_filter
     def group_command(event):
         return "群聊命令"
 """
@@ -34,7 +34,7 @@
 from .registry import FilterRegistry, FilterEntry, filter_registry
 from .base import BaseFilter
 from .builtin import GroupFilter, PrivateFilter, AdminFilter, RootFilter, CustomFilter
-from .decorators import filter, group_only, private_only, admin_only, root_only, admin_group_only, admin_private_only
+from .decorators import filter, group_filter, private_filter, admin_filter, root_filter, admin_group_filter, admin_private_filter
 from .validator import FilterValidator
 
 # 便捷导出
@@ -51,8 +51,8 @@ __all__ = [
     "filter_registry", "filter",
     
     # 装饰器
-    "group_only", "private_only", "admin_only", "root_only", 
-    "admin_group_only", "admin_private_only",
+    "group_filter", "private_filter", "admin_filter", "root_filter", 
+    "admin_group_filter", "admin_private_filter",
     
     # 验证器
     "FilterValidator",
