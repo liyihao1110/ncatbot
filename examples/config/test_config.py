@@ -32,4 +32,6 @@ bot.register_plugin(ConfigTestPlugin)
 helper.send_private_message_sync("/ic")
 helper.send_private_message_sync("/gc") # 应该输出 1
 helper.send_private_message_sync("/ic")
+helper.send_private_message_sync("/cfg ConfigTestPlugin counter 2", user_id="123456") # 应该输出 2
+helper.assert_reply_sent("插件 ConfigTestPlugin 配置 counter 更新为 2")
 bot.bot_exit()
