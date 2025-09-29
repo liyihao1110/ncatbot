@@ -280,7 +280,7 @@ class Config(BaseConfig):
     """是否检查 NcatBot 更新"""
     skip_ncatbot_install_check: bool = False
     """是否跳过 NcatBot 安装检查"""
-
+    websocket_timeout: int = 15
     # 暂时没用的
 
     def asdict(self) -> dict[str, Any]:

@@ -7,6 +7,7 @@ import uuid
 from threading import Lock
 from queue import Queue
 import websockets
+from .nc.launch import napcat_service_ok
 from websockets.exceptions import ConnectionClosedError
 from ncatbot.core.event import (
     PrivateMessageEvent,
@@ -90,30 +91,37 @@ class Adapter:
             uri_with_token, close_timeout=0.2, max_size=2**30, open_timeout=1
         )
         LOG.info("NapCat WebSocket 连接成功")
-        try:
-            while True:
-                LOG.debug("looping")
-                message = await self.client.recv()
-                message_data: dict = json.loads(message)
-                LOG.debug(message_data)
-                if "echo" in message_data:
-                    await self._handle_response(message_data)
-                else:
-                    await self._handle_event(message_data)
+        while True:
+            try:
+                while True:
+                    LOG.debug("looping")
+                    message = await self.client.recv()
+                    message_data: dict = json.loads(message)
+                    LOG.debug(message_data)
+                    if "echo" in message_data:
+                        await self._handle_response(message_data)
+                    else:
+                        await self._handle_event(message_data)
 
-        except asyncio.CancelledError:
-            # 当任务被取消时（如KeyboardInterrupt）
-            await self.cleanup()
-            raise
+            except asyncio.CancelledError:
+                # 当任务被取消时（如KeyboardInterrupt）
+                await self.cleanup()
+                raise
 
-        except ConnectionClosedError:
-            # TODO 细化判断
-            raise NcatBotConnectionError("NapCat 服务主动关闭了连接")
+            except ConnectionClosedError:
+                if napcat_service_ok(ncatbot_config.websocket_timeout):
+                    LOG.info("NapCat WebSocket 连接已关闭, 正在尝试重新连接...")
+                    self.client = await websockets.connect(
+                        uri_with_token, close_timeout=0.2, max_size=2**30, open_timeout=1
+                    )
+                    continue
+                # TODO 细化判断
+                raise NcatBotConnectionError("NapCat 服务主动关闭了连接")
 
-        except Exception:
-            await self.cleanup()
-            LOG.info(traceback.format_exc())
-            raise NcatBotError("未知网络错误")
+            except Exception:
+                await self.cleanup()
+                LOG.info(traceback.format_exc())
+                raise NcatBotError("未知网络错误")
 
     async def _handle_response(self, message: dict):
         """处理API响应, 不能阻塞"""

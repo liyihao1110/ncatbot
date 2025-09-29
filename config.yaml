@@ -4,6 +4,7 @@ enable_webui_interaction: true # 启用 webui 交互
 check_ncatbot_update: true # 检查 NcatBot 更新
 skip_ncatbot_install_check: false # 跳过 NcatBot 安装检查
 debug: false # 调试模式, 开启将会打印更多调试信息
+websocket_timeout: 15 # NapCat WebSocket 连接最大超时允许
 napcat:
   ws_uri: ws://localhost:3001
   webui_uri: http://localhost:6099
