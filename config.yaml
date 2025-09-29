@@ -7,19 +7,18 @@ debug: false # 调试模式, 开启将会打印更多调试信息
 websocket_timeout: 15 # NapCat WebSocket 连接最大超时允许
 napcat:
   ws_uri: ws://localhost:3001
-  webui_uri: http://localhost:6099
-  webui_token: NcatBot
-  ws_token: 'NcatBot'
+  ws_token: NcatBot
   ws_listen_ip: localhost
+  webui_uri: http://localhost:6099
+  webui_token: n>F,6M{&FjYitfW<
   enable_webui: true
-  remote_mode: false
   check_napcat_update: false
   stop_napcat: false
+  remote_mode: false
   report_self_message: false
-  report_forward_message_detail: true # 上报解析合并转发消息
+  report_forward_message_detail: true
 plugin:
-  plugin_whitelist: [] # 插件白名单, 留空表示不启用白名单, 只加载白名单内的插件
-  plugin_blacklist: [] # 插件黑名单, 留空表示不启用黑名单, 不加载黑名单内的插件
-  # 同时启用白名单和黑名单时, 白名单优先级更高(即只有白名单内的插件会被加载, 黑名单无效)
   plugins_dir: plugins
-  skip_plugin_load: false
+  plugin_whitelist: []
+  plugin_blacklist: []
+  skip_plugin_load: true

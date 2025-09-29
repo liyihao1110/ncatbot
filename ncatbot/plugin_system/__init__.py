@@ -12,7 +12,8 @@ from .loader import PluginLoader
 from .builtin_mixin import NcatBotPlugin
 from .builtin_plugin.unified_registry import filter_registry, command_registry
 from .decorator import CompatibleHandler
-from .builtin_plugin.unified_registry import on_message, option, param, option_group, admin_filter, root_filter, private_filter, group_filter
+from .builtin_plugin.unified_registry import on_message, option, param, option_group, admin_only, root_only, private_only, group_only, on_request, on_notice
+from .builtin_plugin.unified_registry import admin_filter, root_filter, private_filter, group_filter
 
 __all__ = [
     'BasePlugin',
@@ -27,6 +28,12 @@ __all__ = [
     'option',
     'param',
     'option_group',
+    'on_request',
+    'on_notice',
+    'admin_only',
+    'root_only',
+    'private_only',
+    'group_only',
     'admin_filter',
     'root_filter',
     'private_filter',

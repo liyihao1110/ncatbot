@@ -52,3 +52,18 @@ class SystemManager(NcatBotPlugin):
         elif set == "remove":
             self.rbac_manager.unassign_role_to_user(user_id, PermissionGroup.ADMIN.value)
             await event.reply(f"删除管理员 {user_id}", at=False)
+
+    @command_registry.command("set_config", aliases=["cfg"])
+    @filter_registry.admin_filter
+    async def set_config(self, event: BaseMessageEvent, plugin_name: str, config_name: str, value: str) -> None:
+        plugin = self.get_plugin(plugin_name)
+        if not plugin:
+            await event.reply(f"未找到插件 {plugin_name}")
+        configs = plugin.get_registered_configs()
+        if config_name not in configs:
+            await event.reply(f"插件 {plugin_name} 未注册配置 {config_name}")
+        from ..builtin_mixin.config_mixin import Config
+        config: Config = configs[config_name]
+        config.update(value)
+        await event.reply(f"插件 {plugin_name} 配置 {config_name} 更新为 {value}")
+        

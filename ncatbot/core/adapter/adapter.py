@@ -188,6 +188,7 @@ class Adapter:
 
             if self.client:
                 await self.client.close()
+            print("WebSocket 连接已关闭")
             self.client = None
         except:
             pass

@@ -52,7 +52,12 @@ class StartArgs(TypedDict, total=False):
     # 以后再加参数直接在这里补一行即可，无需改函数签名
 
 class BotClient:
+    _initialized = False  # 兼容旧版本检查
+    
     def __init__(self, only_private: bool = False):
+        if self._initialized:
+            raise NcatBotError("BotClient 实例只能创建一次")
+        self._initialized = True
         self.adapter = Adapter()
         self.event_handlers: dict[str, list] = {}
         self.thread_pool = ThreadPool(max_workers=1, max_per_func=1)

@@ -86,7 +86,11 @@ class BaseConfig:
 
     def asdict(self) -> dict[str, Any]:
         """将实例转换为字典。"""
-        return asdict(self)
+        data = {k: v for k, v in self.__dict__.items() if isinstance(v, (str, int, bool, type(None), tuple, list)) \
+            and not k.startswith('_') \
+            and k not in ATTRIBUTE_IGNORE
+        }
+        return data
 
     def save(self) -> None:
         """保存当前配置到默认路径。"""
@@ -196,7 +200,6 @@ class NapCatConfig(BaseConfig):
                     pwd = generate_strong_password()
                     logger.info(f"已生成强密码: {pwd}")
                     self.ws_token = pwd
-                    self.save()
                 else:
                     raise ValueError("WS 令牌强度不足, 请修改为强密码, 或者修改 ws_listen_ip 本地监听 `localhost`")
 
@@ -206,7 +209,6 @@ class NapCatConfig(BaseConfig):
                     pwd = generate_strong_password()
                     logger.info(f"已生成强密码: {pwd}")
                     self.webui_token = pwd
-                    self.save()
                 else:
                     raise ValueError("WebUI 令牌强度不足, 请修改为强密码")
 
@@ -288,9 +290,10 @@ class Config(BaseConfig):
         napcat = self.napcat.asdict()
         plugin = self.plugin.asdict()
         base = {
-            k: v for k, v in self.__dict__.items() if isinstance(v, (str, int, bool, type(None), tuple, list))
+            k: v for k, v in self.__dict__.items() if isinstance(v, (str, int, bool, type(None), tuple, list)) \
+                and not k.startswith('_')
         }
-        return {"napcat": napcat, "plugin": plugin, **base}
+        return {**base, "napcat": napcat, "plugin": plugin}
     
     @classmethod
     def create_from_file(cls, path: str) -> "Config":
@@ -378,6 +381,7 @@ class Config(BaseConfig):
         # 验证插件配置
         self.plugin.validate()
         self.napcat.validate()
+        self.save()
 
     @classmethod
     def load(cls) -> "Config":
@@ -434,7 +438,10 @@ ATTRIBUTE_RECURSIVE = {
 
 # 处理未知字段时要忽略的属性
 ATTRIBUTE_IGNORE = {
-    "",
+    "ws_host",
+    "ws_port",
+    "webui_host",
+    "webui_port",
 }
 
 ncatbot_config = Config.load()

@@ -62,6 +62,17 @@ class _ModuleImporter:
         try:
             sys.path.insert(0, str(self.directory))
             for entry in self.directory.iterdir():
+                name = entry.stem
+                if len(ncatbot_config.plugin.plugin_whitelist) > 0:
+                    if name not in ncatbot_config.plugin.plugin_whitelist:
+                        LOG.info("插件文件「%s」不在白名单内，跳过加载", name)
+                        continue
+                    
+                if len(ncatbot_config.plugin.plugin_blacklist) > 0:
+                    if name in ncatbot_config.plugin.plugin_blacklist:
+                        LOG.info("插件文件「%s」在黑名单内，跳过加载", name)
+                        continue
+                    
                 if entry.is_dir() and (entry / "__init__.py").exists():
                     name, path = entry.name, entry
                 elif entry.suffix == ".py":
@@ -215,6 +226,7 @@ class PluginLoader:
         for name in load_order:
             cls = next(c for c in valid_classes if c.name == name)
             LOG.info("加载插件「%s」", name)
+                
             plugin = cls(
                 event_bus=self.event_bus,
                 debug=self._debug,

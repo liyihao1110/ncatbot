@@ -3,6 +3,7 @@ from typing import Optional, Dict, Any, List, Union, TYPE_CHECKING
 from .event_factory import EventFactory
 from .mock_api import MockAPIAdapter
 from ncatbot.utils import get_log
+from ncatbot.utils.thread_pool import run_coroutine
 
 if TYPE_CHECKING:
     from ncatbot.core.event.message_segment import MessageArray
@@ -59,6 +60,29 @@ class TestHelper:
         LOG.info(f"发送私聊消息事件: {event}")
         await self.client.inject_event(event)
         
+    def send_group_message_sync(
+        self,
+        message: Union[str, MessageArray],
+        group_id: str = "123456789",
+        user_id: str = "987654321",
+        nickname: str = "TestUser",
+        **kwargs
+    ):
+        """同步发送群聊消息事件并处理"""
+        run_coroutine(self.send_group_message, 
+                      message, group_id, user_id, nickname, **kwargs)
+
+    def send_private_message_sync(
+        self,
+        message: Union[str, MessageArray],
+        user_id: str = "987654321",
+        nickname: str = "TestUser",
+        **kwargs
+    ):
+        """同步发送私聊消息事件并处理"""
+        run_coroutine(self.send_private_message, 
+                      message, user_id, nickname, **kwargs)
+
     def assert_reply_sent(self, expected_text: Optional[str] = None):
         """断言发送了回复"""
         group_calls = self.mock_api.get_calls_for_endpoint("/send_group_msg")

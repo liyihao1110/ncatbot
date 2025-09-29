@@ -196,10 +196,10 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         event_data: BaseEventData = event.data
         if event_data.post_type == "notice":
             for func in legacy_registry._notice_event:
-                await func(event_data)
+                await self._execute_function(func, event_data)
         elif event_data.post_type == "request":
             for func in legacy_registry._request_event:
-                await func(event_data)
+                await self._execute_function(func, event_data)
         return True
     
     def _find_plugin_for_function(self, func: Callable) -> "NcatBotPlugin":
