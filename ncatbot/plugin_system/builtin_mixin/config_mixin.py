@@ -1,7 +1,5 @@
 from .commnad_mixin import CommandMixin
-from typing import Any, List, Dict, Union
-from ncatbot.core.event import BaseMessageEvent
-from ncatbot.utils import PermissionGroup
+from typing import Any, List, Dict, Union, Callable
 from ncatbot.utils import get_log
 
 LOG = get_log("ConfigMixin")
@@ -13,6 +11,8 @@ class Config:
         self.description = data['description']
         self.value_type = data['value_type']
         self.metadata = data['metadata']
+        self.plugin = data['plugin']
+        self.on_change = data['on_change']
     
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Config):
@@ -22,15 +22,19 @@ class Config:
         return False
 
     def update(self, value: str) -> None:
+        oldvalue = self.plugin.config.get(self.name, None)
+        newvalue = None
         if self.value_type == bool:
             if value.lower() in ['true', '1', 'yes', 'on']:
-                self.value = True
+                newvalue = True
             elif value.lower() in ['false', '0', 'no', 'off']:
-                self.value = False
+                newvalue = False
             else:
                 raise ValueError(f"Invalid boolean value: {value}")
         else:
-            self.value = self.value_type(value)
+            newvalue = self.value_type(value)
+        self.plugin.config[self.name] = newvalue
+        return oldvalue, newvalue
 
 class ConfigMixin(CommandMixin):
     def get_registered_configs(self) -> Dict[str, Config]:
@@ -38,7 +42,7 @@ class ConfigMixin(CommandMixin):
             self._registered_configs: Dict[str, Config] = {}
         return self._registered_configs
     
-    def register_config(self, name: str, default_value: Any = None, description: str = "", value_type: Union[type] = str, metadata: Dict[str, Any] = None, *args, **kwargs):
+    def register_config(self, name: str, default_value: Any = None, description: str = "", value_type: Union[type] = str, metadata: Dict[str, Any] = None, on_change: Callable=None, *args, **kwargs):
         # TODO: 自动生成描述
         # 兼容旧版
         if "default" in kwargs:
@@ -61,7 +65,9 @@ class ConfigMixin(CommandMixin):
                 'default_value': default_value,
                 'description': description,
                 'value_type': value_type,
-                'metadata': metadata
+                'metadata': metadata,
+                'plugin': self, 
+                'on_change': on_change
             })
             
         else:

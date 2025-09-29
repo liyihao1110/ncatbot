@@ -5,7 +5,7 @@ from ncatbot.core.event import BaseMessageEvent, At
 from typing import List
 import psutil
 import ncatbot
-from ncatbot.utils import get_log, PermissionGroup
+from ncatbot.utils import get_log, PermissionGroup, run_coroutine
 
 LOG = get_log("SystemManager")
 
@@ -64,6 +64,8 @@ class SystemManager(NcatBotPlugin):
             await event.reply(f"插件 {plugin_name} 未注册配置 {config_name}")
         from ..builtin_mixin.config_mixin import Config
         config: Config = configs[config_name]
-        config.update(value)
+        oldvalue, newvalue = config.update(value)
+        if config.on_change:
+            run_coroutine(config.on_change, oldvalue, newvalue)
         await event.reply(f"插件 {plugin_name} 配置 {config_name} 更新为 {value}")
         

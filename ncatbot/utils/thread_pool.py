@@ -19,6 +19,9 @@ def run_coroutine(func: Callable[..., Coroutine[Any, Any, T]], *args, **kwargs):
     :param kwargs: 关键字参数
     :return: 协程函数的返回值
     """
+    if not inspect.iscoroutinefunction(func):
+        return func(*args, **kwargs)
+    
     result: list[T] = []
     def runner():
         try:
