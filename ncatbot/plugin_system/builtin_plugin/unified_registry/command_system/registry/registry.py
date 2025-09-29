@@ -123,12 +123,12 @@ class ModernRegistry:
         self.prefixes: List[str] = prefixes if prefixes else ["/", "!"]
         LOG.debug("现代化命令注册器初始化完成")
     
-    def command(self, name: str, aliases: list=None, desc: str="", **kwargs):
+    def command(self, name: str, aliases: list=None, description: str="", **kwargs):
         """注册根级命令"""
         if "prefixes" not in kwargs:
             kwargs["prefixes"] = self.prefixes
-        if desc:
-            kwargs["description"] = desc
+        if description:
+            kwargs["description"] = description
         return self.root_group.command(name, aliases=aliases, **kwargs)
     
     def group(self, name: str, description: str = "", prefixes: Optional[List[str]] = None) -> CommandGroup:
