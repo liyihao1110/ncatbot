@@ -103,6 +103,7 @@ class Adapter:
 
         except asyncio.CancelledError:
             # 当任务被取消时（如KeyboardInterrupt）
+            LOG.info("WebSocket 连接已取消")
             await self.cleanup()
             raise
 
@@ -180,6 +181,7 @@ class Adapter:
 
             if self.client:
                 await self.client.close()
+            print("WebSocket 连接已关闭")
             self.client = None
         except:
             pass
