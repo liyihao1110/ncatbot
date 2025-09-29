@@ -120,12 +120,14 @@ class ModernRegistry:
     error_handler = ErrorHandler()
 
     def __init__(self, prefixes: Optional[List[str]] = None):
-        self.prefixes: List[str] = prefixes if prefixes else ["/"]
+        self.prefixes: List[str] = prefixes if prefixes else ["/", "!"]
         LOG.debug("现代化命令注册器初始化完成")
     
-    def command(self, name: str, **kwargs):
+    def command(self, name: str, aliases: list=None, desc: str="", **kwargs):
         """注册根级命令"""
-        return self.root_group.command(name, **kwargs, prefixes=self.prefixes)
+        if "prefixes" not in kwargs:
+            kwargs["prefixes"] = self.prefixes
+        return self.root_group.command(name, aliases=aliases, description=desc, **kwargs)
     
     def group(self, name: str, description: str = "", prefixes: Optional[List[str]] = None) -> CommandGroup:
         """创建根级命令组"""

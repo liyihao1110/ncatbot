@@ -534,7 +534,7 @@ class RBACManager:
             else:
                 raise IndexError(f"权限路径 {permissions_path} 不存在")
         self.manager.assign_permissions_to_role(role_name, permissions_path, mode)
-        self.manager.unassign_permissions_to_role(role_name, permissions_path, 'black' if mode == 'white' else 'white')
+        self.manager.unassign_permissions_to_role(role_name, permissions_path)
         
     def assign_permissions_to_user(self, user_name: str, permissions_path: str, mode: Literal["white", "black"] = "white", create_path_if_not_exists: bool = True):
         if not self.user_exists(user_name):
