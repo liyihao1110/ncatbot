@@ -82,11 +82,7 @@ class Adapter:
 
     async def connect_websocket(self) -> bool:
         """连接 ws 客户端"""
-        uri_with_token = (
-            ncatbot_config.napcat.ws_uri
-            + "/?access_token="
-            + ncatbot_config.napcat.ws_token
-        )
+        uri_with_token = ncatbot_config.get_uri_with_token()
         self.client = await websockets.connect(
             uri_with_token, close_timeout=0.2, max_size=2**30, open_timeout=1
         )
@@ -109,11 +105,12 @@ class Adapter:
                 raise
 
             except ConnectionClosedError:
+                LOG.info("NapCat WebSocket 连接已关闭, 正在尝试重新连接...")
                 if napcat_service_ok(ncatbot_config.websocket_timeout):
-                    LOG.info("NapCat WebSocket 连接已关闭, 正在尝试重新连接...")
                     self.client = await websockets.connect(
                         uri_with_token, close_timeout=0.2, max_size=2**30, open_timeout=1
                     )
+                    LOG.info("NapCat WebSocket 重新连接成功")
                     continue
                 # TODO 细化判断
                 raise NcatBotConnectionError("NapCat 服务主动关闭了连接")

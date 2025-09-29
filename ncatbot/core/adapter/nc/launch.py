@@ -22,6 +22,7 @@ from ncatbot.core.adapter.nc.config import config_napcat
 from ncatbot.core.adapter.nc.start import start_napcat, stop_napcat
 from ncatbot.utils import ncatbot_config, get_log
 from ncatbot.utils.error import NcatBotError
+from ncatbot.utils import run_coroutine
 
 LOG = get_log("ncatbot.core.adapter.nc.launch")
 
@@ -30,10 +31,11 @@ class NcatBotLoginError(NcatBotError):
         super().__init__(info, False)
 
 
-async def test_websocket() -> bool:
-    uri_with_token = ncatbot_config.napcat.ws_uri + "/?access_token=" + ncatbot_config.napcat.ws_token
+async def test_websocket(report_status=False) -> bool:
+    uri_with_token = ncatbot_config.get_uri_with_token()
     try:
-        async with websockets.connect(uri_with_token, open_timeout=3) as ws:
+        async with websockets.connect(uri_with_token, open_timeout=5) as ws:
+            print("testing websocket...")
             data = json.loads(await ws.recv())
             if data.get("status", "ok") == "ok":
                 return True
@@ -42,15 +44,17 @@ async def test_websocket() -> bool:
     except NcatBotError:
         raise
     except Exception as e:
+        if report_status:
+            LOG.warning("测试 websocket 连接失败: " + str(e))
         return False    
 
 
-def napcat_service_ok(EXPIRE=0):
+def napcat_service_ok(EXPIRE=0, show_info=True):
     if EXPIRE == 0:
-        return asyncio.run(test_websocket())
+        return run_coroutine(test_websocket, show_info)
     else:
         MAX_TIME_EXPIRE = time.time() + EXPIRE
-        while not napcat_service_ok():
+        while not napcat_service_ok(show_info=(time.time() > MAX_TIME_EXPIRE)):
             if time.time() > MAX_TIME_EXPIRE:
                 return False
             time.sleep(0.5)

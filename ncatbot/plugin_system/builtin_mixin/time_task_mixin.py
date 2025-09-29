@@ -7,7 +7,7 @@ import asyncio
 import functools
 import threading
 from schedule import Scheduler
-from ncatbot.utils.thread_pool import run_coroutine
+from ncatbot.utils import run_coroutine
 
 class TimeTaskScheduler:
     """

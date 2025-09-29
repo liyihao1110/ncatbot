@@ -127,7 +127,9 @@ class ModernRegistry:
         """注册根级命令"""
         if "prefixes" not in kwargs:
             kwargs["prefixes"] = self.prefixes
-        return self.root_group.command(name, aliases=aliases, description=desc, **kwargs)
+        if desc:
+            kwargs["description"] = desc
+        return self.root_group.command(name, aliases=aliases, **kwargs)
     
     def group(self, name: str, description: str = "", prefixes: Optional[List[str]] = None) -> CommandGroup:
         """创建根级命令组"""

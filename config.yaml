@@ -10,7 +10,7 @@ napcat:
   ws_token: NcatBot
   ws_listen_ip: localhost
   webui_uri: http://localhost:6099
-  webui_token: n>F,6M{&FjYitfW<
+  webui_token: NcatBot
   enable_webui: true
   check_napcat_update: false
   stop_napcat: false

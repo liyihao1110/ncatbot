@@ -11,7 +11,7 @@ from ncatbot.plugin_system.event import EventBus
 from ncatbot.plugin_system import BasePlugin
 from ncatbot.utils import get_log
 from .client_mixin import ClientMixin
-from ncatbot.utils.thread_pool import run_coroutine
+from ncatbot.utils import run_coroutine
 
 LOG = get_log("TestClient")
 

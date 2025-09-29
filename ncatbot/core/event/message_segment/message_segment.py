@@ -12,7 +12,7 @@ from dataclasses import dataclass, field, fields
 from urllib.parse import urljoin
 from typing import Literal, Union, Any, TYPE_CHECKING, TypeVar, Dict, Type, Iterable
 from ncatbot.utils import get_log, NcatBotError, status
-from ncatbot.utils.thread_pool import run_coroutine
+from ncatbot.utils import run_coroutine
 if TYPE_CHECKING:
     from ncatbot.core.event.message_segment.message_array import MessageArray
     from ncatbot.core.event.event_data import MessageEventData

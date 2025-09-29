@@ -43,7 +43,7 @@ class ClientMixin:
         })
         # 同步调用启动处理器
         import inspect
-        from ncatbot.utils.thread_pool import run_coroutine
+        from ncatbot.utils import run_coroutine
         from ncatbot.utils import OFFICIAL_STARTUP_EVENT
         for handler in self.event_handlers[OFFICIAL_STARTUP_EVENT]:
             if inspect.iscoroutinefunction(handler):

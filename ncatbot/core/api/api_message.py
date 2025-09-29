@@ -15,7 +15,7 @@ from ncatbot.core.helper import ForwardConstructor
 from ncatbot.core.legacy import MessageChain
 from ncatbot.utils import NcatBotValueError
 from .utils import BaseAPI, APIReturnStatus, MessageAPIReturnStatus, check_exclusive_argument
-from ncatbot.utils.thread_pool import run_coroutine
+from ncatbot.utils import run_coroutine
 
 class MessageAPI(BaseAPI):
     

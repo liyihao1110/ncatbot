@@ -3,7 +3,7 @@ from typing import Optional, Dict, Any, List, Union, TYPE_CHECKING
 from .event_factory import EventFactory
 from .mock_api import MockAPIAdapter
 from ncatbot.utils import get_log
-from ncatbot.utils.thread_pool import run_coroutine
+from ncatbot.utils import run_coroutine
 
 if TYPE_CHECKING:
     from ncatbot.core.event.message_segment import MessageArray

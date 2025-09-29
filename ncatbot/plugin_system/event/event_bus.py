@@ -13,7 +13,7 @@ from ncatbot.utils import get_log
 # from logging import getLogger
 from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, Set
 
-from ncatbot.utils.thread_pool import run_coroutine
+from ncatbot.utils import run_coroutine
 
 if TYPE_CHECKING:
     from ..base_plugin import BasePlugin

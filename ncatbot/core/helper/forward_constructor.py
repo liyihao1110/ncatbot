@@ -1,6 +1,6 @@
 import asyncio
 from ncatbot.utils import status
-from ncatbot.utils.thread_pool import run_coroutine
+from ncatbot.utils import run_coroutine
 from ncatbot.core.event.message_segment import MessageArray, Node, Image, Text, Forward, Node, File, Video, MessageSegment
 
 class ForwardConstructor:

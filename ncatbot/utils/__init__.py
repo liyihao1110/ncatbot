@@ -6,7 +6,7 @@ from ncatbot.utils.logger import get_log
 from ncatbot.utils.status import Status, status
 from ncatbot.utils.network_io import get_proxy_url
 from ncatbot.utils.error import NcatBotError, NcatBotValueError
-from ncatbot.utils.thread_pool import ThreadPool
+from ncatbot.utils.thread_pool import ThreadPool, run_coroutine
 
 # Re-export assets
 from ncatbot.utils.assets import (
@@ -65,6 +65,7 @@ __all__ = [
     
     # 线程池
     "ThreadPool",
+    "run_coroutine",
     
     # 资源/常量
     "Color",

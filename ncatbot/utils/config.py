@@ -8,6 +8,7 @@ import urllib.parse
 import warnings
 from dataclasses import KW_ONLY, asdict, dataclass, field, fields
 from typing import Any, List, Optional, Self, TextIO
+from urllib.parse import quote_plus
 
 import rich  # 这东西真需要吗
 import yaml
@@ -284,6 +285,10 @@ class Config(BaseConfig):
     """是否跳过 NcatBot 安装检查"""
     websocket_timeout: int = 15
     # 暂时没用的
+
+    def get_uri_with_token(self):
+        quoted_token = quote_plus(self.napcat.ws_token)
+        return f"{self.napcat.ws_uri.rstrip('/')}/?access_token={quoted_token}"
 
     def asdict(self) -> dict[str, Any]:
         """将实例转换为字典。"""

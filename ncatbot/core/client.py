@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 from ncatbot.core.adapter.adapter import Adapter
 from ncatbot.core.api.api import BotAPI
-from ncatbot.utils.thread_pool import run_coroutine
+from ncatbot.utils import run_coroutine
 from ncatbot.core.event import MessageSegment
 from ncatbot.core.event import BaseEventData, PrivateMessageEvent, GroupMessageEvent, NoticeEvent, RequestEvent, MetaEvent
 from ncatbot.utils import (
