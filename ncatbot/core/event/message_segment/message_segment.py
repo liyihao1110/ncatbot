@@ -1,18 +1,12 @@
 
-from email import message
-import re
-import base64
 import os
-import asyncio
 import time
 import httpx
 from ncatbot.core.event.message_segment.utils import convert_uploadable_object
-import urllib
+import urllib.parse
 from dataclasses import dataclass, field, fields
-from urllib.parse import urljoin
 from typing import Literal, Union, Any, TYPE_CHECKING, TypeVar, Dict, Type, Iterable
-from ncatbot.utils import get_log, NcatBotError, status
-from ncatbot.utils import run_coroutine
+from ncatbot.utils import get_log, run_coroutine, NcatBotError, status
 if TYPE_CHECKING:
     from ncatbot.core.event.message_segment.message_array import MessageArray
     from ncatbot.core.event.event_data import MessageEventData

@@ -2,16 +2,11 @@ import hashlib
 import platform
 import time
 import traceback
+import urllib.error
+import socket
 
 import qrcode
-import requests
-from requests.exceptions import ConnectionError
-from urllib3.exceptions import NewConnectionError
-
-# from PIL import Image
-# import qreader
-from ncatbot.utils import NAPCAT_WEBUI_SALT, ncatbot_config, get_log
-
+from ncatbot.utils import NAPCAT_WEBUI_SALT, ncatbot_config, get_log, post_json
 
 class QQLoginedError(Exception):
     def __init__(self):
@@ -64,11 +59,11 @@ class LoginHandler:
                 hashed_token = hashlib.sha256(
                     f"{ncatbot_config.napcat.webui_token}.{NAPCAT_WEBUI_SALT}".encode()
                 ).hexdigest()
-                content = requests.post(
+                content = post_json(
                     self.base_uri + "/api/auth/login",
-                    json={"hash": hashed_token},
+                    payload={"hash": hashed_token},
                     timeout=5,
-                ).json()
+                )
                 time.sleep(0.02)
                 self.header = {
                     "Authorization": "Bearer " + content["data"]["Credential"],
@@ -88,11 +83,11 @@ class LoginHandler:
                 if time.time() > MAX_TIME_EXPIER:
                     # 尝试老版本 NapCat 登录
                     try:
-                        content = requests.post(
+                        content = post_json(
                             self.base_uri + "/api/auth/login",
-                            json={"token": ncatbot_config.napcat.webui_token},
+                            payload={"token": ncatbot_config.napcat.webui_token},
                             timeout=5,
-                        ).json()
+                        )
                         time.sleep(0.2)
                         self.header = {
                             "Authorization": "Bearer " + content["data"]["Credential"],
@@ -106,7 +101,7 @@ class LoginHandler:
                         LOG.info("建议更新到最新版本 NapCat")
                         LOG.info(traceback.format_exc())
                         raise Exception("无法获取授权信息")
-            except (ConnectionError, NewConnectionError):
+            except (urllib.error.URLError, socket.timeout, ConnectionError, OSError):
                 if platform.system() == "Windows":
                     if time.time() > MAX_TIME_EXPIER:
                         LOG.error("授权操作超时")
@@ -133,11 +128,11 @@ class LoginHandler:
 
     def get_quick_login(self):
         try:
-            data = requests.post(
+            data = post_json(
                 self.base_uri + "/api/QQLogin/GetQuickLoginListNew",
                 headers=self.header,
                 timeout=5,
-            ).json()["data"]
+            )["data"]
             list = [rec["uin"] for rec in data if rec["isQuickLogin"]]
             LOG.info("快速登录列表: " + str(list))
             return list
@@ -148,11 +143,11 @@ class LoginHandler:
     def check_login_status(self) -> bool:
         # 检查 NapCat 是否登录
         try:
-            return requests.post(
+            return post_json(
                 self.base_uri + "/api/QQLogin/CheckLoginStatus",
                 headers=self.header,
                 timeout=5,
-            ).json()["data"]["isLogin"]
+            )["data"]["isLogin"]
         except TimeoutError:
             LOG.warning("检查登录状态超时, 默认未登录")
             return False
@@ -160,12 +155,12 @@ class LoginHandler:
     def send_quick_login_request(self):
         LOG.info("正在发送快速登录请求...")
         try:
-            status = requests.post(
+            status = post_json(
                 self.base_uri + "/api/QQLogin/SetQuickLogin",
                 headers=self.header,
-                json={"uin": str(ncatbot_config.bt_uin)},
+                payload={"uin": str(ncatbot_config.bt_uin)},
                 timeout=8,
-            ).json()
+            )
             success = status.get("message", "failed") in ["success", "QQ Is Logined"]
             if not success:
                 LOG.warning(f"快速登录请求失败: {status}")
@@ -180,11 +175,11 @@ class LoginHandler:
         while time.time() < EXPIRE:
             time.sleep(0.2)
             try:
-                data = requests.post(
+                data = post_json(
                     self.base_uri + "/api/QQLogin/GetQQLoginQrcode",
                     headers=self.header,
                     timeout=5,
-                ).json()
+                )
                 val = data.get("data", {}).get("qrcode", None)
                 if data.get("message", None) == "QQ Is Logined":
                     raise QQLoginedError()
@@ -201,15 +196,11 @@ class LoginHandler:
 
     def get_qq_login_info(self):
         try:
-            return (
-                requests.post(
-                    self.base_uri + "/api/QQLogin/GetQQLoginInfo",
-                    headers=self.header,
-                    timeout=5,
-                )
-                .json()
-                .get("data", {})
-            )
+            return post_json(
+                self.base_uri + "/api/QQLogin/GetQQLoginInfo",
+                headers=self.header,
+                timeout=5,
+            ).get("data", {})
         except TimeoutError:
             LOG.warning("获取登录信息超时, 默认未登录")
             return None

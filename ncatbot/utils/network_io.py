@@ -1,14 +1,67 @@
-import threading
-import time
-from concurrent.futures import ThreadPoolExecutor
-from queue import Queue
 from tqdm import tqdm
+import socket
+import json
+import urllib
+import urllib.request
+import urllib.error
 
 from ncatbot.utils.logger import get_log
 from ncatbot.utils.status import status
 
 _log = get_log()
 
+
+def post_json(url: str, payload: dict | None = None, headers: dict | None = None, timeout: float = 5.0) -> dict:
+    body = None
+    req_headers = {
+        "User-Agent": "ncatbot/1.0",
+        "Accept": "application/json",
+    }
+    if headers:
+        req_headers.update(headers)
+    if payload is not None:
+        body = json.dumps(payload).encode("utf-8")
+        req_headers["Content-Type"] = "application/json"
+    req = urllib.request.Request(url, data=body, headers=req_headers, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            status = getattr(resp, "status", resp.getcode())
+            if status != 200:
+                raise urllib.error.HTTPError(url, status, "Non-200 response", hdrs=resp.headers, fp=None)
+            data = resp.read()
+            return json.loads(data.decode("utf-8"))
+    except socket.timeout as e:
+        # 维持与原代码的 TimeoutError 语义一致
+        raise TimeoutError("request timed out") from e
+    except urllib.error.URLError as e:
+        # 某些实现会把超时包裹在 URLError.reason 中
+        if isinstance(getattr(e, "reason", None), socket.timeout):
+            raise TimeoutError("request timed out") from e
+        raise
+
+def get_json(url: str, headers: dict | None = None, timeout: float = 5.0) -> dict:
+    req_headers = {
+        "User-Agent": "ncatbot/1.0",
+        "Accept": "application/json",
+    }
+    if headers:
+        req_headers.update(headers)
+    req = urllib.request.Request(url, headers=req_headers, method="GET")
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            status = getattr(resp, "status", resp.getcode())
+            if status != 200:
+                raise urllib.error.HTTPError(url, status, "Non-200 response", hdrs=resp.headers, fp=None)
+            data = resp.read()
+            return json.loads(data.decode("utf-8"))
+    except socket.timeout as e:
+        # 维持与原代码的 TimeoutError 语义一致
+        raise TimeoutError("request timed out") from e
+    except urllib.error.URLError as e:
+        # 某些实现会把超时包裹在 URLError.reason 中
+        if isinstance(getattr(e, "reason", None), socket.timeout):
+            raise TimeoutError("request timed out") from e
+        raise
 
 def download_file(url, file_name):
     """下载文件, 带进度条"""
@@ -82,6 +135,11 @@ def get_proxy_url():
         status.current_github_proxy = ""
         return ""
 
+
+def gen_url_with_proxy(original_url: str) -> str:
+    """生成带代理的 URL"""
+    proxy_url = get_proxy_url()
+    return f"{proxy_url.strip('/')}/{original_url.strip('/')}" if proxy_url else original_url
 
 # threading.Thread(target=get_proxy_url, daemon=True).start()
 

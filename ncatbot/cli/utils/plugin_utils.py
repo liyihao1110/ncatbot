@@ -2,13 +2,10 @@
 
 from typing import Any, Dict, List, Optional, Tuple, TypedDict, Union
 
-import requests
-from requests.exceptions import RequestException, Timeout
-
 from ncatbot.cli.utils.colors import command, error, header, info, success
 from ncatbot.cli.utils.constants import PLUGIN_INDEX_URL
-from ncatbot.utils import get_log, get_proxy_url
-
+from ncatbot.utils import get_log, gen_url_with_proxy, post_json
+import urllib
 
 class PluginInfo(TypedDict):
     versions: List[str]
@@ -30,30 +27,14 @@ def get_plugin_index() -> Optional[PluginIndex]:
         Optional[PluginIndex]: 插件索引，如果获取失败则返回 None
     """
     try:
-        proxy_url = get_proxy_url()
-        if proxy_url:
-            index_url = f"{proxy_url}{PLUGIN_INDEX_URL}"
-        else:
-            index_url = PLUGIN_INDEX_URL
-
+        index_url = gen_url_with_proxy(PLUGIN_INDEX_URL)
         logger.debug(f"正在获取插件索引: {index_url}")
-        response = requests.get(index_url, timeout=10)
-        if response.status_code != 200:
-            logger.error(f"获取插件索引失败: HTTP {response.status_code}")
-            return None
-
-        data = response.json()
+        data = post_json(index_url, {}, timeout=10)
         if not isinstance(data, dict) or "plugins" not in data:
             logger.error("获取的插件索引格式无效")
             return None
 
         return data
-    except Timeout:
-        logger.error("获取插件索引超时")
-        return None
-    except RequestException as e:
-        logger.error(f"获取插件索引网络错误: {e}")
-        return None
     except ValueError as e:
         logger.error(f"解析插件索引 JSON 失败: {e}")
         return None
@@ -79,27 +60,22 @@ def gen_plugin_download_url(plugin_name: str, version: str, repository: str) -> 
 
     def check_url_exists(url: str) -> bool:
         """检查 URL 是否存在（返回 200 状态码）。"""
-        try:
-            logger.debug(f"检查 URL 是否存在: {url}")
-            response = requests.get(url, stream=True, timeout=5)
-            exists = response.status_code == 200
-            response.close()
-            return exists
-        except (RequestException, Timeout) as e:
-            logger.error(f"URL 检查失败: {url}, 错误: {e}")
-            return False
-
-    # 确保 proxy_url 以 / 结尾
-    proxy_url = get_proxy_url() or ""
-    if proxy_url and not proxy_url.endswith("/"):
-        proxy_url = f"{proxy_url}/"
+        # try:
+        #     logger.debug(f"检查 URL 是否存在: {url}")
+        #     req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "ncatbot/1.0"})
+        #     with urllib.request.urlopen(req, timeout=10) as resp:
+        #         exists = resp.status == 200
+        #     return exists
+        # except (urllib.error.HTTPError, urllib.error.URLError) as e:
+        #     logger.error(f"URL 检查失败: {url}, 错误: {e}")
+        return False
 
     # 清理仓库路径
     repo_path = repository.replace("https://github.com/", "").strip("/")
 
     # 构建两种可能的下载 URL
-    url1 = f"{proxy_url}https://github.com/{repo_path}/raw/refs/heads/v{version}/release/{plugin_name}-{version}.zip"
-    url2 = f"{proxy_url}https://github.com/{repo_path}/releases/download/v{version}/{plugin_name}-{version}.zip"
+    url1 = gen_url_with_proxy(f"https://github.com/{repo_path}/raw/refs/heads/v{version}/release/{plugin_name}-{version}.zip")
+    url2 = gen_url_with_proxy(f"https://github.com/{repo_path}/releases/download/v{version}/{plugin_name}-{version}.zip")
 
     logger.debug(f"尝试下载 URL 1: {url1}")
     if check_url_exists(url1):
@@ -141,21 +117,22 @@ def download_plugin_file(plugin_info: PluginInfo, file_name: str) -> bool:
         logger.info(f"正在下载插件: {plugin_name} v{version}")
 
         # 下载文件
-        response = requests.get(url, timeout=30)
-        if response.status_code != 200:
-            logger.error(f"下载插件包失败: HTTP {response.status_code}")
-            return False
+        req = urllib.request.Request(url, method="GET", headers={"User-Agent": "ncatbot/1.0"})
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            if resp.status != 200:
+                logger.error(f"下载插件包失败: HTTP {resp.status}")
+                return False
 
         with open(file_name, "wb") as f:
-            f.write(response.content)
+            f.write(resp.read())
 
         logger.info(f"插件下载完成: {file_name}")
         return True
-    except Timeout:
-        logger.error("下载插件包超时")
+    except urllib.error.HTTPError as e:
+        logger.error(f"下载插件包失败: HTTP {e.code}")
         return False
-    except RequestException as e:
-        logger.error(f"下载插件包网络错误: {e}")
+    except urllib.error.URLError as e:
+        logger.error(f"下载插件包网络错误: {e.reason}")
         return False
     except Exception as e:
         logger.error(f"下载插件包时出错: {e}")

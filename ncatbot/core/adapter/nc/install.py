@@ -5,16 +5,17 @@ import platform
 import subprocess
 import sys
 
-from requests import get
+import urllib.error
 
 from ncatbot.utils import (
     INSTALL_SCRIPT_URL,
-    LINUX_NAPCAT_DIR,
     WINDOWS_NAPCAT_DIR,
     ncatbot_config,
     get_log,
-    get_proxy_url,
+    gen_url_with_proxy,
+    get_json,
 )
+
 from ncatbot.core.adapter.nc.utils import (
     check_linux_permissions,
     check_self_package_version,
@@ -28,17 +29,17 @@ LOG = get_log("ncatbot.core.adapter.nc.install")
 
 def get_napcat_version():
     """从GitHub获取 napcat 版本号"""
-    github_proxy_url = get_proxy_url()
-    version_url = f"{github_proxy_url}https://raw.githubusercontent.com/NapNeko/NapCatQQ/main/package.json"
+    version_url = "https://raw.githubusercontent.com/NapNeko/NapCatQQ/main/package.json"
+    version_url = gen_url_with_proxy(version_url)
     LOG.info(f"正在获取版号信息... {version_url}")
-    version_response = get(version_url)
-    if version_response.status_code == 200:
-        version = version_response.json()["version"]
+    data = get_json(version_url)
+    version = data.get("version", None)
+    if version:
         LOG.debug(f"获取最新版本信息成功, 版本号: {version}")
         return version
-    LOG.info(f"获取最新版本信息失败, http 状态码: {version_response.status_code}")
+    else:
+        LOG.info("获取最新版本信息失败: package.json 中缺少 version 字段")
     return None
-
 
 def check_windows_qq_version():
     # TODO: 登陆后检查 QQ 版本
@@ -64,8 +65,7 @@ def install_napcat_windows(type: str):
 
     try:
         version = get_napcat_version()
-        github_proxy_url = get_proxy_url()
-        download_url = f"{github_proxy_url}https://github.com/NapNeko/NapCatQQ/releases/download/v{version}/NapCat.Shell.zip"
+        download_url = gen_url_with_proxy(f"https://github.com/NapNeko/NapCatQQ/releases/download/v{version}/NapCat.Shell.zip")
         if not version:
             return False
 

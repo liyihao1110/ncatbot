@@ -4,9 +4,9 @@ from ncatbot.utils.config import ncatbot_config
 from ncatbot.utils.config import ncatbot_config as config
 from ncatbot.utils.logger import get_log
 from ncatbot.utils.status import Status, status
-from ncatbot.utils.network_io import get_proxy_url
-from ncatbot.utils.error import NcatBotError, NcatBotValueError
-from ncatbot.utils.thread_pool import ThreadPool, run_coroutine
+from ncatbot.utils.network_io import gen_url_with_proxy, get_json, post_json
+from ncatbot.utils.error import NcatBotError
+from ncatbot.utils.thread_pool import run_coroutine
 
 # Re-export assets
 from ncatbot.utils.assets import (
@@ -35,7 +35,6 @@ from ncatbot.utils.assets import (
     STATUS_LISTENING,
     STATUS_LOVE_YOU,
     STATUS_LEARNING,
-    Status as StatusConstants,
     PermissionGroup,
     DefaultPermission,
     EVENT_QUEUE_MAX_SIZE,
@@ -57,7 +56,9 @@ __all__ = [
     "Status",
     
     # 网络工具
-    "get_proxy_url",
+    "gen_url_with_proxy",
+    "post_json",
+    "get_json",
     
     # 错误处理
     "NcatBotError",
