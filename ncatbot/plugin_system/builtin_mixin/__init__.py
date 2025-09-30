@@ -5,5 +5,5 @@ __all__ = [
     "ConfigMixin",
     "FunctionMixin",
     "CommandMixin",
-    "TimeTaskMixin"
-]    
+    "TimeTaskMixin",
+]

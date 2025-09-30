@@ -8,6 +8,7 @@ import socket
 import qrcode
 from ncatbot.utils import NAPCAT_WEBUI_SALT, ncatbot_config, get_log, post_json
 
+
 class QQLoginedError(Exception):
     def __init__(self):
         super().__init__("QQ 已登录")

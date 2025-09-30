@@ -5,7 +5,6 @@ import platform
 import subprocess
 import sys
 
-import urllib.error
 
 from ncatbot.utils import (
     INSTALL_SCRIPT_URL,
@@ -24,7 +23,7 @@ from ncatbot.core.adapter.nc.utils import (
     get_napcat_dir,
 )
 
-LOG = get_log("ncatbot.core.adapter.nc.install")    
+LOG = get_log("ncatbot.core.adapter.nc.install")
 
 
 def get_napcat_version():
@@ -40,6 +39,7 @@ def get_napcat_version():
     else:
         LOG.info("获取最新版本信息失败: package.json 中缺少 version 字段")
     return None
+
 
 def check_windows_qq_version():
     # TODO: 登陆后检查 QQ 版本
@@ -65,7 +65,9 @@ def install_napcat_windows(type: str):
 
     try:
         version = get_napcat_version()
-        download_url = gen_url_with_proxy(f"https://github.com/NapNeko/NapCatQQ/releases/download/v{version}/NapCat.Shell.zip")
+        download_url = gen_url_with_proxy(
+            f"https://github.com/NapNeko/NapCatQQ/releases/download/v{version}/NapCat.Shell.zip"
+        )
         if not version:
             return False
 
@@ -187,8 +189,10 @@ def install_or_update_napcat():
     else:
         return True
 
+
 def main():
     install_napcat("install")
-    
-if __name__ == '__main__':
+
+
+if __name__ == "__main__":
     main()

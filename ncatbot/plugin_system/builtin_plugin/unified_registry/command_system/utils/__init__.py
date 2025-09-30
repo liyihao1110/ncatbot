@@ -2,6 +2,7 @@
 
 提供各种工具类和规格定义。
 """
+
 from .specs import CommandSpec, OptionSpec, OptionGroupSpec, ParameterSpec, FuncSpec
 from .exceptions import (
     CommandSystemError,
@@ -18,8 +19,9 @@ from .exceptions import (
     TooManyArgumentsError,
     ErrorHandler,
 )
+
 __all__ = [
-    "CommandSpec", 
+    "CommandSpec",
     "OptionSpec",
     "OptionGroupSpec",
     "ParameterSpec",

@@ -1,5 +1,7 @@
 from ncatbot.plugin_system import NcatBotPlugin
-from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import filter_registry, CustomFilter
+from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import (
+    filter_registry,
+)
 from ncatbot.plugin_system import command_registry
 from ncatbot.core.event import BaseMessageEvent
 
@@ -8,6 +10,7 @@ from ncatbot.core.event import BaseMessageEvent
 @filter_registry.register("time_filter")
 def time_filter(event: BaseMessageEvent) -> bool:
     import datetime
+
     current_hour = datetime.datetime.now().hour
     return 9 <= current_hour <= 22
 
@@ -39,5 +42,3 @@ class CustomFiltersPlugin(NcatBotPlugin):
 def bind_custom_filter_to_function(func):
     filter_registry.add_filter_to_function(func, "keyword_filter")
     return func
-
-

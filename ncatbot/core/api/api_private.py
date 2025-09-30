@@ -1,22 +1,35 @@
-from typing import Literal, Union
+from typing import Union
 from .utils import BaseAPI, APIReturnStatus
 from ncatbot.utils import run_coroutine
 
+
 class PrivateAPI(BaseAPI):
-    
     # ---------------------
     # region 文件
     # ---------------------
-    async def upload_private_file(self, user_id: Union[str, int], file: str, name: str) -> None:
-        result = await self.async_callback("/upload_private_file", {"user_id": user_id, "file": file, "name": name})
+    async def upload_private_file(
+        self, user_id: Union[str, int], file: str, name: str
+    ) -> None:
+        result = await self.async_callback(
+            "/upload_private_file", {"user_id": user_id, "file": file, "name": name}
+        )
         APIReturnStatus.raise_if_failed(result)
-    
+
     async def get_private_file_url(self, file_id: str) -> str:
-        result = await self.async_callback("/get_private_file_url", {"file_id": file_id})
+        result = await self.async_callback(
+            "/get_private_file_url", {"file_id": file_id}
+        )
         status = APIReturnStatus(result)
         return status.data.get("url")
-    
-    async def post_private_file(self, user_id: Union[str, int], image: str=None, record: str=None, video: str=None, file: str=None) -> str:
+
+    async def post_private_file(
+        self,
+        user_id: Union[str, int],
+        image: str = None,
+        record: str = None,
+        video: str = None,
+        file: str = None,
+    ) -> str:
         count = sum(1 for arg in [image, record, video, file] if arg is not None)
         if count != 1:
             raise ValueError("只能上传一个文件")
@@ -30,7 +43,7 @@ class PrivateAPI(BaseAPI):
             return await self.send_private_file(user_id, file)
         else:
             raise ValueError("必须上传一个文件")
-    
+
     # ---------------------
     # region 其它
     # ---------------------
@@ -42,19 +55,30 @@ class PrivateAPI(BaseAPI):
         """
         result = await self.async_callback("/set_input_status", {"status": status})
         APIReturnStatus.raise_if_failed(result)
-    
+
     # ---------------------
     # region 同步版本接口
     # ---------------------
-    
-    def upload_private_file_sync(self, user_id: Union[str, int], file: str, name: str) -> None:
+
+    def upload_private_file_sync(
+        self, user_id: Union[str, int], file: str, name: str
+    ) -> None:
         return run_coroutine(self.upload_private_file, user_id, file, name)
-    
+
     def get_private_file_url_sync(self, file_id: str) -> str:
         return run_coroutine(self.get_private_file_url, file_id)
-    
-    def post_private_file_sync(self, user_id: Union[str, int], image: str=None, record: str=None, video: str=None, file: str=None) -> str:
-        return run_coroutine(self.post_private_file, user_id, image, record, video, file)
-    
+
+    def post_private_file_sync(
+        self,
+        user_id: Union[str, int],
+        image: str = None,
+        record: str = None,
+        video: str = None,
+        file: str = None,
+    ) -> str:
+        return run_coroutine(
+            self.post_private_file, user_id, image, record, video, file
+        )
+
     def set_input_status_sync(self, status: int) -> None:
         return run_coroutine(self.set_input_status, status)

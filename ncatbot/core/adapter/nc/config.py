@@ -8,6 +8,7 @@ from ncatbot.utils.assets.default_webui_config import config as default_webui_co
 
 LOG = get_log("ncatbot.core.adapter.nc.config")
 
+
 def config_napcat():
     """配置 napcat 服务器, 保证 napcat_dir 存在且被正确配置"""
     napcat_dir = get_napcat_dir()
@@ -21,15 +22,25 @@ def config_napcat():
             original_data = json.load(
                 open(
                     os.path.join(
-                        napcat_dir, "config", "onebot11_" + str(ncatbot_config.bt_uin) + ".json"
+                        napcat_dir,
+                        "config",
+                        "onebot11_" + str(ncatbot_config.bt_uin) + ".json",
                     ),
                     "r",
                     encoding="utf-8",
                 )
             )
-            if original_data["parseMultMsg"] != ncatbot_config.napcat.report_forward_message_detail:
-                LOG.warning("解析合并转发消息配置不匹配, 将修改为 NcatBot 配置的配置: " + str(ncatbot_config.napcat.report_forward_message_detail))
-                original_data["parseMultMsg"] = ncatbot_config.napcat.report_forward_message_detail
+            if (
+                original_data["parseMultMsg"]
+                != ncatbot_config.napcat.report_forward_message_detail
+            ):
+                LOG.warning(
+                    "解析合并转发消息配置不匹配, 将修改为 NcatBot 配置的配置: "
+                    + str(ncatbot_config.napcat.report_forward_message_detail)
+                )
+                original_data["parseMultMsg"] = (
+                    ncatbot_config.napcat.report_forward_message_detail
+                )
         else:
             original_data = {
                 "network": {
@@ -47,7 +58,11 @@ def config_napcat():
             "port": int(urlparse(ncatbot_config.napcat.ws_uri).port),
             "messagePostFormat": "array",
             "reportSelfMessage": ncatbot_config.napcat.report_self_message,
-            "token": (str(ncatbot_config.napcat.ws_token) if ncatbot_config.napcat.ws_token is not None else ""),
+            "token": (
+                str(ncatbot_config.napcat.ws_token)
+                if ncatbot_config.napcat.ws_token is not None
+                else ""
+            ),
             "enableForcePushEvent": True,
             "debug": False,
             "heartInterval": 30000,
@@ -56,9 +71,20 @@ def config_napcat():
             pass
         else:
             for server_config in original_data["network"]["websocketServers"]:
-                if server_config["port"] == int(urlparse(ncatbot_config.napcat.ws_uri).port):
-                    if input("原配置对应的端口 " + str(server_config["port"]) + " 已经存在, 是否强制覆盖配置 (y/n): ").lower() == "y":
-                        original_data["network"]["websocketServers"].remove(server_config)
+                if server_config["port"] == int(
+                    urlparse(ncatbot_config.napcat.ws_uri).port
+                ):
+                    if (
+                        input(
+                            "原配置对应的端口 "
+                            + str(server_config["port"])
+                            + " 已经存在, 是否强制覆盖配置 (y/n): "
+                        ).lower()
+                        == "y"
+                    ):
+                        original_data["network"]["websocketServers"].remove(
+                            server_config
+                        )
                     else:
                         raise ValueError(
                             f"原配置对应的端口 {server_config['port']} 已经存在, 请更改端口"

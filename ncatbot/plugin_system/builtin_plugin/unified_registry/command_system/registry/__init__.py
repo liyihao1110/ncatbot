@@ -11,11 +11,11 @@
 
 使用示例：
     from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.modern_registry import registry
-    
+
     @registry.command("hello")
     def hello_command(event):
         return "Hello, World!"
-    
+
     @registry.command("greet")
     @registry.option("-v", "--verbose", help="详细输出")
     @registry.param("target", type=CommonUnionTypes.USER_IDENTIFIER, help="目标用户")
@@ -25,14 +25,23 @@
 
 from .registry import ModernRegistry, CommandGroup, command_registry
 from .decorators import (
-    option, param, option_group,
+    option,
+    param,
+    option_group,
 )
 from ..utils import (
-    CommandRegistrationError, ParameterError, ValidationError,
-    CommandNotFoundError, ArgumentError, OptionError,
-    TypeConversionError, MultiTypeConversionError,
-    MutuallyExclusiveError, MissingRequiredParameterError,
-    TooManyArgumentsError, ErrorHandler
+    CommandRegistrationError,
+    ParameterError,
+    ValidationError,
+    CommandNotFoundError,
+    ArgumentError,
+    OptionError,
+    TypeConversionError,
+    MultiTypeConversionError,
+    MutuallyExclusiveError,
+    MissingRequiredParameterError,
+    TooManyArgumentsError,
+    ErrorHandler,
 )
 from ..utils.specs import ParameterSpec, OptionSpec, OptionGroupSpec, CommandSpec
 from .help_system import HelpGenerator, format_error_with_help
@@ -43,24 +52,33 @@ registry = ModernRegistry()
 __all__ = [
     # 主要注册实例
     "registry",
-    
     # 核心类
-    "ModernRegistry", "CommandGroup", "command_registry",
-    
+    "ModernRegistry",
+    "CommandGroup",
+    "command_registry",
     # 装饰器
-    "option", "param", "option_group",
-    
+    "option",
+    "param",
+    "option_group",
     # 异常类
-    "CommandRegistrationError", "ParameterError", "ValidationError",
-    "CommandNotFoundError", "ArgumentError", "OptionError",
-    "TypeConversionError", "MultiTypeConversionError",
-    "MutuallyExclusiveError", "MissingRequiredParameterError",
-    "TooManyArgumentsError", "ErrorHandler",
-    
-    
+    "CommandRegistrationError",
+    "ParameterError",
+    "ValidationError",
+    "CommandNotFoundError",
+    "ArgumentError",
+    "OptionError",
+    "TypeConversionError",
+    "MultiTypeConversionError",
+    "MutuallyExclusiveError",
+    "MissingRequiredParameterError",
+    "TooManyArgumentsError",
+    "ErrorHandler",
     # 规格系统
-    "ParameterSpec", "OptionSpec", "OptionGroupSpec", "CommandSpec",
-    
+    "ParameterSpec",
+    "OptionSpec",
+    "OptionGroupSpec",
+    "CommandSpec",
     # 帮助系统
-    "HelpGenerator", "format_error_with_help",
+    "HelpGenerator",
+    "format_error_with_help",
 ]

@@ -14,9 +14,11 @@ async def run_group_management_tests():
 
     # 管理员权限模拟
     original_manager = status.global_access_manager
+
     class _AdminManager:
         def user_has_role(self, user_id, role):
             return True
+
     status.global_access_manager = _AdminManager()
     try:
         await helper.send_group_message("/mute 10086 --duration=120", group_id="g1")
@@ -42,5 +44,3 @@ async def run_group_management_tests():
 
 if __name__ == "__main__":
     asyncio.run(run_group_management_tests())
-
-

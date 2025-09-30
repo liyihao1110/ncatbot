@@ -9,6 +9,7 @@ import threading
 from schedule import Scheduler
 from ncatbot.utils import run_coroutine
 
+
 class TimeTaskScheduler:
     """
     任务调度器，支持以下特性:
@@ -27,7 +28,6 @@ class TimeTaskScheduler:
         self._scheduler = Scheduler()
         self._jobs = []
         threading.Thread(target=self.loop, daemon=True).start()
-        
 
     def loop(self):
         while True:
@@ -320,6 +320,7 @@ class TimeTaskScheduler:
                 }
         return None
 
+
 class TimeTaskMixin:
     """定时任务调度混入类，提供定时任务的管理功能。
 
@@ -393,12 +394,8 @@ class TimeTaskMixin:
             bool: 如果任务移除成功返回True，否则返回False。
         """
         return self._time_task_scheduler.remove_job(name=task_name)
-    
-    
+
     @final
     def restart_scheduler(self) -> None:
         """重启定时任务调度器。"""
         pass
-        
-    
-    

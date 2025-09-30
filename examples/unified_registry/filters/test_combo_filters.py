@@ -14,9 +14,11 @@ async def run_combo_filters_tests():
 
     # 管理员 + 群聊
     original_manager = status.global_access_manager
+
     class _AdminManager:
         def user_has_role(self, user_id, role):
             return True
+
     status.global_access_manager = _AdminManager()
     try:
         await helper.send_group_message("/grouppromote 10010")
@@ -37,9 +39,11 @@ async def run_combo_filters_tests():
 
     # filters("admin_filter", "group_filter") + 命令
     original_manager = status.global_access_manager
+
     class _AdminManager2:
         def user_has_role(self, user_id, role):
             return True
+
     status.global_access_manager = _AdminManager2()
     try:
         await helper.send_group_message("/order")
@@ -53,5 +57,3 @@ async def run_combo_filters_tests():
 
 if __name__ == "__main__":
     asyncio.run(run_combo_filters_tests())
-
-

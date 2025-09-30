@@ -265,25 +265,25 @@ class _RBACManager:
             self.users[user_name]["role_list"].append(role_name)
             self.role_users[role_name].add(user_name)
 
-    def unassign_permissions_to_role(
-        self, role_name: str, permissions_path: str
-    ):
+    def unassign_permissions_to_role(self, role_name: str, permissions_path: str):
         if not self.check_availability(role_name=role_name):
             raise IndexError(f"角色 {role_name} 不存在")
         self.refresh_cache(role_name=role_name)
         for mode in ["white", "black"]:
             if permissions_path in self.roles[role_name][f"{mode}_permissions_list"]:
-                self.roles[role_name][f"{mode}_permissions_list"].remove(permissions_path)
+                self.roles[role_name][f"{mode}_permissions_list"].remove(
+                    permissions_path
+                )
 
-    def unassign_permissions_to_user(
-        self, user_name: str, permissions_path: str
-    ):
+    def unassign_permissions_to_user(self, user_name: str, permissions_path: str):
         if not self.check_availability(user_name=user_name):
             raise IndexError(f"用户 {user_name} 不存在")
         self.refresh_cache(user_name=user_name)
         for mode in ["white", "black"]:
             if permissions_path in self.users[user_name][f"{mode}_permissions_list"]:
-                self.users[user_name][f"{mode}_permissions_list"].remove(permissions_path)
+                self.users[user_name][f"{mode}_permissions_list"].remove(
+                    permissions_path
+                )
 
     def unassign_role_to_user(self, role_name: str, user_name: str):
         if not self.check_availability(user_name=user_name, role_name=role_name):
@@ -352,8 +352,7 @@ class _RBACManager:
                 for role_name, role_data in self.roles.items()
             },
             "role_users": {
-                role_name: list(users)
-                for role_name, users in self.role_users.items()
+                role_name: list(users) for role_name, users in self.role_users.items()
             },
             # 保存用户数据（包含直接权限和角色关联）
             "users": {
@@ -374,7 +373,6 @@ class _RBACManager:
     def from_dict(cls, data: dict) -> "_RBACManager":
         """从字典重建RBACManager实例"""
         # 检查全局配置
-        
 
         instance = cls()
         instance.case_sensitive = data.get("case_sensitive", True)
@@ -399,7 +397,7 @@ class _RBACManager:
                     if instance.permissions_trie.check_path(p)
                 ],
             }
-        
+
         # 恢复角色/用户对照表
         for role_name, users in data.get("role_users", {}).items():
             instance.role_users[role_name] = set(users)
@@ -430,64 +428,78 @@ class _RBACManager:
         # 强制刷新所有缓存
         instance.refresh_cache()
         return instance
-    
+
 
 class RBACManager:
     manager: _RBACManager = None
+
     def __init__(self, path):
         if os.path.exists(path):
             with open(path, "r", encoding="utf-8") as f:
                 self.manager = _RBACManager.from_dict(json.load(f))
         else:
             self.manager = _RBACManager(default_role=PermissionGroup.USER.value)
-            
+
         self.add_role(PermissionGroup.USER.value)
         self.add_role(PermissionGroup.ADMIN.value)
         self.add_role(PermissionGroup.ROOT.value)
-        self.set_role_inheritance(PermissionGroup.ADMIN.value, PermissionGroup.ROOT.value)
-        self.set_role_inheritance(PermissionGroup.USER.value, PermissionGroup.ADMIN.value)
+        self.set_role_inheritance(
+            PermissionGroup.ADMIN.value, PermissionGroup.ROOT.value
+        )
+        self.set_role_inheritance(
+            PermissionGroup.USER.value, PermissionGroup.ADMIN.value
+        )
         self.unassign_root_roles()
         self.assign_role_to_user(ncatbot_config.root, PermissionGroup.ROOT.value)
-    
+
     def set_role_inheritance(self, role: str, inherited_role: str):
         if not self.role_exists(role) or not self.role_exists(inherited_role):
             raise IndexError(f"角色 {role} 或 {inherited_role} 不存在")
         self.manager.set_role_inheritance(role, inherited_role)
-    
+
     def unassign_root_roles(self):
         for user in self.manager.role_users[PermissionGroup.ROOT.value]:
             self.manager.users[user]["role_list"].remove(PermissionGroup.ROOT.value)
         self.manager.role_users[PermissionGroup.ROOT.value] = set()
-    
+
     def save(self, path):
         # TODO 编码问题
-        json.dump(self.manager.to_dict(), open(path, "w", encoding="utf-8"), ensure_ascii=False, indent=4)
-    
+        json.dump(
+            self.manager.to_dict(),
+            open(path, "w", encoding="utf-8"),
+            ensure_ascii=False,
+            indent=4,
+        )
+
     def load(self, path):
-        self.manager = _RBACManager.from_dict(json.load(open(path, "r", encoding="utf-8")))
-    
+        self.manager = _RBACManager.from_dict(
+            json.load(open(path, "r", encoding="utf-8"))
+        )
+
     def user_exists(self, user_name: str) -> bool:
         return self.manager.check_availability(user_name=user_name)
-    
+
     def role_exists(self, role_name: str) -> bool:
         return self.manager.check_availability(role_name=role_name)
-    
+
     def permission_path_exists(self, permissions_path: str) -> bool:
         return self.manager.check_availability(permissions_path=permissions_path)
-    
-    def check_permission(self, user_name: str, path: str, create_user_if_not_exists: bool = True) -> bool:
+
+    def check_permission(
+        self, user_name: str, path: str, create_user_if_not_exists: bool = True
+    ) -> bool:
         if not self.user_exists(user_name):
             if create_user_if_not_exists:
                 self.add_user(user_name)
             else:
                 raise IndexError(f"用户 {user_name} 不存在")
         return self.manager.check_permission(user_name, path)
-    
+
     def user_has_role(self, user_name: str, role_name: str) -> bool:
         if not self.user_exists(user_name):
             self.add_user(user_name)
         return role_name in self.manager.users[user_name]["role_list"]
-    
+
     def add_role(self, role_name: str, ignore_if_exists: bool = True):
         if self.role_exists(role_name):
             if ignore_if_exists:
@@ -498,8 +510,10 @@ class RBACManager:
             self.manager.add_role(role_name)
         if not ignore_if_exists:
             raise IndexError(f"角色 {role_name} 已存在")
-    
-    def add_user(self, user_name: str, role_list: List[str] = None, ignore_if_exists: bool = True):
+
+    def add_user(
+        self, user_name: str, role_list: List[str] = None, ignore_if_exists: bool = True
+    ):
         if self.user_exists(user_name):
             if ignore_if_exists:
                 return
@@ -513,8 +527,10 @@ class RBACManager:
                     raise IndexError(f"角色 {role} 不存在")
                 if not self.user_has_role(user_name, role):
                     self.manager.assign_role_to_user(role_list, user_name)
-    
-    def assign_role_to_user(self, user_name: str, role_name: str, create_user_if_not_exists: bool = True):
+
+    def assign_role_to_user(
+        self, user_name: str, role_name: str, create_user_if_not_exists: bool = True
+    ):
         if not self.user_exists(user_name):
             if create_user_if_not_exists:
                 self.add_user(user_name)
@@ -524,8 +540,14 @@ class RBACManager:
             raise IndexError(f"角色 {role_name} 不存在")
         if not self.user_has_role(user_name, role_name):
             self.manager.assign_role_to_user(role_name, user_name)
-    
-    def assign_permissions_to_role(self, role_name: str, permissions_path: str, mode: Literal["white", "black"] = "white", create_path_if_not_exists: bool = True):
+
+    def assign_permissions_to_role(
+        self,
+        role_name: str,
+        permissions_path: str,
+        mode: Literal["white", "black"] = "white",
+        create_path_if_not_exists: bool = True,
+    ):
         if not self.role_exists(role_name):
             raise IndexError(f"角色 {role_name} 不存在")
         if not self.permission_path_exists(permissions_path):
@@ -535,8 +557,14 @@ class RBACManager:
                 raise IndexError(f"权限路径 {permissions_path} 不存在")
         self.manager.assign_permissions_to_role(role_name, permissions_path, mode)
         self.manager.unassign_permissions_to_role(role_name, permissions_path)
-        
-    def assign_permissions_to_user(self, user_name: str, permissions_path: str, mode: Literal["white", "black"] = "white", create_path_if_not_exists: bool = True):
+
+    def assign_permissions_to_user(
+        self,
+        user_name: str,
+        permissions_path: str,
+        mode: Literal["white", "black"] = "white",
+        create_path_if_not_exists: bool = True,
+    ):
         if not self.user_exists(user_name):
             raise IndexError(f"用户 {user_name} 不存在")
         if not self.permission_path_exists(permissions_path):
@@ -545,13 +573,15 @@ class RBACManager:
             else:
                 raise IndexError(f"权限路径 {permissions_path} 不存在")
         self.manager.assign_permissions_to_user(user_name, permissions_path, mode)
-        self.manager.unassign_permissions_to_user(user_name, permissions_path, 'black' if mode == 'white' else 'white')
-    
+        self.manager.unassign_permissions_to_user(
+            user_name, permissions_path, "black" if mode == "white" else "white"
+        )
+
     def ban_permissions_to_role(self, role_name: str, permissions_path: str):
-        self.assign_permissions_to_role(role_name, permissions_path, mode='black')
-    
+        self.assign_permissions_to_role(role_name, permissions_path, mode="black")
+
     def ban_permissions_to_user(self, user_name: str, permissions_path: str):
-        self.assign_permissions_to_user(user_name, permissions_path, mode='black')
+        self.assign_permissions_to_user(user_name, permissions_path, mode="black")
 
     def revoke_permissions_from_user(self, user_name: str, permissions_path: str):
         if not self.user_exists(user_name):
@@ -565,13 +595,13 @@ class RBACManager:
             raise IndexError(f"角色 {role_name} 不存在")
         if not self.permission_path_exists(permissions_path):
             raise IndexError(f"权限路径 {permissions_path} 不存在")
-        self.manager.unassign_permissions_to_role(role_name, permissions_path, 'black')
-    
+        self.manager.unassign_permissions_to_role(role_name, permissions_path, "black")
+
     def add_role_inheritance(self, role: str, inherited_role: str):
         if not self.role_exists(role) or not self.role_exists(inherited_role):
             raise IndexError(f"角色 {role} 或 {inherited_role} 不存在")
         self.manager.set_role_inheritance(role, inherited_role)
-    
+
     def add_permissions(self, permissions_path: str, ignore_if_exists: bool = True):
         if self.permission_path_exists(permissions_path):
             if ignore_if_exists:
@@ -580,5 +610,3 @@ class RBACManager:
                 raise IndexError(f"权限路径 {permissions_path} 已存在")
         else:
             self.manager.add_permissions(permissions_path)
-        
-    

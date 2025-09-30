@@ -1,9 +1,14 @@
 from ncatbot.plugin_system import NcatBotPlugin
 from ncatbot.plugin_system import command_registry
 from ncatbot.plugin_system import (
-    admin_group_filter, admin_private_filter, group_filter, admin_filter
+    admin_group_filter,
+    admin_private_filter,
+    group_filter,
+    admin_filter,
 )
-from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import filter_registry
+from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import (
+    filter_registry,
+)
 from ncatbot.core.event import BaseMessageEvent
 
 
@@ -43,5 +48,3 @@ class ComboFiltersPlugin(NcatBotPlugin):
     @command_registry.command("order")
     async def order_command(self, event: BaseMessageEvent):
         await event.reply("多重过滤器命令")
-
-

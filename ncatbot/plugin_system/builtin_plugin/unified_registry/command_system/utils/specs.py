@@ -3,15 +3,16 @@
 提供类型安全的数据结构，替代字典存储选项、选项组和参数配置。
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Callable, Any, List, Optional, Dict, Type
 import inspect
+
 
 class FuncSpec:
     def __init__(self, func: Callable):
         self.func = func
         self.aliases = getattr(func, "__aliases__", [])
-        
+
         # 生成 metadata 以便代码更易于理解
         self.func_name = func.__name__
         self.func_module = func.__module__
@@ -21,15 +22,18 @@ class FuncSpec:
         self.param_names = [param.name for param in self.param_list]
         self.param_annotations = [param.annotation for param in self.param_list]
 
+
 @dataclass
 class OptionSpec:
     """选项规格数据类
 
     替代原有的选项字典存储。
     """
+
     short_name: Optional[str] = None
     long_name: Optional[str] = None
     description: str = ""
+
     @property
     def name(self) -> str:
         return self.long_name if self.long_name else self.short_name
@@ -41,6 +45,7 @@ class OptionGroupSpec:
 
     替代原有的选项组字典存储。
     """
+
     choices: List[str]
     name: str
     default: str
@@ -53,6 +58,7 @@ class ParameterSpec:
 
     替代原有的参数字典存储。
     """
+
     name: str
     default: Any = None
     required: Optional[bool] = False
@@ -64,7 +70,7 @@ class ParameterSpec:
     type_examples: Dict[Type, List[str]] = None
     is_named: bool = True
     is_positional: bool = False
-    index: int = -1 # 用于确认参数位置（args_types 中），由分析器设置
+    index: int = -1  # 用于确认参数位置（args_types 中），由分析器设置
 
     def __post_init__(self):
         if self.examples is None:
@@ -74,9 +80,17 @@ class ParameterSpec:
         if self.type_examples is None:
             self.type_examples = {}
 
+
 class CommandSpec:
     # 彻底分析函数后得到的命令标识器，用于指导参数传递
-    def __init__(self, options: List[OptionSpec], option_groups: List[OptionGroupSpec], params: List[ParameterSpec], args_types: List[type], func: Callable):
+    def __init__(
+        self,
+        options: List[OptionSpec],
+        option_groups: List[OptionGroupSpec],
+        params: List[ParameterSpec],
+        args_types: List[type],
+        func: Callable,
+    ):
         self.options: List[OptionSpec] = options
         self.option_groups: List[OptionGroupSpec] = option_groups
         self.params: List[ParameterSpec] = params
@@ -97,13 +111,13 @@ class CommandSpec:
             if option in value.choices:
                 return {value.name: option}
         return None
-    
+
     def get_param_binding(self, param: str, value: Any) -> dict:
         for param_spec in self.params:
             if param_spec.name == param:
                 target_type = self.args_types[param_spec.index]
-                if target_type == bool:
+                if target_type is bool:
                     return {param_spec.name: value.lower() not in ["false", "0"]}
                 else:
-                    return {param_spec.name: target_type(value)}                
+                    return {param_spec.name: target_type(value)}
         return None

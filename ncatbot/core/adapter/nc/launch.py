@@ -19,12 +19,13 @@ import websockets
 from ncatbot.core.adapter.nc.install import install_or_update_napcat
 from ncatbot.core.adapter.nc.login import login, report_login_status
 from ncatbot.core.adapter.nc.config import config_napcat
-from ncatbot.core.adapter.nc.start import start_napcat, stop_napcat
+from ncatbot.core.adapter.nc.start import start_napcat
 from ncatbot.utils import ncatbot_config, get_log
 from ncatbot.utils.error import NcatBotError
 from ncatbot.utils import run_coroutine
 
 LOG = get_log("ncatbot.core.adapter.nc.launch")
+
 
 class NcatBotLoginError(NcatBotError):
     def __init__(self, info):
@@ -45,7 +46,7 @@ async def test_websocket(report_status=False) -> bool:
     except Exception as e:
         if report_status:
             LOG.warning("测试 websocket 连接失败: " + str(e))
-        return False    
+        return False
 
 
 def napcat_service_ok(EXPIRE=0, show_info=True):
@@ -70,7 +71,9 @@ def connect_napcat():
 def check_napcat_service_remote():
     """尝试以远程模式连接到 NapCat 服务"""
     if napcat_service_ok():
-        LOG.info(f"napcat 服务器 {ncatbot_config.napcat.ws_uri} 在线, 正在检查账号状态...")
+        LOG.info(
+            f"napcat 服务器 {ncatbot_config.napcat.ws_uri} 在线, 正在检查账号状态..."
+        )
         if not ncatbot_config.enable_webui_interaction:  # 跳过基于 WebUI 交互的检查
             LOG.warning(
                 f"跳过基于 WebUI 交互的检查, 请自行确保 NapCat 已经登录了正确的 QQ {ncatbot_config.bt_uin}"
@@ -85,9 +88,7 @@ def check_napcat_service_remote():
                 LOG.error("对运行 NapCat 的服务器进行物理重启一般能解决该问题")
                 raise NcatBotLoginError("登录状态异常, 请检查远端 NapCat 服务")
             if status == 2:
-                LOG.error(
-                    f"远端登录的 QQ 与配置的 QQ 号不匹配, 请检查远端 NapCat 服务"
-                )
+                LOG.error("远端登录的 QQ 与配置的 QQ 号不匹配, 请检查远端 NapCat 服务")
                 raise NcatBotLoginError(
                     "登录的 QQ 号与配置的 QQ 号不匹配, 请检查远端 NapCat 服务"
                 )
@@ -102,7 +103,9 @@ def lanuch_napcat_service(*args, **kwargs):
         if check_napcat_service_remote():
             pass
         else:
-            raise NcatBotError("远端 NapCat 服务异常, 请检查远端 NapCat 服务, 或者关闭远端模式")
+            raise NcatBotError(
+                "远端 NapCat 服务异常, 请检查远端 NapCat 服务, 或者关闭远端模式"
+            )
     else:
         LOG.info("正在以本地模式运行, 检查中...")
         if napcat_service_ok():
@@ -129,6 +132,7 @@ def lanuch_napcat_service(*args, **kwargs):
                         raise NcatBotError("禁用 WebUI 交互时, 必须手动登录")
                     else:
                         pass
+
 
 if __name__ == "__main__":
     print(asyncio.run(test_websocket()))

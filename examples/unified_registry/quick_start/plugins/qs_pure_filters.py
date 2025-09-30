@@ -22,5 +22,3 @@ class QSPureFilterPlugin(NcatBotPlugin):
         if self._is_command(event):
             return
         await event.reply("收到一条群聊消息")
-
-

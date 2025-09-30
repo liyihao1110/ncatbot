@@ -5,15 +5,9 @@ NcatBot 测试工具模块
 """
 
 from .event_factory import EventFactory
-from .client_mixin import ClientMixin  
+from .client_mixin import ClientMixin
 from .test_helper import TestHelper
 from .mock_api import MockAPIAdapter
 from .test_client import TestClient
 
-__all__ = [
-    'EventFactory',
-    'ClientMixin', 
-    'TestHelper',
-    'MockAPIAdapter',
-    'TestClient'
-]
+__all__ = ["EventFactory", "ClientMixin", "TestHelper", "MockAPIAdapter", "TestClient"]

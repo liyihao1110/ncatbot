@@ -26,5 +26,3 @@ class ParamsBasicPlugin(NcatBotPlugin):
     @command_registry.command("say")
     async def say_cmd(self, event: BaseMessageEvent, message: str):
         await event.reply(f"机器人说: {message}")
-
-

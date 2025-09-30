@@ -1,23 +1,25 @@
-
 from typing import Literal
 from ncatbot.core.event.event_data import BaseEventData
 from ncatbot.utils import status, get_log
 
 LOG = get_log("ncatbot.core.event.request")
 
+
 class RequestEvent(BaseEventData):
     post_type: Literal["request"] = None
     request_type: Literal["friend", "group"] = None
-    comment: str = None # 验证信息
-    flag: str = None # 验证 flag
-    
+    comment: str = None  # 验证信息
+    flag: str = None  # 验证 flag
+
     def is_friend_request(self) -> bool:
         return self.request_type == "friend"
 
     def is_group_request(self) -> bool:
         return self.request_type == "group"
-    
-    async def approve(self, approve: bool = True, remark: str = None, reason: str = None):
+
+    async def approve(
+        self, approve: bool = True, remark: str = None, reason: str = None
+    ):
         """通过或者拒绝验证
         Args:
             approve (bool, optional): 是否通过. Defaults to True.
@@ -27,18 +29,28 @@ class RequestEvent(BaseEventData):
         if self.request_type == "friend":
             if reason is not None:
                 LOG.warning("好友请求不支持拒绝理由")
-            return await status.global_api.set_friend_add_request(self.flag, approve, remark)
+            return await status.global_api.set_friend_add_request(
+                self.flag, approve, remark
+            )
         elif self.request_type == "group":
             if remark is not None:
                 LOG.warning("加群请求不支持备注")
-            return await status.global_api.set_group_add_request(self.flag, approve, reason)
-    
-    def approve_sync(self, approve: bool = True, remark: str = None, reason: str = None):
+            return await status.global_api.set_group_add_request(
+                self.flag, approve, reason
+            )
+
+    def approve_sync(
+        self, approve: bool = True, remark: str = None, reason: str = None
+    ):
         if self.request_type == "friend":
             if reason is not None:
                 LOG.warning("好友请求不支持拒绝理由")
-            return status.global_api.set_friend_add_request_sync(self.flag, approve, remark)
+            return status.global_api.set_friend_add_request_sync(
+                self.flag, approve, remark
+            )
         elif self.request_type == "group":
             if remark is not None:
                 LOG.warning("加群请求不支持备注")
-            return status.global_api.set_group_add_request_sync(self.flag, approve, reason)
+            return status.global_api.set_group_add_request_sync(
+                self.flag, approve, reason
+            )

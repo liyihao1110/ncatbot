@@ -24,10 +24,10 @@ async def run_all_tests():
     helper = TestHelper(client)
     client.start()
     client.register_plugin(HelloPlugin)
-    
+
     # 测试结果统计
     results = {"passed": 0, "failed": 0, "errors": []}
-    
+
     # 测试1：基本命令
     try:
         helper.clear_history()
@@ -39,7 +39,7 @@ async def run_all_tests():
     except AssertionError as e:
         results["failed"] += 1
         results["errors"].append(f"Hello 命令测试失败: {e}")
-    
+
     # 测试2：带参数命令
     try:
         helper.clear_history()
@@ -53,7 +53,7 @@ async def run_all_tests():
     except AssertionError as e:
         results["failed"] += 1
         results["errors"].append(f"Echo 命令测试失败: {e}")
-    
+
     # 测试3：命令别名
     try:
         helper.clear_history()
@@ -65,15 +65,15 @@ async def run_all_tests():
     except AssertionError as e:
         results["failed"] += 1
         results["errors"].append(f"命令别名测试失败: {e}")
-    
+
     # 打印测试报告
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     print(f"测试完成: {results['passed']} 通过, {results['failed']} 失败")
     if results["errors"]:
         print("\n失败详情:")
         for error in results["errors"]:
             print(f"  - {error}")
-    print("="*50)
+    print("=" * 50)
 
 
 if __name__ == "__main__":

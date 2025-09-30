@@ -2,6 +2,7 @@
 EventFactory 用法测试
 来源: docs/testing/guide.md
 """
+
 from ncatbot.utils.testing import EventFactory
 from ncatbot.core.event.message_segment import MessageArray, Text, At, Image
 import asyncio
@@ -15,7 +16,7 @@ async def main():
         group_id="123456789",
         user_id="987654321",
         nickname="TestUser",
-        role="member"  # member, admin, owner
+        role="member",  # member, admin, owner
     )
     print(f"群消息事件: {event}")
 
@@ -24,7 +25,7 @@ async def main():
         Text("你好 "),
         At("123456"),
         Text(" 这是一张图片："),
-        Image("http://example.com/image.jpg")
+        Image("http://example.com/image.jpg"),
     )
     event = EventFactory.create_group_message(message=msg_array)
     print(f"复杂消息事件: {event}")
@@ -33,7 +34,7 @@ async def main():
     event = EventFactory.create_private_message(
         message="私聊消息",
         user_id="123456",
-        sub_type="friend"  # friend, group, other
+        sub_type="friend",  # friend, group, other
     )
     print(f"私聊消息事件: {event}")
 
@@ -42,7 +43,7 @@ async def main():
         notice_type="group_increase",
         user_id="123456",
         group_id="789012",
-        sub_type="approve"
+        sub_type="approve",
     )
     print(f"通知事件: {event}")
 
@@ -51,7 +52,7 @@ async def main():
         request_type="friend",
         user_id="123456",
         flag="unique_flag",
-        comment="请加我为好友"
+        comment="请加我为好友",
     )
     print(f"请求事件: {event}")
 

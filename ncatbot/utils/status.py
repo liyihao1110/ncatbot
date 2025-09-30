@@ -13,11 +13,11 @@ class Status:
     """Global state management class."""
 
     def __init__(self):
-        self.exit = False # 全局退出标志
+        self.exit = False  # 全局退出标志
         self._lock = Lock()
         self.current_github_proxy = None
         self.global_api: BotAPI = None
-        self.global_access_manager: 'RBACManager' = None
+        self.global_access_manager: "RBACManager" = None
         self._registered_loggers: Set[str] = set()
 
     def set(self, key: str, value: Any) -> None:
@@ -49,6 +49,7 @@ class Status:
     def update_logger_level(self) -> None:
         """Update the level of all registered loggers."""
         from ncatbot.utils.config import ncatbot_config
+
         level = logging.DEBUG if ncatbot_config.debug else logging.INFO
         logging.getLogger().setLevel(level)
         with self._lock:

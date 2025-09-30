@@ -11,4 +11,5 @@ class LegacyRegistry:
         self._request_event.append(func)
         return func
 
+
 legacy_registry = LegacyRegistry()

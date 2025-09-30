@@ -8,11 +8,12 @@
 """
 
 from dataclasses import dataclass
-from typing import Callable, Tuple, List, Any, Dict
+from typing import Tuple, List, Any, Dict
 
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.utils.specs import CommandSpec
+from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.utils.specs import (
+    CommandSpec,
+)
 from ncatbot.utils import get_log
-from ..command_system.analyzer.func_analyzer import FuncAnalyser
 from ..command_system.lexer.message_tokenizer import MessageTokenizer
 from ncatbot.core.event import BaseMessageEvent
 
@@ -34,20 +35,28 @@ class InvalidParamError(Exception):
 @dataclass
 class BindResult:
     ok: bool
-    args: Tuple # 位置参数
-    named_args: Dict[str, Any] # 命名参数
+    args: Tuple  # 位置参数
+    named_args: Dict[str, Any]  # 命名参数
     message: str = ""
 
 
 class ArgumentBinder:
-    def bind(self, spec: CommandSpec, event: BaseMessageEvent, path_words: Tuple[str, ...], prefixes: List[str]) -> BindResult:
+    def bind(
+        self,
+        spec: CommandSpec,
+        event: BaseMessageEvent,
+        path_words: Tuple[str, ...],
+        prefixes: List[str],
+    ) -> BindResult:
         try:
             # TODO: 绑定错误回报提示
             # 解析消息为 ParsedCommand（elements 已去除选项/命名参数）
             tokenizer = MessageTokenizer()
             parsed = tokenizer.parse_message(event.message)
             elements = list(parsed.elements)  # copy
-            LOG.debug(f"解析后的元素: {elements}, 命名参数: {parsed.named_params}, 选项: {parsed.options}")
+            LOG.debug(
+                f"解析后的元素: {elements}, 命名参数: {parsed.named_params}, 选项: {parsed.options}"
+            )
             LOG.debug(f"路径词: {path_words}")
             # 跳过命令词（仅匹配前置的 text 元素）
             skip_idx = 0
@@ -55,7 +64,11 @@ class ArgumentBinder:
             pw_idx = 0
             while skip_idx < len(elements) and pw_idx < len(pw):
                 el = elements[skip_idx]
-                if el.type == "text" and (str(el.content) == pw[pw_idx] or (el.content[0] in prefixes) and el.content[1:].startswith(pw[pw_idx])):
+                if el.type == "text" and (
+                    str(el.content) == pw[pw_idx]
+                    or (el.content[0] in prefixes)
+                    and el.content[1:].startswith(pw[pw_idx])
+                ):
                     skip_idx += 1
                     pw_idx += 1
                 else:
@@ -71,7 +84,7 @@ class ArgumentBinder:
                 if result is None:
                     raise InvalidParamError(k)
                 bound_kwargs.update(result)
-            
+
             for o in parsed.options:
                 result = spec.get_kw_binding(o)
                 if result is None:
@@ -80,7 +93,7 @@ class ArgumentBinder:
 
             for idx, element in enumerate(elements[skip_idx:]):
                 content = element.content
-                if spec.args_types[idx] == bool:
+                if spec.args_types[idx] is bool:
                     bound_args.append(content.lower() not in ["false", "0"])
                 elif spec.args_types[idx] in (str, float, int):
                     bound_args.append(spec.args_types[idx](content))
@@ -91,4 +104,3 @@ class ArgumentBinder:
         except Exception as e:
             LOG.debug(f"绑定异常: {e}")
             raise e
-

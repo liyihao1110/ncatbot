@@ -18,26 +18,36 @@ LOG = get_log(__name__)
 
 class CommandGroup:
     """命令组
-    
+
     支持嵌套的命令组织结构。
     """
-    
-    def __init__(self, name: str, parent: Optional['CommandGroup'] = None, description: str = "", prefixes: Optional[List[str]] = None):
+
+    def __init__(
+        self,
+        name: str,
+        parent: Optional["CommandGroup"] = None,
+        description: str = "",
+        prefixes: Optional[List[str]] = None,
+    ):
         self.name = name
         self.parent = parent
         self.description = description
         self.commands: Dict[Tuple[str, ...], CommandSpec] = {}
         self.aliases: Dict[Tuple[str, ...], CommandSpec] = {}
-        self.subgroups: Dict[str, 'CommandGroup'] = {}
+        self.subgroups: Dict[str, "CommandGroup"] = {}
 
         # 可继承的配置
         self.prefixes: List[str] = prefixes
-    
-    def command(self, name: str, 
-               aliases: Optional[List[str]] = None,
-               description: Optional[str] = None,
-               prefixes: Optional[List[str]] = None):
+
+    def command(
+        self,
+        name: str,
+        aliases: Optional[List[str]] = None,
+        description: Optional[str] = None,
+        prefixes: Optional[List[str]] = None,
+    ):
         """命令装饰器"""
+
         def decorator(func: Callable) -> Callable:
             # 验证装饰器 - 延迟导入避免循环导入
 
@@ -49,47 +59,53 @@ class CommandGroup:
             func.__is_command__ = True
             # 注册命令
             self._register_command(command_spec)
-                        
+
             LOG.debug(f"注册命令: {name} (组: {self.get_full_name()})")
             return func
-        
+
         return decorator
-    
-    def group(self, name: str, description: str = "", prefixes: Optional[List[str]] = None) -> 'CommandGroup':
+
+    def group(
+        self, name: str, description: str = "", prefixes: Optional[List[str]] = None
+    ) -> "CommandGroup":
         """创建子命令组"""
         if name in self.subgroups:
             return self.subgroups[name]
-        subgroup = CommandGroup(name, parent=self, description=description, prefixes=prefixes if prefixes else self.prefixes)
+        subgroup = CommandGroup(
+            name,
+            parent=self,
+            description=description,
+            prefixes=prefixes if prefixes else self.prefixes,
+        )
         self.subgroups[name] = subgroup
         return subgroup
-    
+
     def set_prefixes(self, prefixes: List[str]):
         """设置前缀"""
         self.prefixes = prefixes
-    
+
     def _register_command(self, command_spec: CommandSpec):
         """注册命令"""
         # 检查名称冲突
         if command_spec.name in self.commands:
             raise CommandRegistrationError(
-                command_spec.name,
-                f"命令名称 '{command_spec.name}' 已存在"
+                command_spec.name, f"命令名称 '{command_spec.name}' 已存在"
             )
-        
+
         # 注册主名称
         self.commands[command_spec.name] = command_spec
-        
+
         # 注册别名
         for aliases in command_spec.aliases:
             self.aliases[aliases] = command_spec
-    
+
     def get_full_name(self) -> Tuple[str, ...]:
         """获取完整组名"""
         if self.parent:
             return self.parent.get_full_name() + (self.name,)
         return (self.name,)
-    
-    def get_all_commands(self) -> Dict[Tuple[str, ...], CommandSpec]:  
+
+    def get_all_commands(self) -> Dict[Tuple[str, ...], CommandSpec]:
         """获取所有命令（包括子组）"""
         commands = {(k,): v for k, v in self.commands.items()}
         for subgroup in self.subgroups.values():
@@ -113,34 +129,41 @@ class CommandGroup:
 
 class ModernRegistry:
     """现代化命令注册器
-    
+
     提供完整的命令管理功能。
     """
+
     root_group = CommandGroup("root")
     error_handler = ErrorHandler()
 
     def __init__(self, prefixes: Optional[List[str]] = None):
         self.prefixes: List[str] = prefixes if prefixes else ["/", "!"]
         LOG.debug("现代化命令注册器初始化完成")
-    
-    def command(self, name: str, aliases: list=None, description: str="", **kwargs):
+
+    def command(self, name: str, aliases: list = None, description: str = "", **kwargs):
         """注册根级命令"""
         if "prefixes" not in kwargs:
             kwargs["prefixes"] = self.prefixes
-        return self.root_group.command(name, aliases=aliases, description=description, **kwargs)
-    
-    def group(self, name: str, description: str = "", prefixes: Optional[List[str]] = None) -> CommandGroup:
+        return self.root_group.command(
+            name, aliases=aliases, description=description, **kwargs
+        )
+
+    def group(
+        self, name: str, description: str = "", prefixes: Optional[List[str]] = None
+    ) -> CommandGroup:
         """创建根级命令组"""
-        return self.root_group.group(name, description, prefixes=prefixes if prefixes else self.prefixes)
-    
+        return self.root_group.group(
+            name, description, prefixes=prefixes if prefixes else self.prefixes
+        )
+
     def get_all_commands(self) -> Dict[Tuple[str, ...], CommandSpec]:
         """获取所有命令"""
         return self.root_group.get_all_commands()
-    
+
     def get_all_aliases(self) -> Dict[Tuple[str, ...], CommandSpec]:
         """获取所有别名"""
         return self.root_group.get_all_aliases()
-    
+
     @classmethod
     def get_registry(cls, prefixes: Optional[List[str]] = None) -> "ModernRegistry":
         """获取注册器"""

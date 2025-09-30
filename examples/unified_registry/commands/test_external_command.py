@@ -15,7 +15,7 @@ async def run_external_command_tests():
         await helper.send_private_message(cmd)
         helper.assert_reply_sent("机器人运行正常")
         helper.clear_history()
-    
+
     await helper.send_private_message("non_prefix_hello")
     helper.assert_reply_sent("Hello, World!")
     helper.clear_history()
@@ -28,5 +28,3 @@ async def run_external_command_tests():
 
 if __name__ == "__main__":
     asyncio.run(run_external_command_tests())
-
-

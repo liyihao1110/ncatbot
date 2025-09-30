@@ -28,7 +28,13 @@ class ReadmeDemoPlugin(NcatBotPlugin):
     @command_registry.command("deploy")
     @option(short_name="v", long_name="verbose", help="详细输出")
     @param(name="env", default="dev", help="部署环境")
-    async def deploy_cmd(self, event: BaseMessageEvent, app_name: str, env: str = "dev", verbose: bool = False):
+    async def deploy_cmd(
+        self,
+        event: BaseMessageEvent,
+        app_name: str,
+        env: str = "dev",
+        verbose: bool = False,
+    ):
         result = f"部署 {app_name} 到 {env} 环境"
         if verbose:
             result += " (详细模式)"
@@ -56,9 +62,11 @@ async def run_readme_tests():
 
     # deploy 仅管理员
     original_manager = status.global_access_manager
+
     class _MockManager:
         def user_has_role(self, user_id, role):
             return False
+
     status.global_access_manager = _MockManager()
     try:
         await helper.send_private_message("/deploy app --env=prod -v")
@@ -68,6 +76,7 @@ async def run_readme_tests():
         class _AdminManager:
             def user_has_role(self, user_id, role):
                 return True
+
         status.global_access_manager = _AdminManager()
 
         await helper.send_private_message("/deploy app --env=prod -v")
@@ -82,5 +91,3 @@ async def run_readme_tests():
 
 if __name__ == "__main__":
     asyncio.run(run_readme_tests())
-
-

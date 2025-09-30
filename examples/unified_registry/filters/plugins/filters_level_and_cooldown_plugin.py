@@ -1,5 +1,8 @@
 from ncatbot.plugin_system import NcatBotPlugin
-from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import BaseFilter, filter_registry
+from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import (
+    BaseFilter,
+    filter_registry,
+)
 from ncatbot.plugin_system import command_registry
 from ncatbot.core.event import BaseMessageEvent
 import time
@@ -53,5 +56,3 @@ class LevelAndCooldownPlugin(NcatBotPlugin):
     @command_registry.command("limited")
     async def limited_command(self, event: BaseMessageEvent):
         await event.reply("有冷却限制的命令")
-
-

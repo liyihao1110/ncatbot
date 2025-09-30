@@ -7,6 +7,7 @@ from ncatbot.cli.utils.constants import PLUGIN_INDEX_URL
 from ncatbot.utils import get_log, gen_url_with_proxy, post_json
 import urllib
 
+
 class PluginInfo(TypedDict):
     versions: List[str]
     repository: str
@@ -74,8 +75,12 @@ def gen_plugin_download_url(plugin_name: str, version: str, repository: str) -> 
     repo_path = repository.replace("https://github.com/", "").strip("/")
 
     # 构建两种可能的下载 URL
-    url1 = gen_url_with_proxy(f"https://github.com/{repo_path}/raw/refs/heads/v{version}/release/{plugin_name}-{version}.zip")
-    url2 = gen_url_with_proxy(f"https://github.com/{repo_path}/releases/download/v{version}/{plugin_name}-{version}.zip")
+    url1 = gen_url_with_proxy(
+        f"https://github.com/{repo_path}/raw/refs/heads/v{version}/release/{plugin_name}-{version}.zip"
+    )
+    url2 = gen_url_with_proxy(
+        f"https://github.com/{repo_path}/releases/download/v{version}/{plugin_name}-{version}.zip"
+    )
 
     logger.debug(f"尝试下载 URL 1: {url1}")
     if check_url_exists(url1):
@@ -117,7 +122,9 @@ def download_plugin_file(plugin_info: PluginInfo, file_name: str) -> bool:
         logger.info(f"正在下载插件: {plugin_name} v{version}")
 
         # 下载文件
-        req = urllib.request.Request(url, method="GET", headers={"User-Agent": "ncatbot/1.0"})
+        req = urllib.request.Request(
+            url, method="GET", headers={"User-Agent": "ncatbot/1.0"}
+        )
         with urllib.request.urlopen(req, timeout=30) as resp:
             if resp.status != 200:
                 logger.error(f"下载插件包失败: HTTP {resp.status}")
@@ -288,7 +295,7 @@ def format_plugin_table(
 
     name_text_width = get_display_width(name_text)
     author_text_width = get_display_width(author_text)
-    version_text_width = get_display_width(version_text)
+    # version_text_width = get_display_width(version_text)
 
     name_header = header(name_text) + " " * (name_column_width - name_text_width)
     author_header = header(author_text) + " " * (

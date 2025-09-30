@@ -23,11 +23,11 @@ async def run_qa_bot_tests():
     helper.assert_reply_sent("✅ 已添加问答")
     helper.clear_history()
 
-    await helper.send_private_message('/list_qa')
+    await helper.send_private_message("/list_qa")
     helper.assert_reply_sent("📚 问答库：")
     helper.clear_history()
 
-    await helper.send_private_message('/time')
+    await helper.send_private_message("/time")
     helper.assert_reply_sent("🕐 当前时间：")
     helper.clear_history()
 
@@ -36,5 +36,3 @@ async def run_qa_bot_tests():
 
 if __name__ == "__main__":
     asyncio.run(run_qa_bot_tests())
-
-

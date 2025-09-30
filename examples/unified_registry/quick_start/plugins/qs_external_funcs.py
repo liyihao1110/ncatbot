@@ -27,5 +27,3 @@ class QSExternalFuncsPlugin(NcatBotPlugin):
     @command_registry.command("inside")
     async def inside_cmd(self, event: BaseMessageEvent):
         await event.reply("这是类内的命令")
-
-

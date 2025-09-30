@@ -1,6 +1,11 @@
 from ncatbot.plugin_system import NcatBotPlugin
 from ncatbot.plugin_system import command_registry
-from ncatbot.plugin_system import group_filter, private_filter, admin_filter, root_filter, on_message
+from ncatbot.plugin_system import (
+    group_filter,
+    private_filter,
+    admin_filter,
+    root_filter,
+)
 from ncatbot.core.event import BaseMessageEvent
 
 
@@ -48,6 +53,3 @@ class BuiltinFiltersPlugin(NcatBotPlugin):
     @command_registry.command("shutdown")
     async def shutdown_command(self, event: BaseMessageEvent):
         await event.reply("正在关闭机器人...")
-
-
-

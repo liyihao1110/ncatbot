@@ -1,4 +1,4 @@
-from ncatbot.core import BotClient, BaseMessageEvent, GroupMessageEvent
+from ncatbot.core import BotClient, BaseMessageEvent
 from ncatbot.utils import config
 from ncatbot.plugin_system import on_message
 
@@ -7,6 +7,7 @@ config.set_bot_uin("123456")
 config.set_root("234567")
 
 bot = BotClient()
+
 
 @on_message
 async def on_private_message(event: BaseMessageEvent):
@@ -19,4 +20,3 @@ async def on_private_message(event: BaseMessageEvent):
 
 
 bot.run_frontend(debug=True)  # 前台线程启动，返回全局 API（同步友好）
-

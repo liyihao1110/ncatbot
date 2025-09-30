@@ -16,7 +16,15 @@ class CmdComplexPlugin(NcatBotPlugin):
     @option(short_name="e", long_name="encrypt", help="加密备份")
     @param(name="path", default="/backup", help="备份路径")
     @param(name="exclude", default="", help="排除文件")
-    async def backup_cmd(self, event: BaseMessageEvent, database: str, path: str = "/backup", exclude: str = "", compress: bool = False, encrypt: bool = False):
+    async def backup_cmd(
+        self,
+        event: BaseMessageEvent,
+        database: str,
+        path: str = "/backup",
+        exclude: str = "",
+        compress: bool = False,
+        encrypt: bool = False,
+    ):
         result = f"备份数据库 {database} 到 {path}"
         features = []
         if compress:
@@ -31,12 +39,12 @@ class CmdComplexPlugin(NcatBotPlugin):
 
     @command_registry.command("send", description="发送消息")
     @option(short_name="a", long_name="all", help="发送给所有人")
-    async def send_cmd(self, event: BaseMessageEvent, message: str, target: str = "", all: bool = False):
+    async def send_cmd(
+        self, event: BaseMessageEvent, message: str, target: str = "", all: bool = False
+    ):
         if all:
             await event.reply(f"广播消息: {message}")
         elif target:
             await event.reply(f"发送给 {target}: {message}")
         else:
             await event.reply(f"发送消息: {message} (默认发送给当前用户)")
-
-

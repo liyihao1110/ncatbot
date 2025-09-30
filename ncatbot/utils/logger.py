@@ -10,18 +10,17 @@ import os
 import re
 import logging
 import warnings
-from typing import Optional, Dict, Pattern, Tuple, List, Union
+from typing import Optional, Pattern, Tuple, List
 from tqdm import tqdm as tqdm_original
 from logging.handlers import TimedRotatingFileHandler
 
 from ncatbot.utils.assets.color import Color
 
 
-
 # 分配规则 - 支持输出到控制台和多目标匹配
 rules = [
-    ('database', 'db.log'),      # 数据库日志输出到文件
-    ('network', 'network.log'),  # 同时输出到文件
+    ("database", "db.log"),  # 数据库日志输出到文件
+    ("network", "network.log"),  # 同时输出到文件
 ]
 
 # 日志格式配置
@@ -65,24 +64,32 @@ default_log_format = {
     },
 }
 
+
 # -------------------------------------------------
 # 1. 自定义 tqdm
 # -------------------------------------------------
 class tqdm(tqdm_original):
     _STYLE_MAP = {
-        "BLACK": Color.BLACK, "RED": Color.RED, "GREEN": Color.GREEN,
-        "YELLOW": Color.YELLOW, "BLUE": Color.BLUE,
-        "MAGENTA": Color.MAGENTA, "CYAN": Color.CYAN, "WHITE": Color.WHITE,
+        "BLACK": Color.BLACK,
+        "RED": Color.RED,
+        "GREEN": Color.GREEN,
+        "YELLOW": Color.YELLOW,
+        "BLUE": Color.BLUE,
+        "MAGENTA": Color.MAGENTA,
+        "CYAN": Color.CYAN,
+        "WHITE": Color.WHITE,
     }
 
     def __init__(self, *args, **kwargs):
         self._custom_colour = kwargs.pop("colour", "GREEN")
-        kwargs.setdefault("bar_format",
-                          f"{Color.CYAN}{{desc}}{Color.RESET} "
-                          f"{Color.WHITE}{{percentage:3.0f}}%{Color.RESET} "
-                          f"{Color.GRAY}[{{total}}/{{n_fmt}}]{Color.RESET}"
-                          f"{Color.WHITE}|{{bar:20}}|{Color.RESET}"
-                          f"{Color.BLUE}[{{elapsed}}]{Color.RESET}")
+        kwargs.setdefault(
+            "bar_format",
+            f"{Color.CYAN}{{desc}}{Color.RESET} "
+            f"{Color.WHITE}{{percentage:3.0f}}%{Color.RESET} "
+            f"{Color.GRAY}[{{total}}/{{n_fmt}}]{Color.RESET}"
+            f"{Color.WHITE}|{{bar:20}}|{Color.RESET}"
+            f"{Color.BLUE}[{{elapsed}}]{Color.RESET}",
+        )
         kwargs.setdefault("ncols", 80)
         kwargs.setdefault("colour", None)
         super().__init__(*args, **kwargs)
@@ -100,6 +107,7 @@ class tqdm(tqdm_original):
         if self.desc:
             self.desc = f"{valid_color}{self.desc}{Color.RESET}"
 
+
 # -------------------------------------------------
 # 2. 彩色日志
 # -------------------------------------------------
@@ -110,6 +118,7 @@ LOG_LEVEL_TO_COLOR = {
     "ERROR": Color.RED,
     "CRITICAL": Color.MAGENTA,
 }
+
 
 class ColoredFormatter(logging.Formatter):
     use_color = True
@@ -122,7 +131,9 @@ class ColoredFormatter(logging.Formatter):
                     f"{record.levelname:8}{Color.RESET}"
                 )
                 record.colored_name = f"{Color.MAGENTA}{record.name}{Color.RESET}"
-                record.colored_time = f"{Color.CYAN}{self.formatTime(record)}{Color.RESET}"
+                record.colored_time = (
+                    f"{Color.CYAN}{self.formatTime(record)}{Color.RESET}"
+                )
             else:
                 record.colored_levelname = record.levelname
                 record.colored_name = record.name
@@ -132,28 +143,31 @@ class ColoredFormatter(logging.Formatter):
             warnings.warn(f"日志格式化错误: {e}")
             return f"[FORMAT ERROR] {record.getMessage()}"
 
+
 # -------------------------------------------------
 # 3. 自定义过滤器
 # -------------------------------------------------
 class RegisteredLoggerFilter(logging.Filter):
     """过滤器：只允许通过 get_log() 注册的 logger 的 DEBUG 信息通过控制台"""
-    
+
     def filter(self, record: logging.LogRecord) -> bool:
         # 非 DEBUG 级别的日志都通过
         if record.levelno != logging.DEBUG:
             return True
-        
+
         # 根 logger 的 DEBUG 信息总是通过
         if not record.name or record.name == "root":
             return True
-        
+
         # DEBUG 级别的日志只有注册过的 logger 才通过
         try:
             from ncatbot.utils.status import status
+
             return status.is_registered_logger(record.name)
         except ImportError:
             # 如果状态模块未初始化，则默认通过
             return True
+
 
 # -------------------------------------------------
 # 4. 工具函数
@@ -164,6 +178,7 @@ def _get_valid_log_level(level_name: str, default: str) -> str:
         return level_name
     warnings.warn(f"Invalid log level: {level_name}, fallback to {default.upper()}")
     return default.upper()
+
 
 def _compile_rules(raw_rules: List[Tuple[str, str]]) -> List[Tuple[Pattern, str]]:
     """
@@ -180,6 +195,7 @@ def _compile_rules(raw_rules: List[Tuple[str, str]]) -> List[Tuple[Pattern, str]
             warnings.warn(f"Invalid regex pattern '{pattern_str}': {e}")
     return compiled_rules
 
+
 # -------------------------------------------------
 # 5. 全局初始化
 # -------------------------------------------------
@@ -193,7 +209,9 @@ def setup_logging():
     os.makedirs(log_dir, exist_ok=True)
 
     # ---- 5.2 通用格式 ----
-    console_fmt = os.getenv("LOG_FORMAT") or default_log_format["console"][console_level]
+    console_fmt = (
+        os.getenv("LOG_FORMAT") or default_log_format["console"][console_level]
+    )
     file_fmt = os.getenv("LOG_FILE_FORMAT") or default_log_format["file"][file_level]
 
     # ---- 5.3 根记录器（控制台 + 主文件） ----
@@ -227,7 +245,7 @@ def setup_logging():
 
     # ---- 5.4 重定向记录器 ----
     compiled_rules: List[Tuple[Pattern, str]] = _compile_rules(rules)
-    
+
     # 创建过滤器类
     class RegexFilter(logging.Filter):
         def __init__(self, pattern: Pattern):
@@ -236,7 +254,7 @@ def setup_logging():
 
         def filter(self, record: logging.LogRecord) -> bool:
             return bool(self.pattern.match(record.name))
-    
+
     # 处理所有规则
     for pattern, target in compiled_rules:
         # 处理文件输出规则
@@ -258,6 +276,7 @@ def setup_logging():
 
     logging.getLogger("logger").debug("日志系统初始化")
 
+
 # -------------------------------------------------
 # 6. 获取 logger 的快捷函数
 # -------------------------------------------------
@@ -265,17 +284,19 @@ def get_log(name: Optional[str] = None) -> logging.Logger:
     """返回一个logger；若name为空则返回root logger"""
     logger = logging.getLogger(name)
     # logger.setLevel(logging.INFO)
-    
+
     # 注册非根 logger
     if name is not None:
         try:
             from ncatbot.utils.status import status
+
             status.register_logger(name)
         except ImportError:
             # 如果状态模块未初始化，则忽略注册
             pass
-    
+
     return logger
+
 
 # -------------------------------------------------
 # 7. 启动时初始化一次
@@ -309,15 +330,15 @@ if __name__ == "__main__":
     root.info("测试完成")
     db.info("数据库关闭")
     net.info("网络关闭")
-    
+
     # 打印所有处理器的信息用于调试
     print("\n日志处理器调试信息:")
     print(f"根记录器处理器数量: {len(root.handlers)}")
     for i, handler in enumerate(root.handlers):
         handler_type = type(handler).__name__
         if isinstance(handler, TimedRotatingFileHandler):
-            print(f" 处理器 {i+1}: {handler_type} (文件: {handler.baseFilename})")
+            print(f" 处理器 {i + 1}: {handler_type} (文件: {handler.baseFilename})")
         elif isinstance(handler, logging.StreamHandler):
-            print(f" 处理器 {i+1}: {handler_type} (控制台)")
+            print(f" 处理器 {i + 1}: {handler_type} (控制台)")
         else:
-            print(f" 处理器 {i+1}: {handler_type}")
+            print(f" 处理器 {i + 1}: {handler_type}")

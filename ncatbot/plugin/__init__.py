@@ -6,8 +6,7 @@ from ncatbot.plugin.compatible_enrollment import CompatibleEnrollment
 
 
 __all__ = [
-    'Event',
-    'BasePlugin',
-    'CompatibleEnrollment',
+    "Event",
+    "BasePlugin",
+    "CompatibleEnrollment",
 ]
-

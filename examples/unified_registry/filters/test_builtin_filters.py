@@ -24,9 +24,11 @@ async def run_builtin_filters_tests():
 
     # admin_filter 命令（ban）
     original_manager = status.global_access_manager
+
     class _MockManager:
         def user_has_role(self, user_id, role):
             return False
+
     status.global_access_manager = _MockManager()
     try:
         await helper.send_private_message("/ban 10086")
@@ -36,6 +38,7 @@ async def run_builtin_filters_tests():
         class _AdminManager:
             def user_has_role(self, user_id, role):
                 return True
+
         status.global_access_manager = _AdminManager()
 
         await helper.send_private_message("/ban 10086")
@@ -46,9 +49,11 @@ async def run_builtin_filters_tests():
 
     # admin_filter 纯过滤函数
     original_manager = status.global_access_manager
+
     class _AdminManager2:
         def user_has_role(self, user_id, role):
             return True
+
     status.global_access_manager = _AdminManager2()
     try:
         await helper.send_private_message("任意消息")
@@ -60,9 +65,11 @@ async def run_builtin_filters_tests():
     # root_filter 命令
     # 将当前用户模拟为 root（沿用权限接口，直接返回 True）
     original_manager = status.global_access_manager
+
     class _RootManager:
         def user_has_role(self, user_id, role):
             return True
+
     status.global_access_manager = _RootManager()
     try:
         await helper.send_private_message("/shutdown")
@@ -76,5 +83,3 @@ async def run_builtin_filters_tests():
 
 if __name__ == "__main__":
     asyncio.run(run_builtin_filters_tests())
-
-

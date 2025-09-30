@@ -18,9 +18,11 @@ async def run_external_funcs_tests():
 
     # 非管理员不可执行 external_admin
     original_manager = status.global_access_manager
+
     class _MockManager:
         def user_has_role(self, user_id, role):
             return False
+
     status.global_access_manager = _MockManager()
     try:
         await helper.send_private_message("/external_admin do")
@@ -30,6 +32,7 @@ async def run_external_funcs_tests():
         class _AdminManager:
             def user_has_role(self, user_id, role):
                 return True
+
         status.global_access_manager = _AdminManager()
 
         await helper.send_private_message("/external_admin do")
@@ -47,5 +50,3 @@ async def run_external_funcs_tests():
 
 if __name__ == "__main__":
     asyncio.run(run_external_funcs_tests())
-
-

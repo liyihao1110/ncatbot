@@ -5,5 +5,9 @@ from ncatbot.core.event.message import GroupMessageEvent as GroupMessage
 from ncatbot.core.event.message import PrivateMessageEvent as PrivateMessage
 from ncatbot.core.event.message import BaseMessageEvent as BaseMessage
 
-
-
+__all__ = [
+    "MessageChain",
+    "GroupMessage",
+    "PrivateMessage",
+    "BaseMessage",
+]

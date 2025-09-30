@@ -23,23 +23,23 @@ async def interactive_test():
     helper = TestHelper(client)
     client.start()
     client.register_plugin(HelloPlugin)
-    
+
     print("🎮 交互式测试模式")
     print("输入命令进行测试，输入 'exit' 退出")
     print("示例命令: /hello, /hi, /echo 测试文本")
     print("-" * 50)
-    
+
     while True:
         command = input("\n> ")
-        if command.lower() == 'exit':
+        if command.lower() == "exit":
             break
-        
+
         # 清理历史
         helper.clear_history()
-        
+
         # 发送命令
         await helper.send_private_message(command)
-        
+
         # 获取回复
         reply = helper.get_latest_reply()
         if reply:
@@ -47,7 +47,7 @@ async def interactive_test():
             print(f"📨 回复: {text}")
         else:
             print("❌ 没有回复")
-        
+
         # 显示 API 调用
         api_calls = helper.get_api_calls()
         if api_calls:

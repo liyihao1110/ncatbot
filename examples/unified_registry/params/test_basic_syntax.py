@@ -40,5 +40,3 @@ async def run_basic_syntax_tests():
 
 if __name__ == "__main__":
     asyncio.run(run_basic_syntax_tests())
-
-

@@ -11,7 +11,9 @@ from ncatbot.utils.status import status
 _log = get_log()
 
 
-def post_json(url: str, payload: dict = None, headers: dict = None, timeout: float = 5.0) -> dict:
+def post_json(
+    url: str, payload: dict = None, headers: dict = None, timeout: float = 5.0
+) -> dict:
     body = None
     req_headers = {
         "User-Agent": "ncatbot/1.0",
@@ -27,7 +29,9 @@ def post_json(url: str, payload: dict = None, headers: dict = None, timeout: flo
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             status = getattr(resp, "status", resp.getcode())
             if status != 200:
-                raise urllib.error.HTTPError(url, status, "Non-200 response", hdrs=resp.headers, fp=None)
+                raise urllib.error.HTTPError(
+                    url, status, "Non-200 response", hdrs=resp.headers, fp=None
+                )
             data = resp.read()
             return json.loads(data.decode("utf-8"))
     except socket.timeout as e:
@@ -38,6 +42,7 @@ def post_json(url: str, payload: dict = None, headers: dict = None, timeout: flo
         if isinstance(getattr(e, "reason", None), socket.timeout):
             raise TimeoutError("request timed out") from e
         raise
+
 
 def get_json(url: str, headers: dict = None, timeout: float = 5.0) -> dict:
     req_headers = {
@@ -51,7 +56,9 @@ def get_json(url: str, headers: dict = None, timeout: float = 5.0) -> dict:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             status = getattr(resp, "status", resp.getcode())
             if status != 200:
-                raise urllib.error.HTTPError(url, status, "Non-200 response", hdrs=resp.headers, fp=None)
+                raise urllib.error.HTTPError(
+                    url, status, "Non-200 response", hdrs=resp.headers, fp=None
+                )
             data = resp.read()
             return json.loads(data.decode("utf-8"))
     except socket.timeout as e:
@@ -63,10 +70,12 @@ def get_json(url: str, headers: dict = None, timeout: float = 5.0) -> dict:
             raise TimeoutError("request timed out") from e
         raise
 
+
 def download_file(url, file_name):
     """下载文件, 带进度条"""
     try:
         import requests
+
         r = requests.get(url, stream=True)
         total_size = int(r.headers.get("content-length", 0))
         progress_bar = tqdm(
@@ -95,6 +104,7 @@ def download_file(url, file_name):
 def get_proxy_url():
     """获取 github 代理 URL"""
     import requests
+
     if status.current_github_proxy is not None:
         return status.current_github_proxy
     TIMEOUT = 10
@@ -120,9 +130,9 @@ def get_proxy_url():
         except TimeoutError as e:
             _log.warning(f"请求失败: {url}, 错误: {e}")
             return None
-        except Exception as e:
+        except Exception:
             return None
-    
+
     url = check_proxy(github_proxy_urls[0])
     if url is not None:
         available_proxy.append(url)
@@ -139,10 +149,14 @@ def get_proxy_url():
 def gen_url_with_proxy(original_url: str) -> str:
     """生成带代理的 URL"""
     proxy_url = get_proxy_url()
-    return f"{proxy_url.strip('/')}/{original_url.strip('/')}" if proxy_url else original_url
+    return (
+        f"{proxy_url.strip('/')}/{original_url.strip('/')}"
+        if proxy_url
+        else original_url
+    )
+
 
 # threading.Thread(target=get_proxy_url, daemon=True).start()
 
 if __name__ == "__main__":
-
     print("done")

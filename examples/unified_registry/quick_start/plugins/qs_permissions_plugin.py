@@ -30,5 +30,3 @@ class QSPermissionsPlugin(NcatBotPlugin):
     @command_registry.command("admin")
     async def admin_cmd(self, event: BaseMessageEvent):
         await event.reply("你是管理员！")
-
-

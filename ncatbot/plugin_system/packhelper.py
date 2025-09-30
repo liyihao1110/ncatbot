@@ -5,8 +5,9 @@ import logging
 from packaging.requirements import Requirement
 from packaging.version import Version
 
-LOG = logging.getLogger('PackageHelper')
+LOG = logging.getLogger("PackageHelper")
 # TODO 不兼容检测
+
 
 class PackageHelper:
     """检查并确保某个 PEP-508 需求字符串被满足，否则自动安装/升级"""
@@ -24,13 +25,12 @@ class PackageHelper:
                 PackageHelper._pip_install(req_str)
             except subprocess.CalledProcessError:
                 LOG.error("安装失败: %s", req_str)
-                raise 
+                raise
             return
 
         # 已安装 → 检查版本规格
         if not req.specifier.contains(Version(installed_ver)):
-            LOG.warning("版本不符(现有 %s, 需求 %s)，尝试升级",
-                        installed_ver, req_str)
+            LOG.warning("版本不符(现有 %s, 需求 %s)，尝试升级", installed_ver, req_str)
             PackageHelper._pip_install(req_str)
         else:
             LOG.info("依赖已满足: %s", req_str)

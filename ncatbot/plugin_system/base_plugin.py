@@ -17,7 +17,6 @@ from ncatbot.utils import get_log
 
 from .config import config
 from .event import EventBus, NcatBotEvent
-from .decorator import RegisterServer
 from .rbac import RBACManager
 from ncatbot.utils import status
 
@@ -54,23 +53,31 @@ class BasePlugin:
         data_file (Path): 插件数据文件路径
         main_file (Path): 插件主文件路径
     """
+
     # -------- 插件元数据 --------
     name: str
     version: str
     author: str = "Unknown"
     description: str = "这个作者很懒且神秘，没有写一点点描述，真是一个神秘的插件"
     dependencies: Dict[str, str] = {}  # 格式: {"other_plugin": ">=1.0"}
-    config: dict = {}   # 使用YAML格式存储的配置数据
+    config: dict = {}  # 使用YAML格式存储的配置数据
 
     # -------- 运行时属性 --------
     first_load: bool = True
-    debug: bool = False
 
     # -------- 内部属性 --------
     _handlers_id: Set[UUID]  # 注册的事件处理器ID集合
-    _loader: 'PluginLoader' # 插件加载器
+    _loader: "PluginLoader"  # 插件加载器
 
-    def __init__(self, event_bus: EventBus, *, debug: bool = False, rbac_manager: RBACManager = None, plugin_loader: 'PluginLoader' = None, **extras: Any) -> None:
+    def __init__(
+        self,
+        event_bus: EventBus,
+        *,
+        debug: bool = False,
+        rbac_manager: RBACManager = None,
+        plugin_loader: "PluginLoader" = None,
+        **extras: Any,
+    ) -> None:
         """初始化插件实例。
 
         仅做最轻量的装配，不做任何IO操作。
@@ -95,7 +102,7 @@ class BasePlugin:
         self._debug = debug
         for k, v in extras.items():
             setattr(self, k, v)
-            
+
         # 初始化属性
         self.api = status.global_api
         self._handlers_id = set()
@@ -151,8 +158,8 @@ class BasePlugin:
                 content = await f.read()
                 self.config = yaml.safe_load(content) or {}
         else:
-            self.config = {}   # 首次加载使用空配置
-        
+            self.config = {}  # 首次加载使用空配置
+
         self._init_()
         await self.on_load()
 
@@ -168,11 +175,9 @@ class BasePlugin:
         finally:
             # 保存配置到磁盘
             async with aiofiles.open(self.data_file, "w", encoding="utf-8") as f:
-                await f.write(yaml.dump(
-                    self.config, 
-                    sort_keys=False, 
-                    allow_unicode=True
-                ))
+                await f.write(
+                    yaml.dump(self.config, sort_keys=False, allow_unicode=True)
+                )
 
     # ------------------------------------------------------------------
     # 属性
@@ -181,12 +186,12 @@ class BasePlugin:
     def event_bus(self) -> EventBus:
         """获取事件总线实例。"""
         return self._event_bus
-    
+
     @property
     def debug(self) -> bool:
         """获取调试模式状态。"""
         return self._debug
-    
+
     @property
     def meta_data(self) -> Dict[str, Any]:
         """获取插件元数据字典。"""
@@ -196,10 +201,10 @@ class BasePlugin:
             "author": self.author,
             "description": self.description,
             "dependencies": self.dependencies,
-            "config": self.config
+            "config": self.config,
         }.copy()
-    
-    @property  
+
+    @property
     def thread_pool(self) -> ThreadPoolExecutor:
         """获取线程池实例（当前返回None，需子类实现）。"""
         return None
@@ -207,28 +212,36 @@ class BasePlugin:
     # ------------------------------------------------------------------
     # 事件系统接口
     # ------------------------------------------------------------------
-    def register_handler(self, event_type: str, handler: callable, priority: int = 0, timeout: float = None) -> UUID:
+    def register_handler(
+        self,
+        event_type: str,
+        handler: callable,
+        priority: int = 0,
+        timeout: float = None,
+    ) -> UUID:
         """注册事件处理器。
-        
+
         Args:
             event_type: 要监听的事件类型
             handler: 事件处理函数
             priority: 处理优先级，数值越大优先级越高
-            
+
         Returns:
             注册生成的事件处理器UUID
         """
-        handler_id = self.event_bus.subscribe(event_type, handler, priority, timeout, plugin=self)
+        handler_id = self.event_bus.subscribe(
+            event_type, handler, priority, timeout, plugin=self
+        )
         self._handlers_id.add(handler_id)
         LOG.debug(f"{self.name} 注册事件处理器 {event_type}: {handler.__name__}")
         return handler_id
 
     def unregister_handler(self, handler_id: UUID) -> bool:
         """注销事件处理器。
-        
+
         Args:
             handler_id: 要注销的事件处理器UUID
-            
+
         Returns:
             是否成功注销
         """
@@ -245,11 +258,11 @@ class BasePlugin:
 
     async def publish(self, event_type: str, data: Any) -> List[Any]:
         """发布事件。
-        
+
         Args:
             event_type: 事件类型
             data: 事件数据
-            
+
         Returns:
             所有处理器的返回结果列表
         """
@@ -257,18 +270,18 @@ class BasePlugin:
 
     async def request(self, addr: str, data: dict = None) -> Any:
         """发送请求并等待响应。
-        
+
         Args:
             addr: 请求地址(SERVER-前缀的服务)
             data: 请求数据
-            
+
         Returns:
             第一个响应结果，如果没有响应则返回None
         """
         result = await self.event_bus.publish(NcatBotEvent(f"SERVER-{addr}", data))
         return result[0] if result else None
 
-    def get_plugin(self, name: str) -> 'BasePlugin':
+    def get_plugin(self, name: str) -> "BasePlugin":
         """根据插件名称获取插件实例。
 
         Args:
@@ -278,8 +291,8 @@ class BasePlugin:
             插件实例；若不存在则返回 None。
         """
         return self._loader.get_plugin(name)
-    
-    def list_plugins(self, *, obj: bool = False) -> List[Union[str, 'BasePlugin']]:
+
+    def list_plugins(self, *, obj: bool = False) -> List[Union[str, "BasePlugin"]]:
         """插件列表
 
         Args:
@@ -289,4 +302,3 @@ class BasePlugin:
             插件实例/插件名称列表
         """
         return self._loader.list_plugins(obj=obj)
-        

@@ -1,8 +1,3 @@
-from ncatbot.cli.commands.registry import registry
-from ncatbot.cli.utils.colors import command, error, info, success
-from ncatbot.utils import ncatbot_config as config
-
-
 # @registry.register(
 #     "setqq",
 #     "重新设置 QQ 号",

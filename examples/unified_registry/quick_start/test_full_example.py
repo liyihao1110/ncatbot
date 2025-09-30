@@ -26,9 +26,11 @@ async def run_full_example_tests():
 
     # announce 需要管理员+群聊
     original_manager = status.global_access_manager
+
     class _AdminManager:
         def user_has_role(self, user_id, role):
             return True
+
     status.global_access_manager = _AdminManager()
     try:
         await helper.send_group_message("/announce 大家好")
@@ -54,5 +56,3 @@ async def run_full_example_tests():
 
 if __name__ == "__main__":
     asyncio.run(run_full_example_tests())
-
-

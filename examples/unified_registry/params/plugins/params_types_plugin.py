@@ -32,5 +32,3 @@ class ParamsTypesPlugin(NcatBotPlugin):
             await event.reply(f"✅ {a} ÷ {b} = {result}")
         except Exception as e:
             await event.reply(f"❌ 计算错误: {e}")
-
-

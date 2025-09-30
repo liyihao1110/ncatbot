@@ -1,5 +1,10 @@
 from .event_data import BaseEventData, MessageEventData
-from .message import BaseMessageEvent, AnonymousMessage, GroupMessageEvent, PrivateMessageEvent
+from .message import (
+    BaseMessageEvent,
+    AnonymousMessage,
+    GroupMessageEvent,
+    PrivateMessageEvent,
+)
 from .meta import MetaEvent, Status
 from .notice import NoticeEvent
 from .request import RequestEvent
@@ -34,55 +39,49 @@ from .message_segment import (
 
 __all__ = [
     # From event_data.py
-    'BaseEventData',
-    'MessageEventData',
-    
+    "BaseEventData",
+    "MessageEventData",
     # From message.py
-    'BaseMessageEvent',
-    'AnonymousMessage',
-    'GroupMessageEvent',
-    'PrivateMessageEvent',
-    
+    "BaseMessageEvent",
+    "AnonymousMessage",
+    "GroupMessageEvent",
+    "PrivateMessageEvent",
     # From meta.py
-    'MetaEvent',
-    'Status',
-    
+    "MetaEvent",
+    "Status",
     # From notice.py
-    'NoticeEvent',
-    'NoticeFile',
-    
+    "NoticeEvent",
+    "NoticeFile",
     # From request.py
-    'RequestEvent',
-    
+    "RequestEvent",
     # From sender.py
-    'BaseSender',
-    'PrivateSender',
-    'GroupSender',
-    
+    "BaseSender",
+    "PrivateSender",
+    "GroupSender",
     # From message_segment
-    'MessageSegment',
-    'MessageArray',
-    'Text',
-    'PlainText',
-    'Face',
-    'Image',
-    'File',
-    'Record',
-    'Video',
-    'At',
-    'AtAll',
-    'Rps',
-    'Dice',
-    'Shake',
-    'Poke',
-    'Anonymous',
-    'Share',
-    'Contact',
-    'Location',
-    'Music',
-    'Reply',
-    'Node',
-    'Forward',
-    'XML',
-    'Json',
+    "MessageSegment",
+    "MessageArray",
+    "Text",
+    "PlainText",
+    "Face",
+    "Image",
+    "File",
+    "Record",
+    "Video",
+    "At",
+    "AtAll",
+    "Rps",
+    "Dice",
+    "Shake",
+    "Poke",
+    "Anonymous",
+    "Share",
+    "Contact",
+    "Location",
+    "Music",
+    "Reply",
+    "Node",
+    "Forward",
+    "XML",
+    "Json",
 ]

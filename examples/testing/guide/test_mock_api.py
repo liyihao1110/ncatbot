@@ -2,6 +2,7 @@
 MockAPIAdapter 用法测试
 来源: docs/testing/guide.md
 """
+
 from ncatbot.utils.testing import TestClient, TestHelper
 from ..common.hello_plugin import HelloPlugin
 import asyncio
@@ -22,10 +23,7 @@ async def main():
     print(f"所有 API 调用: {len(all_calls)}")
 
     # 设置自定义响应
-    mock_api.set_response("/custom_api", {
-        "retcode": 0,
-        "data": {"custom": "response"}
-    })
+    mock_api.set_response("/custom_api", {"retcode": 0, "data": {"custom": "response"}})
 
     # 设置动态响应
     def dynamic_response(endpoint, data):

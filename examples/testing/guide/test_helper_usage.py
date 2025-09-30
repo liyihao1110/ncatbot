@@ -3,7 +3,6 @@ TestHelper 基本用法测试
 来源: docs/testing/guide.md
 """
 
-
 from ncatbot.utils.testing import TestClient, TestHelper
 from ..common.hello_plugin import HelloPlugin
 import asyncio
@@ -37,14 +36,13 @@ async def main():
     helper.clear_history()
 
     # 设置 API 响应
-    helper.set_api_response("/get_group_info", {
-        "retcode": 0,
-        "data": {
-            "group_id": "789012",
-            "group_name": "测试群",
-            "member_count": 100
-        }
-    })
+    helper.set_api_response(
+        "/get_group_info",
+        {
+            "retcode": 0,
+            "data": {"group_id": "789012", "group_name": "测试群", "member_count": 100},
+        },
+    )
     print("已设置 API 响应")
 
     print("✅ TestHelper 基本用法测试完成")

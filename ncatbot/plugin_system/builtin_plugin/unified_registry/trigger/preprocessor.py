@@ -21,7 +21,9 @@ class PreprocessResult:
 
 
 class MessagePreprocessor:
-    def __init__(self, *, require_prefix: bool, prefixes: List[str], case_sensitive: bool) -> None:
+    def __init__(
+        self, *, require_prefix: bool, prefixes: List[str], case_sensitive: bool
+    ) -> None:
         self.require_prefix = require_prefix
         self.prefixes = prefixes
         self.case_sensitive = case_sensitive
@@ -35,11 +37,11 @@ class MessagePreprocessor:
             return None
 
         first = event.message.messages[0]
-        if getattr(first, 'msg_seg_type', None) != 'text':
+        if getattr(first, "msg_seg_type", None) != "text":
             # 没有首段文本，不进入命令解析
             return None
 
-        text: str = getattr(first, 'text', '') or ''
+        text: str = getattr(first, "text", "") or ""
         raw = text
         norm = self._normalize(text)
 
@@ -57,5 +59,3 @@ class MessagePreprocessor:
             return PreprocessResult(command_text=raw[cut_len:].lstrip())
         else:
             return PreprocessResult(command_text=raw)
-
-

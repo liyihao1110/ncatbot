@@ -1,6 +1,7 @@
 from ncatbot.plugin_system.rbac.rbac_path import PermissionPath
 # from ncatbot.utils import Color, visualize_tree
 
+
 class Trie:
     def __init__(self, case_sensitive: bool = True):
         self.trie = {}
@@ -87,9 +88,8 @@ class Trie:
                         # 继续向上检查孤链（比如如果 "a" 被删,检查它的父节点是否需要删除）
                         for i in range(len(parent_chain) - 2, -1, -1):
                             current_parent, current_key = parent_chain[i]
-                            if (
-                                current_key in current_parent
-                                and not current_parent.get(current_key, {})
+                            if current_key in current_parent and not current_parent.get(
+                                current_key, {}
                             ):
                                 del current_parent[current_key]
                             else:

@@ -14,13 +14,13 @@ async def run_media_and_advanced_tests():
     # 非文本元素
     client.register_plugin(ParamsMediaPlugin)
 
-    msg = MessageArray([Text("/analyze \"这是一张风景图\" "), Image(file="img001.jpg")])
+    msg = MessageArray([Text('/analyze "这是一张风景图" '), Image(file="img001.jpg")])
     await helper.send_private_message(msg)
     helper.assert_reply_sent("分析图片: 这是一张风景图")
     helper.assert_reply_sent("img001.jpg")
     helper.clear_history()
 
-    msg2 = MessageArray([Text("/mention \"你好\" "), At(qq="12345")])
+    msg2 = MessageArray([Text('/mention "你好" '), At(qq="12345")])
     await helper.send_private_message(msg2)
     helper.assert_reply_sent("发送消息给 @12345: 你好")
     helper.clear_history()
@@ -36,5 +36,3 @@ async def run_media_and_advanced_tests():
 
 if __name__ == "__main__":
     asyncio.run(run_media_and_advanced_tests())
-
-

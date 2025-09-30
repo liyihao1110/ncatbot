@@ -57,7 +57,7 @@ class ParsedCommand:
     named_params: Dict[str, Any]    # 命名参数表，支持 MessageSegment
     elements: List[Element]         # 元素列表
     raw_tokens: List[Token]         # 原始 Token 序列
-    
+
     def get_text_params() -> Dict[str, str]     # 获取文本参数
     def get_segment_params() -> Dict[str, Any]  # 获取非文本参数
 ```

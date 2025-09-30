@@ -20,5 +20,3 @@ async def run_data_processing_tests():
 
 if __name__ == "__main__":
     asyncio.run(run_data_processing_tests())
-
-

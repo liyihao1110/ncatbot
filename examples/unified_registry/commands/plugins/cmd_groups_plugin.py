@@ -32,5 +32,3 @@ class CmdGroupsPlugin(NcatBotPlugin):
     @user_admin.command("unban", aliases=["aun"], description="解封用户")
     async def unban_user_cmd(self, event: BaseMessageEvent, user_id: str):
         await event.reply(f"已解封用户: {user_id}")
-
-

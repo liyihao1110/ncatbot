@@ -48,5 +48,3 @@ async def run_types_and_errors_tests():
 
 if __name__ == "__main__":
     asyncio.run(run_types_and_errors_tests())
-
-

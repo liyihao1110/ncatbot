@@ -30,5 +30,3 @@ async def run_level_and_cooldown_tests():
 
 if __name__ == "__main__":
     asyncio.run(run_level_and_cooldown_tests())
-
-

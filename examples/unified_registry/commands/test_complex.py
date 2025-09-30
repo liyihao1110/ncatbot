@@ -27,11 +27,11 @@ async def run_complex_tests():
     helper.assert_reply_sent("发送消息: hello (默认发送给当前用户)")
     helper.clear_history()
 
-    await helper.send_private_message("/send \"你好\" tom")
+    await helper.send_private_message('/send "你好" tom')
     helper.assert_reply_sent("发送给 tom: 你好")
     helper.clear_history()
 
-    await helper.send_private_message("/send \"广播\" -a")
+    await helper.send_private_message('/send "广播" -a')
     helper.assert_reply_sent("广播消息: 广播")
     helper.clear_history()
 
@@ -40,5 +40,3 @@ async def run_complex_tests():
 
 if __name__ == "__main__":
     asyncio.run(run_complex_tests())
-
-

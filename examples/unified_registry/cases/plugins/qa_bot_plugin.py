@@ -28,7 +28,9 @@ class QABotPlugin(NcatBotPlugin):
                 LOG.info(f"用户 {event.user_id} 询问: {question}")
                 await event.reply(f"💡 {answer}")
                 return
-        await event.reply("❓ 抱歉，我不知道这个问题的答案。你可以使用 /add_qa 添加新的问答。")
+        await event.reply(
+            "❓ 抱歉，我不知道这个问题的答案。你可以使用 /add_qa 添加新的问答。"
+        )
 
     @command_registry.command("add_qa", description="添加问答")
     async def add_qa_cmd(self, event: BaseMessageEvent, question: str, answer: str):
@@ -52,7 +54,6 @@ class QABotPlugin(NcatBotPlugin):
     @command_registry.command("time", description="获取当前时间")
     async def time_cmd(self, event: BaseMessageEvent):
         import datetime
+
         now = datetime.datetime.now()
         await event.reply(f"🕐 当前时间：{now.strftime('%Y-%m-%d %H:%M:%S')}")
-
-

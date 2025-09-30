@@ -11,7 +11,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
-from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.utils.specs import CommandSpec
+from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.utils.specs import (
+    CommandSpec,
+)
 from ncatbot.utils import get_log
 from ..command_system.lexer.tokenizer import Token, TokenType
 
@@ -25,7 +27,9 @@ class CommandEntry:
 
 
 class CommandResolver:
-    def __init__(self, *, case_sensitive: bool, prefixes: List[str], allow_hierarchical: bool) -> None:
+    def __init__(
+        self, *, case_sensitive: bool, prefixes: List[str], allow_hierarchical: bool
+    ) -> None:
         self.case_sensitive = case_sensitive
         self.allow_hierarchical = allow_hierarchical
         self.prefixes_tuple = tuple(prefix for prefix in prefixes)
@@ -42,9 +46,14 @@ class CommandResolver:
     def _path_to_norm(self, path: Tuple[str, ...]) -> Tuple[str, ...]:
         return tuple(self._normalize(p) for p in path)
 
-    def build_index(self, commands: Dict[Tuple[str, ...], CommandSpec], aliases: Dict[Tuple[str, ...], CommandSpec]) -> None:
+    def build_index(
+        self,
+        commands: Dict[Tuple[str, ...], CommandSpec],
+        aliases: Dict[Tuple[str, ...], CommandSpec],
+    ) -> None:
         """构建索引并进行严格冲突检测。"""
         entries: Dict[Tuple[str, ...], CommandEntry] = {}
+
         def add_entry(path: Tuple[str, ...], command: CommandSpec):
             norm_path = self._path_to_norm(path)
             if norm_path in entries:
@@ -64,12 +73,16 @@ class CommandResolver:
                 min_len = min(len(a), len(b))
                 if a[:min_len] == b[:min_len] and a != b:
                     if not self.allow_hierarchical:
-                        raise ValueError(f"命令前缀冲突: {' '.join(a)} vs {' '.join(b)}")
+                        raise ValueError(
+                            f"命令前缀冲突: {' '.join(a)} vs {' '.join(b)}"
+                        )
 
         self._index = entries
         LOG.debug(f"Resolver 索引构建完成: {len(self._index)}")
 
-    def resolve_from_tokens(self, tokens: List[Token]) -> Optional[Tuple[str, CommandEntry]]:
+    def resolve_from_tokens(
+        self, tokens: List[Token]
+    ) -> Optional[Tuple[str, CommandEntry]]:
         """从首段 tokens 解析命令。
 
         策略：仅接收 TokenType.WORD/QUOTED_STRING 序列作为命令词；
@@ -99,5 +112,3 @@ class CommandResolver:
                 if candidate in self._index:
                     return prefix, self._index[candidate]
         return None, None
-
-

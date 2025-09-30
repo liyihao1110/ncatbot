@@ -1,8 +1,13 @@
 import asyncio
 from ncatbot.utils.testing import TestClient, TestHelper
 
-from .plugins.filters_custom_plugin import CustomFiltersPlugin, bind_custom_filter_to_function
-from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import filter_registry
+from .plugins.filters_custom_plugin import (
+    CustomFiltersPlugin,
+    bind_custom_filter_to_function,
+)
+from ncatbot.plugin_system.builtin_plugin.unified_registry.filter_system import (
+    filter_registry,
+)
 from ncatbot.core.event import BaseMessageEvent
 
 
@@ -42,5 +47,3 @@ async def run_custom_filters_tests():
 
 if __name__ == "__main__":
     asyncio.run(run_custom_filters_tests())
-
-

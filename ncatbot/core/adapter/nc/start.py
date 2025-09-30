@@ -178,6 +178,7 @@ def stop_napcat():
     else:
         raise RuntimeError("不支持的操作系统")
 
+
 def start_napcat():
     """本地启动 NapCat 服务"""
     if platform.system() == "Linux":

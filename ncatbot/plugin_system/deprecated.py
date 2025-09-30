@@ -4,7 +4,7 @@
 # @LastEditors  : Fish-LP fish.zh@outlook.com
 # @LastEditTime : 2025-08-05 21:53:23
 # @Description  : 喵喵喵, 我还没想好怎么介绍文件喵
-# @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议 
+# @Copyright (c) 2025 by Fish-LP, Fcatbot使用许可协议
 # -------------------------
 
 import functools
@@ -14,6 +14,7 @@ import warnings
 class DeprecatedWarningState:
     def __init__(self):
         self.warned = set()
+
 
 def deprecated(replacement=None):
     """
@@ -33,5 +34,7 @@ def deprecated(replacement=None):
                 warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
                 state.warned.add(func)
             return func(*args, **kwargs)
+
         return wrapper
+
     return decorator

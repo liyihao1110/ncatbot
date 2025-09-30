@@ -49,5 +49,3 @@ async def run_groups_tests():
 
 if __name__ == "__main__":
     asyncio.run(run_groups_tests())
-
-

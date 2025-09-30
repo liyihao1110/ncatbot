@@ -13,14 +13,14 @@ async def main():
     # 创建客户端和辅助器
     client = TestClient()
     helper = TestHelper(client)
-    
+
     # 启动并注册插件
     client.start()
     client.register_plugin(HelloPlugin)
-    
+
     # 发送测试消息
     await helper.send_private_message("/hello")
-    
+
     # 验证回复
     reply = helper.get_latest_reply()
     if reply:

@@ -5,7 +5,7 @@
 ## 目录结构
 
 - `quick_start/` - 快速上手指南中的代码示例
-- `guide/` - 完整测试指南中的代码示例  
+- `guide/` - 完整测试指南中的代码示例
 - `simple_tests/` - 简单函数式测试的代码示例
 - `unittest_tests/` - 标准化测试（unittest）的代码示例
 - `api_examples/` - API参考文档中的代码示例
@@ -18,7 +18,7 @@
 .\.venv\Scripts\activate
 
 # 运行特定示例
-python.exe -m examples.testing.unittest_tests.test_calculator_plugin 
+python.exe -m examples.testing.unittest_tests.test_calculator_plugin
 
 ```
 

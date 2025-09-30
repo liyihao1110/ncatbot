@@ -38,7 +38,9 @@ class QSFullExamplePlugin(NcatBotPlugin):
     @admin_filter
     @command_registry.command("announce", description="发布公告")
     @option(short_name="a", long_name="all", help="发送给所有群员")
-    async def announce_cmd(self, event: BaseMessageEvent, message: str, all: bool = False):
+    async def announce_cmd(
+        self, event: BaseMessageEvent, message: str, all: bool = False
+    ):
         result = f"公告: {message}"
         if all:
             result += " [发送给所有群员]"
@@ -48,5 +50,3 @@ class QSFullExamplePlugin(NcatBotPlugin):
     @param(name="name", default="朋友", help="要问候的名字")
     async def greet_cmd(self, event: BaseMessageEvent, name: str = "朋友"):
         await event.reply(f"你好，{name}！欢迎使用机器人。")
-
-

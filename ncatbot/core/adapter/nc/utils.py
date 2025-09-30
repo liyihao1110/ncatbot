@@ -29,6 +29,7 @@ def get_napcat_dir():
         LOG.warning("默认使用工作目录下 napcat/ 目录")
         return os.path.join(os.getcwd(), "napcat")
 
+
 def download_file(url, file_name):
     """下载文件, 带进度条"""
     try:
@@ -56,6 +57,7 @@ def download_file(url, file_name):
         LOG.error("错误信息:", e)
         return
 
+
 def unzip_file(file_name, exact_path, remove=False):
     try:
         with zipfile.ZipFile(file_name, "r") as zip_ref:
@@ -66,7 +68,7 @@ def unzip_file(file_name, exact_path, remove=False):
     except Exception:
         LOG.error(f"解压 {file_name} 失败")
         return
-    
+
 
 def get_local_package_version(package_name):
     """

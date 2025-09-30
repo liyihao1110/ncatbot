@@ -5,6 +5,7 @@ import urllib.request
 from urllib.parse import urljoin
 from ncatbot.utils import ncatbot_config
 
+
 def convert_uploadable_object(i):
     """将可上传对象转换为标准格式"""
 

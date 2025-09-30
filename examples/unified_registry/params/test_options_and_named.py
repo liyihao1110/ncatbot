@@ -50,7 +50,9 @@ async def run_options_and_named_tests():
     helper.assert_reply_sent("部署 myapp: 环境=prod, 端口=8080, 进程=4")
     helper.clear_history()
 
-    await helper.send_private_message("/deploy myapp --env=prod --port=9000 --workers=8")
+    await helper.send_private_message(
+        "/deploy myapp --env=prod --port=9000 --workers=8"
+    )
     helper.assert_reply_sent("部署 myapp: 环境=prod, 端口=9000, 进程=8")
     helper.clear_history()
 
@@ -59,12 +61,16 @@ async def run_options_and_named_tests():
     helper.assert_reply_sent("处理文件: data.csv → result.txt (json格式)")
     helper.clear_history()
 
-    await helper.send_private_message("/process data.csv -v --output=output.xml --format=xml")
+    await helper.send_private_message(
+        "/process data.csv -v --output=output.xml --format=xml"
+    )
     helper.assert_reply_sent("处理文件: data.csv → output.xml (xml格式) [详细模式]")
     helper.clear_history()
 
     await helper.send_private_message('/process "my file.txt" --force -v')
-    helper.assert_reply_sent("处理文件: my file.txt → result.txt (json格式) [详细模式] [强制模式]")
+    helper.assert_reply_sent(
+        "处理文件: my file.txt → result.txt (json格式) [详细模式] [强制模式]"
+    )
     helper.clear_history()
 
     # 选项组
@@ -85,5 +91,3 @@ async def run_options_and_named_tests():
 
 if __name__ == "__main__":
     asyncio.run(run_options_and_named_tests())
-
-

@@ -1,8 +1,7 @@
 import asyncio
-import datetime
 import json
 import traceback
-from typing import Dict, Callable, Any, Optional, Literal
+from typing import Dict, Callable, Optional, Literal
 import uuid
 from threading import Lock
 from queue import Queue
@@ -24,7 +23,6 @@ from ncatbot.utils import (
     OFFICIAL_NOTICE_EVENT,
     OFFICIAL_REQUEST_EVENT,
     OFFICIAL_STARTUP_EVENT,
-    OFFICIAL_SHUTDOWN_EVENT,
     OFFICIAL_HEARTBEAT_EVENT,
 )
 from ncatbot.utils.error import NcatBotError, NcatBotConnectionError
@@ -108,7 +106,10 @@ class Adapter:
                 LOG.info("NapCat WebSocket 连接已关闭, 正在尝试重新连接...")
                 if napcat_service_ok(ncatbot_config.websocket_timeout):
                     self.client = await websockets.connect(
-                        uri_with_token, close_timeout=0.2, max_size=2**30, open_timeout=1
+                        uri_with_token,
+                        close_timeout=0.2,
+                        max_size=2**30,
+                        open_timeout=1,
                     )
                     LOG.info("NapCat WebSocket 重新连接成功")
                     continue
@@ -154,7 +155,6 @@ class Adapter:
         elif post_type == "meta_event":
             event = MetaEvent(message)
             if event.meta_event_type == "lifecycle":
-
                 if event.sub_type == "enable":
                     callback = None
                     # TODO: 正确的 Bot 上线处理
@@ -187,5 +187,5 @@ class Adapter:
                 await self.client.close()
             print("WebSocket 连接已关闭")
             self.client = None
-        except:
-            pass
+        except Exception as e:
+            LOG.error(f"清理资源时出错: {e}")

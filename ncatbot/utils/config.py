@@ -22,25 +22,31 @@ logger = get_log("Config")
 CONFIG_PATH = os.getenv("NCATBOT_CONFIG_PATH", os.path.join(os.getcwd(), "config.yaml"))
 T = TypeVar("T", bound="BaseConfig")
 
+
 def strong_password_check(password: str) -> bool:
     # 包含 数字、大小写字母、特殊符号，至少 12 位
     special_chars = "!@#$%^&*()_+-=[]{}|;:,.<>?"
-    return len(password) >= 12 and \
-            any(char.isdigit() for char in password) and \
-            any(char.isalpha() for char in password) and \
-            any(char in special_chars for char in password)
+    return (
+        len(password) >= 12
+        and any(char.isdigit() for char in password)
+        and any(char.isalpha() for char in password)
+        and any(char in special_chars for char in password)
+    )
+
 
 def generate_strong_password(length=16):
     special_chars = "!@#$%^&*()_+-=[]{}|;:,.<>?"
     all_chars = string.ascii_letters + string.digits + special_chars
     while True:
-        password = ''.join(random.choice(all_chars) for _ in range(length))
+        password = "".join(random.choice(all_chars) for _ in range(length))
         if strong_password_check(password):
             return password
+
 
 @dataclass(frozen=False)
 class BaseConfig:
     """基础配置类，提供通用功能。"""
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any], /, **kwargs: Any) -> T:
         """从字典创建新实例。
@@ -86,8 +92,11 @@ class BaseConfig:
 
     def asdict(self) -> Dict[str, Any]:
         """将实例转换为字典。"""
-        data = {k: v for k, v in self.__dict__.items() if isinstance(v, (str, int, bool, type(None), tuple, list)) \
-            and not k.startswith('_') \
+        data = {
+            k: v
+            for k, v in self.__dict__.items()
+            if isinstance(v, (str, int, bool, type(None), tuple, list))
+            and not k.startswith("_")
             and k not in ATTRIBUTE_IGNORE
         }
         return data
@@ -195,17 +204,24 @@ class NapCatConfig(BaseConfig):
     def _security_check(self) -> None:
         if self.ws_listen_ip == "0.0.0.0":
             if not strong_password_check(self.ws_token):
-                logger.error("WS 令牌强度不足，请修改为强密码，或者修改 ws_listen_ip 本地监听 `localhost`")
-                if input("WS 令牌强度不足，是否修改为强密码？(y/n): ").lower() == 'y':
+                logger.error(
+                    "WS 令牌强度不足，请修改为强密码，或者修改 ws_listen_ip 本地监听 `localhost`"
+                )
+                if input("WS 令牌强度不足，是否修改为强密码？(y/n): ").lower() == "y":
                     pwd = generate_strong_password()
                     logger.info(f"已生成强密码: {pwd}")
                     self.ws_token = pwd
                 else:
-                    raise ValueError("WS 令牌强度不足, 请修改为强密码, 或者修改 ws_listen_ip 本地监听 `localhost`")
+                    raise ValueError(
+                        "WS 令牌强度不足, 请修改为强密码, 或者修改 ws_listen_ip 本地监听 `localhost`"
+                    )
 
-        if self.enable_webui:   
+        if self.enable_webui:
             if not strong_password_check(self.webui_token):
-                if input("WebUI 令牌强度不足，是否修改为强密码？(y/n): ").lower() == 'y':
+                if (
+                    input("WebUI 令牌强度不足，是否修改为强密码？(y/n): ").lower()
+                    == "y"
+                ):
                     pwd = generate_strong_password()
                     logger.info(f"已生成强密码: {pwd}")
                     self.webui_token = pwd
@@ -294,11 +310,13 @@ class Config(BaseConfig):
         napcat = self.napcat.asdict()
         plugin = self.plugin.asdict()
         base = {
-            k: v for k, v in self.__dict__.items() if isinstance(v, (str, int, bool, type(None), tuple, list)) \
-                and not k.startswith('_')
+            k: v
+            for k, v in self.__dict__.items()
+            if isinstance(v, (str, int, bool, type(None), tuple, list))
+            and not k.startswith("_")
         }
         return {**base, "napcat": napcat, "plugin": plugin}
-    
+
     @classmethod
     def create_from_file(cls, path: str) -> "Config":
         """从 YAML 文件加载配置。
@@ -415,24 +433,25 @@ class Config(BaseConfig):
     # 3xx 兼容
     def set_bot_uin(self, bot_uin: str) -> None:
         self.bt_uin = str(bot_uin)
-    
+
     def set_root(self, root: str) -> None:
         self.root = str(root)
-    
+
     def set_ws_uri(self, ws_uri: str) -> None:
         self.napcat.ws_uri = str(ws_uri)
-    
+
     def set_webui_uri(self, webui_uri: str) -> None:
         self.napcat.webui_uri = str(webui_uri)
-    
+
     def set_ws_token(self, ws_token: str) -> None:
         self.napcat.ws_token = str(ws_token)
-    
+
     def set_webui_token(self, webui_token: str) -> None:
         self.napcat.webui_token = str(webui_token)
-    
+
     def set_ws_listen_ip(self, ws_listen_ip: str) -> None:
         self.napcat.ws_listen_ip = str(ws_listen_ip)
+
 
 # 复杂嵌套对象的递归属性映射
 ATTRIBUTE_RECURSIVE = {

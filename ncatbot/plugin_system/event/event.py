@@ -48,7 +48,7 @@ class NcatBotEvent:
     def results(self):
         return copy(self._results)
 
-    @property 
+    @property
     def intercepted(self) -> bool:
         """是否被拦截"""
         return self._intercepted
@@ -71,33 +71,33 @@ class NcatBotEvent:
 
     def stop_propagation(self):
         """停止事件的继续传播
-        
+
         调用此方法后,后续的事件处理器将不会被执行。
         """
         self._propagation_stopped = True
 
     def add_result(self, result: Any):
         """添加事件处理结果
-        
+
         Args:
             result: 处理器返回的结果
         """
         self._results.append(result)
-    
+
     def add_exception(self, exception: Exception):
         """添加事件处理过程中的异常
-        
+
         Args:
             exception: 处理过程中捕获的异常
         """
         self._exceptions.append(exception)
-    
+
     def intercept(self):
         """拦截事件,阻止事件继续处理
         同时会停止事件传播
         """
         self._propagation_stopped = True
         self._intercepted = True
-    
+
     def __repr__(self):
         return f'Event(type="{self.type}",data={self.data},results={self.results},exceptions={self.exceptions})'

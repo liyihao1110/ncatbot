@@ -21,5 +21,3 @@ class CmdBasicAliasPlugin(NcatBotPlugin):
     @command_registry.command("status", aliases=["stat", "st"], description="查看状态")
     async def status_cmd(self, event: BaseMessageEvent):
         await event.reply("机器人运行正常")
-
-

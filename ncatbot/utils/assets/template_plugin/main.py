@@ -1,8 +1,7 @@
 """Plugin main file."""
 
-from ncatbot.core import GroupMessageEvent, PrivateMessageEvent, BaseMessageEvent
+from ncatbot.core import BaseMessageEvent
 from ncatbot.plugin_system import NcatBotPlugin
-
 
 
 class Plugin(NcatBotPlugin):
