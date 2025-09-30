@@ -68,7 +68,7 @@ class CommandMixin(FunctionMixin):
                 return handler(event, args)
         return warpped_handler
     
-    def register_command(self, name: str, handler: Callable[[BaseMessageEvent, list[str]], Any], aliases: List[str] = None, description: str = "", usage: str = "", examples: List[str] = None, permission: PermissionGroup = PermissionGroup.USER.value, timeout: float = None) -> Command:
+    def register_command(self, name: str, handler: Callable[[BaseMessageEvent, List[str]], Any], aliases: List[str] = None, description: str = "", usage: str = "", examples: List[str] = None, permission: PermissionGroup = PermissionGroup.USER.value, timeout: float = None) -> Command:
         # TODO 提示已经注册的别名
         # TODO 限定参数
         if not hasattr(self, '_registered_commands'):
@@ -90,8 +90,8 @@ class CommandMixin(FunctionMixin):
         self._registered_commands.append(command)
         return command
     
-    def register_user_command(self, name: str, handler: Callable[[BaseMessageEvent, list[str]], Any], aliases: List[str] = None, description: str = "", usage: str = "", examples: List[str] = None, timeout: float = None) -> Command:
+    def register_user_command(self, name: str, handler: Callable[[BaseMessageEvent, List[str]], Any], aliases: List[str] = None, description: str = "", usage: str = "", examples: List[str] = None, timeout: float = None) -> Command:
         return self.register_command(name, handler, aliases, description, usage, examples, PermissionGroup.USER.value, timeout)
         
-    def register_admin_command(self, name: str, handler: Callable[[list[str], BaseMessageEvent], Any], aliases: List[str] = None, description: str = "", usage: str = "", examples: List[str] = None, timeout: float = None) -> Command:
+    def register_admin_command(self, name: str, handler: Callable[[List[str], BaseMessageEvent], Any], aliases: List[str] = None, description: str = "", usage: str = "", examples: List[str] = None, timeout: float = None) -> Command:
         return self.register_command(name, handler, aliases, description, usage, examples, PermissionGroup.ADMIN.value, timeout)

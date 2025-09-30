@@ -10,6 +10,7 @@ import asyncio
 import importlib
 # TODO 用 zipimport 实现 zip 格式插件
 import sys
+import toml
 from collections import defaultdict, deque
 from pathlib import Path
 from types import ModuleType
@@ -63,12 +64,12 @@ class _ModuleImporter:
             sys.path.insert(0, str(self.directory))
             for entry in self.directory.iterdir():
                 name = entry.stem
-                if len(ncatbot_config.plugin.plugin_whitelist) > 0:
+                if ncatbot_config.plugin.plugin_whitelist:
                     if name not in ncatbot_config.plugin.plugin_whitelist:
                         LOG.info("插件文件「%s」不在白名单内，跳过加载", name)
                         continue
                     
-                if len(ncatbot_config.plugin.plugin_blacklist) > 0:
+                if ncatbot_config.plugin.plugin_blacklist:
                     if name in ncatbot_config.plugin.plugin_blacklist:
                         LOG.info("插件文件「%s」在黑名单内，跳过加载", name)
                         continue
@@ -106,19 +107,39 @@ class _ModuleImporter:
     def _maybe_install_deps(self, plugin_path: Path) -> None:
         if not _AUTO_INSTALL:
             return
-        req_file = (
-            plugin_path / "requirements.txt"
-            if plugin_path.is_dir()
-            else plugin_path.with_suffix(".requirements.txt")
-        )
-        if not req_file.exists():
-            return
+        
+        def ensure_req_from_requirements():
+            req_file = (
+                plugin_path / "requirements.txt"
+                if plugin_path.is_dir()
+                else plugin_path.with_suffix(".requirements.txt")
+            )
+            if not req_file.exists():
+                return 
 
-        for line in req_file.read_text(encoding="utf-8").splitlines():
-            req = line.strip()
-            if not req or req.startswith("#") or req.startswith("-"):
-                continue
+            for line in req_file.read_text(encoding="utf-8").splitlines():
+                req = line.strip()
+                if not req or req.startswith("#") or req.startswith("-"):
+                    continue
             self._ensure_package(req)
+
+        def ensure_req_from_pyproject():
+            pyproject = (
+                plugin_path / "pyproject.toml"
+                if plugin_path.is_dir()
+                else plugin_path.with_suffix(".pyproject.toml")
+            )
+            if not pyproject.exists():
+                return
+            data = toml.load(pyproject)
+            requires = data.get("project", {}).get("dependencies", [])
+            for req in requires:
+                self._ensure_package(req)
+
+        ensure_req_from_pyproject()
+        ensure_req_from_requirements()
+        
+            
 
     def _ensure_package(self, req: str) -> None:
         """检查包是否存在，不存在则安装。"""

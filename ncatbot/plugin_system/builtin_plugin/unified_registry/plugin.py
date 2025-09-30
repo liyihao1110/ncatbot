@@ -207,7 +207,7 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         # 缓存查找结果
         if func in self.func_plugin_map:
             return self.func_plugin_map[func]
-        
+
         # 遍历所有插件查找函数归属
         plugins = self.list_plugins(obj=True)
         for plugin in plugins:

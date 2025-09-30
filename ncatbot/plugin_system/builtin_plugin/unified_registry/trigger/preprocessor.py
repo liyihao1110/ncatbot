@@ -7,7 +7,7 @@
 """
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, List
 
 from ncatbot.utils import get_log
 from ncatbot.core.event import BaseMessageEvent
@@ -21,7 +21,7 @@ class PreprocessResult:
 
 
 class MessagePreprocessor:
-    def __init__(self, *, require_prefix: bool, prefixes: list[str], case_sensitive: bool) -> None:
+    def __init__(self, *, require_prefix: bool, prefixes: List[str], case_sensitive: bool) -> None:
         self.require_prefix = require_prefix
         self.prefixes = prefixes
         self.case_sensitive = case_sensitive

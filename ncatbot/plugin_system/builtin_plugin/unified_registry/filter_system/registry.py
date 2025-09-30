@@ -22,12 +22,10 @@ class FilterRegistry:
     1. filter_registry.register_filter(name, filter_instance)
     2. filter_registry.register(func) 或 @filter_registry 装饰器
     """
-    
-    _function_filters: Dict[Callable, List["BaseFilter"]] = {}
-    
+        
     def __init__(self):
         self._filters: Dict[str, FilterEntry] = {}
-        self._function_filters: List[Callable] = []  # 注册的函数过滤器
+        self._function_filters: List[Callable] = []
         from .decorators import admin_filter, root_filter, private_filter, group_filter
         self.admin_filter = admin_filter
         self.root_filter = root_filter
@@ -82,12 +80,7 @@ class FilterRegistry:
                 
             custom_filter = CustomFilter(f, filter_name)
             self.register_filter(filter_name, custom_filter)
-            
-            # 同时保存函数引用
-            self._function_filters.append(f)
-            
-            # 标记函数已注册为过滤器
-            f.__is_filter__ = True
+                        
             return f
         
         if func_or_name is None or isinstance(func_or_name, str):

@@ -9,7 +9,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.utils.specs import CommandSpec
 from ncatbot.utils import get_log
@@ -25,7 +25,7 @@ class CommandEntry:
 
 
 class CommandResolver:
-    def __init__(self, *, case_sensitive: bool, prefixes: list[str], allow_hierarchical: bool) -> None:
+    def __init__(self, *, case_sensitive: bool, prefixes: List[str], allow_hierarchical: bool) -> None:
         self.case_sensitive = case_sensitive
         self.allow_hierarchical = allow_hierarchical
         self.prefixes_tuple = tuple(prefix for prefix in prefixes)

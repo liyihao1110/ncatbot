@@ -1,4 +1,4 @@
-from typing import Literal, Union
+from typing import Literal, Union, List
 from .utils import BaseAPI, APIReturnStatus
 from ncatbot.utils import run_coroutine
 from ncatbot.core.event import File
@@ -92,11 +92,11 @@ class GroupMemberInfo:
        
 
 class GroupMemberList:
-    def __init__(self, data: list[dict]):
+    def __init__(self, data: List[dict]):
         self.members = [GroupMemberInfo(**item) for item in data]
     
     @classmethod
-    def from_shut_list(cls, shut_list_dict: list[dict]) -> "GroupMemberList":
+    def from_shut_list(cls, shut_list_dict: List[dict]) -> "GroupMemberList":
         obj = cls([])
         for item in shut_list_dict:
             obj.members.append(GroupMemberInfo.from_shut_list_dict(item))
@@ -121,7 +121,7 @@ class GroupMemberList:
     def filter_by_role(self, role: Literal["admin", "owner", "member"]) -> "GroupMemberList":
         return GroupMemberList([member for member in self.members if member.role == role])
     
-    def filter_by_role_not_in(self, roles: list[Literal["admin", "owner", "member"]]) -> "GroupMemberList":
+    def filter_by_role_not_in(self, roles: List[Literal["admin", "owner", "member"]]) -> "GroupMemberList":
         return GroupMemberList([member for member in self.members if member.role not in roles])
     
     def filter_by_have_title(self) -> "GroupMemberList":
@@ -188,7 +188,7 @@ class GroupAPI(BaseAPI):
         result = await self.async_callback("/delete_essence_msg", {"message_id": message_id})
         APIReturnStatus.raise_if_failed(result)
     
-    async def get_group_essence_msg(self, group_id: Union[str, int]) -> list[dict]:
+    async def get_group_essence_msg(self, group_id: Union[str, int]) -> List[dict]:
         # TODO: 返回值(不紧急)
         result = await self.async_callback("/get_group_essence_msg", {"group_id": group_id})
         status = APIReturnStatus(result)
@@ -386,7 +386,7 @@ class GroupAPI(BaseAPI):
     def delete_essence_msg_sync(self, message_id: Union[str, int]) -> None:
         return run_coroutine(self.delete_essence_msg, message_id)
     
-    def get_group_essence_msg_sync(self, group_id: Union[str, int]) -> list[dict]:
+    def get_group_essence_msg_sync(self, group_id: Union[str, int]) -> List[dict]:
         return run_coroutine(self.get_group_essence_msg, group_id)
     
     def post_group_file_sync(self, group_id: Union[str, int], image: str = None, record: str=None, video: str=None, file: str=None) -> str:

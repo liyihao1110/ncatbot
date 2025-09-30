@@ -198,7 +198,7 @@ def setup_logging():
 
     # ---- 5.3 根记录器（控制台 + 主文件） ----
     root = logging.getLogger()
-    root.setLevel(logging.DEBUG)
+    root.setLevel(logging.INFO)
     root.handlers.clear()
 
     # 控制台处理器

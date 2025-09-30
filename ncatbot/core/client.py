@@ -2,12 +2,14 @@ import asyncio
 import inspect
 import traceback
 import threading
-from typing import Callable, Optional, Type, Literal, Union, TypedDict, Unpack, List, TypeVar, TYPE_CHECKING
+from typing import Callable, Optional, Type, Literal, Union, TypedDict, List, TypeVar, TYPE_CHECKING
+from typing_extensions import Unpack
 
 T = TypeVar('T')
 
 if TYPE_CHECKING:
     from ncatbot.plugin_system import BasePlugin
+
 
 from ncatbot.core.adapter.adapter import Adapter
 from ncatbot.core.api.api import BotAPI
@@ -59,7 +61,7 @@ class BotClient:
             raise NcatBotError("BotClient 实例只能创建一次")
         self._initialized = True
         self.adapter = Adapter()
-        self.event_handlers: dict[str, list] = {}
+        self.event_handlers: Dict[str, list] = {}
         self.thread_pool = ThreadPool(max_workers=1, max_per_func=1)
         self.api = BotAPI(self.adapter.send)
         self.crash_flag = False

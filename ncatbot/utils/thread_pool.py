@@ -22,7 +22,7 @@ def run_coroutine(func: Callable[..., Coroutine[Any, Any, T]], *args, **kwargs):
     if not inspect.iscoroutinefunction(func):
         return func(*args, **kwargs)
     
-    result: list[T] = []
+    result: List[T] = []
     def runner():
         try:
             result.append(asyncio.run(func(*args, **kwargs)))

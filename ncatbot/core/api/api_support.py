@@ -1,4 +1,4 @@
-from typing import Literal, Union
+from typing import Literal, Union, List
 from .utils import BaseAPI, APIReturnStatus
 from ncatbot.utils import run_coroutine
 from ncatbot.core.event.message_segment.message_segment import convert_uploadable_object
@@ -20,7 +20,7 @@ class AICharacter:
         }
 
 class AICharacterList:
-    def __init__(self, data: list[dict]):
+    def __init__(self, data: List[dict]):
         self.characters = [AICharacter(item) for item in data]
     
     def __repr__(self) -> str:
@@ -74,7 +74,7 @@ class SupportAPI(BaseAPI):
     # region OCR 相关（仅 windows 可用）
     # ---------------------
     
-    async def ocr_image(self, image: str) -> list[dict]:
+    async def ocr_image(self, image: str) -> List[dict]:
         # TODO: 返回值(不紧急)
         result = await self.async_callback("/ocr_image", {"image": convert_uploadable_object(image)})
         status = APIReturnStatus(result)
@@ -121,7 +121,7 @@ class SupportAPI(BaseAPI):
     def can_send_record_sync(self, group_id: Union[str, int]) -> bool:
         return run_coroutine(self.can_send_record, group_id)
     
-    def ocr_image_sync(self, image: str) -> list[dict]:
+    def ocr_image_sync(self, image: str) -> List[dict]:
         return run_coroutine(self.ocr_image, image)
     
     def get_version_info_sync(self) -> dict:

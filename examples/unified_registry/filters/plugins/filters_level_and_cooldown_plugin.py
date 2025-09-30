@@ -31,9 +31,8 @@ class LevelAndCooldownPlugin(NcatBotPlugin):
 
     @LevelFilter(min_level=1)
     async def high_level_message(self, event: BaseMessageEvent):
-        if self._is_command(event):
-            return
-        await event.reply("收到一条高等级用户的消息")
+        if "高等级" in event.raw_message:
+            await event.reply("收到一条高等级用户的消息")
 
     # 冷却时间过滤器注册
     @filter_registry.register("cooldown")

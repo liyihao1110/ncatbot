@@ -1,10 +1,10 @@
-import asyncio
+from typing import List
 from ncatbot.utils import status
 from ncatbot.utils import run_coroutine
 from ncatbot.core.event.message_segment import MessageArray, Node, Image, Text, Forward, Node, File, Video, MessageSegment
 
 class ForwardConstructor:
-    def __init__(self, user_id: str="123456", nickname: str="QQ用户", content: list[Node]=None):
+    def __init__(self, user_id: str="123456", nickname: str="QQ用户", content: List[Node]=None):
         self.user_id = user_id
         self.nickname = nickname
         self.content = content if content else []

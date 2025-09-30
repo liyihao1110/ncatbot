@@ -1,4 +1,4 @@
-from typing import Literal, Union
+from typing import Literal, Union, List
 from .utils import BaseAPI, APIReturnStatus
 from ncatbot.utils import run_coroutine
 from ncatbot.core.event.message_segment.message_segment import convert_uploadable_object
@@ -10,8 +10,8 @@ class LoginInfo:
     user_id: str
     
 class CustomFaceList:
-    urls: list[str]
-    def __init__(self, data: list[dict]):
+    urls: List[str]
+    def __init__(self, data: List[dict]):
         self.urls = [item["url"] for item in data]
 
 class AccountAPI(BaseAPI):
@@ -54,7 +54,7 @@ class AccountAPI(BaseAPI):
     # region 好友
     # ---------------------
     
-    async def get_friends_with_cat(self) -> list[dict]:
+    async def get_friends_with_cat(self) -> List[dict]:
         # TODO: 返回值(不紧急)
         result = await self.async_callback("/get_friends_with_cat")
         status = APIReturnStatus(result)
@@ -76,7 +76,7 @@ class AccountAPI(BaseAPI):
         result = await self.async_callback("/set_friend_add_request", {"flag": flag, "approve": approve, "remark": remark})
         APIReturnStatus.raise_if_failed(result)
     
-    async def get_friend_list(self) -> list[dict]:
+    async def get_friend_list(self) -> List[dict]:
         # TODO: 返回值(不紧急)
         result = await self.async_callback("/get_friend_list")
         status = APIReturnStatus(result)
@@ -113,7 +113,7 @@ class AccountAPI(BaseAPI):
         result = await self.async_callback("/create_collection", {"rawData": rawData, "brief": brief})
         APIReturnStatus.raise_if_failed(result)
         
-    async def get_recent_contact(self) -> list[dict]:
+    async def get_recent_contact(self) -> List[dict]:
         # TODO: 返回值(不紧急)
         result = await self.async_callback("/get_recent_contact")
         status = APIReturnStatus(result)
@@ -179,7 +179,7 @@ class AccountAPI(BaseAPI):
     def get_status_sync(self) -> dict:
         return run_coroutine(self.get_status)
     
-    def get_friends_with_cat_sync(self) -> list[dict]:
+    def get_friends_with_cat_sync(self) -> List[dict]:
         return run_coroutine(self.get_friends_with_cat)
     
     def send_like_sync(self, user_id: Union[str, int], times: int = 1) -> None:
@@ -188,7 +188,7 @@ class AccountAPI(BaseAPI):
     def set_friend_add_request_sync(self, flag: str, approve: bool, remark: str = None) -> None:
         return run_coroutine(self.set_friend_add_request, flag, approve, remark)
     
-    def get_friend_list_sync(self) -> list[dict]:
+    def get_friend_list_sync(self) -> List[dict]:
         return run_coroutine(self.get_friend_list)
 
     def delete_friend_sync(self, user_id: Union[str, int], block: bool = True, both: bool = True) -> None:
@@ -206,7 +206,7 @@ class AccountAPI(BaseAPI):
     def create_collection_sync(self, rawData: str, brief: str) -> None:
         return run_coroutine(self.create_collection, rawData, brief)
         
-    def get_recent_contact_sync(self) -> list[dict]:
+    def get_recent_contact_sync(self) -> List[dict]:
         return run_coroutine(self.get_recent_contact)
     
     def _mark_all_as_read_sync(self) -> None:

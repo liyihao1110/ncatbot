@@ -9,7 +9,7 @@
 import os
 import json
 from functools import lru_cache
-from typing import Dict, Literal, Set
+from typing import Dict, Literal, Set, List
 
 from ncatbot.utils.assets.literals import PermissionGroup
 from ncatbot.utils import ncatbot_config
@@ -499,7 +499,7 @@ class RBACManager:
         if not ignore_if_exists:
             raise IndexError(f"角色 {role_name} 已存在")
     
-    def add_user(self, user_name: str, role_list: list[str] = None, ignore_if_exists: bool = True):
+    def add_user(self, user_name: str, role_list: List[str] = None, ignore_if_exists: bool = True):
         if self.user_exists(user_name):
             if ignore_if_exists:
                 return

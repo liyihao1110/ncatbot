@@ -1,16 +1,17 @@
-root: '123456' # Bot 管理员 QQ 号
-bt_uin: '123456' # Bot QQ 号
-enable_webui_interaction: true # 启用 webui 交互
-check_ncatbot_update: true # 检查 NcatBot 更新
-skip_ncatbot_install_check: false # 跳过 NcatBot 安装检查
-debug: false # 调试模式, 开启将会打印更多调试信息
-websocket_timeout: 15 # NapCat WebSocket 连接最大超时允许
+root: '123456'
+bt_uin: '123456789'
+enable_webui_interaction: true
+debug: false
+github_proxy: null
+check_ncatbot_update: true
+skip_ncatbot_install_check: false
+websocket_timeout: 15
 napcat:
   ws_uri: ws://localhost:3001
   ws_token: NcatBot
   ws_listen_ip: localhost
   webui_uri: http://localhost:6099
-  webui_token: NcatBot
+  webui_token: EXks[b%pkS4KVPlZ
   enable_webui: true
   check_napcat_update: false
   stop_napcat: false

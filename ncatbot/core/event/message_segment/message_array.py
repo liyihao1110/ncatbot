@@ -108,13 +108,13 @@ def process_dict(data: dict) -> MessageSegment:
     msg_data = data.get("data")
     return get_class_by_name(msg_seg_type).from_dict(msg_data)
 
-def process_iterable(data: list) -> list[MessageSegment]:
+def process_iterable(data: list) -> List[MessageSegment]:
     result = []
     for item in data:
         result = result + process_item(item)
     return result
 
-def process_item(item: Union[List[Union[dict, MessageSegment]], Union[dict, MessageSegment]]) -> list[MessageSegment]:
+def process_item(item: Union[List[Union[dict, MessageSegment]], Union[dict, MessageSegment]]) -> List[MessageSegment]:
     """
     处理消息(单个或迭代器)，返回对应的 list[MessageSegment] 对象
     
@@ -143,14 +143,14 @@ class MessageArray:
     """表示一条消息的数据结构
     支持字典构造和 MessageSegment 构造
     """
-    messages: list[MessageSegment] = []
+    messages: List[MessageSegment] = []
         
     @classmethod
-    def from_list(cls, data: list[Union[dict, MessageSegment]]):
+    def from_list(cls, data: List[Union[dict, MessageSegment]]):
         """"其实也支持单个"""
         return cls(data)
     
-    def to_list(self) -> list[Dict]:
+    def to_list(self) -> List[Dict]:
         data = []
         for item in self.messages:
             data.append(item.to_dict())
@@ -163,7 +163,7 @@ class MessageArray:
             if mlen != len(self.filter(Forward)) and mlen != len(self.filter(Node)):
                 raise MessageFormatError("消息格式错误, 合并转发消息严禁和其它类型消息混用")
     
-    def add_by_list(self, data: list[Union[dict, MessageSegment]]):
+    def add_by_list(self, data: List[Union[dict, MessageSegment]]):
         self.messages.extend(process_item(data))
         return self
     

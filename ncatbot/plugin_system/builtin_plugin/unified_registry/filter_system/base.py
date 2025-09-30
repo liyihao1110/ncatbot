@@ -31,14 +31,10 @@ class BaseFilter(ABC):
     def __call__(self, func: Callable) -> Callable:
         """使过滤器实例可作为装饰器使用"""
         
-        @wraps(func)
-        def wrapper(*args, **kwargs) -> Any:
-            return func(*args, **kwargs)
-        
         from .registry import filter_registry
         # 将过滤器添加到函数
         filter_registry.add_filter_to_function(func, self)
-        return wrapper
+        return func
     
     def __str__(self) -> str:
         return f"{self.__class__.__name__}({self.name})"

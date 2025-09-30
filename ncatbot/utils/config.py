@@ -2,12 +2,13 @@
 
 import copy
 import os
-import logging
 import time
 import urllib.parse
 import warnings
-from dataclasses import KW_ONLY, asdict, dataclass, field, fields
-from typing import Any, List, Optional, Self, TextIO
+from dataclasses import dataclass, field, fields
+from typing import Any, List, Optional, TextIO, TypeVar, Dict
+
+
 from urllib.parse import quote_plus
 
 import rich  # 这东西真需要吗
@@ -19,6 +20,7 @@ from ncatbot.utils.status import status
 
 logger = get_log("Config")
 CONFIG_PATH = os.getenv("NCATBOT_CONFIG_PATH", os.path.join(os.getcwd(), "config.yaml"))
+T = TypeVar("T", bound="BaseConfig")
 
 def strong_password_check(password: str) -> bool:
     # 包含 数字、大小写字母、特殊符号，至少 12 位
@@ -39,11 +41,8 @@ def generate_strong_password(length=16):
 @dataclass(frozen=False)
 class BaseConfig:
     """基础配置类，提供通用功能。"""
-
-    _: KW_ONLY
-
     @classmethod
-    def from_dict(cls, data: dict[str, Any], /, **kwargs: Any) -> Self:
+    def from_dict(cls, data: Dict[str, Any], /, **kwargs: Any) -> T:
         """从字典创建新实例。
 
         Args:
@@ -85,7 +84,7 @@ class BaseConfig:
 
         return self
 
-    def asdict(self) -> dict[str, Any]:
+    def asdict(self) -> Dict[str, Any]:
         """将实例转换为字典。"""
         data = {k: v for k, v in self.__dict__.items() if isinstance(v, (str, int, bool, type(None), tuple, list)) \
             and not k.startswith('_') \
@@ -104,7 +103,7 @@ class BaseConfig:
             logger.error(f"保存配置失败: {e}")
             raise ValueError(f"保存配置失败: {e}") from e
 
-    def __replace__(self, **kwargs: Any) -> Self:
+    def __replace__(self, **kwargs: Any) -> T:
         """替换属性值。
 
         Args:
@@ -118,7 +117,7 @@ class BaseConfig:
             setattr(replaced, key, value)
         return replaced
 
-    def pprint(self, file: TextIO | None = None) -> None:
+    def pprint(self, file: TextIO = None) -> None:
         """美化打印实例。"""
         rich.print(self, file=file)
 
@@ -290,7 +289,7 @@ class Config(BaseConfig):
         quoted_token = quote_plus(self.napcat.ws_token)
         return f"{self.napcat.ws_uri.rstrip('/')}/?access_token={quoted_token}"
 
-    def asdict(self) -> dict[str, Any]:
+    def asdict(self) -> Dict[str, Any]:
         """将实例转换为字典。"""
         napcat = self.napcat.asdict()
         plugin = self.plugin.asdict()

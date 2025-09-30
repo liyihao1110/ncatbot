@@ -5,7 +5,7 @@ import httpx
 from ncatbot.core.event.message_segment.utils import convert_uploadable_object
 import urllib.parse
 from dataclasses import dataclass, field, fields
-from typing import Literal, Union, Any, TYPE_CHECKING, TypeVar, Dict, Type, Iterable
+from typing import Literal, Union, Any, TYPE_CHECKING, TypeVar, Dict, Type, List
 from ncatbot.utils import get_log, run_coroutine, NcatBotError, status
 if TYPE_CHECKING:
     from ncatbot.core.event.message_segment.message_array import MessageArray
@@ -19,7 +19,7 @@ class MessageTypeNotFoundErr(NcatBotError):
     def __init__(self, type_name):
         super().__init__(f"找不到消息类型: {type_name}")
 
-def create_message_array(obj: Union["MessageArray", Union[list["MessageSegment"], list[dict]], ]) -> "MessageArray":
+def create_message_array(obj: Union["MessageArray", Union[List["MessageSegment"], List[dict]], ]) -> "MessageArray":
     from ncatbot.core.event.message_segment.message_array import MessageArray
     if isinstance(obj, MessageArray):
         return obj
@@ -114,10 +114,19 @@ class MessageSegment():
         return self.summary if hasattr(self, "summary") else "该消息不支持预览"
     
     def __repr__(self):
-        field_items = [(field.name, getattr(self, field.name)) 
-                      for field in fields(self) if hasattr(self, field.name) and field.repr]
-        non_none_fields = [f"{name}={value if not isinstance(value, str) else f'\"{value}\"'}" 
-                          for name, value in field_items if value is not None]
+        field_items = [(field.name, getattr(self, field.name))
+                    for field in fields(self)
+                    if hasattr(self, field.name) and field.repr]
+
+        non_none_fields = []
+        for name, value in field_items:
+            if value is None:
+                continue
+            if isinstance(value, str):
+                quoted = f'"{value}"'      # 这里不再有反斜杠
+            else:
+                quoted = value
+            non_none_fields.append(f"{name}={quoted}")
         return f"{self.__class__.__name__}({', '.join(non_none_fields)})"
 
     def __str__(self):
@@ -401,14 +410,14 @@ class Forward(MessageSegment):
     id: str = field(default=None)
     # summary: str = field(init=False, repr=False, default="[聊天记录]")
     # prompt: str = field(init=False)
-    # news: list[str] = field(init=False, repr=False, default=None)
+    # news: List[str] = field(init=False, repr=False, default=None)
     # source: str = field(init=False, repr=False, default=None)
     message_type: Literal["group", "friend"] = field(default=None) # 用于描述消息节点的来源
-    content: list[Node] = field(default=None)
+    content: List[Node] = field(default=None)
     msg_seg_type: Literal["forward"] = field(init=False, repr=False, default="forward")
     
     @classmethod
-    def from_content(cls, content: list[dict], id):
+    def from_content(cls, content: List[dict], id):
         obj = cls(id)
         obj.content = [Node.from_message_event(msg_event_dict) for msg_event_dict in content]
         return obj
@@ -422,7 +431,7 @@ class Forward(MessageSegment):
         return obj        
         
     @classmethod
-    def from_messages(cls, messages: list[Union[Node, "MessageEventData"]], message_type: Literal["group", "friend"] = None):
+    def from_messages(cls, messages: List[Union[Node, "MessageEventData"]], message_type: Literal["group", "friend"] = None):
         from ncatbot.core.event.event_data import MessageEventData
         obj = cls(None)
         if len(messages) == 0:
@@ -437,7 +446,7 @@ class Forward(MessageSegment):
         return obj
     
     @classmethod
-    async def from_message_id(cls, messages: list[Union[str, int]], message_type: Literal["group", "friend"]):
+    async def from_message_id(cls, messages: List[Union[str, int]], message_type: Literal["group", "friend"]):
         from ncatbot.core.event.event_data import MessageEventData
         obj = cls(None)
         if len(messages) == 0:
@@ -447,7 +456,7 @@ class Forward(MessageSegment):
         obj.message_type = message_type
         
     def to_forward_dict(self):
-        def modify_type(msg_list: list[dict]):
+        def modify_type(msg_list: List[dict]):
             for msg in msg_list:
                 if msg['type'] in ("forward", "node"):
                     msg['type'] = 'node'
@@ -485,12 +494,12 @@ class Forward(MessageSegment):
             "source": source
         }
     
-    async def get_content(self) -> list[Node]:
+    async def get_content(self) -> List[Node]:
         fwd = await status.global_api.get_forward_msg(self.id)
         self.__dict__.update(fwd.__dict__)
         return self.content
     
-    def filter(self, cls: Type[T]) -> list[T]:
+    def filter(self, cls: Type[T]) -> List[T]:
         return self.content[0].content.filter(cls)
     
     def get_summary(self):
@@ -515,7 +524,7 @@ class Markdown(MessageSegment):
     msg_seg_type: Literal["markdown"] = field(init=False, repr=False, default="markdown")
 
 def get_class_by_name(name: str) -> Type[MessageSegment]:
-    def find_all_subclasses(cls) -> list[Type[MessageSegment]]:
+    def find_all_subclasses(cls) -> List[Type[MessageSegment]]:
         subclasses = set()
         for subclass in cls.__subclasses__():
             subclasses.add(subclass)

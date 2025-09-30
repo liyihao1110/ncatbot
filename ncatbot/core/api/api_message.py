@@ -1,4 +1,4 @@
-from typing import Literal, Union
+from typing import Literal, Union, List
 from ncatbot.core.event import GroupMessageEvent, PrivateMessageEvent, BaseMessageEvent
 from ncatbot.core.event import (
     Record,
@@ -6,8 +6,6 @@ from ncatbot.core.event import (
     Forward,
     File,
     Music,
-    Reply,
-    Text,
     PlainText,
 )
 from ncatbot.core.event.message_segment.message_array import MessageArray
@@ -22,7 +20,7 @@ class MessageAPI(BaseAPI):
     # ---------------------
     # region 群聊消息发送
     # ---------------------
-    async def send_group_msg(self, group_id: Union[str, int], message: list[dict]) -> str:
+    async def send_group_msg(self, group_id: Union[str, int], message: List[dict]) -> str:
         """顶级群聊消息发送接口（一般不开放使用）"""
         if len(message) == 0:
             raise NcatBotValueError("message", "Empty")
@@ -112,14 +110,14 @@ class MessageAPI(BaseAPI):
         status = MessageAPIReturnStatus(result)
         return status.message_id
     
-    async def send_group_forward_msg_by_id(self, group_id: Union[str, int], messages: list[Union[str, int]]) -> str:
+    async def send_group_forward_msg_by_id(self, group_id: Union[str, int], messages: List[Union[str, int]]) -> str:
         info = await self.get_login_info()
         fcr = ForwardConstructor(info.user_id, info.nickname)
         for message_id in messages:
             fcr.attach_message_id(message_id)
         return await self.post_group_forward_msg(group_id, fcr.to_forward())
     
-    async def send_group_forward_msg(self, group_id: Union[str, int], messages: list[dict], news: list[str], prompt: str, summary: str, source: str) -> str:
+    async def send_group_forward_msg(self, group_id: Union[str, int], messages: List[dict], news: List[str], prompt: str, summary: str, source: str) -> str:
         """发送群合并转发消息（NcatBot 接口）"""
         result = await self.async_callback("/send_group_forward_msg", {"group_id": group_id, "messages": messages, "news": news, "prompt": prompt, "summary": summary, "source": source})
         status = MessageAPIReturnStatus(result)
@@ -147,7 +145,7 @@ class MessageAPI(BaseAPI):
     # ---------------------
     # region 私聊消息发送
     # ---------------------
-    async def send_private_msg(self, user_id: Union[str, int], message: list[dict]) -> str:
+    async def send_private_msg(self, user_id: Union[str, int], message: List[dict]) -> str:
         """顶级私聊消息接口（一般不开放使用）"""
         if len(message) == 0:
             raise NcatBotValueError("message", "Empty")
@@ -222,13 +220,13 @@ class MessageAPI(BaseAPI):
         status = MessageAPIReturnStatus(result)
         return status.message_id
     
-    async def send_private_forward_msg(self, user_id: Union[str, int], messages: list[dict], news: list[str], prompt: str, summary: str, source: str) -> str:
+    async def send_private_forward_msg(self, user_id: Union[str, int], messages: List[dict], news: List[str], prompt: str, summary: str, source: str) -> str:
         """发送私聊合并转发消息（NcatBot 接口）"""
         result = await self.async_callback("/send_private_forward_msg", {"user_id": user_id, "messages": messages, "news": news, "prompt": prompt, "summary": summary, "source": source})
         status = MessageAPIReturnStatus(result)
         return status.message_id
     
-    async def send_private_forward_msg_by_id(self, user_id: Union[str, int], messages: list[Union[str, int]]) -> str:
+    async def send_private_forward_msg_by_id(self, user_id: Union[str, int], messages: List[Union[str, int]]) -> str:
         info = await self.get_login_info()
         fcr = ForwardConstructor(info.user_id, info.nickname)
         for message_id in messages:
@@ -282,7 +280,7 @@ class MessageAPI(BaseAPI):
     # region 合并转发消息发送
     # ---------------------
 
-    async def send_forward_msg(self, group_id: Union[str, int] = None, user_id: Union[str, int] = None, messages: list[GroupMessageEvent] = None, news: list[str] = None, prompt: str = None, summary: str = None, source: str = None) -> str:
+    async def send_forward_msg(self, group_id: Union[str, int] = None, user_id: Union[str, int] = None, messages: List[GroupMessageEvent] = None, news: List[str] = None, prompt: str = None, summary: str = None, source: str = None) -> str:
         """顶级合并转发消息发送接口（一般不开放使用）
 
         Args:
@@ -330,7 +328,7 @@ class MessageAPI(BaseAPI):
     # ---------------------
     # region 消息获取
     # ---------------------
-    async def get_group_msg_history(self, group_id: Union[str, int], message_seq: Union[str, int], number: int = 20, reverseOrder: bool = False) -> list[GroupMessageEvent]:
+    async def get_group_msg_history(self, group_id: Union[str, int], message_seq: Union[str, int], number: int = 20, reverseOrder: bool = False) -> List[GroupMessageEvent]:
         result = await self.async_callback("/get_group_msg_history", {"group_id": group_id, "message_seq": message_seq, "number": number, "reverseOrder": reverseOrder})
         status = APIReturnStatus(result)
         return [GroupMessageEvent(data) for data in status.data.get("messages")]
@@ -345,7 +343,7 @@ class MessageAPI(BaseAPI):
         status = APIReturnStatus(result)
         return Forward.from_content(status.data.get("messages"), message_id)
     
-    async def get_friend_msg_history(self, user_id: Union[str, int], message_seq: Union[str, int], number: int = 20, reverseOrder: bool = False) -> list[PrivateMessageEvent]:
+    async def get_friend_msg_history(self, user_id: Union[str, int], message_seq: Union[str, int], number: int = 20, reverseOrder: bool = False) -> List[PrivateMessageEvent]:
         result = await self.async_callback("/get_friend_msg_history", {"user_id": user_id, "message_seq": message_seq, "number": number, "reverseOrder": reverseOrder})
         status = APIReturnStatus(result)
         return [PrivateMessageEvent(data) for data in status.data.get("messages")]
@@ -375,7 +373,7 @@ class MessageAPI(BaseAPI):
     # region 同步版本接口
     # ---------------------
     
-    def send_group_msg_sync(self, group_id: Union[str, int], message: list[dict]) -> str:
+    def send_group_msg_sync(self, group_id: Union[str, int], message: List[dict]) -> str:
         return run_coroutine(self.send_group_msg, group_id, message)
     
     def post_group_array_msg_sync(self, group_id: Union[str, int], msg: MessageArray) -> str:
@@ -408,10 +406,10 @@ class MessageAPI(BaseAPI):
     def send_group_music_sync(self, group_id: Union[str, int], type: Literal["qq", "163"], id: Union[int, str]) -> str:
         return run_coroutine(self.send_group_music, group_id, type, id)
     
-    def send_group_forward_msg_by_id_sync(self, group_id: Union[str, int], messages: list[Union[str, int]]) -> str:
+    def send_group_forward_msg_by_id_sync(self, group_id: Union[str, int], messages: List[Union[str, int]]) -> str:
         return run_coroutine(self.send_group_forward_msg_by_id, group_id, messages)
     
-    def send_group_forward_msg_sync(self, group_id: Union[str, int], messages: list[dict], news: list[str], prompt: str, summary: str, source: str) -> str:
+    def send_group_forward_msg_sync(self, group_id: Union[str, int], messages: List[dict], news: List[str], prompt: str, summary: str, source: str) -> str:
         return run_coroutine(self.send_group_forward_msg, group_id, messages, news, prompt, summary, source)
     
     def send_group_custom_music_sync(self, group_id: Union[str, int], audio: str, url: str, title: str, content: str=None, image: str=None) -> str:
@@ -423,7 +421,7 @@ class MessageAPI(BaseAPI):
     def group_poke_sync(self, group_id: Union[str, int], user_id: Union[str, int]) -> None:
         return run_coroutine(self.group_poke, group_id, user_id)
     
-    def send_private_msg_sync(self, user_id: Union[str, int], message: list[dict]) -> str:
+    def send_private_msg_sync(self, user_id: Union[str, int], message: List[dict]) -> str:
         return run_coroutine(self.send_private_msg, user_id, message)
     
     def post_private_array_msg_sync(self, user_id: Union[str, int], msg: MessageArray) -> str:
@@ -456,10 +454,10 @@ class MessageAPI(BaseAPI):
     def send_private_music_sync(self, user_id: Union[str, int], type: Literal["qq", "163"], id: Union[int, str]) -> str:
         return run_coroutine(self.send_private_music, user_id, type, id)
     
-    def send_private_forward_msg_sync(self, user_id: Union[str, int], messages: list[dict], news: list[str], prompt: str, summary: str, source: str) -> str:
+    def send_private_forward_msg_sync(self, user_id: Union[str, int], messages: List[dict], news: List[str], prompt: str, summary: str, source: str) -> str:
         return run_coroutine(self.send_private_forward_msg, user_id, messages, news, prompt, summary, source)
     
-    def send_private_forward_msg_by_id_sync(self, user_id: Union[str, int], messages: list[Union[str, int]]) -> str:
+    def send_private_forward_msg_by_id_sync(self, user_id: Union[str, int], messages: List[Union[str, int]]) -> str:
         return run_coroutine(self.send_private_forward_msg_by_id, user_id, messages)
     
     def send_private_custom_music_sync(self, user_id: Union[str, int], audio: str, url: str, title: str, content: str=None, image: str=None) -> str:
@@ -480,7 +478,7 @@ class MessageAPI(BaseAPI):
     def set_msg_emoji_like_sync(self, message_id: Union[str, int], emoji_id: Union[str, int], set: bool = True) -> None:
         return run_coroutine(self.set_msg_emoji_like, message_id, emoji_id, set)
     
-    def send_forward_msg_sync(self, group_id: Union[str, int] = None, user_id: Union[str, int] = None, messages: list[GroupMessageEvent] = None, news: list[str] = None, prompt: str = None, summary: str = None, source: str = None) -> str:
+    def send_forward_msg_sync(self, group_id: Union[str, int] = None, user_id: Union[str, int] = None, messages: List[GroupMessageEvent] = None, news: List[str] = None, prompt: str = None, summary: str = None, source: str = None) -> str:
         return run_coroutine(self.send_forward_msg, group_id, user_id, messages, news, prompt, summary, source)
     
     def post_forward_msg_sync(self, group_id: Union[str, int] = None, user_id: Union[str, int] = None, msg: Forward = None):
@@ -492,7 +490,7 @@ class MessageAPI(BaseAPI):
     def post_private_forward_msg_sync(self, user_id: Union[str, int], forward: Forward) -> str:
         return run_coroutine(self.post_private_forward_msg, user_id, forward)
     
-    def get_group_msg_history_sync(self, group_id: Union[str, int], message_seq: Union[str, int], number: int = 20, reverseOrder: bool = False) -> list[GroupMessageEvent]:
+    def get_group_msg_history_sync(self, group_id: Union[str, int], message_seq: Union[str, int], number: int = 20, reverseOrder: bool = False) -> List[GroupMessageEvent]:
         return run_coroutine(self.get_group_msg_history, group_id, message_seq, number, reverseOrder)
     
     def get_msg_sync(self, message_id: Union[str, int]) -> BaseMessageEvent:
@@ -501,7 +499,7 @@ class MessageAPI(BaseAPI):
     def get_forward_msg_sync(self, message_id: Union[str, int]) -> Forward:
         return run_coroutine(self.get_forward_msg, message_id)
     
-    def get_friend_msg_history_sync(self, user_id: Union[str, int], message_seq: Union[str, int], number: int = 20, reverseOrder: bool = False) -> list[PrivateMessageEvent]:
+    def get_friend_msg_history_sync(self, user_id: Union[str, int], message_seq: Union[str, int], number: int = 20, reverseOrder: bool = False) -> List[PrivateMessageEvent]:
         return run_coroutine(self.get_friend_msg_history, user_id, message_seq, number, reverseOrder)
     
     def get_record_sync(self, file: str = None, file_id: str = None, out_format: Literal["mp3", "amr", "wma", "m4a", "ogg", "wav", "flac", "spx"] = "mp3") -> Record:

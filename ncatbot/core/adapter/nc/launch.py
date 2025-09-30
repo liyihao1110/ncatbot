@@ -35,7 +35,6 @@ async def test_websocket(report_status=False) -> bool:
     uri_with_token = ncatbot_config.get_uri_with_token()
     try:
         async with websockets.connect(uri_with_token, open_timeout=5) as ws:
-            print("testing websocket...")
             data = json.loads(await ws.recv())
             if data.get("status", "ok") == "ok":
                 return True

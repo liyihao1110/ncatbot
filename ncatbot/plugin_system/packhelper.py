@@ -20,7 +20,11 @@ class PackageHelper:
             installed_ver = _meta.version(dist_name)
         except _meta.PackageNotFoundError:
             LOG.info("缺失包 %s，开始安装", dist_name)
-            PackageHelper._pip_install(req_str)
+            try:
+                PackageHelper._pip_install(req_str)
+            except subprocess.CalledProcessError:
+                LOG.error("安装失败: %s", req_str)
+                raise 
             return
 
         # 已安装 → 检查版本规格

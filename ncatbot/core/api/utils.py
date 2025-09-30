@@ -1,6 +1,7 @@
-from typing import Callable
+from typing import Callable, List
 from ncatbot.utils import get_log, ncatbot_config, NcatBotError
 import traceback
+
 
 LOG = get_log("API")
 
@@ -10,7 +11,7 @@ class ExclusiveArgumentError(NcatBotError):
         super().__init__(f"{extra_info}: {arg_name1}, {arg_name2}")
 
 
-def check_exclusive_argument(arg1, arg2, names: list[str], error: bool = False):
+def check_exclusive_argument(arg1, arg2, names: List[str], error: bool = False):
     if (arg1 is not None) == (arg2 is not None):
         if arg1 is not None:
             e = ExclusiveArgumentError(*names)

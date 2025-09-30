@@ -11,7 +11,7 @@ from ncatbot.utils.status import status
 _log = get_log()
 
 
-def post_json(url: str, payload: dict | None = None, headers: dict | None = None, timeout: float = 5.0) -> dict:
+def post_json(url: str, payload: dict = None, headers: dict = None, timeout: float = 5.0) -> dict:
     body = None
     req_headers = {
         "User-Agent": "ncatbot/1.0",
@@ -39,7 +39,7 @@ def post_json(url: str, payload: dict | None = None, headers: dict | None = None
             raise TimeoutError("request timed out") from e
         raise
 
-def get_json(url: str, headers: dict | None = None, timeout: float = 5.0) -> dict:
+def get_json(url: str, headers: dict = None, timeout: float = 5.0) -> dict:
     req_headers = {
         "User-Agent": "ncatbot/1.0",
         "Accept": "application/json",
