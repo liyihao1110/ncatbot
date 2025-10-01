@@ -6,7 +6,7 @@ import subprocess
 import sys
 
 
-from ncatbot.utils import (
+from ....utils import (
     INSTALL_SCRIPT_URL,
     WINDOWS_NAPCAT_DIR,
     ncatbot_config,
@@ -15,7 +15,7 @@ from ncatbot.utils import (
     get_json,
 )
 
-from ncatbot.core.adapter.nc.utils import (
+from .utils import (
     check_linux_permissions,
     check_self_package_version,
     unzip_file,

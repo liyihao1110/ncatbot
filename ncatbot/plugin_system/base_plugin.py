@@ -13,12 +13,11 @@ from uuid import UUID
 from pathlib import Path
 from typing import Any, Dict, List, Set, Union, final, TYPE_CHECKING
 from concurrent.futures import ThreadPoolExecutor
-from ncatbot.utils import get_log
 
 from .config import config
 from .event import EventBus, NcatBotEvent
 from .rbac import RBACManager
-from ncatbot.utils import status
+from ncatbot.utils import status, get_log
 
 if TYPE_CHECKING:
     from .loader import PluginLoader

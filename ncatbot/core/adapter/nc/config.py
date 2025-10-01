@@ -2,9 +2,9 @@ import os
 import json
 import shutil
 from urllib.parse import urlparse
-from ncatbot.core.adapter.nc.utils import get_napcat_dir, check_linux_permissions
-from ncatbot.utils import get_log, ncatbot_config
-from ncatbot.utils.assets.default_webui_config import config as default_webui_config
+from .utils import get_napcat_dir, check_linux_permissions
+from ....utils import get_log, ncatbot_config
+from ....utils.assets.default_webui_config import config as default_webui_config
 
 LOG = get_log("ncatbot.core.adapter.nc.config")
 

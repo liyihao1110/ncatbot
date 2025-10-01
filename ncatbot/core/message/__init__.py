@@ -1,9 +1,9 @@
 # 3xx 兼容层
 
-from ncatbot.core.event.message_segment import MessageArray as MessageChain
-from ncatbot.core.event.message import GroupMessageEvent as GroupMessage
-from ncatbot.core.event.message import PrivateMessageEvent as PrivateMessage
-from ncatbot.core.event.message import BaseMessageEvent as BaseMessage
+from ..event import MessageArray as MessageChain
+from ..event import GroupMessageEvent as GroupMessage
+from ..event import PrivateMessageEvent as PrivateMessage
+from ..event import BaseMessageEvent as BaseMessage
 
 __all__ = [
     "MessageChain",

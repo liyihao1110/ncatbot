@@ -132,47 +132,50 @@ class Adapter:
 
     async def _handle_event(self, message: dict):
         """处理事件, 不能阻塞"""
-        post_type: Literal["message", "notice", "request", "meta_event"] = message.get(
-            "post_type"
-        )
+        try:
+            post_type: Literal["message", "notice", "request", "meta_event"] = (
+                message.get("post_type")
+            )
 
-        callback = None
+            callback = None
 
-        if post_type == "message":
-            message_type: Literal["private", "group"] = message.get("message_type")
-            if message_type == "private":
-                event = PrivateMessageEvent(message)
-                callback = self.event_callback.get(OFFICIAL_PRIVATE_MESSAGE_EVENT)
-            elif message_type == "group":
-                event = GroupMessageEvent(message)
-                callback = self.event_callback.get(OFFICIAL_GROUP_MESSAGE_EVENT)
-        elif post_type == "notice":
-            event = NoticeEvent(message)
-            callback = self.event_callback.get(OFFICIAL_NOTICE_EVENT)
-        elif post_type == "request":
-            event = RequestEvent(message)
-            callback = self.event_callback.get(OFFICIAL_REQUEST_EVENT)
-        elif post_type == "meta_event":
-            event = MetaEvent(message)
-            if event.meta_event_type == "lifecycle":
-                if event.sub_type == "enable":
-                    callback = None
-                    # TODO: 正确的 Bot 上线处理
-                elif event.sub_type == "disable":
-                    callback = None
-                    # TODO: 正确的 Bot 下线处理
-                elif event.sub_type == "connect":
-                    callback = self.event_callback.get(OFFICIAL_STARTUP_EVENT)
-            elif event.meta_event_type == "heartbeat":
-                callback = self.event_callback.get(OFFICIAL_HEARTBEAT_EVENT)
+            if post_type == "message":
+                message_type: Literal["private", "group"] = message.get("message_type")
+                if message_type == "private":
+                    event = PrivateMessageEvent(message)
+                    callback = self.event_callback.get(OFFICIAL_PRIVATE_MESSAGE_EVENT)
+                elif message_type == "group":
+                    event = GroupMessageEvent(message)
+                    callback = self.event_callback.get(OFFICIAL_GROUP_MESSAGE_EVENT)
+            elif post_type == "notice":
+                event = NoticeEvent(**message)
+                callback = self.event_callback.get(OFFICIAL_NOTICE_EVENT)
+            elif post_type == "request":
+                event = RequestEvent(message)
+                callback = self.event_callback.get(OFFICIAL_REQUEST_EVENT)
+            elif post_type == "meta_event":
+                event = MetaEvent(message)
+                if event.meta_event_type == "lifecycle":
+                    if event.sub_type == "enable":
+                        callback = None
+                        # TODO: 正确的 Bot 上线处理
+                    elif event.sub_type == "disable":
+                        callback = None
+                        # TODO: 正确的 Bot 下线处理
+                    elif event.sub_type == "connect":
+                        callback = self.event_callback.get(OFFICIAL_STARTUP_EVENT)
+                elif event.meta_event_type == "heartbeat":
+                    callback = self.event_callback.get(OFFICIAL_HEARTBEAT_EVENT)
 
-        if callback:
-            try:
-                await callback(event)
-            except Exception as e:
-                LOG.error(f"处理事件时出错: {e}")
-        else:
-            LOG.warning(f"未找到事件回调: {post_type}")
+            if callback:
+                try:
+                    await callback(event)
+                except Exception as e:
+                    LOG.error(f"处理事件时出错: {e}")
+            else:
+                LOG.warning(f"未找到事件回调: {post_type}")
+        except Exception as e:
+            raise NcatBotError(f"处理事件时出错: {e}")
 
     async def cleanup(self):
         """清理资源"""

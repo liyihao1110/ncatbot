@@ -5,7 +5,7 @@ from ncatbot.utils.config import ncatbot_config as config
 from ncatbot.utils.logger import get_log
 from ncatbot.utils.status import Status, status
 from ncatbot.utils.network_io import gen_url_with_proxy, get_json, post_json
-from ncatbot.utils.error import NcatBotError, NcatBotValueError
+from ncatbot.utils.error import NcatBotError, NcatBotValueError, NcatBotConnectionError
 from ncatbot.utils.thread_pool import run_coroutine, ThreadPool
 
 # Re-export assets
@@ -59,6 +59,7 @@ __all__ = [
     # 错误处理
     "NcatBotError",
     "NcatBotValueError",
+    "NcatBotConnectionError",
     # 线程池
     "ThreadPool",
     "run_coroutine",

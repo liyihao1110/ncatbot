@@ -1,4 +1,4 @@
-from ncatbot.plugin_system.rbac.rbac_path import PermissionPath
+from .rbac_path import PermissionPath
 # from ncatbot.utils import Color, visualize_tree
 
 

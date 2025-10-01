@@ -1,11 +1,11 @@
 from typing import Union, Literal, TYPE_CHECKING
 from abc import abstractmethod, ABC
-from ncatbot.core.event.event_data import MessageEventData
-from ncatbot.utils import status
-from ncatbot.core.event.sender import PrivateSender, GroupSender
+from ...utils import status
+from .sender import PrivateSender, GroupSender
+from .event_data import MessageEventData
 
 if TYPE_CHECKING:
-    from ncatbot.core.legacy import MessageChain
+    from .message_segment import MessageArray
 
 
 class BaseMessageEvent(MessageEventData, ABC):
@@ -89,7 +89,7 @@ class GroupMessageEvent(BaseMessageEvent):
         image: str = None,
         at: bool = True,
         space: bool = True,
-        rtf: "MessageChain" = None,
+        rtf: "MessageArray" = None,
     ):
         return await status.global_api.post_group_msg(
             self.group_id,
@@ -106,7 +106,7 @@ class GroupMessageEvent(BaseMessageEvent):
         image: str = None,
         at: bool = True,
         space: bool = True,
-        rtf: "MessageChain" = None,
+        rtf: "MessageArray" = None,
     ):
         return status.global_api.post_group_msg_sync(
             self.group_id,
@@ -128,14 +128,14 @@ class PrivateMessageEvent(BaseMessageEvent):
         self.sender = PrivateSender(data.get("sender"))
 
     async def reply(
-        self, text: str = None, image: str = None, rtf: "MessageChain" = None
+        self, text: str = None, image: str = None, rtf: "MessageArray" = None
     ):
         return await status.global_api.post_private_msg(
             self.user_id, text, self.message_id, image, rtf
         )
 
     def reply_sync(
-        self, text: str = None, image: str = None, rtf: "MessageChain" = None
+        self, text: str = None, image: str = None, rtf: "MessageArray" = None
     ):
         return status.global_api.post_private_msg_sync(
             self.user_id, text, self.message_id, image, rtf

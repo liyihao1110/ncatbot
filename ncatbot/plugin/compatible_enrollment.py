@@ -1,5 +1,5 @@
-from ncatbot.plugin_system.builtin_plugin.unified_registry import filter_registry
-from ncatbot.plugin_system.builtin_plugin.unified_registry.legacy_registry import (
+from ..plugin_system import filter_registry
+from ..plugin_system.builtin_plugin.unified_registry.legacy_registry import (
     legacy_registry,
 )
 

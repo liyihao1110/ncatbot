@@ -6,7 +6,7 @@ import urllib.error
 import socket
 
 import qrcode
-from ncatbot.utils import NAPCAT_WEBUI_SALT, ncatbot_config, get_log, post_json
+from ....utils import NAPCAT_WEBUI_SALT, ncatbot_config, get_log, post_json
 
 
 class QQLoginedError(Exception):

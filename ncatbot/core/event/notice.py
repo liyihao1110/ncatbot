@@ -1,5 +1,6 @@
-from ncatbot.core.event.event_data import BaseEventData
+from .event_data import BaseEventData
 from typing import Literal, Optional
+from dataclasses import dataclass
 
 
 class File:
@@ -9,9 +10,12 @@ class File:
     busid: str = None
 
 
+@dataclass
 class NoticeEvent(BaseEventData):
     # 保留细化能力
     post_type: Literal["notice"] = None
+    time: int = None
+    self_id: str = None  # 和 OneBot11 标准不一致, 这里采取 str
     notice_type: Literal[
         "group_upload",
         "group_admin",
@@ -45,4 +49,22 @@ class NoticeEvent(BaseEventData):
     duration: Optional[int] = None  # group_ban
     message_id: Optional[str] = None  # group_recall, friend_recall
     target_id: Optional[str] = None  # notify.poke, notify.lucky_king
-    honor_type: Optional[Literal["talkative", "performer", "emotion"]]  # notify.honor
+    honor_type: Optional[Literal["talkative", "performer", "emotion"]] = (
+        None  # notify.honor
+    )
+
+    def get_core_properties_str(self):
+        core_properties = []
+        for k, v in self.__dict__.items():
+            if v is not None:
+                core_properties.append(f"{k}={v}")
+        core_properties.remove("post_type=notice")
+        core_properties.remove(f"time={self.time}")
+        core_properties.remove(f"self_id={self.self_id}")
+        return core_properties
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({', '.join(self.get_core_properties_str())})"
+
+    def __str__(self):
+        return self.__repr__()

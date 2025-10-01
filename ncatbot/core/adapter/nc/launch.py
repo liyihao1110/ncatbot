@@ -16,13 +16,12 @@ import time
 import json
 import websockets
 
-from ncatbot.core.adapter.nc.install import install_or_update_napcat
-from ncatbot.core.adapter.nc.login import login, report_login_status
-from ncatbot.core.adapter.nc.config import config_napcat
-from ncatbot.core.adapter.nc.start import start_napcat
-from ncatbot.utils import ncatbot_config, get_log
-from ncatbot.utils.error import NcatBotError
-from ncatbot.utils import run_coroutine
+from .install import install_or_update_napcat
+from .login import login, report_login_status
+from .config import config_napcat
+from .start import start_napcat
+from ....utils import ncatbot_config, get_log, run_coroutine
+from ....utils import NcatBotError
 
 LOG = get_log("ncatbot.core.adapter.nc.launch")
 

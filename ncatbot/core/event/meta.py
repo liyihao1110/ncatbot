@@ -1,4 +1,4 @@
-from ncatbot.core.event.event_data import BaseEventData
+from .event_data import BaseEventData
 from typing import Literal, Optional
 
 

@@ -1,6 +1,6 @@
 from typing import Literal, Callable
-from ncatbot.core.event.message_segment import MessageArray
-from ncatbot.core.event.sender import BaseSender
+from .message_segment import MessageArray
+from .sender import BaseSender
 
 """
 self_id, message_id 等无需进行数学运算, 故直接使用 str

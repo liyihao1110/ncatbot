@@ -1,12 +1,7 @@
 import re
 from typing import Dict, Union, Type, TypeVar, List, Iterable
-from ncatbot.core.event.message_segment.message_segment import (
-    MessageSegment,
-    get_class_by_name,
-    MessageTypeNotFoundErr,
-)
-from ncatbot.utils import NcatBotError, status, get_log
 from .message_segment import (
+    MessageSegment,
     Text,
     PlainText,
     Face,
@@ -17,7 +12,10 @@ from .message_segment import (
     Reply,
     Node,
     Forward,
+    get_class_by_name,
+    MessageTypeNotFoundErr,
 )
+from ....utils import NcatBotError, status, get_log
 
 T = TypeVar("T", bound=MessageSegment)
 LOG = get_log("MessageArray")

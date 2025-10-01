@@ -11,10 +11,9 @@ import json
 from functools import lru_cache
 from typing import Dict, Literal, Set, List
 
-from ncatbot.utils.assets.literals import PermissionGroup
-from ncatbot.utils import ncatbot_config
-from ncatbot.plugin_system.rbac.rbac_path import PermissionPath
-from ncatbot.plugin_system.rbac.rbac_trie import Trie
+from ncatbot.utils import PermissionGroup, ncatbot_config
+from .rbac_path import PermissionPath
+from .rbac_trie import Trie
 
 
 class _RBACManager:

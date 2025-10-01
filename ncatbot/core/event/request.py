@@ -54,3 +54,9 @@ class RequestEvent(BaseEventData):
             return status.global_api.set_group_add_request_sync(
                 self.flag, approve, reason
             )
+
+    def __init__(self, data):
+        super().__init__(data)
+        self.request_type = data.get("request_type")
+        self.comment = data.get("comment")
+        self.flag = data.get("flag")

@@ -5,7 +5,7 @@ import subprocess
 import time
 import traceback
 
-from ncatbot.utils import WINDOWS_NAPCAT_DIR, ncatbot_config, get_log
+from ....utils import WINDOWS_NAPCAT_DIR, ncatbot_config, get_log
 
 LOG = get_log("adapter.nc.start")
 

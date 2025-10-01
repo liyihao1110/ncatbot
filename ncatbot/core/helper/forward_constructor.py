@@ -1,7 +1,6 @@
 from typing import List
-from ncatbot.utils import status
-from ncatbot.utils import run_coroutine
-from ncatbot.core.event.message_segment import (
+from ...utils import status, run_coroutine
+from ..event import (
     MessageArray,
     Image,
     Text,

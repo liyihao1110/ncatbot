@@ -1,15 +1,15 @@
 import os
 import time
 import httpx
-from ncatbot.core.event.message_segment.utils import convert_uploadable_object
 import urllib.parse
 from dataclasses import dataclass, field, fields
 from typing import Literal, Union, Any, TYPE_CHECKING, TypeVar, Dict, Type, List
-from ncatbot.utils import get_log, run_coroutine, NcatBotError, status
+from ....utils import get_log, run_coroutine, NcatBotError, status
+from .utils import convert_uploadable_object
 
 if TYPE_CHECKING:
-    from ncatbot.core.event.message_segment.message_array import MessageArray
-    from ncatbot.core.event.event_data import MessageEventData
+    from .message_array import MessageArray
+    from ...event import MessageEventData
 
 T = TypeVar("T")
 LOG = get_log("MessageSegment")

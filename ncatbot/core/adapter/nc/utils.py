@@ -9,8 +9,8 @@ import urllib.parse
 import zipfile
 import requests
 from tqdm import tqdm
-from ncatbot.utils.assets.literals import PYPI_URL, WINDOWS_NAPCAT_DIR, LINUX_NAPCAT_DIR
-from ncatbot.utils import get_log
+from ....utils import PYPI_URL, WINDOWS_NAPCAT_DIR, LINUX_NAPCAT_DIR
+from ....utils import get_log
 
 LOG = get_log("ncatbot.core.adapter.nc.utils")
 

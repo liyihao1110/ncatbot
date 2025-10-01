@@ -19,12 +19,10 @@ from typing_extensions import Unpack
 if TYPE_CHECKING:
     from ncatbot.plugin_system import BasePlugin
 
-
-from ncatbot.core.adapter.adapter import Adapter
-from ncatbot.core.api.api import BotAPI
-from ncatbot.utils import run_coroutine
-from ncatbot.core.event import MessageSegment
-from ncatbot.core.event import (
+from .adapter import lanuch_napcat_service, Adapter
+from .api import BotAPI
+from .event import (
+    MessageSegment,
     BaseEventData,
     PrivateMessageEvent,
     GroupMessageEvent,
@@ -32,7 +30,10 @@ from ncatbot.core.event import (
     RequestEvent,
     MetaEvent,
 )
-from ncatbot.utils import (
+from ..utils import get_log, run_coroutine, ThreadPool
+from ..utils import status, ncatbot_config
+from ..utils import NcatBotError, NcatBotConnectionError
+from ..utils import (
     OFFICIAL_PRIVATE_MESSAGE_EVENT,
     OFFICIAL_GROUP_MESSAGE_EVENT,
     OFFICIAL_NOTICE_EVENT,
@@ -41,9 +42,6 @@ from ncatbot.utils import (
     OFFICIAL_SHUTDOWN_EVENT,
     OFFICIAL_HEARTBEAT_EVENT,
 )
-from ncatbot.utils import get_log, status, ncatbot_config, ThreadPool
-from ncatbot.core.adapter.nc.launch import lanuch_napcat_service
-from ncatbot.utils.error import NcatBotError, NcatBotConnectionError
 
 T = TypeVar("T")
 LOG = get_log("Client")
