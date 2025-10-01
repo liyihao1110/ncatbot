@@ -186,7 +186,6 @@ class BotClient:
     # 装饰器版本 ==========================================
     def on_group_message(
         self,
-        handler: Optional[Callable] = None,
         filter: Union[Type[MessageSegment], None] = None,
     ):
         """装饰器注册群消息处理器"""
@@ -197,11 +196,10 @@ class BotClient:
             self.add_group_message_handler(f, filter)
             return f  # 其实没有必要
 
-        return decorator(handler) if handler else decorator
+        return decorator
 
     def on_private_message(
         self,
-        handler: Optional[Callable] = None,
         filter: Union[Type[MessageSegment], None] = None,
     ):
         """装饰器注册私聊消息处理器"""
@@ -212,54 +210,52 @@ class BotClient:
             self.add_private_message_handler(f, filter)
             return f  # 其实没有必要
 
-        return decorator(handler) if handler else decorator
+        return decorator
 
-    def on_notice(self, handler: Optional[Callable] = None, filter=None):
+    def on_notice(self, filter=None):
         """装饰器注册通知事件处理器"""
 
         def decorator(f: Callable[[NoticeEvent], None]):
             self.add_notice_handler(f, filter)
             return f
 
-        return decorator(handler) if handler else decorator
+        return decorator
 
-    def on_request(
-        self, handler: Optional[Callable] = None, filter=Literal["group", "friend"]
-    ):
+    def on_request(self, filter=Literal["group", "friend"]):
         """装饰器注册请求事件处理器"""
 
         def decorator(f: Callable[[RequestEvent], None]):
             self.add_request_handler(f, filter)
             return f
 
-        return decorator(handler) if handler else decorator
+        return decorator
 
-    def on_startup(self, handler: Optional[Callable] = None):
+    def on_startup(self):
         """装饰器注册启动事件处理器"""
 
         def decorator(f: Callable[[MetaEvent], None]):
             self.add_startup_handler(f)
             return f
 
-        return decorator(handler) if handler else decorator
+        return decorator
 
-    def on_shutdown(self, handler: Optional[Callable] = None):
+    def on_shutdown(self):
         """装饰器注册关闭事件处理器"""
 
         def decorator(f: Callable[[MetaEvent], None]):
             self.add_shutdown_handler(f)
             return f
 
-        return decorator(handler) if handler else decorator
+        return decorator
 
-    def on_heartbeat(self, handler: Optional[Callable] = None):
+    def on_heartbeat(self):
         """装饰器注册心跳事件处理器"""
 
         def decorator(f: Callable[[MetaEvent], None]):
             self.add_heartbeat_handler(f)
             return f
 
-        return decorator(handler) if handler else decorator
+        return decorator
 
     def bot_exit(self):
         status.exit = True

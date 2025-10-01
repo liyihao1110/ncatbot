@@ -46,7 +46,10 @@ class NoticeEvent(BaseEventData):
     operator_id: Optional[str] = (
         None  # group_decrease, group_increase, group_ban, group_recall
     )
+    raw_info: Optional[dict] = None  # notify
     duration: Optional[int] = None  # group_ban
+    card_old: Optional[str] = None  # group_increase
+    card_new: Optional[str] = None  # group_increase
     message_id: Optional[str] = None  # group_recall, friend_recall
     target_id: Optional[str] = None  # notify.poke, notify.lucky_king
     honor_type: Optional[Literal["talkative", "performer", "emotion"]] = (
