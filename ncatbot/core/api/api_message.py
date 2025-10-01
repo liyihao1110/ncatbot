@@ -525,7 +525,7 @@ class MessageAPI(BaseAPI):
         self,
         group_id: Union[str, int],
         message_seq: Union[str, int],
-        number: int = 20,
+        count: int = 20,
         reverseOrder: bool = False,
     ) -> List[GroupMessageEvent]:
         result = await self.async_callback(
@@ -533,7 +533,7 @@ class MessageAPI(BaseAPI):
             {
                 "group_id": group_id,
                 "message_seq": message_seq,
-                "number": number,
+                "count": count,
                 "reverseOrder": reverseOrder,
             },
         )
@@ -556,7 +556,7 @@ class MessageAPI(BaseAPI):
         self,
         user_id: Union[str, int],
         message_seq: Union[str, int],
-        number: int = 20,
+        count: int = 20,
         reverseOrder: bool = False,
     ) -> List[PrivateMessageEvent]:
         result = await self.async_callback(
@@ -564,7 +564,7 @@ class MessageAPI(BaseAPI):
             {
                 "user_id": user_id,
                 "message_seq": message_seq,
-                "number": number,
+                "count": count,
                 "reverseOrder": reverseOrder,
             },
         )
