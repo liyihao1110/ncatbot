@@ -10,7 +10,6 @@ from ncatbot.core.event import (
 )
 from ncatbot.core.event.message_segment.message_array import MessageArray
 from ncatbot.core.helper import ForwardConstructor
-from ncatbot.core.legacy import MessageChain
 from ncatbot.utils import NcatBotValueError
 from .utils import (
     BaseAPI,
@@ -56,7 +55,7 @@ class MessageAPI(BaseAPI):
         at: Union[str, int] = None,
         reply: Union[str, int] = None,
         image: str = None,
-        rtf: MessageChain = None,
+        rtf: MessageArray = None,
     ) -> str:
         """发送群聊消息（NcatBot 接口）"""
         msg_array = MessageArray()
@@ -261,7 +260,7 @@ class MessageAPI(BaseAPI):
         text: str = None,
         reply: Union[str, int] = None,
         image: str = None,
-        rtf: MessageChain = None,
+        rtf: MessageArray = None,
     ) -> str:
         """发送私聊消息（NcatBot 接口）"""
         msg_array = MessageArray()
@@ -633,7 +632,7 @@ class MessageAPI(BaseAPI):
         at: Union[str, int] = None,
         reply: Union[str, int] = None,
         image: str = None,
-        rtf: MessageChain = None,
+        rtf: MessageArray = None,
     ) -> str:
         return run_coroutine(self.post_group_msg, group_id, text, at, reply, image, rtf)
 
@@ -728,7 +727,7 @@ class MessageAPI(BaseAPI):
         text: str = None,
         reply: Union[str, int] = None,
         image: str = None,
-        rtf: MessageChain = None,
+        rtf: MessageArray = None,
     ) -> str:
         return run_coroutine(self.post_private_msg, user_id, text, reply, image, rtf)
 
