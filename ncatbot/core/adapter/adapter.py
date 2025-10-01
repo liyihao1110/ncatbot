@@ -148,7 +148,7 @@ class Adapter:
                     event = GroupMessageEvent(message)
                     callback = self.event_callback.get(OFFICIAL_GROUP_MESSAGE_EVENT)
             elif post_type == "notice":
-                event = NoticeEvent(**message)
+                event = NoticeEvent(message)
                 callback = self.event_callback.get(OFFICIAL_NOTICE_EVENT)
             elif post_type == "request":
                 event = RequestEvent(message)

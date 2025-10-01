@@ -1,6 +1,5 @@
 from .event_data import BaseEventData
 from typing import Literal, Optional
-from dataclasses import dataclass
 
 
 class File:
@@ -10,7 +9,6 @@ class File:
     busid: str = None
 
 
-@dataclass
 class NoticeEvent(BaseEventData):
     # 保留细化能力
     post_type: Literal["notice"] = None
@@ -55,6 +53,11 @@ class NoticeEvent(BaseEventData):
     honor_type: Optional[Literal["talkative", "performer", "emotion"]] = (
         None  # notify.honor
     )
+
+    def __init__(self, data):
+        super().__init__(data)
+        for k, v in data.items():
+            setattr(self, k, v)
 
     def get_core_properties_str(self):
         core_properties = []
