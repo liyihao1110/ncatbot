@@ -91,9 +91,11 @@ class GroupMessageEvent(BaseMessageEvent):
         space: bool = True,
         rtf: "MessageArray" = None,
     ):
+        if text is not None:
+            text = (" " if space else "") + text
         return await status.global_api.post_group_msg(
             self.group_id,
-            (" " if space else "") + text,
+            text,
             self.user_id if at else None,
             reply=self.message_id,
             image=image,
@@ -108,9 +110,11 @@ class GroupMessageEvent(BaseMessageEvent):
         space: bool = True,
         rtf: "MessageArray" = None,
     ):
+        if text is not None:
+            text = (" " if space else "") + text
         return status.global_api.post_group_msg_sync(
             self.group_id,
-            (" " if space else "") + text,
+            text,
             self.user_id if at else None,
             reply=self.message_id,
             image=image,
