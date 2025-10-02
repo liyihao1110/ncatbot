@@ -73,13 +73,13 @@ class StartArgs(TypedDict, total=False):
 class BotClient:
     _initialized = False  # 兼容旧版本检查
 
-    def __init__(self, only_private: bool = False):
+    def __init__(self, only_private: bool = False, max_workers: int = 16):
         if self._initialized:
             raise NcatBotError("BotClient 实例只能创建一次")
         self._initialized = True
         self.adapter = Adapter()
         self.event_handlers: Dict[str, list] = {}
-        self.thread_pool = ThreadPool(max_workers=1, max_per_func=1)
+        self.thread_pool = ThreadPool(max_workers=max_workers, max_per_func=4)
         self.api = BotAPI(self.adapter.send)
         self.crash_flag = False
         status.global_api = self.api

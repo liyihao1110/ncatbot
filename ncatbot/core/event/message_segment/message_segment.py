@@ -618,7 +618,7 @@ class XML(MessageSegment):
 
 @dataclass(repr=False)
 class Json(MessageSegment):
-    data: str
+    data: str  # json 字符串
     msg_seg_type: Literal["json"] = field(init=False, repr=False, default="json")
 
 

@@ -52,6 +52,8 @@ class Adapter:
         # send 函数可能会在其它事件循环被调用, 需要使用线程安全通信方式
         echo = str(uuid.uuid4())
         queue = Queue(maxsize=1)
+        LOG.debug(f"向 {path} 发送请求: {echo}")
+        LOG.debug(f"请求参数: {params}")
 
         with self._lock:
             self.pending_requests[echo] = queue
@@ -188,7 +190,7 @@ class Adapter:
 
             if self.client:
                 await self.client.close()
-            print("WebSocket 连接已关闭")
+            LOG.info("NapCat WebSocket 连接已关闭")
             self.client = None
         except Exception as e:
             LOG.error(f"清理资源时出错: {e}")

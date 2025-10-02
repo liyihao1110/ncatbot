@@ -23,6 +23,7 @@ from .message_segment import (
     Forward,
     XML,
     Json,
+    Markdown,
 )
 from .message_array import MessageArray
 from .sentence import Sentence
@@ -53,6 +54,7 @@ __all__ = [
     "Forward",
     "XML",
     "Json",
+    "Markdown",
     "MessageArray",
     "Sentence",
 ]
