@@ -1,4 +1,4 @@
-from typing import Literal, Union, List
+from typing import Literal, Union, List, Optional
 from ncatbot.core.event import GroupMessageEvent, PrivateMessageEvent, BaseMessageEvent
 from ncatbot.core.event import (
     Record,
@@ -51,11 +51,11 @@ class MessageAPI(BaseAPI):
     async def post_group_msg(
         self,
         group_id: Union[str, int],
-        text: str = None,
-        at: Union[str, int] = None,
-        reply: Union[str, int] = None,
-        image: str = None,
-        rtf: MessageArray = None,
+        text: Optional[str] = None,
+        at: Optional[Union[str, int]] = None,
+        reply: Optional[Union[str, int]] = None,
+        image: Optional[str] = None,
+        rtf: Optional[MessageArray] = None,
     ) -> str:
         """发送群聊消息（NcatBot 接口）"""
         msg_array = MessageArray()
@@ -134,7 +134,7 @@ class MessageAPI(BaseAPI):
         return status.message_id
 
     async def send_group_file(
-        self, group_id: Union[str, int], file: str, name: str = None
+        self, group_id: Union[str, int], file: str, name: Optional[str] = None
     ) -> str:
         """发送群文件消息（NcatBot 接口）"""
         payload = File(file=file, file_name=name).to_dict()
@@ -194,8 +194,8 @@ class MessageAPI(BaseAPI):
         audio: str,
         url: str,
         title: str,
-        content: str = None,
-        image: str = None,
+        content: Optional[str] = None,
+        image: Optional[str] = None,
     ) -> str:
         """发送群音乐分享消息（NcatBot 接口）"""
         music = Music(
@@ -257,10 +257,10 @@ class MessageAPI(BaseAPI):
     async def post_private_msg(
         self,
         user_id: Union[str, int],
-        text: str = None,
-        reply: Union[str, int] = None,
-        image: str = None,
-        rtf: MessageArray = None,
+        text: Optional[str] = None,
+        reply: Optional[Union[str, int]] = None,
+        image: Optional[str] = None,
+        rtf: Optional[MessageArray] = None,
     ) -> str:
         """发送私聊消息（NcatBot 接口）"""
         msg_array = MessageArray()
@@ -327,7 +327,7 @@ class MessageAPI(BaseAPI):
         return status.message_id
 
     async def send_private_file(
-        self, user_id: Union[str, int], file: str, name: str = None
+        self, user_id: Union[str, int], file: str, name: Optional[str] = None
     ) -> str:
         """发送私聊文件消息（NcatBot 接口）"""
         result = await self.async_callback(
@@ -390,8 +390,8 @@ class MessageAPI(BaseAPI):
         audio: str,
         url: str,
         title: str,
-        content: str = None,
-        image: str = None,
+        content: Optional[str] = None,
+        image: Optional[str] = None,
     ) -> str:
         """发送私聊音乐分享消息（NcatBot 接口）"""
         music = Music(
@@ -425,7 +425,7 @@ class MessageAPI(BaseAPI):
     # ---------------------
 
     async def send_poke(
-        self, group_id: Union[str, int] = None, user_id: Union[str, int] = None
+        self, group_id: Optional[Union[str, int]] = None, user_id: Optional[Union[str, int]] = None
     ) -> None:
         """发送戳一戳消息"""
         check_exclusive_argument(group_id, user_id, ["group_id", "user_id"], error=True)
@@ -457,13 +457,13 @@ class MessageAPI(BaseAPI):
 
     async def send_forward_msg(
         self,
-        group_id: Union[str, int] = None,
-        user_id: Union[str, int] = None,
-        messages: List[GroupMessageEvent] = None,
-        news: List[str] = None,
-        prompt: str = None,
-        summary: str = None,
-        source: str = None,
+        group_id: Optional[Union[str, int]] = None,
+        user_id: Optional[Union[str, int]] = None,
+        messages: Optional[List[GroupMessageEvent]] = None,
+        news: Optional[List[str]] = None,
+        prompt: Optional[str] = None,
+        summary: Optional[str] = None,
+        source: Optional[str] = None,
     ) -> str:
         """顶级合并转发消息发送接口（一般不开放使用）
 
@@ -497,9 +497,9 @@ class MessageAPI(BaseAPI):
 
     async def post_forward_msg(
         self,
-        group_id: Union[str, int] = None,
-        user_id: Union[str, int] = None,
-        msg: Forward = None,
+        group_id: Optional[Union[str, int]] = None,
+        user_id: Optional[Union[str, int]] = None,
+        msg: Optional[Forward] = None,
     ):
         """发送合并转发消息（NcatBot 接口）"""
         if msg is None:
@@ -573,8 +573,8 @@ class MessageAPI(BaseAPI):
 
     async def get_record(
         self,
-        file: str = None,
-        file_id: str = None,
+        file: Optional[str] = None,
+        file_id: Optional[str] = None,
         out_format: Literal[
             "mp3", "amr", "wma", "m4a", "ogg", "wav", "flac", "spx"
         ] = "mp3",
@@ -628,11 +628,11 @@ class MessageAPI(BaseAPI):
     def post_group_msg_sync(
         self,
         group_id: Union[str, int],
-        text: str = None,
-        at: Union[str, int] = None,
-        reply: Union[str, int] = None,
-        image: str = None,
-        rtf: MessageArray = None,
+        text: Optional[str] = None,
+        at: Optional[Union[str, int]] = None,
+        reply: Optional[Union[str, int]] = None,
+        image: Optional[str] = None,
+        rtf: Optional[MessageArray] = None,
     ) -> str:
         return run_coroutine(self.post_group_msg, group_id, text, at, reply, image, rtf)
 
@@ -694,8 +694,8 @@ class MessageAPI(BaseAPI):
         audio: str,
         url: str,
         title: str,
-        content: str = None,
-        image: str = None,
+        content: Optional[str] = None,
+        image: Optional[str] = None,
     ) -> str:
         return run_coroutine(
             self.send_group_custom_music, group_id, audio, url, title, content, image
@@ -724,10 +724,10 @@ class MessageAPI(BaseAPI):
     def post_private_msg_sync(
         self,
         user_id: Union[str, int],
-        text: str = None,
-        reply: Union[str, int] = None,
-        image: str = None,
-        rtf: MessageArray = None,
+        text: Optional[str] = None,
+        reply: Optional[Union[str, int]] = None,
+        image: Optional[str] = None,
+        rtf: Optional[MessageArray] = None,
     ) -> str:
         return run_coroutine(self.post_private_msg, user_id, text, reply, image, rtf)
 
@@ -789,8 +789,8 @@ class MessageAPI(BaseAPI):
         audio: str,
         url: str,
         title: str,
-        content: str = None,
-        image: str = None,
+        content: Optional[str] = None,
+        image: Optional[str] = None,
     ) -> str:
         return run_coroutine(
             self.send_private_custom_music, user_id, audio, url, title, content, image
@@ -819,13 +819,13 @@ class MessageAPI(BaseAPI):
 
     def send_forward_msg_sync(
         self,
-        group_id: Union[str, int] = None,
-        user_id: Union[str, int] = None,
-        messages: List[GroupMessageEvent] = None,
-        news: List[str] = None,
-        prompt: str = None,
-        summary: str = None,
-        source: str = None,
+        group_id: Optional[Union[str, int]] = None,
+        user_id: Optional[Union[str, int]] = None,
+        messages: Optional[List[GroupMessageEvent]] = None,
+        news: Optional[List[str]] = None,
+        prompt: Optional[str] = None,
+        summary: Optional[str] = None,
+        source: Optional[str] = None,
     ) -> str:
         return run_coroutine(
             self.send_forward_msg,
@@ -840,9 +840,9 @@ class MessageAPI(BaseAPI):
 
     def post_forward_msg_sync(
         self,
-        group_id: Union[str, int] = None,
-        user_id: Union[str, int] = None,
-        msg: Forward = None,
+        group_id: Optional[Union[str, int]] = None,
+        user_id: Optional[Union[str, int]] = None,
+        msg: Optional[Forward] = None,
     ):
         return run_coroutine(self.post_forward_msg, group_id, user_id, msg)
 
@@ -886,8 +886,8 @@ class MessageAPI(BaseAPI):
 
     def get_record_sync(
         self,
-        file: str = None,
-        file_id: str = None,
+        file: Optional[str] = None,
+        file_id: Optional[str] = None,
         out_format: Literal[
             "mp3", "amr", "wma", "m4a", "ogg", "wav", "flac", "spx"
         ] = "mp3",
