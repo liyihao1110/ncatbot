@@ -121,7 +121,7 @@ class _ModuleImporter:
                 req = line.strip()
                 if not req or req.startswith("#") or req.startswith("-"):
                     continue
-            self._ensure_package(req)
+                self._ensure_package(req)
 
         def ensure_req_from_pyproject():
             pyproject = (
