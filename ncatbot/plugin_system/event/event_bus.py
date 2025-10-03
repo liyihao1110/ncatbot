@@ -225,7 +225,6 @@ class EventBus:
         """发布事件并等待所有处理器完成"""
         handlers = self._collect_handlers(event.type)
         handler_meta = self._handler_meta.copy()
-        result_queues = {}
 
         # 为每个handler提交任务
         for _, _, handler, hid, timeout in handlers:
@@ -233,15 +232,17 @@ class EventBus:
                 break
 
             # 为每个任务创建结果队列
-            result_queue = Queue()
-            self.result_queues[hid] = result_queue
-            result_queues[hid] = result_queue
-
-            # 提交任务到线程池
-            LOG.debug(f"提交任务到线程池: {handler.__name__}, {hid}")
-            self.task_queue.put(
-                (self._run_handler, handler, event, timeout, result_queue, hid)
-            )
+            with self._lock:
+                if hid in self.result_queues:
+                    result_queue = self.result_queues[hid]
+                else:
+                    result_queue = Queue()
+                    self.result_queues[hid] = result_queue
+                # 提交任务到线程池
+                LOG.debug(f"提交任务到线程池: {handler.__name__}, {hid}")
+                self.task_queue.put(
+                    (self._run_handler, handler, event, timeout, result_queue, hid)
+                )
             try:
                 result = result_queue.get(timeout=timeout)
                 if isinstance(result, Exception):
@@ -268,7 +269,12 @@ class EventBus:
             finally:
                 # 清理结果队列
                 try:
-                    del self.result_queues[hid]
+                    with self._lock:
+                        if (
+                            hid in self.result_queues
+                            and self.result_queues[hid].empty()
+                        ):
+                            del self.result_queues[hid]
                 except Exception as e:
                     LOG.error(f"清理结果队列时发生错误: {e}")
                     LOG.info(traceback.format_exc())
