@@ -339,6 +339,9 @@ class At(MessageSegment):
 class AtAll(At):
     qq: str = field(init=False, default="all")
 
+    def __init__(self, qq: str = "all"):
+        self.qq = qq
+
     def __str__(self):
         return "AtAll()"
 
