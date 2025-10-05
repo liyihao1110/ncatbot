@@ -28,9 +28,6 @@ async def on_group_msg(group_msg: GroupMessage):
     _log.info(group_msg)
     if group_msg.raw_message == "test":
         await group_msg.reply("Ncatbot Group Msg Test Success")
-        
-    if group_msg.raw_message == "test a":
-        await bot.api.post_all_group_msg(bot_client = bot, text = "Everybody good evening, This is a test group msg")
 
 
 @bot.private_event()
