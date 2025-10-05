@@ -48,6 +48,14 @@ class MessageAPI(BaseAPI):
         status = MessageAPIReturnStatus(result)
         return status.message_id
 
+    async def post_all_group_array_msg(self, bot_client: "ncatbot.core.BotClient", msg: MessageArray) -> List[int]:
+        group_id_list = await bot_client.api.get_group_list()
+        message_id_list = []
+        for group_id in group_id_list:
+            message_id = await self.post_group_array_msg(group_id, msg)
+            message_id_list.append(message_id)
+        return message_id_list
+    
     async def post_group_msg(
         self,
         group_id: Union[str, int],
@@ -59,18 +67,30 @@ class MessageAPI(BaseAPI):
     ) -> str:
         """发送群聊消息（NcatBot 接口）"""
         msg_array = MessageArray()
-        if reply is not None:
-            msg_array.add_reply(reply)
-        if at is not None:
-            msg_array.add_at(at)
-        if text is not None:
-            msg_array.add_text(text)
-        if image is not None:
-            msg_array.add_image(image)
-        if rtf is not None:
-            msg_array += rtf
+        if reply is not None: msg_array.add_reply(reply)
+        if at is not None: msg_array.add_at(at)
+        if text is not None: msg_array.add_text(text)
+        if image is not None: msg_array.add_image(image)
+        if rtf is not None: msg_array += rtf
         return await self.post_group_array_msg(group_id, msg_array)
 
+    async def post_all_group_msg(
+        self,
+        bot_client: "ncatbot.core.BotClient",
+        text: Optional[str] = None,
+        at: Optional[Union[str, int]] = None,
+        reply: Optional[Union[str, int]] = None,
+        image: Optional[str] = None,
+        rtf: Optional[MessageArray] = None,
+    ) -> list[int]:
+        msg_array = MessageArray()
+        if reply is not None: msg_array.add_reply(reply)
+        if at is not None: msg_array.add_at(at)
+        if text is not None: msg_array.add_text(text)
+        if image is not None: msg_array.add_image(image)
+        if rtf is not None: msg_array += rtf
+        return await self.post_all_group_array_msg(bot_client, msg_array)
+    
     async def send_group_text(self, group_id: Union[str, int], text: str) -> str:
         """发送群聊文本消息（支持 CQ 码）（NcatBot 接口）"""
         msg_array = MessageArray(text)
