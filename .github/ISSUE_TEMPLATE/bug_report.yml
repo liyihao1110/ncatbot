@@ -1,0 +1,69 @@
+name: 🐛 Bug 汇报
+description: 创建一个 Bug 汇报以帮助我们改进
+title: "[BUG] "
+labels: ["bug"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢花时间汇报！  
+
+  - type: textarea
+    id: describe
+    attributes:
+      label: 1. 问题现象（必填）
+      description: 发生了什么？期望发生什么？
+      placeholder: |
+        清晰简洁地描述现象与期望结果。
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 2. 复现步骤（必填，最好包括代码）
+      description: 如何稳定复现？越具体越好
+      placeholder: |
+        1. 启动 NapCat …
+        2. 发送消息 …
+        3. 看到报错 …
+    validations:
+      required: true
+
+  - type: textarea
+    id: env
+    attributes:
+      label: 3. 运行环境（必填）
+      description: 建议直接复制下面三行填写
+      placeholder: |
+        - OS: Win11 23H2 / Ubuntu 22.04
+        - NcatBot: v4.2.x
+        - NapCat: v4.x.y
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 4. 关键日志 / 截图
+      description: 日志请复制**文本**（不要截长图），敏感信息请打码
+      render: text
+
+  - type: textarea
+    id: config
+    attributes:
+      label: 5. 相关配置项
+      description: 只贴**改动过**的片段，用 ```yaml 包裹
+      render: yaml
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: 6. 自查清单
+      options:
+        - label: 我已经升级到最新版（NcatBot & NapCat）
+          required: true
+        - label: 我已经搜索过历史 Issues
+          required: true
