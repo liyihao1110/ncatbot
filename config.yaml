@@ -1,6 +1,6 @@
 root: '123456789'
 bt_uin: '123456789'
-enable_webui_interaction: false
+enable_webui_interaction: true
 debug: false
 github_proxy: null
 check_ncatbot_update: true
