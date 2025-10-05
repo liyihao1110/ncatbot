@@ -8,7 +8,7 @@ skip_ncatbot_install_check: false
 websocket_timeout: 15
 napcat:
   ws_uri: ws://localhost:3001
-  ws_token: ''
+  ws_token: 'NcatBot'
   ws_listen_ip: localhost
   webui_uri: http://localhost:6099
   webui_token: A0]2rcX_x)D|Bh{c
