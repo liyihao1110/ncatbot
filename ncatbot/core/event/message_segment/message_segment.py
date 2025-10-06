@@ -2,6 +2,7 @@ import os
 import time
 import httpx
 import urllib.parse
+import copy
 from dataclasses import dataclass, field, fields
 from typing import Literal, Union, Any, TYPE_CHECKING, TypeVar, Dict, Type, List
 from ....utils import get_log, run_coroutine, NcatBotError, status
@@ -200,8 +201,11 @@ class DownloadableMessageSegment(MessageSegment):
         return filename
 
     def to_dict(self):
-        self.file = convert_uploadable_object(self.file)
-        return super().to_dict()
+        # 不修改本身的 file 属性，提供一个转换后的副本
+        copy_self = copy.deepcopy(self)
+        copy_self.file = convert_uploadable_object(copy_self.file)
+        # 调用父类的to_dict()方法，防止无限递归
+        return super(DownloadableMessageSegment, copy_self).to_dict()
 
     def __post_init__(self):
         pass
