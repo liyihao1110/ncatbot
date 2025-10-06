@@ -1,4 +1,4 @@
-from typing import Literal, Union, List, Any, Coroutine
+from typing import Literal, Union, List
 from .utils import BaseAPI, APIReturnStatus
 from ncatbot.utils import run_coroutine
 from ncatbot.core.event import File
@@ -451,22 +451,17 @@ class GroupAPI(BaseAPI):
         result = await self.async_callback("/get_group_info_ex", {"group_id": group_id})
         status = APIReturnStatus(result)
         return status.data
-    
-    async def get_group_list(self) -> List[int]:
-        group_list = list()
-        group_info_list = await self.get_group_info_list()
-        for group_info in group_info_list:
-            group_list.append(group_info.get("group_id"))
-        return group_list
-    
-    async def get_group_info_list(self) -> dict | list[Any]:
+
+    async def get_group_list(self, info: bool = False) -> list[Union[str, dict]]:
         result = await self.async_callback("/get_group_list", {"next_token": ""})
         status = APIReturnStatus(result)
         if status.is_success():
-            return status.data
+            if info:
+                return status.data
+            return [str(group.get("group_id")) for group in status.data]
         else:
             return []
-        
+
     async def get_group_member_info(
         self, group_id: Union[str, int], user_id: Union[str, int]
     ) -> GroupMemberInfo:
