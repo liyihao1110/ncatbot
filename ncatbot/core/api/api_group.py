@@ -517,7 +517,7 @@ class GroupAPI(BaseAPI):
     async def set_group_name(self, group_id: Union[str, int], name: str) -> None:
         """设置群名"""
         result = await self.async_callback(
-            "/set_group_name", {"group_id": group_id, "name": name}
+            "/set_group_name", {"group_id": group_id, "group_name": name}
         )
         APIReturnStatus.raise_if_failed(result)
 

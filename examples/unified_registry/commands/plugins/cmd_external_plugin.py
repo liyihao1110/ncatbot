@@ -1,5 +1,7 @@
 from ncatbot.plugin_system import NcatBotPlugin
 from ncatbot.plugin_system import command_registry
+from ncatbot.plugin_system import private_filter
+
 from ncatbot.core.event import BaseMessageEvent
 
 
@@ -28,3 +30,9 @@ async def non_prefix_hello_cmd(event: BaseMessageEvent):
 @my_group.command("my_group_hello")
 async def my_group_hello_cmd(event: BaseMessageEvent):
     await event.reply("Hello, Group World!")
+
+
+@private_filter
+async def echo_private(event: BaseMessageEvent):
+    """回显私聊消息"""
+    await event.reply(f"You said: {event.raw_message}")

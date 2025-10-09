@@ -1,4 +1,4 @@
-from typing import Literal, Union, List
+from typing import Literal, Union, List, Dict, Any
 from .utils import BaseAPI, APIReturnStatus
 from ncatbot.utils import run_coroutine
 from ncatbot.core.event.message_segment.message_segment import convert_uploadable_object
@@ -79,11 +79,15 @@ class AccountAPI(BaseAPI):
 
         return status.data
 
-    async def send_like(self, user_id: Union[str, int], times: int = 1) -> None:
+    async def send_like(self, user_id: Union[str, int], times: int = 1) -> Dict[str, Any]:
         result = await self.async_callback(
             "/send_like", {"user_id": user_id, "times": times}
         )
-        APIReturnStatus.raise_if_failed(result)
+        try:
+            APIReturnStatus.raise_if_failed(result)
+        except Exception as e:
+            return result
+        return result
 
     async def set_friend_add_request(
         self, flag: str, approve: bool, remark: str = None
@@ -221,7 +225,7 @@ class AccountAPI(BaseAPI):
     def get_friends_with_cat_sync(self) -> List[dict]:
         return run_coroutine(self.get_friends_with_cat)
 
-    def send_like_sync(self, user_id: Union[str, int], times: int = 1) -> None:
+    def send_like_sync(self, user_id: Union[str, int], times: int = 1) -> dict[str, Any]:
         return run_coroutine(self.send_like, user_id, times)
 
     def set_friend_add_request_sync(
