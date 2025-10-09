@@ -9,7 +9,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Union, Tuple
 
 from ncatbot.plugin_system.builtin_plugin.unified_registry.command_system.utils.specs import (
     CommandSpec,
@@ -82,7 +82,7 @@ class CommandResolver:
 
     def resolve_from_tokens(
         self, tokens: List[Token]
-    ) -> Optional[Tuple[str, CommandEntry]]:
+    ) -> Union[Tuple[str, CommandEntry], Tuple[None, None]]:
         """从首段 tokens 解析命令。
 
         策略：仅接收 TokenType.WORD/QUOTED_STRING 序列作为命令词；

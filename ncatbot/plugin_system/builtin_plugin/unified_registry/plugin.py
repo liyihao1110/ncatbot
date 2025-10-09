@@ -158,8 +158,8 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         LOG.info(f"命令前缀集合: {self.prefixes}")
 
         self._preprocessor = MessagePreprocessor(
-            require_prefix=False,
             prefixes=self.prefixes,
+            require_prefix=False,
             case_sensitive=False,
         )
 

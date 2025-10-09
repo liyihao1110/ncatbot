@@ -22,10 +22,10 @@ class PreprocessResult:
 
 class MessagePreprocessor:
     def __init__(
-        self, *, require_prefix: bool, prefixes: List[str], case_sensitive: bool
+        self, *, prefixes: List[str], require_prefix: bool, case_sensitive: bool
     ) -> None:
-        self.require_prefix = require_prefix
         self.prefixes = prefixes
+        self.require_prefix = require_prefix
         self.case_sensitive = case_sensitive
 
     def _normalize(self, s: str) -> str:
@@ -43,7 +43,7 @@ class MessagePreprocessor:
 
         text: str = getattr(first, "text", "") or ""
         raw = text
-        norm = self._normalize(text)
+        norm = self._normalize(text).lstrip()
 
         if self.require_prefix:
             matched = None
@@ -54,8 +54,5 @@ class MessagePreprocessor:
                     break
             if matched is None:
                 return None
-            # 去除前缀，原样切除与大小写无关
-            cut_len = len(matched)
-            return PreprocessResult(command_text=raw[cut_len:].lstrip())
-        else:
-            return PreprocessResult(command_text=raw)
+
+        return PreprocessResult(command_text=raw)
