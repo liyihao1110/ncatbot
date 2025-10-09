@@ -54,5 +54,8 @@ class MessagePreprocessor:
                     break
             if matched is None:
                 return None
-
-        return PreprocessResult(command_text=raw)
+            # 去除前缀，原样切除与大小写无关
+            cut_len = len(matched)
+            return PreprocessResult(command_text=raw[cut_len:].lstrip())
+        else:
+            return PreprocessResult(command_text=raw)

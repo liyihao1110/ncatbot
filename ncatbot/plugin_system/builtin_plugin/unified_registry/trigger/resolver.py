@@ -112,3 +112,7 @@ class CommandResolver:
                 if candidate in self._index:
                     return prefix, self._index[candidate]
         return None, None
+
+    def get_commands(self) -> List[CommandEntry]:
+        """获取所有已注册的命令条目。"""
+        return list(self._index.values())
