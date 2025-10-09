@@ -106,6 +106,14 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
 
         # 解析首段文本为 token（用于命令匹配）
         text = pre.command_text
+        hit = [
+            command
+            for command in self._resolver.get_commands()
+            if text.split(" ")[0].endswith(command.path_words[0])
+        ]
+        if not hit:
+            return False
+
         tokenizer = StringTokenizer(text)
         tokens: List[Token] = tokenizer.tokenize()
 
@@ -158,8 +166,8 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         LOG.info(f"命令前缀集合: {self.prefixes}")
 
         self._preprocessor = MessagePreprocessor(
-            require_prefix=False,
             prefixes=self.prefixes,
+            require_prefix=False,
             case_sensitive=False,
         )
 
