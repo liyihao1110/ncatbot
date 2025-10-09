@@ -168,7 +168,7 @@ class MessageSegment:
 @dataclass(repr=False)
 class DownloadableMessageSegment(MessageSegment):
     file: str
-    url: str = field(init=False)
+    url: str = field(init=False, default=None)
     msg_seg_type: Literal["file", "image", "record", "video"] = field(
         init=False, repr=False, default=None
     )
@@ -207,6 +207,40 @@ class DownloadableMessageSegment(MessageSegment):
         # 调用父类的to_dict()方法，防止无限递归
         return super(DownloadableMessageSegment, copy_self).to_dict()
 
+    def get_base64(self):
+        import base64
+
+        if self.url is not None:
+            self.download_sync("./data", f".temp-{self.get_file_name()}")
+            with open(f"./data/.temp-{self.get_file_name()}", "rb") as f:
+                encoded = base64.b64encode(f.read()).decode("utf-8")
+            os.remove(f"./data/.temp-{self.get_file_name()}")
+            return f"base64://{encoded}"
+
+        else:
+            if os.path.exists(self.file):
+                with open(self.file, "rb") as f:
+                    encoded = base64.b64encode(f.read()).decode("utf-8")
+                return f"base64://{encoded}"
+            elif self.file.startswith("base64://"):
+                return self.file
+            elif self.file.startswith("data:"):
+                return "base64://" + self.file.split("base64,")[-1]
+            elif self.file.startswith("http"):
+                try:
+                    response = httpx.get(self.file)
+                    if response.status_code == 200:
+                        encoded = base64.b64encode(response.content).decode("utf-8")
+                        return f"base64://{encoded}"
+                    else:
+                        LOG.error(f"无法下载文件，HTTP 状态码: {response.status_code}")
+                        return None
+                except httpx.RequestError as e:
+                    LOG.error(f"下载文件时出错: {e}")
+                    return None
+            else:
+                raise NcatBotError(f"无法处理的文件 {self.file}")
+
     def __post_init__(self):
         pass
 
@@ -216,28 +250,39 @@ class DownloadableMessageSegment(MessageSegment):
             raise NcatBotError(f"下载路径不存在: {dir}")
         target_path = os.path.join(dir, name)
         if os.path.exists(target_path):
-            path = (
-                target_path.split(".")[0]
-                + "_"
-                + str(time.time())
-                + "."
-                + target_path.split(".")[1]
-            )
+            path = os.path.join(dir, f"{time.time()}-{name}")
             LOG.warning(f"文件已存在: {target_path}, 将保存为 {path}")
         else:
             path = target_path
         return path
 
     async def download_to(self, dir: str, name: str = None):
+        # TODO: 优化这里屎一样的逻辑
         path = self._get_final_path(dir, name)
-        try:
+        if self.url is not None:
             async with httpx.AsyncClient() as client:
-                response = await client.get(self.url)
+                resp = await client.get(self.url, timeout=60)
+                resp.raise_for_status()
                 with open(path, "wb") as f:
-                    f.write(response.content)
-        except httpx.UnsupportedProtocol:
-            LOG.error(f"不支持的协议: {self.file}")
-            return None
+                    f.write(resp.content)
+        else:
+            if os.path.exists(self.file):
+                import shutil
+
+                shutil.copyfile(self.file, path)
+            else:
+                b64_data = self.get_base64()
+                if b64_data is None:
+                    raise NcatBotError(f"无法下载文件: {self.file}")
+                import base64
+
+                if b64_data.startswith("data:"):
+                    b64_data = b64_data.split("base64,")[-1]
+                elif b64_data.startswith("base64://"):
+                    b64_data = b64_data[len("base64://") :]
+                with open(path, "wb") as f:
+                    f.write(base64.b64decode(b64_data))
+
         return path
 
     async def download(self, dir, name: str = None):
