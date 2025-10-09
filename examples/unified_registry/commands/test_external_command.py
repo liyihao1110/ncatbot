@@ -23,6 +23,17 @@ async def run_external_command_tests():
     await helper.send_private_message("!my_group my_group_hello")
     helper.assert_reply_sent("Hello, Group World!")
     helper.clear_history()
+
+    short_slash_message = "short slash should not go in command logics - test"
+    await helper.send_private_message(short_slash_message)
+    helper.assert_reply_sent(f"You said: {short_slash_message}")
+    helper.clear_history()
+
+    long_slash_message = "long slashes should not go in command logics -- test"
+    await helper.send_private_message(long_slash_message)
+    helper.assert_reply_sent(f"You said: {long_slash_message}")
+    helper.clear_history()
+
     print("\n✅ external_command 测试通过")
 
 
