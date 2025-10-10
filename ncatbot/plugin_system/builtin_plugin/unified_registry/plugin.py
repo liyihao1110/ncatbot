@@ -127,15 +127,40 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         func = match.command.func
         ignore_words = match.path_words  # 用于参数绑定的 ignore 计数
 
-        # 参数绑定：复用 FuncAnalyser 约束
-        bind_result: BindResult = self._binder.bind(
-            match.command, event, ignore_words, [prefix]
-        )
-        if not bind_result.ok:
-            # 绑定失败：可选择静默或提示（最小实现为静默）
-            LOG.debug(f"参数绑定失败: {bind_result.message}")
+        ## 参数绑定：复用 FuncAnalyser 约束
+        #bind_result: BindResult = self._binder.bind(
+        #    match.command, event, ignore_words, [prefix]
+        #)
+        #if not bind_result.ok:
+        #    # 绑定失败：可选择静默或提示（最小实现为静默）
+        #    LOG.debug(f"参数绑定失败: {bind_result.message}")
+        #    return False
+        try:
+            bind_result: BindResult = self._binder.bind(
+                match.command, event, ignore_words, [prefix]
+            )
+        except Exception as e:
+            # 捕获所有参数绑定阶段的异常（如IndexError、TypeError等）
+            await self.event_bus.publish(NcatBotEvent(
+                type="ncatbot.param_bind_failed",
+                data={
+                    "event": event,
+                    "msg": f"参数解析异常：{str(e)}",
+                    "cmd": match.command.name
+                }
+            ))
             return False
-
+        if not bind_result.ok:
+            await self.event_bus.publish(NcatBotEvent(
+                type="ncatbot.param_bind_failed",
+                data={
+                    "event": event,
+                    "msg": f"参数解析异常：{str(e)}",
+                    "cmd": match.command.name
+                }
+            ))
+            return False
+        
         await self._execute_function(
             func, event, *bind_result.args, **bind_result.named_args
         )
