@@ -40,7 +40,7 @@ class HandlerTimeoutError(Exception):
 
 
 class EventBus:
-    def __init__(self, default_timeout: float = 5, max_workers: int = 1) -> None:
+    def __init__(self, default_timeout: float = 5, max_workers: int = 2) -> None:
         """
         事件总线实现 - 线程池
 
@@ -52,94 +52,107 @@ class EventBus:
         self._regex: List[Tuple] = []
         self._lock = threading.Lock()
         self.default_timeout = default_timeout
+        self.max_workers = max_workers
 
         # 线程池状态
         self.task_queue = queue.Queue()
-        self.workers: Set[threading.Thread] = set()
+        self.task_queue: "Queue[Tuple[Callable, Callable, NcatBotEvent, float, asyncio.Queue, uuid.UUID]]"
         self.worker_lock = threading.Lock()
-        self.worker_timeouts: Dict[int, float] = {}  # {thread_id: timeout}
-        self.active_tasks: Dict[int, Future] = {}  # {thread_id: future}
+        self._worker_map: dict[int, threading.Thread] = {}
+        self.worker_timeouts: Dict[int, float] = {}
+        self.active_tasks: Dict[int, Future] = {}
 
         # 存储处理器元数据
         self._handler_meta: Dict[uuid.UUID, Dict] = {}
-        self.result_queues: Dict[uuid.UUID, asyncio.Queue] = {}  # 添加结果队列字典
+        self.result_queues: Dict[uuid.UUID, asyncio.Queue] = {}
 
         # 初始化工作线程
-        for _ in range(max_workers):
-            self._add_worker()
+        for i in range(max_workers):
+            self._add_worker(i)
 
         # 启动监控线程
         self.monitor_thread = threading.Thread(
             target=self._monitor_timeouts, daemon=True
         )
         self.monitor_thread.start()
+    
+    @property
+    def workers(self) -> Set[threading.Thread]:
+        """当前存活的工作线程（只读）"""
+        with self.worker_lock:
+            return {t for t in self._worker_map.values() if t.is_alive()}
+    
+    def _add_worker(self, worker_id: int) -> bool:
+        """创建/复活一个工作线程；成功返回 True"""
+        with self.worker_lock:
+            old = self._worker_map.get(worker_id)
+            if old is not None and old.is_alive():
+                return True
+            if old is not None:
+                self._worker_map.pop(worker_id, None)
 
-    def _add_worker(self):
-        """添加新的工作线程"""
-        worker = threading.Thread(
-            target=self._worker_loop, daemon=True, name="EventBus_Worker"
-        )
-        worker.start()
-        self.workers.add(worker)
+            try:
+                t = threading.Thread(
+                    target=self._worker_loop,
+                    args=(worker_id,),
+                    daemon=True,
+                    name=f"EventBus_Worker-{worker_id}"
+                )
+                t.start()
+                self._worker_map[worker_id] = t
+                return True
+            except Exception as exc:
+                LOG.error(f"无法启动工作线程: {worker_id}: {exc}")
+                return False
 
-    def _worker_loop(self):
-        """工作线程主循环"""
-        thread_id = threading.get_ident()
+    def _worker_loop(self, worker_id: int):
+        """工作线程"""
         while True:
             try:
-                # 获取任务
                 task = self.task_queue.get(timeout=0.1)
                 runner, handler, event, timeout, result_queue, hid = task
-                # LOG.debug(f"线程执行任务: {handler.__name__}")
-                result_queue: Queue
 
-                # 记录任务开始时间
-                start_time = time.time()
-                self.worker_timeouts[thread_id] = start_time + timeout
+                thread_id = threading.get_ident()
+                start = time.time()
+                self.worker_timeouts[thread_id] = start + timeout
 
                 try:
-                    # 执行任务
                     result = runner(handler, event)
                     result_queue.put(result)
-                    # LOG.debug(f"任务结果: {id(result_queue)}")
                 except Exception as e:
+                    LOG.debug(f"任务 {hid} 执行错误: {e}")
                     result_queue.put(e)
                 finally:
-                    # 清理任务状态
-                    del self.worker_timeouts[thread_id]
+                    self.worker_timeouts.pop(thread_id, None)
                     self.task_queue.task_done()
-                    # LOG.debug(f"线程任务结束: {handler.__name__}")
             except queue.Empty:
-                # 检查是否需要退出
-                if len(self.workers) > max(5, len(self.workers) * 0.8):
+                # 只有“过剩”线程才退出
+                with self.worker_lock:
+                    alive = sum(1 for t in self._worker_map.values() if t.is_alive())
+                if alive <= self.max_workers:
+                    continue
+                if alive > int(self.max_workers * 1.5):
+                    LOG.debug(f"Worker-{worker_id} 退出, 原因: 线程数超量150%")
                     break
 
     def _monitor_timeouts(self):
-        """监控超时任务并强制终止线程"""
+        """监控超时任务并强制终止线程，随后补充新线程"""
         while True:
             time.sleep(self.default_timeout / 4)
-            current_time = time.time()
+            now = time.time()
 
             with self.worker_lock:
-                # 检查所有工作线程
-                for worker in list(self.workers):
-                    thread_id = worker.ident
-                    if thread_id in self.worker_timeouts:
-                        # 检查是否超时
-                        if current_time > self.worker_timeouts[thread_id]:
-                            # 强制终止超时线程
-                            self._terminate_thread(worker)
-                            self.workers.remove(worker)
+                for wid, worker in list(self._worker_map.items()):
+                    tid = worker.ident
+                    if tid in self.worker_timeouts and now > self.worker_timeouts[tid]:
+                        self._terminate_thread(worker)
+                        self._worker_map.pop(wid, None)
+                        self._add_worker(wid)          # 补充同 ID 新线程
 
-                            # 补充新线程
-                            self._add_worker()
-
-                            # 设置future异常
-                            if thread_id in self.active_tasks:
-                                future = self.active_tasks[thread_id]
-                                if not future.done():
-                                    future.set_exception(TimeoutError("处理器超时"))
-                                del self.active_tasks[thread_id]
+                        if tid in self.active_tasks:
+                            fut = self.active_tasks.pop(tid)
+                            if not fut.done():
+                                fut.set_exception(TimeoutError("处理器超时"))
 
     def _terminate_thread(self, thread: threading.Thread):
         """强制终止线程"""
@@ -310,18 +323,18 @@ class EventBus:
         """关闭事件总线并清理资源"""
         # 终止所有工作线程
         with self.worker_lock:
-            for worker in self.workers:
+            for worker in list(self._worker_map.values()):
                 if worker.is_alive():
                     self._terminate_thread(worker)
-            self.workers.clear()
+            self._worker_map.clear()          # 清空映射表
 
-            # 清空任务队列
-            while not self.task_queue.empty():
-                try:
-                    self.task_queue.get_nowait()
-                    self.task_queue.task_done()
-                except queue.Empty:
-                    break
+        # 清空任务队列
+        while not self.task_queue.empty():
+            try:
+                self.task_queue.get_nowait()
+                self.task_queue.task_done()
+            except queue.Empty:
+                break
 
 
 @lru_cache(maxsize=128)
