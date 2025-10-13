@@ -334,11 +334,15 @@ class Face(MessageSegment):
 class Image(DownloadableMessageSegment):
     msg_seg_type: Literal["image"] = field(init=False, repr=False, default="image")
     summary: str = field(default="[图片]")
+    # 0: 一般图片或 QQ 商城内的动画表情； 1: QQ 用户保存的动画表情，为 1 时发送的图片会在 QQ 内以合适的大小显示
+    sub_type: int = field(default=0)  
     type: Literal["flash"] = None
 
     def is_flase_image(self) -> bool:
         return getattr(self, "type", None) == "flash"
 
+    def is_animated_image(self) -> bool:
+        return self.sub_type == 1
 
 @dataclass(repr=False)
 class File(DownloadableMessageSegment):
