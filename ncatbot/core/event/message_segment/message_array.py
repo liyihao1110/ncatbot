@@ -185,11 +185,17 @@ class MessageArray:
         return self
 
     def add_image(self, image: str):
-        self.messages.append(Image(file=image))
+        if isinstance(image, Image):
+            self.messages.append(image)
+        else:
+            self.messages.append(Image(file=image))
         return self
 
     def add_at(self, user_id: Union[str, int]):
-        self.messages.append(At(user_id))
+        if isinstance(user_id, At) or isinstance(user_id, AtAll):
+            self.messages.append(user_id)
+        else:
+            self.messages.append(At(user_id))
         return self
 
     def add_at_all(self):
