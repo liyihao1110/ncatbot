@@ -7,6 +7,7 @@
 - Sentence 类型吞剩余文本元素；MessageSegment 子类按元素匹配；基础类型从文本元素解析
 """
 
+import inspect
 from dataclasses import dataclass
 from typing import Tuple, List, Any, Dict
 
@@ -73,14 +74,28 @@ class ArgumentBinder:
                     pw_idx += 1
                 else:
                     break
-                
+
             # 缺少参数主动抛出异常
             actual_args_count = len(elements[skip_idx:])
-            total_params = spec.func.__code__.co_argcount
-            required_args_count = total_params - 2
+            sig = inspect.signature(spec.func)
+            required_args = [
+                name
+                for name, param in sig.parameters.items()
+                if param.default is inspect.Parameter.empty
+                and param.kind
+                in (
+                    inspect.Parameter.POSITIONAL_ONLY,
+                    inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                )
+            ]
+            required_args_count = (
+                len(required_args) - 2
+            )  # 减去 self 和 cls 之类的固定参数
             if actual_args_count < required_args_count:
-                raise Exception(f"参数不足：需要{required_args_count}个，实际传入{actual_args_count}个")
-            
+                raise Exception(
+                    f"参数不足：需要 {required_args_count} 个，实际传入 {actual_args_count} 个"
+                )
+
             LOG.debug(f"跳过索引: {skip_idx}")
             idx = skip_idx
             bound_args: List[Any] = []
