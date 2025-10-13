@@ -18,6 +18,7 @@ from .config import config
 from .event import EventBus, NcatBotEvent
 from .rbac import RBACManager
 from ncatbot.utils import status, get_log
+from ncatbot.core.api import BotAPI
 
 if TYPE_CHECKING:
     from .loader import PluginLoader
@@ -47,6 +48,7 @@ class BasePlugin:
         debug (bool): 调试模式标志
 
     运行时属性:
+        api (BotAPI): Ncatbot API 实例
         workspace (Path): 插件工作目录路径
         source_dir (Path): 插件源码目录路径
         data_file (Path): 插件数据文件路径
@@ -62,9 +64,17 @@ class BasePlugin:
     config: dict = {}  # 使用YAML格式存储的配置数据
 
     # -------- 运行时属性 --------
+    api: BotAPI
+    data_file: Path
     first_load: bool = True
+    main_file: Path
+    rbac_manager: RBACManager
+    source_dir: Path
+    workspace: Path
 
     # -------- 内部属性 --------
+    _debug: bool  # 调试模式标志
+    _event_bus: EventBus  # 事件总线实例
     _handlers_id: Set[UUID]  # 注册的事件处理器ID集合
     _loader: "PluginLoader"  # 插件加载器
 
