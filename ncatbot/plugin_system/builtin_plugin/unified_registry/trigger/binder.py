@@ -73,7 +73,14 @@ class ArgumentBinder:
                     pw_idx += 1
                 else:
                     break
-
+                
+            # 缺少参数主动抛出异常
+            actual_args_count = len(elements[skip_idx:])
+            total_params = spec.func.__code__.co_argcount
+            required_args_count = total_params - 2
+            if actual_args_count < required_args_count:
+                raise Exception(f"参数不足：需要{required_args_count}个，实际传入{actual_args_count}个")
+            
             LOG.debug(f"跳过索引: {skip_idx}")
             idx = skip_idx
             bound_args: List[Any] = []

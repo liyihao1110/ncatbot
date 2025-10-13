@@ -140,27 +140,16 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
                 match.command, event, ignore_words, [prefix]
             )
         except Exception as e:
-            # 捕获所有参数绑定阶段的异常（如IndexError、TypeError等）
             await self.event_bus.publish(NcatBotEvent(
                 type="ncatbot.param_bind_failed",
                 data={
                     "event": event,
-                    "msg": f"参数解析异常：{str(e)}",
+                    "msg": str(e),
                     "cmd": match.command.name
                 }
             ))
             return False
-        if not bind_result.ok:
-            await self.event_bus.publish(NcatBotEvent(
-                type="ncatbot.param_bind_failed",
-                data={
-                    "event": event,
-                    "msg": f"参数解析异常：{str(e)}",
-                    "cmd": match.command.name
-                }
-            ))
-            return False
-        
+
         await self._execute_function(
             func, event, *bind_result.args, **bind_result.named_args
         )
