@@ -461,15 +461,36 @@ class MessageAPI(BaseAPI):
 
     async def send_poke(
         self,
+        user_id: Union[str, int],
         group_id: Optional[Union[str, int]] = None,
-        user_id: Optional[Union[str, int]] = None,
     ) -> None:
-        """发送戳一戳消息"""
-        check_exclusive_argument(group_id, user_id, ["group_id", "user_id"], error=True)
-        if user_id:
-            result = await self.async_callback("/friend_poke", {"user_id": user_id})
+        """
+        发送戳一戳消息
+
+        根据是否提供 group_id 参数来决定发送群戳一戳还是好友戳一戳。
+        如果提供了 group_id，则在指定群内戳指定用户；
+        如果未提供 group_id 或 group_id 为 None，则直接戳好友。
+
+        Args:
+            user_id (Union[str, int]): 要戳的用户ID，必须提供且不能为空
+            group_id (Optional[Union[str, int]], 可选): 群号，如果提供则在群内戳一戳，
+                如果不提供则发送好友戳一戳. Defaults to None.
+
+        Raises:
+            NcatBotValueError: 当 user_id 为空时抛出
+            NapCatAPIError: 当API调用失败时抛出
+
+        Returns:
+            None: 该方法无返回值
+        """
+        if not user_id:
+            raise NcatBotValueError("user_id", user_id, must_be=False)
+        if group_id:
+            result = await self.async_callback(
+                "/group_poke", {"group_id": group_id, "user_id": user_id}
+            )
         else:
-            result = await self.async_callback("/group_poke", {"group_id": group_id})
+            result = await self.async_callback("/friend_poke", {"user_id": user_id})
         APIReturnStatus.raise_if_failed(result)
 
     async def delete_msg(self, message_id: Union[str, int]) -> dict:
@@ -842,9 +863,9 @@ class MessageAPI(BaseAPI):
         return run_coroutine(self.friend_poke, user_id)
 
     def send_poke_sync(
-        self, group_id: Union[str, int] = None, user_id: Union[str, int] = None
+        self, user_id: Union[str, int], group_id: Optional[Union[str, int]] = None
     ) -> None:
-        return run_coroutine(self.send_poke, group_id, user_id)
+        return run_coroutine(self.send_poke, user_id, group_id)
 
     def delete_msg_sync(self, message_id: Union[str, int]) -> dict:
         return run_coroutine(self.delete_msg, message_id)
