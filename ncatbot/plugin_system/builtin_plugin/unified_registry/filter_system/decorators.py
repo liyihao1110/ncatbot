@@ -1,7 +1,14 @@
 """过滤器装饰器 v2.0"""
 
 from typing import Callable, Union, TYPE_CHECKING
-from .builtin import GroupFilter, PrivateFilter, AdminFilter, RootFilter, TrueFilter
+from .builtin import (
+    GroupFilter,
+    PrivateFilter,
+    AdminFilter,
+    RootFilter,
+    TrueFilter,
+    CustomFilter,
+)
 from .base import BaseFilter
 
 if TYPE_CHECKING:
@@ -85,6 +92,20 @@ def on_notice(func: Callable) -> Callable:
 
     legacy_registry._notice_event.append(func)
     return func
+
+
+def on_group_poke(func: Callable) -> Callable:
+    """群聊戳一戳专用装饰器"""
+    from ncatbot.core.event.notice import NoticeEvent
+
+    def poke_filter(event) -> bool:
+        """检查是否是戳一戳事件"""
+        return isinstance(event, NoticeEvent) and event.sub_type == "poke"
+
+    decorated_func = filter(GroupFilter(), CustomFilter(poke_filter, "poke_filter"))(
+        func
+    )
+    return on_notice(decorated_func)
 
 
 # 兼容

@@ -16,7 +16,7 @@ class GroupFilter(BaseFilter):
 
     def check(self, event: "BaseMessageEvent") -> bool:
         """检查是否为群聊消息"""
-        return event.is_group_msg()
+        return event.is_group_event()
 
 
 class PrivateFilter(BaseFilter):
@@ -24,7 +24,7 @@ class PrivateFilter(BaseFilter):
 
     def check(self, event: "BaseMessageEvent") -> bool:
         """检查是否为私聊消息"""
-        return not event.is_group_msg()
+        return not event.is_group_event()
 
 
 class AdminFilter(BaseFilter):
