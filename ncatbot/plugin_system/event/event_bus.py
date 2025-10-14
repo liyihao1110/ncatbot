@@ -40,7 +40,7 @@ class HandlerTimeoutError(Exception):
 
 
 class EventBus:
-    def __init__(self, default_timeout: float = 5, max_workers: int = 1) -> None:
+    def __init__(self, default_timeout: float = 120, max_workers: int = 1) -> None:
         """
         事件总线实现 - 线程池
 

@@ -291,7 +291,19 @@ class DownloadableMessageSegment(MessageSegment):
     def download_sync(self, dir: str, name: str = None):
         return run_coroutine(self.download, dir, name)
 
-
+    def __str__(self):
+        return self.__repr__()
+    
+    def __repr__(self):
+        res = super().__repr__()
+        if len(res) > 2024:
+            shortb64 = self.file[:30] + "..." + self.file[-30:]
+            cp = self
+            cp.file = shortb64
+            return cp.__repr__()
+        else:
+            return res
+    
 @dataclass(repr=False)
 class PlainText(MessageSegment):
     # 不转义的纯文本消息

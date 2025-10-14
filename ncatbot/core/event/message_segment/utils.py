@@ -12,12 +12,18 @@ def convert_uploadable_object(i):
     def is_base64(s: str):
         if s.startswith("base64://"):
             return True
-        if re.match(
+        elif re.match(
             r"data:image/(jpg|jpeg|png|gif|bmp|webp|tiff|svg|mp4|avi|mov|wmv|flv|mkv|mpg|mpeg|m4v);base64,",
             s,
         ):
             return True
-        return False
+        else:
+            if not re.fullmatch(r'^[A-Za-z0-9+/]+=*$', s):   # 允许末尾有 1~2 个 =
+                return False
+            if len(s) % 4:                                   # 长度必须是 4 的倍数
+                return False
+            if len(s) < 2048:                             # 最小长度限制
+                return False
 
     def to_base64(s: str):
         if s.startswith("base64://"):
@@ -31,6 +37,7 @@ def convert_uploadable_object(i):
                 s,
             )
             return f"base64://{m.group(2)}"
+        return f"base64://{s}"
 
     if i.startswith("http"):
         return i
