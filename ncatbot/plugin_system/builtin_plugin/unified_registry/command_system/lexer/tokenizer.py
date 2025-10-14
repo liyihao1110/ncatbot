@@ -202,7 +202,8 @@ class StringTokenizer:
                 self.position += 1
 
         # 到达字符串末尾但没有找到结束引号
-        raise QuoteMismatchError(start_pos, '"')
+        self._add_token(TokenType.WORD, self.text[start_pos : self.position])
+        return
 
     def _parse_long_option(self):
         """解析长选项 --option 或 --option=value"""
@@ -220,7 +221,12 @@ class StringTokenizer:
             self.position += 1
 
         if not option_name:
-            raise NcatBotError(f"Position {start_pos}: Empty long option")
+            while (
+                self.position < self.length and not self.text[self.position].isspace()
+            ):
+                self.position += 1
+            self._add_token(TokenType.WORD, self.text[start_pos : self.position])
+            return
 
         # 检查是否有参数赋值
         if self.position < self.length and self.text[self.position] == "=":
@@ -243,7 +249,12 @@ class StringTokenizer:
             self.position += 1
 
         if not options:
-            raise NcatBotError(f"Position {start_pos}: Empty short option")
+            while (
+                self.position < self.length and not self.text[self.position].isspace()
+            ):
+                self.position += 1
+            self._add_token(TokenType.WORD, self.text[start_pos : self.position])
+            return
 
         # 检查是否有参数赋值（只对单个选项）
         if (
