@@ -56,15 +56,17 @@ class NoticeEvent(BaseEventData):
 
     def __init__(self, data):
         super().__init__(data)
-        # 确保group_id和user_id转换为字符串类型，保持与MessageEventData一致
+        # 确保group_id、user_id和target_id转换为字符串类型，保持与MessageEventData一致
         if "group_id" in data and data["group_id"] is not None:
             self.group_id = str(data["group_id"])
         if "user_id" in data and data["user_id"] is not None:
             self.user_id = str(data["user_id"])
+        if "target_id" in data and data["target_id"] is not None:
+            self.target_id = str(data["target_id"])
 
         # 处理其他字段
         for k, v in data.items():
-            if k not in ["group_id", "user_id"]:  # 跳过已处理的字段
+            if k not in ["group_id", "user_id", "target_id"]:  # 跳过已处理的字段
                 setattr(self, k, v)
 
     def get_core_properties_str(self):
