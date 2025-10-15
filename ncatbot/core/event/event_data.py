@@ -50,6 +50,9 @@ class BaseEventData:
     def get_core_properties_str(self):
         return []
 
+    def is_group_event(self):
+        return hasattr(self, "group_id") and self.group_id is not None
+
 
 class MessageEventData(BaseEventData):
     message_type: Literal["private", "group"] = None
