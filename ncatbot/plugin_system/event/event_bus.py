@@ -40,7 +40,7 @@ class HandlerTimeoutError(Exception):
 
 
 class EventBus:
-    def __init__(self, default_timeout: float = 5, max_workers: int = 2) -> None:
+    def __init__(self, default_timeout: float = 120, max_workers: int = 1) -> None:
         """
         事件总线实现 - 线程池
 
@@ -75,13 +75,13 @@ class EventBus:
             target=self._monitor_timeouts, daemon=True
         )
         self.monitor_thread.start()
-    
+
     @property
     def workers(self) -> Set[threading.Thread]:
         """当前存活的工作线程（只读）"""
         with self.worker_lock:
             return {t for t in self._worker_map.values() if t.is_alive()}
-    
+
     def _add_worker(self, worker_id: int) -> bool:
         """创建/复活一个工作线程；成功返回 True"""
         with self.worker_lock:
@@ -96,7 +96,7 @@ class EventBus:
                     target=self._worker_loop,
                     args=(worker_id,),
                     daemon=True,
-                    name=f"EventBus_Worker-{worker_id}"
+                    name=f"EventBus_Worker-{worker_id}",
                 )
                 t.start()
                 self._worker_map[worker_id] = t
@@ -147,7 +147,7 @@ class EventBus:
                     if tid in self.worker_timeouts and now > self.worker_timeouts[tid]:
                         self._terminate_thread(worker)
                         self._worker_map.pop(wid, None)
-                        self._add_worker(wid)          # 补充同 ID 新线程
+                        self._add_worker(wid)  # 补充同 ID 新线程
 
                         if tid in self.active_tasks:
                             fut = self.active_tasks.pop(tid)
@@ -326,7 +326,7 @@ class EventBus:
             for worker in list(self._worker_map.values()):
                 if worker.is_alive():
                     self._terminate_thread(worker)
-            self._worker_map.clear()          # 清空映射表
+            self._worker_map.clear()  # 清空映射表
 
         # 清空任务队列
         while not self.task_queue.empty():

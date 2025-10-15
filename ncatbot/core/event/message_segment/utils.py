@@ -15,7 +15,7 @@ def convert_uploadable_object(i):
     def is_base64(s: str):
         if s.startswith("base64://"):
             return True
-        if re.match(
+        elif re.match(
             r"data:image/(jpg|jpeg|png|gif|bmp|webp|tiff|svg|mp4|avi|mov|wmv|flv|mkv|mpg|mpeg|m4v);base64,",
             s,
         ):
