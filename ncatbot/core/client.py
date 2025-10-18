@@ -26,6 +26,7 @@ from .event import (
     BaseEventData,
     PrivateMessageEvent,
     GroupMessageEvent,
+    MessageSendEvent,
     NoticeEvent,
     RequestEvent,
     MetaEvent,
@@ -36,6 +37,7 @@ from ..utils import NcatBotError, NcatBotConnectionError
 from ..utils import (
     OFFICIAL_PRIVATE_MESSAGE_EVENT,
     OFFICIAL_GROUP_MESSAGE_EVENT,
+    OFFICIAL_MESSAGE_SEND_EVENT,
     OFFICIAL_NOTICE_EVENT,
     OFFICIAL_REQUEST_EVENT,
     OFFICIAL_STARTUP_EVENT,
@@ -48,6 +50,7 @@ LOG = get_log("Client")
 EVENTS = (
     OFFICIAL_PRIVATE_MESSAGE_EVENT,
     OFFICIAL_GROUP_MESSAGE_EVENT,
+    OFFICIAL_MESSAGE_SEND_EVENT,
     OFFICIAL_NOTICE_EVENT,
     OFFICIAL_REQUEST_EVENT,
     OFFICIAL_STARTUP_EVENT,
@@ -157,6 +160,19 @@ class BotClient:
                 handler(event)
 
         self.add_handler(OFFICIAL_PRIVATE_MESSAGE_EVENT, wrapper)
+    
+    def add_message_send_handler(
+        self, handler: Callable[[MessageSendEvent], None], filter=None
+    ):
+        async def wrapper(event: MessageSendEvent):
+            new_messages = event.message.filter(filter)
+            if len(new_messages) == 0:
+                return
+            if inspect.iscoroutinefunction(handler):
+                await handler(event)
+            else:
+                handler(event)
+        self.add_handler(OFFICIAL_MESSAGE_SEND_EVENT, handler)
 
     def add_notice_handler(self, handler: Callable[[NoticeEvent], None], filter=None):
         self.add_handler(OFFICIAL_NOTICE_EVENT, handler)
@@ -210,6 +226,19 @@ class BotClient:
             self.add_private_message_handler(f, filter)
             return f  # 其实没有必要
 
+        return decorator
+    
+    def on_message_send(
+        self,
+        filter: Union[Type[MessageSegment], None] = None,
+    ):
+        """装饰器注册消息发送事件处理器"""
+        if filter is not None and not issubclass(filter, MessageSegment):
+            raise TypeError("filter 必须是 MessageSegment 的子类")
+
+        def decorator(f: Callable[[MessageSendEvent], None]):
+            self.add_message_send_handler(f, filter)
+        
         return decorator
 
     def on_notice(self, filter=None):
