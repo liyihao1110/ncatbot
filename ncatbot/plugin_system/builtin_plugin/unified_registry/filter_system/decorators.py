@@ -108,6 +108,27 @@ def on_group_poke(func: Callable) -> Callable:
     return on_notice(decorated_func)
 
 
+def on_group_at(func: Callable) -> Callable:
+    """群聊艾特专用装饰器"""
+    from ncatbot.core.event.message import GroupMessageEvent
+
+    def at_filter(event) -> bool:
+        """检查是否艾特了机器人"""
+        if not isinstance(event, GroupMessageEvent):
+            return False
+        bot_id = event.self_id
+        for message_spiece in event.message.messages:
+            if (
+                message_spiece.msg_seg_type == "at"
+                and getattr(message_spiece, "qq", None) == bot_id
+            ):
+                return True
+        return False
+
+    decorated_func = filter(GroupFilter(), CustomFilter(at_filter, "at_filter"))(func)
+    return on_message(decorated_func)
+
+
 # 兼容
 admin_only = admin_filter
 root_only = root_filter
