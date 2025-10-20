@@ -500,7 +500,7 @@ class GroupAPI(BaseAPI):
         result = await self.async_callback("/send_group_sign", {"group_id": group_id})
         APIReturnStatus.raise_if_failed(result)
 
-    async def get_qun_album_list(self, group_id:Union[str, int]) -> list[dict]:
+    async def get_group_album_list(self, group_id:Union[str, int]) -> list[dict]:
         """获取群相册列表"""
         result = await self.async_callback("/get_qun_album_list", {"group_id": group_id})
         status = APIReturnStatus(result)
@@ -555,6 +555,13 @@ class GroupAPI(BaseAPI):
                 "tip_window_type": tip_window_type,
                 "type": type,
             },
+        )
+        APIReturnStatus.raise_if_failed(result)
+
+    async def set_group_todo(self, group_id: Union[str, int], message_id: Union[str, int]) -> dict:
+        """设置群待办"""
+        result = await self.async_callback(
+            "/set_group_todo", {"group_id": group_id, "message_id": message_id}
         )
         APIReturnStatus.raise_if_failed(result)
 
