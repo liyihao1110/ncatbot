@@ -505,6 +505,11 @@ class GroupAPI(BaseAPI):
         result = await self.async_callback("/get_qun_album_list", {"group_id": group_id})
         status = APIReturnStatus(result)
         return status.data
+    
+    async def upload_image_to_group_album(self, group_id:Union[str, int], file:str, album_id:str="", album_name:str="") -> None:
+        """上传图片到群相册"""
+        result = await self.async_callback("/upload_image_to_qun_album", {"group_id": group_id, "album_name": album_name, "album_id": album_id, "file": file})
+        APIReturnStatus.raise_if_failed(result)
 
     # --------------
     # region 其它(管理员功能)
