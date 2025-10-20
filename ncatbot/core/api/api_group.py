@@ -500,6 +500,12 @@ class GroupAPI(BaseAPI):
         result = await self.async_callback("/send_group_sign", {"group_id": group_id})
         APIReturnStatus.raise_if_failed(result)
 
+    async def get_qun_album_list(self, group_id:Union[str, int]) -> list[dict]:
+        """获取群相册列表"""
+        result = await self.async_callback("/get_qun_album_list", {"group_id": group_id})
+        status = APIReturnStatus(result)
+        return status.data
+
     # --------------
     # region 其它(管理员功能)
     # --------------
