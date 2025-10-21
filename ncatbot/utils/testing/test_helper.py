@@ -6,6 +6,7 @@ from ncatbot.utils import run_coroutine
 
 if TYPE_CHECKING:
     from ncatbot.core.event.message_segment import MessageArray
+    from .test_client import TestClient
 else:
     MessageArray = "MessageArray"
 
@@ -15,7 +16,7 @@ LOG = get_log("TestHelper")
 class TestHelper:
     """通用测试助手类"""
 
-    def __init__(self, client_with_mixin):
+    def __init__(self, client_with_mixin: TestClient):
         self.client = client_with_mixin
         self.mock_api = MockAPIAdapter()
 
@@ -136,3 +137,69 @@ class TestHelper:
         # 这里需要与 RBAC 系统集成
         # 暂时留空，等待 RBAC 系统的接口
         LOG.warning(f"set_user_permission 方法尚未实现: {user_id} -> {role}")
+
+    async def on_friend_request(
+        self,
+        user_id: str = "987654321",
+        comment: str = " "
+    ):
+        """创建添加好友请求事件并处理"""
+        event = EventFactory.create_friend_request_event(
+            user_id=user_id, comment=comment
+        )
+        LOG.info(f"创建添加好友请求事件: {event}")
+        await self.client.inject_event(event)
+
+    async def on_group_add_request(
+        self,
+        user_id: str = "987654321",
+        group_id: str = "123456789",
+        comment: str = " "
+    ):
+        """创建加入群聊请求事件并处理"""
+        event = EventFactory.create_group_add_request_event(
+            user_id=user_id, group_id=group_id, comment=comment
+        )
+        LOG.info(f"创建加入群聊请求事件: {event}")
+        await self.client.inject_event(event)
+
+    async def on_group_increase_notice(
+        self,
+        user_id: str = "987654321",
+        group_id: str = "123456789",
+        operator_id: str = "88888888",
+        comment: str = " "
+    ):
+        """创建群成员增加通知事件（管理通过审核）并处理"""
+        event = EventFactory.create_group_increase_notice_event(
+            user_id=user_id, group_id=group_id, operator_id=operator_id, comment=comment
+        )
+        LOG.info(f"创建群成员增加通知事件（管理通过审核）: {event}")
+        await self.client.inject_event(event)
+
+    async def on_group_decrease_notice(
+        self,
+        user_id: str = "987654321",
+        group_id: str = "123456789",
+        operator_id: str = "88888888",
+        comment: str = " "
+    ):
+        """创建群成员减少通知事件（被管理员踢出）并处理"""
+        event = EventFactory.create_group_decrease_notice_event(
+            user_id=user_id, group_id=group_id, operator_id=operator_id, comment=comment, subtype="kick"
+        )
+        LOG.info(f"创建群成员减少通知事件（被管理员踢出）: {event}")
+        await self.client.inject_event(event)
+
+    async def on_group_poke_notice(
+        self,
+        user_id: str = "987654321",
+        group_id: str = "123456789",
+        target_id: str = "77777777"
+    ):
+        """创建群成员戳一戳通知事件并处理"""
+        event = EventFactory.create_group_poke_notice_event(
+            user_id=user_id, group_id=group_id, target_id=target_id
+        )
+        LOG.info(f"创建群成员戳一戳通知事件: {event}")
+        await self.client.inject_event(event)
