@@ -178,7 +178,7 @@ class BotClient:
         self.add_handler(OFFICIAL_NOTICE_EVENT, handler)
 
     def add_request_handler(
-        self, handler: Callable[[RequestEvent], None], filter=Literal["group", "friend"]
+        self, handler: Callable[[RequestEvent], None], filter:Literal["group", "friend"] = "group"
     ):
         async def wrapper(event: RequestEvent):
             if filter != event.request_type:
