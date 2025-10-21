@@ -59,8 +59,10 @@ class RequestEvent(BaseEventData):
 
     def __init__(self, data):
         super().__init__(data)
+        _group_id = data.get("group_id", None)
+        _user_id = data.get("user_id", None)
         self.request_type = data.get("request_type")
         self.comment = data.get("comment")
         self.flag = data.get("flag")
-        self.group_id = str(data.get("group_id", None))
-        self.user_id = str(data.get("user_id", None))
+        self.group_id = str(_group_id) if _group_id is not None else None
+        self.user_id = str(_user_id) if _user_id is not None else None
