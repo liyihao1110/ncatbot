@@ -147,7 +147,7 @@ class PrivateMessageEvent(BaseMessageEvent):
     def __repr__(self):
         return super().__repr__()
     
-class MessageSendEvent(BaseMessageEvent):
+class MessageSentEvent(BaseMessageEvent):
     message_type: Literal["group", "private"] = None  # 上级会获取
     sub_type: Literal["friend", "group", "other", "normal"] = None  # 上级会获取
     sender: Union[PrivateSender, GroupSender] = None

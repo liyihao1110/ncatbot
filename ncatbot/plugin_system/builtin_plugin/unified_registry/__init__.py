@@ -24,6 +24,7 @@ from .filter_system.decorators import (
     private_only,
     group_only,
     on_message,
+    on_message_sent,
     on_notice,
     on_request,
 )
@@ -67,6 +68,7 @@ __all__ = [
     "admin_group_filter",
     "admin_private_filter",
     "on_message",
+    "on_message_sent",
     "option",
     "param",
     "option_group",

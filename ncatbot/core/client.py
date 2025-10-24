@@ -26,7 +26,7 @@ from .event import (
     BaseEventData,
     PrivateMessageEvent,
     GroupMessageEvent,
-    MessageSendEvent,
+    MessageSentEvent,
     NoticeEvent,
     RequestEvent,
     MetaEvent,
@@ -37,7 +37,7 @@ from ..utils import NcatBotError, NcatBotConnectionError
 from ..utils import (
     OFFICIAL_PRIVATE_MESSAGE_EVENT,
     OFFICIAL_GROUP_MESSAGE_EVENT,
-    OFFICIAL_MESSAGE_SEND_EVENT,
+    OFFICIAL_MESSAGE_SENT_EVENT,
     OFFICIAL_NOTICE_EVENT,
     OFFICIAL_REQUEST_EVENT,
     OFFICIAL_STARTUP_EVENT,
@@ -50,7 +50,7 @@ LOG = get_log("Client")
 EVENTS = (
     OFFICIAL_PRIVATE_MESSAGE_EVENT,
     OFFICIAL_GROUP_MESSAGE_EVENT,
-    OFFICIAL_MESSAGE_SEND_EVENT,
+    OFFICIAL_MESSAGE_SENT_EVENT,
     OFFICIAL_NOTICE_EVENT,
     OFFICIAL_REQUEST_EVENT,
     OFFICIAL_STARTUP_EVENT,
@@ -115,6 +115,9 @@ class BotClient:
             self.add_group_message_handler(
                 make_async_handler(OFFICIAL_GROUP_MESSAGE_EVENT)
             )
+            self.add_message_sent_handler(
+                make_async_handler(OFFICIAL_MESSAGE_SENT_EVENT)
+            )
             self.add_notice_handler(make_async_handler(OFFICIAL_NOTICE_EVENT))
             self.add_request_handler(make_async_handler(OFFICIAL_REQUEST_EVENT))
             self.add_shutdown_handler(make_async_handler(OFFICIAL_SHUTDOWN_EVENT))
@@ -161,10 +164,10 @@ class BotClient:
 
         self.add_handler(OFFICIAL_PRIVATE_MESSAGE_EVENT, wrapper)
     
-    def add_message_send_handler(
-        self, handler: Callable[[MessageSendEvent], None], filter=None
+    def add_message_sent_handler(
+        self, handler: Callable[[MessageSentEvent], None], filter=None
     ):
-        async def wrapper(event: MessageSendEvent):
+        async def wrapper(event: MessageSentEvent):
             new_messages = event.message.filter(filter)
             if len(new_messages) == 0:
                 return
@@ -172,7 +175,7 @@ class BotClient:
                 await handler(event)
             else:
                 handler(event)
-        self.add_handler(OFFICIAL_MESSAGE_SEND_EVENT, handler)
+        self.add_handler(OFFICIAL_MESSAGE_SENT_EVENT, wrapper)
 
     def add_notice_handler(self, handler: Callable[[NoticeEvent], None], filter=None):
         self.add_handler(OFFICIAL_NOTICE_EVENT, handler)
@@ -228,7 +231,7 @@ class BotClient:
 
         return decorator
     
-    def on_message_send(
+    def on_message_sent(
         self,
         filter: Union[Type[MessageSegment], None] = None,
     ):
@@ -236,8 +239,8 @@ class BotClient:
         if filter is not None and not issubclass(filter, MessageSegment):
             raise TypeError("filter 必须是 MessageSegment 的子类")
 
-        def decorator(f: Callable[[MessageSendEvent], None]):
-            self.add_message_send_handler(f, filter)
+        def decorator(f: Callable[[MessageSentEvent], None]):
+            self.add_message_sent_handler(f, filter)
         
         return decorator
 
