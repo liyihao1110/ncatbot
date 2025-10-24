@@ -1,4 +1,4 @@
-from typing import Optional, Dict, List, Union, TYPE_CHECKING
+from typing import Literal, Optional, Dict, List, Union, TYPE_CHECKING
 from .event_factory import EventFactory
 from .mock_api import MockAPIAdapter
 from ncatbot.utils import get_log
@@ -167,13 +167,16 @@ class TestHelper:
         user_id: str = "987654321",
         group_id: str = "123456789",
         operator_id: str = "88888888",
-        comment: str = " "
+        comment: str = " ",
+        sub_type: Literal["approve", "invite"] = "approve"
     ):
-        """创建群成员增加通知事件（管理通过审核）并处理"""
+        """创建群成员增加通知事件并处理"""
+        if sub_type not in ["approve", "invite"]:
+            raise ValueError("sub_type must be 'approve' or 'invite'")
         event = EventFactory.create_group_increase_notice_event(
-            user_id=user_id, group_id=group_id, operator_id=operator_id, comment=comment
+            user_id=user_id, group_id=group_id, operator_id=operator_id, comment=comment, sub_type=sub_type
         )
-        LOG.info(f"创建群成员增加通知事件（管理通过审核）: {event}")
+        LOG.info(f"创建群成员增加通知事件（sub_type={sub_type}）: {event}")
         await self.client.inject_event(event)
 
     async def on_group_decrease_notice(
@@ -181,24 +184,30 @@ class TestHelper:
         user_id: str = "987654321",
         group_id: str = "123456789",
         operator_id: str = "88888888",
-        comment: str = " "
+        comment: str = " ",
+        sub_type: Literal["leave", "kick"] = "leave"
     ):
-        """创建群成员减少通知事件（被管理员踢出）并处理"""
+        """创建群成员减少通知事件并处理"""
+        if sub_type not in ["leave", "kick"]:
+            raise ValueError("sub_type must be 'leave' or 'kick'")
+        if sub_type == "leave":
+            operator_id = "0"
         event = EventFactory.create_group_decrease_notice_event(
-            user_id=user_id, group_id=group_id, operator_id=operator_id, comment=comment, subtype="kick"
+            user_id=user_id, group_id=group_id, operator_id=operator_id, comment=comment, sub_type=sub_type
         )
-        LOG.info(f"创建群成员减少通知事件（被管理员踢出）: {event}")
+        LOG.info(f"创建群成员减少通知事件（sub_type={sub_type}）: {event}")
         await self.client.inject_event(event)
 
     async def on_group_poke_notice(
         self,
         user_id: str = "987654321",
         group_id: str = "123456789",
-        target_id: str = "77777777"
+        target_id: str = "77777777",
+        raw_info: Optional[Dict] = None
     ):
-        """创建群成员戳一戳通知事件并处理"""
+        """创建群成员戳一戳通知事件并处理，raw_info 没有进行数据验证，谨慎传入。"""
         event = EventFactory.create_group_poke_notice_event(
-            user_id=user_id, group_id=group_id, target_id=target_id
+            user_id=user_id, group_id=group_id, target_id=target_id, raw_info=raw_info
         )
         LOG.info(f"创建群成员戳一戳通知事件: {event}")
         await self.client.inject_event(event)
