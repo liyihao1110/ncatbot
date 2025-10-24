@@ -27,6 +27,10 @@ from .filter_system.decorators import (
     on_message_sent,
     on_notice,
     on_request,
+    on_group_at,
+    on_group_poke,
+    on_group_increase,
+    on_group_request,
 )
 from .filter_system.decorators import (
     admin_filter,
@@ -72,6 +76,10 @@ __all__ = [
     "option",
     "param",
     "option_group",
+    "on_group_at",
+    "on_group_increase",
+    "on_group_poke",
+    "on_group_request",
     # 过滤器相关
     "BaseFilter",
     "GroupFilter",
