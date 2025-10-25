@@ -14,6 +14,7 @@ from .builtin_plugin.unified_registry import filter_registry, command_registry
 from .decorator import CompatibleHandler
 from .builtin_plugin.unified_registry import (
     on_message,
+    on_message_sent,
     option,
     param,
     option_group,
@@ -43,6 +44,7 @@ __all__ = [
     "filter_registry",
     "command_registry",
     "on_message",
+    "on_message_sent",
     "option",
     "param",
     "option_group",

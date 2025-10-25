@@ -17,7 +17,7 @@ NAPCAT_WEBUI_SALT = "napcat"
 
 OFFICIAL_GROUP_MESSAGE_EVENT = "ncatbot.group_message_event"
 OFFICIAL_PRIVATE_MESSAGE_EVENT = "ncatbot.private_message_event"
-OFFICIAL_MESSAGE_SEND_EVENT = "ncatbot.message_sent_event"
+OFFICIAL_MESSAGE_SENT_EVENT = "ncatbot.message_sent_event"
 OFFICIAL_REQUEST_EVENT = "ncatbot.request_event"
 OFFICIAL_NOTICE_EVENT = "ncatbot.notice_event"
 OFFICIAL_STARTUP_EVENT = "ncatbot.startup_event"
@@ -109,7 +109,7 @@ __all__ = [
     "REQUEST_SUCCESS",
     "OFFICIAL_GROUP_MESSAGE_EVENT",
     "OFFICIAL_PRIVATE_MESSAGE_EVENT",
-    "OFFICIAL_MESSAGE_SEND_EVENT",
+    "OFFICIAL_MESSAGE_SENT_EVENT",
     "OFFICIAL_REQUEST_EVENT",
     "OFFICIAL_NOTICE_EVENT",
     "OFFICIAL_STARTUP_EVENT",

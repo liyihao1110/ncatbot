@@ -5,6 +5,7 @@ from typing import Callable, Union, TYPE_CHECKING
 from .builtin import (
     GroupFilter,
     PrivateFilter,
+    MessageSentFilter,
     AdminFilter,
     RootFilter,
     TrueFilter,
@@ -65,6 +66,11 @@ def on_message(func: Callable) -> Callable:
     deco = filter(TrueFilter())
     return deco(func)
 
+def on_message_sent(func: Callable) -> Callable:
+    """自身上报消息专用装饰器"""
+    deco = filter(MessageSentFilter())
+    return deco(func)
+
 
 # 组合装饰器
 def admin_group_filter(func: Callable) -> Callable:
@@ -79,6 +85,7 @@ def admin_private_filter(func: Callable) -> Callable:
     return deco(func)
 
 
+# 专用事件过滤器
 def on_request(func: Callable) -> Callable:
     """请求专用装饰器"""
     from ..legacy_registry import legacy_registry
