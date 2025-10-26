@@ -152,6 +152,21 @@ def on_group_increase(func: Callable) -> Callable:
     return on_notice(decorated_func)
 
 
+def on_group_decrease(func: Callable) -> Callable:
+    """群聊人数减少专用装饰器"""
+
+    def group_decrease_filter(event) -> bool:
+        """检查是否是群聊人数减少事件"""
+        from ncatbot.core.event.notice import NoticeEvent
+
+        return isinstance(event, NoticeEvent) and event.notice_type == "group_decrease"
+
+    decorated_func = filter(
+        GroupFilter(), CustomFilter(group_decrease_filter, "group_decrease_filter")
+    )(func)
+    return on_notice(decorated_func)
+
+
 def on_group_request(func: Callable) -> Callable:
     """群聊请求专用装饰器"""
 

@@ -27,6 +27,7 @@ from .builtin_plugin.unified_registry import (
     on_group_at,
     on_group_poke,
     on_group_increase,
+    on_group_decrease,
     on_group_request,
 )
 from .builtin_plugin.unified_registry import (
@@ -56,6 +57,7 @@ __all__ = [
     "on_notice",
     "on_group_at",
     "on_group_increase",
+    "on_group_decrease",
     "on_group_poke",
     "on_group_request",
     "admin_only",
