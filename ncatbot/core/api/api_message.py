@@ -582,21 +582,21 @@ class MessageAPI(BaseAPI):
     async def get_group_msg_history(
         self,
         group_id: Union[str, int],
-        message_seq: Union[str, int],
+        message_seq: Optional[Union[str, int]] = None,
         count: int = 20,
         reverseOrder: bool = False,
     ) -> List[GroupMessageEvent]:
-        result = await self.async_callback(
-            "/get_group_msg_history",
-            {
-                "group_id": group_id,
-                "message_seq": message_seq,
-                "count": count,
-                "reverseOrder": reverseOrder,
-            },
-        )
+        data = {
+            "group_id": group_id,
+            "count": count,
+            "reverseOrder": reverseOrder,
+        }
+        if message_seq is not None:
+            data["message_seq"] = message_seq
+        result = await self.async_callback("/get_group_msg_history", data)
         status = APIReturnStatus(result)
         return [GroupMessageEvent(data) for data in status.data.get("messages")]
+
 
     async def get_msg(self, message_id: Union[str, int]) -> BaseMessageEvent:
         result = await self.async_callback("/get_msg", {"message_id": message_id})
@@ -917,7 +917,7 @@ class MessageAPI(BaseAPI):
     def get_group_msg_history_sync(
         self,
         group_id: Union[str, int],
-        message_seq: Union[str, int],
+        message_seq: Optional[Union[str, int]] = None,
         number: int = 20,
         reverseOrder: bool = False,
     ) -> List[GroupMessageEvent]:
