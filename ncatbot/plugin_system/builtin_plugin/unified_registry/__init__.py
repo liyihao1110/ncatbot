@@ -30,6 +30,7 @@ from .filter_system.decorators import (
     on_group_at,
     on_group_poke,
     on_group_increase,
+    on_group_decrease,
     on_group_request,
 )
 from .filter_system.decorators import (
@@ -78,6 +79,7 @@ __all__ = [
     "option_group",
     "on_group_at",
     "on_group_increase",
+    "on_group_decrease",
     "on_group_poke",
     "on_group_request",
     # 过滤器相关

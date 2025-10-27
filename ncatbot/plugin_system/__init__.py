@@ -24,6 +24,11 @@ from .builtin_plugin.unified_registry import (
     group_only,
     on_request,
     on_notice,
+    on_group_at,
+    on_group_poke,
+    on_group_increase,
+    on_group_decrease,
+    on_group_request,
 )
 from .builtin_plugin.unified_registry import (
     admin_filter,
@@ -50,6 +55,11 @@ __all__ = [
     "option_group",
     "on_request",
     "on_notice",
+    "on_group_at",
+    "on_group_increase",
+    "on_group_decrease",
+    "on_group_poke",
+    "on_group_request",
     "admin_only",
     "root_only",
     "private_only",
