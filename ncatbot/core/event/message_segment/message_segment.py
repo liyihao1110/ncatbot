@@ -4,7 +4,7 @@ import httpx
 import urllib.parse
 import copy
 from dataclasses import dataclass, field, fields
-from typing import Literal, Union, Any, TYPE_CHECKING, TypeVar, Dict, Type, List
+from typing import Literal, Optional, Union, Any, TYPE_CHECKING, TypeVar, Dict, Type, List
 from ....utils import get_log, run_coroutine, NcatBotError, status
 from .utils import convert_uploadable_object
 
@@ -493,10 +493,10 @@ class Music(MessageSegment):
         self,
         type: Literal["qq", "163", "custom"],
         id: Union[int, str],
-        url: str,
-        title: str,
-        content: str = None,
-        image: str = None,
+        url: Optional[str] = None,
+        title: Optional[str] = None,
+        content: Optional[str] = None,
+        image: Optional[str] = None,
     ):
         self.msg_seg_type = "music"
         self.type = type
