@@ -19,7 +19,7 @@ from typing_extensions import Unpack
 if TYPE_CHECKING:
     from ncatbot.plugin_system import BasePlugin
 
-from .adapter import lanuch_napcat_service, Adapter
+from .adapter import launch_napcat_service, Adapter
 from .api import BotAPI
 from .event import (
     MessageSegment,
@@ -75,6 +75,7 @@ class StartArgs(TypedDict, total=False):
 
 class BotClient:
     _initialized = False  # 兼容旧版本检查
+    _running = False
 
     def __init__(self, only_private: bool = False, max_workers: int = 16):
         if self._initialized:
@@ -163,7 +164,7 @@ class BotClient:
                 handler(event)
 
         self.add_handler(OFFICIAL_PRIVATE_MESSAGE_EVENT, wrapper)
-    
+
     def add_message_sent_handler(
         self, handler: Callable[[MessageSentEvent], None], filter=None
     ):
@@ -175,13 +176,16 @@ class BotClient:
                 await handler(event)
             else:
                 handler(event)
+
         self.add_handler(OFFICIAL_MESSAGE_SENT_EVENT, wrapper)
 
     def add_notice_handler(self, handler: Callable[[NoticeEvent], None], filter=None):
         self.add_handler(OFFICIAL_NOTICE_EVENT, handler)
 
     def add_request_handler(
-        self, handler: Callable[[RequestEvent], None], filter:Literal["group", "friend"] = "group"
+        self,
+        handler: Callable[[RequestEvent], None],
+        filter: Literal["group", "friend"] = "group",
     ):
         async def wrapper(event: RequestEvent):
             if filter != event.request_type:
@@ -230,7 +234,7 @@ class BotClient:
             return f  # 其实没有必要
 
         return decorator
-    
+
     def on_message_sent(
         self,
         filter: Union[Type[MessageSegment], None] = None,
@@ -241,7 +245,7 @@ class BotClient:
 
         def decorator(f: Callable[[MessageSentEvent], None]):
             self.add_message_sent_handler(f, filter)
-        
+
         return decorator
 
     def on_notice(self, filter=None):
@@ -290,6 +294,9 @@ class BotClient:
         return decorator
 
     def bot_exit(self):
+        if not self._running:
+            LOG.warning("Bot 未处于运行状态, 无法退出")
+            return
         status.exit = True
         asyncio.run(self.plugin_loader.unload_all())
         LOG.info("Bot 已经正常退出")
@@ -361,13 +368,15 @@ class BotClient:
         self.event_bus = EventBus()
         self.plugin_loader = PluginLoader(self.event_bus, debug=ncatbot_config.debug)
 
+        self._running = True
+
         run_coroutine(self.plugin_loader.load_plugins)
 
         if getattr(self, "mock_mode", False):  # MockMixin 中提供
             self.mock_start()
         else:
             # 启动服务（仅在非 mock 模式下）
-            lanuch_napcat_service()
+            launch_napcat_service()
             try:
                 asyncio.run(self.adapter.connect_websocket())
             except NcatBotConnectionError:
