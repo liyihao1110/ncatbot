@@ -5,7 +5,7 @@ import subprocess
 import time
 import traceback
 
-from ....utils import WINDOWS_NAPCAT_DIR, ncatbot_config, get_log
+from ....utils import WINDOWS_NAPCAT_DIR, LINUX_NAPCAT_DIR, ncatbot_config, get_log
 
 LOG = get_log("adapter.nc.start")
 
@@ -48,7 +48,9 @@ def start_napcat_linux():
         )
         process.wait()
         if process.returncode != 0:
-            LOG.error("启动 napcat 失败，请检查日志，napcat cli 可能没有被正确安装")
+            LOG.error(
+                f"启动 napcat 失败，请检查日志和目录 {LINUX_NAPCAT_DIR}，napcat cli 可能没有被正确安装"
+            )
             raise FileNotFoundError("napcat cli 可能没有被正确安装")
         if ncatbot_config.napcat.stop_napcat:
             atexit.register(lambda: stop_napcat_linux(ncatbot_config.bt_uin))
