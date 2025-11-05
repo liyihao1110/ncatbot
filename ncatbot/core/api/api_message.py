@@ -664,7 +664,7 @@ class MessageAPI(BaseAPI):
         # TODO: 返回值(不紧急)
         result = await self.async_callback(
             "/fetch_emoji_like",
-            {"message_id": message_id, "emoji_id": emoji_id, "emoji_type": emoji_type},
+            {"message_id": message_id, "emojiId": emoji_id, "emojiType": emoji_type},
         )
         status = APIReturnStatus(result)
         return status.data
