@@ -45,9 +45,9 @@ class AccountAPI(BaseAPI):
         )
         APIReturnStatus.raise_if_failed(result)
 
-    async def set_avatar(self, file: str) -> None:
+    async def set_qq_avatar(self, file: str) -> None:
         result = await self.async_callback(
-            "/set_avatar", {"file": convert_uploadable_object(file)}
+            "/set_qq_avatar", {"file": convert_uploadable_object(file)}
         )
         APIReturnStatus.raise_if_failed(result)
 
@@ -79,7 +79,9 @@ class AccountAPI(BaseAPI):
 
         return status.data
 
-    async def send_like(self, user_id: Union[str, int], times: int = 1) -> Dict[str, Any]:
+    async def send_like(
+        self, user_id: Union[str, int], times: int = 1
+    ) -> Dict[str, Any]:
         result = await self.async_callback(
             "/send_like", {"user_id": user_id, "times": times}
         )
@@ -210,8 +212,8 @@ class AccountAPI(BaseAPI):
     ) -> None:
         return run_coroutine(self.set_online_status, status, ext_status, battary_status)
 
-    def set_avatar_sync(self, file: str) -> None:
-        return run_coroutine(self.set_avatar, file)
+    def set_qq_avatar_sync(self, file: str) -> None:
+        return run_coroutine(self.set_qq_avatar, file)
 
     def set_self_longnick_sync(self, longNick: str) -> None:
         return run_coroutine(self.set_self_longnick, longNick)
@@ -225,7 +227,9 @@ class AccountAPI(BaseAPI):
     def get_friends_with_cat_sync(self) -> List[dict]:
         return run_coroutine(self.get_friends_with_cat)
 
-    def send_like_sync(self, user_id: Union[str, int], times: int = 1) -> dict[str, Any]:
+    def send_like_sync(
+        self, user_id: Union[str, int], times: int = 1
+    ) -> dict[str, Any]:
         return run_coroutine(self.send_like, user_id, times)
 
     def set_friend_add_request_sync(
