@@ -260,7 +260,7 @@ class PluginLoader:
         # 并发执行所有插件的初始化
         await asyncio.gather(*init_tasks)
 
-    async def load_plugin(self, plugin_class: Type[BasePlugin], **kwargs) -> None:
+    async def load_plugin(self, plugin_class: Type[BasePlugin], **kwargs) -> BasePlugin:
         plugin = plugin_class(
             event_bus=self.event_bus,
             debug=self._debug,

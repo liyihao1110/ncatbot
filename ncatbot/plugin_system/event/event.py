@@ -101,3 +101,22 @@ class NcatBotEvent:
 
     def __repr__(self):
         return f'Event(type="{self.type}",data={self.data},results={self.results},exceptions={self.exceptions})'
+
+
+class NcatBotEventFactory:
+    """事件工厂类
+
+    用于创建不同类型的事件实例。
+    """
+
+    @staticmethod
+    def create_event(name: str, **kwargs: Any) -> NcatBotEvent:
+        """创建事件实例
+
+        Args:
+            name: 事件类型标识符
+            **kwargs: 事件携带的数据
+        Returns:
+            NcatBotEvent: 创建的事件实例
+        """
+        return NcatBotEvent(f"ncatbot.{name}", data=kwargs)

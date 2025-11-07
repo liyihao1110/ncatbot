@@ -1,7 +1,7 @@
 from ..builtin_mixin import NcatBotPlugin
 from .unified_registry import command_registry, filter_registry, root_filter
 from .unified_registry.command_system.registry import option_group
-from ..event import NcatBotEvent
+from ..event.event import NcatBotEventFactory, NcatBotEvent
 from ncatbot.core.event import BaseMessageEvent
 import psutil
 import ncatbot
@@ -17,7 +17,8 @@ class SystemManager(NcatBotPlugin):
     description = "ncatbot 系统管理插件"
 
     async def on_load(self) -> None:
-        pass
+        self.register_handler("ncatbot.plugin_load_request", self.load_plugin)
+        self.register_handler("ncatbot.plugin_unload_request", self.unload_plugin)
 
     @command_registry.command("ncatbot_status", aliases=["ncs"])
     @root_filter
@@ -79,13 +80,26 @@ class SystemManager(NcatBotPlugin):
             run_coroutine(config.on_change, oldvalue, newvalue)
         await event.reply(f"插件 {plugin_name} 配置 {config_name} 更新为 {value}")
 
-    async def unload_plugin(self, name):
-        """卸载插件"""
+    async def unload_plugin(self, event: NcatBotEvent) -> bool:
+        """卸载插件, 可以把自己卸了"""
+        name = event.data.get("name")
         plugin = self.get_plugin(name)
         if not plugin:
             LOG.warning(f"尝试卸载不存在的插件 {name}")
             return False
         await self._loader.unload_plugin(name)
-        await self.event_bus.publish(NcatBotEvent("ncatbot.plugin_unload", {"name": name}))
+        await self.event_bus.publish(NcatBotEventFactory.create_event("plugin_unload", name=name))
         LOG.info(f"插件 {name} 已卸载")
         return True
+
+    async def load_plugin(self, name):
+        """加载插件"""
+        plugin = await self._loader.load_plugin(name)
+        if not plugin:
+            LOG.warning(f"尝试加载失败的插件 {name}")
+            return False
+        await self.event_bus.publish(NcatBotEventFactory.create_event("plugin_load", name=plugin.name))
+        LOG.info(f"插件 {plugin.name} 已加载")
+        return True
+
+    
