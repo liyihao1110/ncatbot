@@ -1,6 +1,7 @@
 from ..builtin_mixin import NcatBotPlugin
 from .unified_registry import command_registry, filter_registry, root_filter
 from .unified_registry.command_system.registry import option_group
+from ..event import NcatBotEvent
 from ncatbot.core.event import BaseMessageEvent
 import psutil
 import ncatbot
@@ -77,3 +78,14 @@ class SystemManager(NcatBotPlugin):
         if config.on_change:
             run_coroutine(config.on_change, oldvalue, newvalue)
         await event.reply(f"插件 {plugin_name} 配置 {config_name} 更新为 {value}")
+
+    async def unload_plugin(self, name):
+        """卸载插件"""
+        plugin = self.get_plugin(name)
+        if not plugin:
+            LOG.warning(f"尝试卸载不存在的插件 {name}")
+            return False
+        await self._loader.unload_plugin(name)
+        await self.event_bus.publish(NcatBotEvent("ncatbot.plugin_unload", {"name": name}))
+        LOG.info(f"插件 {name} 已卸载")
+        return True
