@@ -83,7 +83,11 @@ class BotClient:
         self._initialized = True
         self.adapter = Adapter()
         self.event_handlers: Dict[str, list] = {}
-        self.thread_pool = ThreadPool(max_workers=max_workers, max_per_func=4)
+        # ThreadPool 已废弃,纯异步架构不再需要
+        if max_workers != 16:
+            LOG.warning(
+                f"BotClient 已重构为纯异步架构,max_workers 参数已废弃(传入值: {max_workers})"
+            )
         self.api = BotAPI(self.adapter.send)
         self.crash_flag = False
         status.global_api = self.api
@@ -126,9 +130,15 @@ class BotClient:
 
     def create_official_event_handler_group(self, event_name):
         async def event_callback(event: BaseEventData):
-            # 处理回调, 不能阻塞
+            # 纯异步版本:非阻塞式并发执行
+            # 关键:只创建任务,不等待完成(fire-and-forget)
             for handler in self.event_handlers[event_name]:
-                self.thread_pool.submit(handler, event)
+                if inspect.iscoroutinefunction(handler):
+                    # 创建异步任务,让它在后台运行
+                    asyncio.create_task(handler(event))
+                else:
+                    # 同步处理器在线程池中执行,避免阻塞事件循环
+                    asyncio.create_task(asyncio.to_thread(handler, event))
 
         self.adapter.event_callback[event_name] = event_callback
         self.event_handlers[event_name] = []
