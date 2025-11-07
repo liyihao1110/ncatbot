@@ -40,7 +40,6 @@ if TYPE_CHECKING:
     import importlib.util
 
 LOG = get_log("PluginLoader")
-_PLUGINS_DIR = config.plugins_dir
 _AUTO_INSTALL = config.auto_install_pip_pack
 
 
@@ -53,45 +52,100 @@ class _ModuleImporter:
     def __init__(self, directory: str):
         self.directory = Path(directory).resolve()
 
-    def load_all(self) -> Dict[str, ModuleType]:
+    def inspect_all(self) -> List[str]:
         """返回 {插件名: 模块对象}。"""
-        modules: Dict[str, ModuleType] = {}
-        if not self.directory.exists():
-            return modules
+        plugin_folder_names: List[str] = []
+        for entry in self.directory.iterdir():
+            name = entry.stem
+            if entry.is_dir() and (entry / "__init__.py").exists():
+                name, path = entry.name, entry
+            else:
+                LOG.warning("跳过非插件文件/目录: %s", entry)
+            plugin_folder_names.append(name)
+        return plugin_folder_names
 
-        original_path = [*sys.path]
+    def unload_module(self, name: str) -> bool:
+        """
+        卸载指定模块及其所有子模块
+        
+        Args:
+            name: 模块完整名称，如 'plugins.my_plugin'
+        
+        Returns:
+            bool: 是否成功卸载（若模块不存在也返回True）
+        """
+        if not name or not isinstance(name, str):
+            LOG.warning("无效的模块名称: %s", name)
+            return False
+        
+        # 收集目标模块及其所有子模块
+        modules_to_remove = [
+            module_name for module_name in list(sys.modules.keys())
+            if module_name == name or module_name.startswith(f"{name}.")
+        ]
+        
+        if not modules_to_remove:
+            LOG.debug("模块 %s 未加载，无需卸载", name)
+            return True
+        
+        # 执行卸载
+        removed_count = 0
+        for module_name in modules_to_remove:
+            try:
+                del sys.modules[module_name]
+                removed_count += 1
+                LOG.debug("已卸载模块: %s", module_name)
+            except KeyError:
+                pass  # 可能已被其他线程卸载
+        
+        LOG.info("成功卸载模块 %s (共 %d 个模块)", name, removed_count)
+        return True
+
+    def load_module(self, name: str, path: Path) -> Optional[ModuleType]:
+        """
+        加载模块并自动处理依赖
+        
+        Args:
+            name: 模块名称
+            path: 模块路径（文件或目录）
+        
+        Returns:
+            加载成功的模块对象，失败返回 None
+        """
+        if not name or not path:
+            LOG.error("模块名称或路径无效: name=%s, path=%s", name, path)
+            return None
+        
+        if not path.exists():
+            LOG.error("模块路径不存在: %s", path)
+            return None
+        
         try:
-            sys.path.insert(0, str(self.directory))
-            for entry in self.directory.iterdir():
-                name = entry.stem
-                if ncatbot_config.plugin.plugin_whitelist:
-                    if name not in ncatbot_config.plugin.plugin_whitelist:
-                        LOG.info("插件文件「%s」不在白名单内，跳过加载", name)
-                        continue
-
-                if ncatbot_config.plugin.plugin_blacklist:
-                    if name in ncatbot_config.plugin.plugin_blacklist:
-                        LOG.info("插件文件「%s」在黑名单内，跳过加载", name)
-                        continue
-
-                if entry.is_dir() and (entry / "__init__.py").exists():
-                    name, path = entry.name, entry
-                elif entry.suffix == ".py":
-                    name, path = entry.stem, entry
-                else:
-                    continue
-
-                self._maybe_install_deps(path)
-                modules[name] = self._import_single(name, path)
-        finally:
-            sys.path[:] = original_path
-        return modules
-
+            # 清理旧版本，确保干净加载环境
+            self.unload_module(name)
+            
+            # 自动安装依赖
+            LOG.debug("正在检查并安装模块 %s 的依赖", name)
+            self._maybe_install_deps(path)
+            
+            # 执行导入
+            LOG.info("正在加载模块: %s from %s", name, path)
+            module = self._import_single(name, path)
+            LOG.info("模块 %s 加载成功", name)
+            return module
+            
+        except Exception as e:
+            LOG.error("加载模块 %s 失败: %s", name, e, exc_info=True)
+            # 清理残留
+            self.unload_module(name)
+            return None
     # ------------------------------------------------------------------
     # 私有
     # ------------------------------------------------------------------
     def _import_single(self, name: str, path: Path) -> ModuleType:
         try:
+            original_sys_path = sys.path.copy()
+            sys.path.insert(0, str(path.parent))
             if path.is_dir():
                 return importlib.import_module(name)
             spec = importlib.util.spec_from_file_location(name, path)
@@ -103,6 +157,8 @@ class _ModuleImporter:
         except Exception as e:
             LOG.error("导入模块 %s 时出错: %s", name, e)
             raise
+        finally:
+            sys.path = original_sys_path
 
     def _maybe_install_deps(self, plugin_path: Path) -> None:
         if not _AUTO_INSTALL:
@@ -151,12 +207,12 @@ class _DependencyResolver:
         self._graph: Dict[str, Set[str]] = {}
         self._constraints: Dict[str, Dict[str, str]] = {}
 
-    def build(self, plugin_classes: Iterable[Type[BasePlugin]]) -> None:
+    def build(self, plugin_classes: Dict[str, Type[BasePlugin]]) -> None:
         self._graph.clear()
         self._constraints.clear()
-        for cls in plugin_classes:
-            self._graph[cls.name] = set(cls.dependencies.keys())
-            self._constraints[cls.name] = cls.dependencies.copy()
+        for name, cls in plugin_classes.items():
+            self._graph[name] = set(cls.dependencies.keys())
+            self._constraints[name] = cls.dependencies.copy()
 
     def resolve(self) -> List[str]:
         """返回按依赖排序后的插件名；出错抛异常。"""
@@ -198,12 +254,14 @@ class _DependencyResolver:
 # ---------------------------------------------------------------------------
 class PluginLoader:
     """插件加载器：负责插件的加载、卸载、重载、生命周期管理。"""
+    """对于没有被任何插件依赖的插件，可以进行动态的加载和卸载"""
 
     def __init__(self, event_bus: EventBus, *, debug: bool = False) -> None:
         self.plugins: Dict[str, BasePlugin] = {}
         self.event_bus = event_bus or EventBus()
         self.rbac_manager = RBACManager(config.rbac_path)
         self._debug = debug
+        self._importer = _ModuleImporter(str(ncatbot_config.plugin.plugins_dir))
         self._resolver = _DependencyResolver()
 
         # 将rbac_manager注册到全局状态
@@ -229,59 +287,50 @@ class PluginLoader:
         # 在插件的线程池中执行初始化
         await asyncio.get_event_loop().run_in_executor(plugin.thread_pool, _run_init)
 
-    async def from_class_load_plugins(
-        self, plugin_classes: List[Type[BasePlugin]], **kwargs
-    ) -> None:
-        """从「插件类对象」加载。"""
-        valid_classes = [cls for cls in plugin_classes if self._is_valid(cls)]
-        self._resolver.build(valid_classes)
-
-        load_order = self._resolver.resolve()
-        temp = {}
-        init_tasks = []
-
-        for name in load_order:
-            cls = next(c for c in valid_classes if c.name == name)
-            LOG.info("加载插件「%s」", name)
-
-            plugin = cls(
-                event_bus=self.event_bus,
-                debug=self._debug,
-                rbac_manager=self.rbac_manager,
-                plugin_loader=self,
-                **kwargs,
-            )
-            temp[name] = plugin
-            # 收集初始化任务
-            init_tasks.append(self._init_plugin_in_thread(plugin))
-
-        self.plugins.update(temp)
-        self._validate_versions()
-        # 并发执行所有插件的初始化
-        await asyncio.gather(*init_tasks)
-
-    async def load_plugin(self, plugin_class: Type[BasePlugin], **kwargs) -> BasePlugin:
+    async def load_plugin_by_class(self, plugin_class: Type[BasePlugin], name: str, **kwargs) -> BasePlugin:
         plugin = plugin_class(
             event_bus=self.event_bus,
             debug=self._debug,
             rbac_manager=self.rbac_manager,
             plugin_loader=self,
         )
-        self.plugins[plugin.name] = plugin
+        plugin.name = name
+        self.plugins[name] = plugin
         await self._init_plugin_in_thread(plugin)
         return plugin
+    
+    async def load_all_plugins_by_class(
+        self, plugin_classes: Dict[str, Type[BasePlugin]], **kwargs
+    ) -> None:
+        """从「插件类对象」加载。"""
+        print(plugin_classes)
+        valid_classes = {name: cls for name, cls in plugin_classes.items() if self._is_valid(cls)}
+        self._resolver.build(valid_classes)
+
+        load_order = self._resolver.resolve()
+        init_tasks = []
+
+        for name in load_order:
+            cls = valid_classes[name]
+            LOG.info("加载插件「%s」", name)
+            # 收集初始化任务
+            init_tasks.append(self.load_plugin_by_class(cls, name, **kwargs))
+
+        self._validate_versions()
+        # 并发执行所有插件的初始化
+        await asyncio.gather(*init_tasks)
 
     async def load_builtin_plugins(self) -> None:
         """加载内置插件。"""
         # 内置插件要在这里声明
-        plugins = [SystemManager, UnifiedRegistryPlugin]
-        for plugin in plugins:
-            await self.load_plugin(plugin)
+        plugins = {"system_manager": SystemManager, "unified_registry": UnifiedRegistryPlugin}
+        for name, plg in plugins.items():
+            await self.load_plugin_by_class(plg, name)
         LOG.info("已加载内置插件数 [%d]", len(self.plugins))
 
-    async def load_plugins(self, plugins_path: str = _PLUGINS_DIR, **kwargs) -> None:
+    async def load_plugins(self, **kwargs) -> None:
         """从目录批量加载。"""
-        path = Path(plugins_path or _PLUGINS_DIR).resolve()
+        path = Path(ncatbot_config.plugin.plugins_dir).resolve()
         await self.load_builtin_plugins()
         if not path.exists():
             LOG.info("插件目录: %s 不存在……跳过加载插件", path)
@@ -292,19 +341,36 @@ class PluginLoader:
             return
 
         LOG.info("从 %s 导入插件", path)
-        importer = _ModuleImporter(str(path))
-        modules = importer.load_all()
+        plugin_folder_names = self._importer.inspect_all()
+        plugin_classes: Dict[str, Type[BasePlugin]] = {}
+        importer = self._importer
+        for name in plugin_folder_names:
+            if ncatbot_config.plugin.plugin_whitelist and name not in ncatbot_config.plugin.plugin_whitelist:
+                LOG.info("插件 '%s' 不在白名单中，跳过加载", name)
+                continue
+            if name in ncatbot_config.plugin.plugin_blacklist:
+                LOG.info("插件 '%s' 在黑名单中，跳过加载", name)
+                continue
+            module = importer.load_module(name, path / name)
+            if not module:
+                continue
+            cls = self._find_plugin_class_in_module(module)
+            if not cls:
+                # TODO: 支持多插件类/无插件类
+                LOG.warning("在模块中未找到插件类 '%s'", name)
+                continue
+            plugin_classes[name] = cls
 
-        plugin_classes: List[Type[BasePlugin]] = []
-        for mod in modules.values():
-            for cls_name in getattr(mod, "__all__", []):
-                cls = getattr(mod, cls_name)
-                if self._is_valid(cls):
-                    plugin_classes.append(cls)
-
-        await self.from_class_load_plugins(plugin_classes, **kwargs)
+        await self.load_all_plugins_by_class(plugin_classes, **kwargs)
         LOG.info("已加载插件数 [%d]", len(self.plugins))
         # self._load_compatible_data()
+
+    async def load_plugin(self, name) -> bool:
+        try:
+            cls = self._importer.load_module(name, Path(ncatbot_config.plugin.plugins_dir) / name)
+            await self.load_plugin_by_class(cls, name)
+        except Exception as e:
+            LOG.error(f"尝试加载失败的插件 {name}: {e}")
 
     async def unload_plugin(self, name: str, **kwargs) -> bool:
         """卸载单个插件。"""
@@ -314,6 +380,7 @@ class PluginLoader:
             return False
         try:
             await plugin.__unload__(**kwargs)
+            self._importer.unload_module(name)
             del self.plugins[name]
             return True
         except Exception as e:
@@ -323,32 +390,8 @@ class PluginLoader:
     async def reload_plugin(self, name: str, **kwargs) -> bool:
         """重载单个插件。"""
         try:
-            old = self.plugins.get(name)
-            if old:
-                # 调用重载前的钩子函数
-                old._reinit_()
-                await old.on_reload()
-                if not await self.unload_plugin(name):
-                    return False
-
-            module_name = old.__class__.__module__ if old else self._guess_module(name)
-            module = importlib.import_module(module_name)
-            importlib.reload(module)
-
-            cls = self._find_plugin_class_in_module(module, name)
-            if not cls:
-                LOG.error("在模块中未找到插件 '%s'", name)
-                return False
-
-            new = await self.load_plugin(cls)
-
-            # 执行兼容处理（这玩意应该不需要了）
-            # for _, func in _iter_callables(new):
-            #     for handler in CompatibleHandler._subclasses:
-            #         if handler.check(func):
-            #             handler.handle(new, func, self.event_bus, new)
-
-            self.plugins[name] = new
+            await self.unload_plugin(name, **kwargs)
+            await self.load_plugin(name)
             LOG.info("插件 '%s' 重载成功", name)
             return True
         except Exception as e:
@@ -391,7 +434,7 @@ class PluginLoader:
     # -------------------- 私有辅助 --------------------
     @staticmethod
     def _is_valid(cls: Type[BasePlugin]) -> bool:
-        return all(hasattr(cls, attr) for attr in ("name", "version", "dependencies"))
+        return all(hasattr(cls, attr) for attr in ("version", "dependencies"))
 
     def _validate_versions(self) -> None:
         """检查已加载插件的版本约束。"""
@@ -405,41 +448,15 @@ class PluginLoader:
                         plugin_name, dep_name, constraint, dep.version
                     )
 
-    # def _load_compatible_data(self) -> None:
-    #     """运行兼容处理器。"""
-    #     for plugin in self.plugins.values():
-    #         for _, func in _iter_callables(plugin):
-    #             for handler in CompatibleHandler._subclasses:
-    #                 if handler.check(func):
-    #                     # 传入plugin实例
-    #                     handler.handle(plugin, func, self.event_bus)
-
-    def _guess_module(self, plugin_name: str) -> str:
-        """根据插件名猜模块名；简单实现，如有需要可扩展。"""
-        for entry in Path(_PLUGINS_DIR).iterdir():
-            if entry.name == plugin_name:
-                return entry.stem
-        raise ValueError(f"无法定位插件 {plugin_name} 的模块")
-
     def _find_plugin_class_in_module(
-        self, module: ModuleType, plugin_name: str
+        self, module: ModuleType
     ) -> Optional[Type[BasePlugin]]:
         for obj in vars(module).values():
             if (
                 isinstance(obj, type)
                 and issubclass(obj, BasePlugin)
-                and getattr(obj, "name", None) == plugin_name
             ):
                 return obj
         return None
 
 
-# ---------------------------------------------------------------------------
-# 小工具
-# ---------------------------------------------------------------------------
-def _iter_callables(obj):
-    """遍历对象的所有可调用成员。"""
-    for attr in dir(obj):
-        value = getattr(obj, attr)
-        if callable(value):
-            yield attr, value
