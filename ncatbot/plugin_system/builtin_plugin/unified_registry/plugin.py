@@ -82,9 +82,11 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
                     return False
             args = (plugin,) + args if plugin else args
             if asyncio.iscoroutinefunction(func):
+                # 异步处理器: 直接 await,不创建新的事件循环
                 return await func(*args, **kwargs)
             else:
-                return func(*args, **kwargs)
+                # 同步处理器: 在线程池中执行,避免阻塞事件循环
+                return await asyncio.to_thread(func, *args, **kwargs)
         except Exception as e:
             LOG.error(f"执行函数 {func.__name__} 时发生错误: {e}")
             return False
