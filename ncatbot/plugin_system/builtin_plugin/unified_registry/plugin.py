@@ -16,7 +16,7 @@ from .command_system.lexer.tokenizer import StringTokenizer, Token
 from .trigger.resolver import CommandResolver
 from .trigger.binder import ArgumentBinder
 from .filter_system import filter_registry, FilterValidator
-from .command_system.registry.registry import command_registry, command_registries
+from .command_system.registry.registry import command_registry
 from .legacy_registry import legacy_registry
 
 
@@ -173,7 +173,7 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         self.prefixes = list(
             dict.fromkeys(
                 prefix
-                for registry in command_registries
+                for registry in command_registry.command_registries
                 for prefix in registry.prefixes
             )
         )

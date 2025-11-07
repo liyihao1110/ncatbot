@@ -96,6 +96,7 @@ class CommandSpec:
         self.params: List[ParameterSpec] = params
         self.args_types: List[type] = args_types
         self.func: Callable = func
+        self.plugin_name: Optional[str] = None
 
         # 必须外部重新设置的属性
         self.aliases = []  # 默认为空列表而不是None

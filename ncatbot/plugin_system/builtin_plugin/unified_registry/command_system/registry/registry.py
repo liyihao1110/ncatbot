@@ -135,9 +135,11 @@ class ModernRegistry:
 
     root_group = CommandGroup("root")
     error_handler = ErrorHandler()
+    command_registries: List["ModernRegistry"] = []
 
     def __init__(self, prefixes: Optional[List[str]] = None):
         self.prefixes: List[str] = prefixes if prefixes else ["/", "!"]
+        self.command_registries.append(self)
         LOG.debug("现代化命令注册器初始化完成")
 
     def command(self, name: str, aliases: list = None, description: str = "", **kwargs):
@@ -168,10 +170,8 @@ class ModernRegistry:
     def get_registry(cls, prefixes: Optional[List[str]] = None) -> "ModernRegistry":
         """获取注册器"""
         new_registry = cls(prefixes)
-        command_registries.append(new_registry)
         return new_registry
 
 
 # 创建全局实例
 command_registry = ModernRegistry()
-command_registries = [command_registry]
