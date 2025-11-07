@@ -4,7 +4,7 @@ import httpx
 import urllib.parse
 import copy
 from dataclasses import dataclass, field, fields
-from typing import Literal, Union, Any, TYPE_CHECKING, TypeVar, Dict, Type, List
+from typing import Literal, Optional, Union, Any, TYPE_CHECKING, TypeVar, Dict, Type, List
 from ....utils import get_log, run_coroutine, NcatBotError, status
 from .utils import convert_uploadable_object
 
@@ -291,7 +291,19 @@ class DownloadableMessageSegment(MessageSegment):
     def download_sync(self, dir: str, name: str = None):
         return run_coroutine(self.download, dir, name)
 
-
+    def __str__(self):
+        return self.__repr__()
+    
+    def __repr__(self):
+        res = super().__repr__()
+        if len(res) > 2024:
+            shortb64 = self.file[:30] + "..." + self.file[-30:]
+            cp = self
+            cp.file = shortb64
+            return cp.__repr__()
+        else:
+            return res
+    
 @dataclass(repr=False)
 class PlainText(MessageSegment):
     # 不转义的纯文本消息
@@ -481,10 +493,10 @@ class Music(MessageSegment):
         self,
         type: Literal["qq", "163", "custom"],
         id: Union[int, str],
-        url: str,
-        title: str,
-        content: str = None,
-        image: str = None,
+        url: Optional[str] = None,
+        title: Optional[str] = None,
+        content: Optional[str] = None,
+        image: Optional[str] = None,
     ):
         self.msg_seg_type = "music"
         self.type = type

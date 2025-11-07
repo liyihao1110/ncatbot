@@ -121,7 +121,6 @@ class GroupMessageEvent(BaseMessageEvent):
             rtf=rtf,
         )
 
-
 class PrivateMessageEvent(BaseMessageEvent):
     message_type: Literal["private"] = None  # 上级会获取
     sub_type: Literal["friend", "group", "other"]  # 上级会获取
@@ -144,6 +143,95 @@ class PrivateMessageEvent(BaseMessageEvent):
         return status.global_api.post_private_msg_sync(
             self.user_id, text, self.message_id, image, rtf
         )
+
+    def __repr__(self):
+        return super().__repr__()
+    
+class MessageSentEvent(BaseMessageEvent):
+    message_type: Literal["group", "private"] = None  # 上级会获取
+    sub_type: Literal["friend", "group", "other", "normal"] = None  # 上级会获取
+    sender: Union[PrivateSender, GroupSender] = None
+    message_sent_type: Literal["self"] = None
+    target_id: str = None
+    real_seq: str = None
+    group_id: str = None
+
+    def __init__(self, data: dict):
+        super().__init__(data)
+        self.message_sent_type = data.get("message_sent_type")
+        self.target_id = str(data.get("target_id")) if data.get("target_id") else None
+        self.real_seq = str(data.get("real_seq")) if data.get("real_seq") else None
+        
+        # 根据消息类型初始化不同的 Sender
+        if self.message_type == "group":
+            self.sender = GroupSender(data.get("sender"))
+            self.group_id = str(data.get("group_id")) if data.get("group_id") else None
+        elif self.message_type == "private":
+            self.sender = PrivateSender(data.get("sender"))
+        else:
+            self.sender = data.get("sender")
+
+    def is_group_msg(self):
+        """
+        判断是否为群组消息
+        """
+        return self.message_type == "group"
+
+    def is_private_msg(self):
+        """
+        判断是否为私聊消息
+        """
+        return self.message_type == "private"
+
+    def get_core_properties_str(self):
+        """
+        获取核心属性字符串表示
+        """
+        base_props = super().get_core_properties_str()
+        if self.is_group_msg():
+            base_props.append(f"group_id={self.group_id}")
+        base_props.extend([
+            f"message_sent_type={self.message_sent_type}",
+            f"target_id={self.target_id}"
+        ])
+        return base_props
+
+    async def reply(
+        self, text: str = None, image: str = None, rtf: "MessageArray" = None
+    ):
+        if self.is_group_msg():
+            return await status.global_api.post_group_msg(
+                group_id=self.group_id, text=text, reply=self.message_id, image=image, rtf=rtf
+            )
+        elif self.is_private_msg():
+            return await status.global_api.post_private_msg(
+                user_id=self.user_id, text=text, reply=self.message_id, image=image, rtf=rtf
+        )
+
+    def reply_sync(
+        self, text: str = None, image: str = None, rtf: "MessageArray" = None
+    ):
+        if self.is_group_msg():
+            return status.global_api.post_group_msg_sync(
+                group_id=self.group_id, text=text, reply=self.message_id, image=image, rtf=rtf
+            )
+        elif self.is_private_msg():
+            return status.global_api.post_private_msg_sync(
+                user_id=self.user_id, text=text, reply=self.message_id, image=image, rtf=rtf
+        )
+
+    async def delete(self):
+        """
+        撤回消息
+        """
+        return await status.global_api.delete_msg(self.message_id)
+
+    def delete_sync(self):
+        """
+        撤回消息
+        """
+        return status.global_api.delete_msg_sync(self.message_id)
+
 
     def __repr__(self):
         return super().__repr__()

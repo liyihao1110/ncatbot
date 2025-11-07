@@ -16,7 +16,7 @@ class GroupFilter(BaseFilter):
 
     def check(self, event: "BaseMessageEvent") -> bool:
         """检查是否为群聊消息"""
-        return event.is_group_msg()
+        return event.is_group_event()
 
 
 class PrivateFilter(BaseFilter):
@@ -24,8 +24,15 @@ class PrivateFilter(BaseFilter):
 
     def check(self, event: "BaseMessageEvent") -> bool:
         """检查是否为私聊消息"""
-        return not event.is_group_msg()
+        return not event.is_group_event()
 
+class MessageSentFilter(BaseFilter):
+    """自身上报消息过滤器"""
+    
+    def check(self, event: "BaseMessageEvent") -> bool:
+        """检查是否为自身上报的消息"""
+        from ncatbot.core.event import MessageSentEvent
+        return isinstance(event, MessageSentEvent)
 
 class AdminFilter(BaseFilter):
     """管理员权限过滤器"""

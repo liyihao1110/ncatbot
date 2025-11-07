@@ -11,6 +11,7 @@ from websockets.exceptions import ConnectionClosedError
 from ncatbot.core.event import (
     PrivateMessageEvent,
     GroupMessageEvent,
+    MessageSentEvent,
     NoticeEvent,
     RequestEvent,
     MetaEvent,
@@ -20,6 +21,7 @@ from ncatbot.utils import get_log, ncatbot_config
 from ncatbot.utils import (
     OFFICIAL_PRIVATE_MESSAGE_EVENT,
     OFFICIAL_GROUP_MESSAGE_EVENT,
+    OFFICIAL_MESSAGE_SENT_EVENT,
     OFFICIAL_NOTICE_EVENT,
     OFFICIAL_REQUEST_EVENT,
     OFFICIAL_STARTUP_EVENT,
@@ -168,6 +170,9 @@ class Adapter:
                         callback = self.event_callback.get(OFFICIAL_STARTUP_EVENT)
                 elif event.meta_event_type == "heartbeat":
                     callback = self.event_callback.get(OFFICIAL_HEARTBEAT_EVENT)
+            elif post_type == "message_sent":
+                event = MessageSentEvent(message)
+                callback = self.event_callback.get(OFFICIAL_MESSAGE_SENT_EVENT)
 
             if callback:
                 try:

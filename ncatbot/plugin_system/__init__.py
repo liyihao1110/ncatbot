@@ -14,6 +14,7 @@ from .builtin_plugin.unified_registry import filter_registry, command_registry
 from .decorator import CompatibleHandler
 from .builtin_plugin.unified_registry import (
     on_message,
+    on_message_sent,
     option,
     param,
     option_group,
@@ -23,6 +24,11 @@ from .builtin_plugin.unified_registry import (
     group_only,
     on_request,
     on_notice,
+    on_group_at,
+    on_group_poke,
+    on_group_increase,
+    on_group_decrease,
+    on_group_request,
 )
 from .builtin_plugin.unified_registry import (
     admin_filter,
@@ -43,11 +49,17 @@ __all__ = [
     "filter_registry",
     "command_registry",
     "on_message",
+    "on_message_sent",
     "option",
     "param",
     "option_group",
     "on_request",
     "on_notice",
+    "on_group_at",
+    "on_group_increase",
+    "on_group_decrease",
+    "on_group_poke",
+    "on_group_request",
     "admin_only",
     "root_only",
     "private_only",

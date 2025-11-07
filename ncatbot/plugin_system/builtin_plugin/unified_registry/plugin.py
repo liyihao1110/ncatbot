@@ -42,7 +42,7 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
         """插件加载时的初始化"""
         # 订阅事件
         self.event_bus.subscribe(
-            "re:ncatbot.group_message_event|ncatbot.private_message_event",
+            "re:ncatbot.group_message_event|ncatbot.private_message_event|ncatbot.message_sent_event",
             self.handle_message_event,
             timeout=900,
         )

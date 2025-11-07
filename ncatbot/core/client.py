@@ -19,13 +19,14 @@ from typing_extensions import Unpack
 if TYPE_CHECKING:
     from ncatbot.plugin_system import BasePlugin
 
-from .adapter import lanuch_napcat_service, Adapter
+from .adapter import launch_napcat_service, Adapter
 from .api import BotAPI
 from .event import (
     MessageSegment,
     BaseEventData,
     PrivateMessageEvent,
     GroupMessageEvent,
+    MessageSentEvent,
     NoticeEvent,
     RequestEvent,
     MetaEvent,
@@ -36,6 +37,7 @@ from ..utils import NcatBotError, NcatBotConnectionError
 from ..utils import (
     OFFICIAL_PRIVATE_MESSAGE_EVENT,
     OFFICIAL_GROUP_MESSAGE_EVENT,
+    OFFICIAL_MESSAGE_SENT_EVENT,
     OFFICIAL_NOTICE_EVENT,
     OFFICIAL_REQUEST_EVENT,
     OFFICIAL_STARTUP_EVENT,
@@ -48,6 +50,7 @@ LOG = get_log("Client")
 EVENTS = (
     OFFICIAL_PRIVATE_MESSAGE_EVENT,
     OFFICIAL_GROUP_MESSAGE_EVENT,
+    OFFICIAL_MESSAGE_SENT_EVENT,
     OFFICIAL_NOTICE_EVENT,
     OFFICIAL_REQUEST_EVENT,
     OFFICIAL_STARTUP_EVENT,
@@ -72,6 +75,7 @@ class StartArgs(TypedDict, total=False):
 
 class BotClient:
     _initialized = False  # 兼容旧版本检查
+    _running = False
 
     def __init__(self, only_private: bool = False, max_workers: int = 16):
         if self._initialized:
@@ -79,7 +83,11 @@ class BotClient:
         self._initialized = True
         self.adapter = Adapter()
         self.event_handlers: Dict[str, list] = {}
-        self.thread_pool = ThreadPool(max_workers=max_workers, max_per_func=4)
+        # ThreadPool 已废弃,纯异步架构不再需要
+        if max_workers != 16:
+            LOG.warning(
+                f"BotClient 已重构为纯异步架构,max_workers 参数已废弃(传入值: {max_workers})"
+            )
         self.api = BotAPI(self.adapter.send)
         self.crash_flag = False
         status.global_api = self.api
@@ -112,6 +120,9 @@ class BotClient:
             self.add_group_message_handler(
                 make_async_handler(OFFICIAL_GROUP_MESSAGE_EVENT)
             )
+            self.add_message_sent_handler(
+                make_async_handler(OFFICIAL_MESSAGE_SENT_EVENT)
+            )
             self.add_notice_handler(make_async_handler(OFFICIAL_NOTICE_EVENT))
             self.add_request_handler(make_async_handler(OFFICIAL_REQUEST_EVENT))
             self.add_shutdown_handler(make_async_handler(OFFICIAL_SHUTDOWN_EVENT))
@@ -119,9 +130,15 @@ class BotClient:
 
     def create_official_event_handler_group(self, event_name):
         async def event_callback(event: BaseEventData):
-            # 处理回调, 不能阻塞
+            # 纯异步版本:非阻塞式并发执行
+            # 关键:只创建任务,不等待完成(fire-and-forget)
             for handler in self.event_handlers[event_name]:
-                self.thread_pool.submit(handler, event)
+                if inspect.iscoroutinefunction(handler):
+                    # 创建异步任务,让它在后台运行
+                    asyncio.create_task(handler(event))
+                else:
+                    # 同步处理器在线程池中执行,避免阻塞事件循环
+                    asyncio.create_task(asyncio.to_thread(handler, event))
 
         self.adapter.event_callback[event_name] = event_callback
         self.event_handlers[event_name] = []
@@ -158,11 +175,27 @@ class BotClient:
 
         self.add_handler(OFFICIAL_PRIVATE_MESSAGE_EVENT, wrapper)
 
+    def add_message_sent_handler(
+        self, handler: Callable[[MessageSentEvent], None], filter=None
+    ):
+        async def wrapper(event: MessageSentEvent):
+            new_messages = event.message.filter(filter)
+            if len(new_messages) == 0:
+                return
+            if inspect.iscoroutinefunction(handler):
+                await handler(event)
+            else:
+                handler(event)
+
+        self.add_handler(OFFICIAL_MESSAGE_SENT_EVENT, wrapper)
+
     def add_notice_handler(self, handler: Callable[[NoticeEvent], None], filter=None):
         self.add_handler(OFFICIAL_NOTICE_EVENT, handler)
 
     def add_request_handler(
-        self, handler: Callable[[RequestEvent], None], filter=Literal["group", "friend"]
+        self,
+        handler: Callable[[RequestEvent], None],
+        filter: Literal["group", "friend"] = "group",
     ):
         async def wrapper(event: RequestEvent):
             if filter != event.request_type:
@@ -212,6 +245,19 @@ class BotClient:
 
         return decorator
 
+    def on_message_sent(
+        self,
+        filter: Union[Type[MessageSegment], None] = None,
+    ):
+        """装饰器注册消息发送事件处理器"""
+        if filter is not None and not issubclass(filter, MessageSegment):
+            raise TypeError("filter 必须是 MessageSegment 的子类")
+
+        def decorator(f: Callable[[MessageSentEvent], None]):
+            self.add_message_sent_handler(f, filter)
+
+        return decorator
+
     def on_notice(self, filter=None):
         """装饰器注册通知事件处理器"""
 
@@ -258,6 +304,9 @@ class BotClient:
         return decorator
 
     def bot_exit(self):
+        if not self._running:
+            LOG.warning("Bot 未处于运行状态, 无法退出")
+            return
         status.exit = True
         asyncio.run(self.plugin_loader.unload_all())
         LOG.info("Bot 已经正常退出")
@@ -329,13 +378,15 @@ class BotClient:
         self.event_bus = EventBus()
         self.plugin_loader = PluginLoader(self.event_bus, debug=ncatbot_config.debug)
 
+        self._running = True
+
         run_coroutine(self.plugin_loader.load_plugins)
 
         if getattr(self, "mock_mode", False):  # MockMixin 中提供
             self.mock_start()
         else:
             # 启动服务（仅在非 mock 模式下）
-            lanuch_napcat_service()
+            launch_napcat_service()
             try:
                 asyncio.run(self.adapter.connect_websocket())
             except NcatBotConnectionError:

@@ -2,6 +2,7 @@ from .event_data import BaseEventData, MessageEventData
 from .message import (
     BaseMessageEvent,
     AnonymousMessage,
+    MessageSentEvent,
     GroupMessageEvent,
     PrivateMessageEvent,
 )
@@ -46,6 +47,7 @@ __all__ = [
     "AnonymousMessage",
     "GroupMessageEvent",
     "PrivateMessageEvent",
+    "MessageSentEvent",
     # From meta.py
     "MetaEvent",
     "Status",

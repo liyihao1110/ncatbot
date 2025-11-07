@@ -1,6 +1,6 @@
 import time
 import uuid
-from typing import Union, Optional
+from typing import Literal, Union, Optional
 from ncatbot.core.event import (
     GroupMessageEvent,
     PrivateMessageEvent,
@@ -174,3 +174,110 @@ class EventFactory:
             event_data["sub_type"] = sub_type
 
         return RequestEvent(event_data)
+
+    @staticmethod
+    def create_friend_request_event(
+            user_id: str = "987654321",
+            self_id: str = "123456789",
+            comment: str = " "
+    ):
+        """创建添加好友请求事件
+        
+        Args:
+            user_id: 发送者 QQ 号
+            self_id: 机器人 QQ 号
+            comment: 请求附加的备注信息（可选）
+        """
+        return EventFactory.create_request_event(
+            request_type="friend", user_id=user_id, self_id=self_id, comment=comment
+        )
+    
+    @staticmethod
+    def create_group_add_request_event(
+            user_id: str = "987654321",
+            self_id: str = "123456789",
+            group_id: str = "66666666",
+            comment: str = " "
+    ):
+        """创建加入群聊请求事件
+        
+        Args:
+            user_id: 发送者 QQ 号
+            self_id: 机器人 QQ 号
+            group_id: 群号
+            comment: 请求附加的备注信息（可选）
+        """
+        return EventFactory.create_request_event(
+            request_type="group", user_id=user_id, self_id=self_id, group_id=group_id, comment=comment, sub_type="add"
+        )
+    
+    @staticmethod
+    def create_group_increase_notice_event(
+            self_id: str = "123456789",
+            group_id: str = "66666666",
+            user_id: str = "987654321",
+            operator_id: str = "88888888",
+            subtype: Literal["approve", "invite"] = "approve"
+    ):
+        """创建群成员增加通知事件
+
+        Args:
+            self_id: 机器人 QQ 号
+            group_id: 群号
+            user_id: 加入者 QQ 号
+            operator_id: 操作人 QQ 号，approve 时为同意者 QQ 号，invite 时为邀请者 QQ 号
+            sub_type: 群成员增加来源（approve-"同意申请", invite-"邀请加入"）
+        """
+        if subtype not in ["approve", "invite"]:
+            raise ValueError("subtype must be 'approve' or 'invite'")
+        return EventFactory.create_notice_event(
+            notice_type="group_increase", self_id=self_id, user_id=user_id, group_id=group_id, operator_id=operator_id, sub_type=subtype
+        )
+    
+    @staticmethod
+    def create_group_decrease_notice_event(
+            self_id: str = "123456789",
+            group_id: str = "66666666",
+            user_id: str = "987654321",
+            operator_id: str = "88888888",
+            subtype: Literal["leave", "kick"] = "leave"
+    ):
+        """创建群成员减少通知事件
+
+        Args:
+            self_id: 机器人 QQ 号
+            group_id: 群号
+            user_id: 离开者 QQ 号
+            operator_id: 操作人 QQ 号
+            sub_type: 群成员减少来源（leave-"主动离开", kick-"被踢出"）
+        """
+        if subtype not in ["leave", "kick"]:
+            raise ValueError("subtype must be 'leave' or 'kick'")
+        if subtype == "leave":
+            operator_id = "0"
+        return EventFactory.create_notice_event(
+            notice_type="group_decrease", self_id=self_id, user_id=user_id, group_id=group_id, operator_id=operator_id, sub_type=subtype
+        )
+
+    @staticmethod
+    def create_group_poke_notice_event(
+        self_id: str = "123456789",
+        target_id: str = "77777777",
+        user_id: str = "88888888",
+        group_id: str = "66666666",
+        raw_info: Optional[list] = None
+    ):
+        """创建群聊戳一戳通知事件
+
+        Args:
+            self_id: 机器人 QQ 号
+            target_id: 被戳者 QQ 号
+            user_id: 操作人 QQ 号
+            group_id: 群号
+            raw_info: 原始信息（可选）
+        """
+        if not raw_info:
+            raw_info = [{'col': '1', 'nm': '', 'type': 'qq', 'uid': 'user_uid'}, {'jp': 'https://zb.vip.qq.com/v2/pages/nudgeMall?_wv=2&actionId=0', 'src': 'http://tianquan.gtimg.cn/nudgeaction/item/0/expression.jpg', 'type': 'img'}, {'txt': '戳了戳', 'type': 'nor'}, {'col': '1', 'nm': '', 'tp': '0', 'type': 'qq', 'uid': 'target_uid'}, {'txt': '', 'type': 'nor'}]
+        return EventFactory.create_notice_event(
+            notice_type="notify", self_id=self_id, user_id=user_id, group_id=group_id, target_id=target_id, raw_info=raw_info, sub_type="poke"
+        )

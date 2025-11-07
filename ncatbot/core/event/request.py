@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 from ncatbot.core.event.event_data import BaseEventData
 from ncatbot.utils import status, get_log
 
@@ -10,6 +10,8 @@ class RequestEvent(BaseEventData):
     request_type: Literal["friend", "group"] = None
     comment: str = None  # 验证信息
     flag: str = None  # 验证 flag
+    group_id: Optional[str] = None
+    user_id: Optional[str] = None
 
     def is_friend_request(self) -> bool:
         return self.request_type == "friend"
@@ -57,6 +59,10 @@ class RequestEvent(BaseEventData):
 
     def __init__(self, data):
         super().__init__(data)
+        _group_id = data.get("group_id", None)
+        _user_id = data.get("user_id", None)
         self.request_type = data.get("request_type")
         self.comment = data.get("comment")
         self.flag = data.get("flag")
+        self.group_id = str(_group_id) if _group_id is not None else None
+        self.user_id = str(_user_id) if _user_id is not None else None

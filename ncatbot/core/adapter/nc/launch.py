@@ -96,7 +96,7 @@ def check_napcat_service_remote():
     return False
 
 
-def lanuch_napcat_service(*args, **kwargs):
+def launch_napcat_service(*args, **kwargs):
     if ncatbot_config.napcat.remote_mode:
         LOG.info("正在以远端模式运行, 检查中...")
         if check_napcat_service_remote():
