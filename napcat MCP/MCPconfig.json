@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "ncat_mcp": {
+      "command": "python",
+      "args": ["C:\\Users\\Alex\\Desktop\\ncatbot\\main.py"],
+      "env": {
+      }
+    }
+  }
+}
