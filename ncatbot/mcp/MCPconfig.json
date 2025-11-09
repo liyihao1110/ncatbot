@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "ncat_mcp": {
+      "command": "python",
+      "args": ["-c", "import napcat.mcp,sys; napcat.mcp.start(sys.argv[1], sys.argv[2])",
+         "admin_qq", "bot_qq"],
+      "env": {
+      }
+    }
+  }
+}
