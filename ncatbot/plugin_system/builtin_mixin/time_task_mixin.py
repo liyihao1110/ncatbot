@@ -1,5 +1,6 @@
 # from ncatbot.plugin_system.loader import PluginLoader
 from typing import Callable, Optional, List, Tuple, Dict, Any, Union, final
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import re
 import time
@@ -24,16 +25,69 @@ class TimeTaskScheduler:
         _jobs (list): 存储所有任务信息的列表
     """
 
-    def __init__(self):
+class TimeTaskScheduler:
+    def __init__(self, max_workers: int = 10):
         self._scheduler = Scheduler()
         self._jobs = []
-        threading.Thread(target=self.loop, daemon=True).start()
+        self._executor = ThreadPoolExecutor(
+            max_workers=max_workers, 
+            thread_name_prefix="SyncTaskExecutor"
+        )
+        # 启动调度线程
+        self._stop_event = threading.Event()
+        self._thread = threading.Thread(target=self._run_loop, daemon=True)
+        self._thread.start()
 
-    def loop(self):
-        while True:
-            self.step()
+    def _run_loop(self):
+        """优化的调度循环：精确等待而非固定轮询"""
+        while not self._stop_event.is_set():
+            self._scheduler.run_pending()
             time.sleep(0.2)
+    
+    def stop(self):
+        """安全停止调度器"""
+        self._stop_event.set()
+        self._executor.shutdown(wait=False)
+    
+    def _sync_task_wrapper(self, func, args, kwargs, job_name: str):
+        """线程池中执行同步任务"""
+        try:
+            func(*args, **kwargs)
+        except Exception as e:
+            print(f"同步任务执行失败 [{job_name}]: {e}")
 
+    def _run_async_task(self, coro, job_name: str):
+        """在新线程中执行异步任务"""
+        def run_in_thread():
+            try:
+                # 创建临时事件循环
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    loop.run_until_complete(coro)
+                finally:
+                    loop.close()
+            except Exception as e:
+                print(f"异步任务执行失败 [{job_name}]: {e}")
+        
+        # 启动守护线程执行
+        thread = threading.Thread(target=run_in_thread, daemon=True)
+        thread.start()
+
+    def _run_task(self, func, args, kwargs, job_name: str):
+        """不阻塞地执行任务"""
+        try:
+            if asyncio.iscoroutinefunction(func):
+                # 异步任务：在新线程中运行事件循环
+                self._run_async_task(func(*args, **kwargs), job_name)
+            else:
+                # 同步任务：提交到线程池
+                self._executor.submit(
+                    self._sync_task_wrapper, func, args, kwargs, job_name
+                )
+        except Exception as e:
+            print(f"任务调度失败 [{job_name}]: {e}")
+    
     def _parse_time(self, time_str: str) -> dict:
         """
         解析时间参数为调度配置字典，支持格式:
@@ -212,15 +266,8 @@ class TimeTaskScheduler:
                 final_kwargs = {**job_info["static_kwargs"], **dyn_kwargs}
 
                 # 执行任务
-                try:
-                    if asyncio.iscoroutinefunction(job_info["func"]):
-                        run_func_sync(job_info["func"], *final_args, **final_kwargs)
-                    else:
-                        job_info["func"](*final_args, **final_kwargs)
-                    job_info["run_count"] += 1
-                except Exception as e:
-                    print(f"任务执行失败 [{name}]: {str(e)}")
-
+                self._run_task(job_info["func"], final_args, final_kwargs, name)
+                
             # 创建调度任务
             if interval_cfg["type"] == "interval":
                 job = self._scheduler.every(interval_cfg["value"]).seconds.do(
@@ -244,10 +291,6 @@ class TimeTaskScheduler:
         except Exception as e:
             print(f"任务添加失败: {str(e)}")
             return False
-
-    def step(self) -> None:
-        """单步执行"""
-        self._scheduler.run_pending()
 
     def run(self) -> None:
         """独立运行"""
