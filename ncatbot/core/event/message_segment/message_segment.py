@@ -350,7 +350,7 @@ class Image(DownloadableMessageSegment):
     sub_type: int = field(default=0)  
     type: Literal["flash"] = None
 
-    def is_flase_image(self) -> bool:
+    def is_flash_image(self) -> bool:
         return getattr(self, "type", None) == "flash"
 
     def is_animated_image(self) -> bool:
