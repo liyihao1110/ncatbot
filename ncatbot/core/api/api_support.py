@@ -1,6 +1,6 @@
 from typing import Literal, Union, List
 from .utils import BaseAPI, APIReturnStatus
-from ncatbot.utils import run_coroutine
+from ncatbot.utils import run_func_sync
 from ncatbot.core.event.message_segment.message_segment import convert_uploadable_object
 
 
@@ -125,24 +125,24 @@ class SupportAPI(BaseAPI):
     def get_ai_characters_sync(
         self, group_id: Union[str, int], chat_type: Literal[1, 2]
     ) -> AICharacterList:
-        return run_coroutine(self.get_ai_characters, group_id, chat_type)
+        return run_func_sync(self.get_ai_characters, group_id, chat_type)
 
     def get_ai_record_sync(
         self, group_id: Union[str, int], character_id: str, text: str
     ) -> str:
-        return run_coroutine(self.get_ai_record, group_id, character_id, text)
+        return run_func_sync(self.get_ai_record, group_id, character_id, text)
 
     def can_send_image_sync(self) -> bool:
-        return run_coroutine(self.can_send_image)
+        return run_func_sync(self.can_send_image)
 
     def can_send_record_sync(self, group_id: Union[str, int]) -> bool:
-        return run_coroutine(self.can_send_record, group_id)
+        return run_func_sync(self.can_send_record, group_id)
 
     def ocr_image_sync(self, image: str) -> List[dict]:
-        return run_coroutine(self.ocr_image, image)
+        return run_func_sync(self.ocr_image, image)
 
     def get_version_info_sync(self) -> dict:
-        return run_coroutine(self.get_version_info)
+        return run_func_sync(self.get_version_info)
 
     def bot_exit_sync(self) -> None:
-        return run_coroutine(self.bot_exit)
+        return run_func_sync(self.bot_exit)

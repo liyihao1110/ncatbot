@@ -5,7 +5,7 @@ import urllib.parse
 import copy
 from dataclasses import dataclass, field, fields
 from typing import Literal, Optional, Union, Any, TYPE_CHECKING, TypeVar, Dict, Type, List
-from ....utils import get_log, run_coroutine, NcatBotError, status
+from ....utils import get_log, run_func_sync, NcatBotError, status
 from .utils import convert_uploadable_object
 
 if TYPE_CHECKING:
@@ -289,7 +289,7 @@ class DownloadableMessageSegment(MessageSegment):
         return await self.download_to(dir, name)
 
     def download_sync(self, dir: str, name: str = None):
-        return run_coroutine(self.download, dir, name)
+        return run_func_sync(self.download, dir, name)
 
     def __str__(self):
         return self.__repr__()

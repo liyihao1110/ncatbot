@@ -1,6 +1,6 @@
 from typing import Union
 from .utils import BaseAPI, APIReturnStatus
-from ncatbot.utils import run_coroutine
+from ncatbot.utils import run_func_sync
 
 
 class PrivateAPI(BaseAPI):
@@ -64,10 +64,10 @@ class PrivateAPI(BaseAPI):
     def upload_private_file_sync(
         self, user_id: Union[str, int], file: str, name: str
     ) -> None:
-        return run_coroutine(self.upload_private_file, user_id, file, name)
+        return run_func_sync(self.upload_private_file, user_id, file, name)
 
     def get_private_file_url_sync(self, file_id: str) -> str:
-        return run_coroutine(self.get_private_file_url, file_id)
+        return run_func_sync(self.get_private_file_url, file_id)
 
     def post_private_file_sync(
         self,
@@ -77,9 +77,9 @@ class PrivateAPI(BaseAPI):
         video: str = None,
         file: str = None,
     ) -> str:
-        return run_coroutine(
+        return run_func_sync(
             self.post_private_file, user_id, image, record, video, file
         )
 
     def set_input_status_sync(self, event_type: int, user_id: Union[str, int]) -> None:
-        return run_coroutine(self.set_input_status, event_type, user_id)
+        return run_func_sync(self.set_input_status, event_type, user_id)

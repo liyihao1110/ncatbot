@@ -1,5 +1,5 @@
 from typing import List
-from ...utils import status, run_coroutine
+from ...utils import status, run_func_sync
 from ..event import (
     MessageArray,
     Image,
@@ -50,13 +50,21 @@ class ForwardConstructor:
             raise ValueError("Forward 对象的 content 不能为空")
         self.attach(MessageArray(forward), user_id, nickname)
 
-    def attach_message_id(
-        self, message_id: str, user_id: str = None, nickname: str = None
-    ):
-        event = run_coroutine(status.global_api.get_msg, message_id)
+    async def attach_message_id(
+        self, message_id: str, user_id: str = None, nickname: str =
+        None):
+        event = await status.global_api.get_msg(message_id)
         user_id = user_id if user_id else event.user_id
         nickname = nickname if nickname else event.sender.nickname
         self.attach(event.message, user_id, nickname)
+        
+
+    def attach_message_id_sync(
+        self, message_id: str, user_id: str = None, nickname: str = None
+    ):
+        run_func_sync(
+            self.attach_message_id(message_id, user_id, nickname)
+        )
 
     def to_forward(self) -> Forward:
         return Forward(content=self.content)
