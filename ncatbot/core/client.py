@@ -60,7 +60,7 @@ EVENTS = (
 
 
 class StartArgs(TypedDict, total=False):
-    bt_uin: Optional[int]
+    bt_uin: Union[str, int]
     root: Optional[str]
     ws_uri: Optional[str]
     webui_uri: Optional[str]
