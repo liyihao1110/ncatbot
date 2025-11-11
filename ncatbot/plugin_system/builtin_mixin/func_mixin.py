@@ -223,7 +223,7 @@ class FunctionMixin:
                 prefix = f"/{self.name}.{name}"
 
             filter_chain = create_filter(prefix, regex, filter)
-            warpped_handler = self._create_func_handler(name, handler, filter_chain)
+            wrapped_handler = self._create_func_handler(name, handler, filter_chain)
             func = Func(
                 {
                     "name": name,
@@ -235,7 +235,7 @@ class FunctionMixin:
                     "metadata": metadata,
                     "handlder_id": self.register_handler(
                         "re:ncatbot.group_message_event|ncatbot.private_message_event",
-                        warpped_handler,
+                        wrapped_handler,
                         timeout=timeout,
                     ),
                 }
