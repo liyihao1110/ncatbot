@@ -51,6 +51,10 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
             self.handle_legacy_event,
             timeout=900,
         )
+        self.event_bus.subscribe(
+            "ncatbot.plugin_unloaded",
+            self.handle_plugin_unloaded_event,
+        )
 
         # 设置过滤器验证器
         self._filter_validator = FilterValidator()
@@ -68,6 +72,17 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
     def _normalize_case(self, s: str) -> str:
         # TODO: 实现大小写敏感（可能永远不会做）
         return s
+
+    async def handle_plugin_unloaded_event(self, event: NcatBotEvent) -> None:
+        """处理插件卸载事件，清理相关缓存"""
+        self._initialized = False
+        self.initialize_if_needed()
+        new_filters_map = {}
+        for name, func in self.filter_registry._function_filters.items():
+            if self.get_plugin(name) == None:
+                continue
+            new_filters_map[name] = func
+        self.filter_registry._function_filters = new_filters_map
 
     async def _execute_function(self, func: Callable, *args, **kwargs):
         """执行函数
@@ -93,7 +108,7 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
 
     async def _run_pure_filters(self, event: "BaseMessageEvent") -> None:
         """遍历执行纯过滤器函数（不含命令函数）。"""
-        for func in filter_registry._function_filters:
+        for func in filter_registry._function_filters.values():
             # 额外防御：若误标记，仍跳过命令函数
             if getattr(func, "__is_command__", False):
                 continue

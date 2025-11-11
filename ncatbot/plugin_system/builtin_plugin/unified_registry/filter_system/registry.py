@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from .base import BaseFilter
 from .builtin import CustomFilter
 from ncatbot.utils import get_log
+from ..utils import get_func_plugin_name
 
 LOG = get_log(__name__)
 
@@ -28,7 +29,7 @@ class FilterRegistry:
 
     def __init__(self):
         self._filters: Dict[str, FilterEntry] = {}
-        self._function_filters: List[Callable] = []
+        self._function_filters: Dict[str, Callable] = {}
         from .decorators import admin_filter, root_filter, private_filter, group_filter
 
         self.admin_filter = admin_filter
@@ -116,7 +117,7 @@ class FilterRegistry:
         """
         if not hasattr(func, "__filters__"):
             setattr(func, "__filters__", [])
-            self._function_filters.append(func)
+            self._function_filters[get_func_plugin_name(func)] = func
 
         filter_list: List[BaseFilter] = getattr(func, "__filters__")
 
@@ -144,14 +145,6 @@ class FilterRegistry:
         """获取过滤器实例"""
         entry = self.get_filter(name)
         return entry.filter_instance if entry else None
-
-    def list_filters(self) -> List[FilterEntry]:
-        """列出所有注册的过滤器"""
-        return list(self._filters.values())
-
-    def list_filter_functions(self) -> List[Callable]:
-        """列出所有注册的过滤器函数"""
-        return self._function_filters.copy()
 
     def filters(self, *filters: Union[BaseFilter, str]):
         """为函数添加多个过滤器"""

@@ -5,9 +5,7 @@ from ncatbot.utils import get_log
 from .sig_validator import SigValidator
 from .param_validator import ParamsValidator
 from ..utils import CommandSpec, FuncSpec
-from ncatbot.utils import ncatbot_config
-from pathlib import Path
-import inspect
+from ...utils import get_func_plugin_name
 
 LOG = get_log(__name__)
 
@@ -47,15 +45,5 @@ class FuncAnalyser:
             self.func_descriptor, self.actual_params
         )
         spec = self.params_validator.analyze_params()
-        plugin_dir = Path(ncatbot_config.plugin.plugins_dir).resolve()
-        file = inspect.getsourcefile(self.func_descriptor.func)
-        spec.plugin_name = "ncatbot"
-        if file:
-            file_path = Path(file).resolve()            
-            try:
-                relative_path = file_path.relative_to(plugin_dir)
-                if relative_path.parts:
-                    spec.plugin_name = relative_path.parts[0]
-            except ValueError:
-                pass
+        spec.plugin_name = get_func_plugin_name(self.func_descriptor.func)
         return spec
