@@ -85,7 +85,8 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
                 # 异步处理器: 直接 await,不创建新的事件循环
                 return await func(*args, **kwargs)
             else:
-                # 同步处理器: 在线程池中执行,避免阻塞事件循环
+                # 同步处理器: 在线程池中执行, 避免阻塞事件循环
+                # 同步处理器必须全部使用同步接口
                 return await asyncio.to_thread(func, *args, **kwargs)
         except Exception as e:
             LOG.error(f"执行函数 {func.__name__} 时发生错误: {e}")

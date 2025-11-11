@@ -140,14 +140,16 @@ class BotClient:
 
     def create_official_event_handler_group(self, event_name):
         async def event_callback(event: BaseEventData):
-            # 纯异步版本:非阻塞式并发执行
-            # 关键:只创建任务,不等待完成(fire-and-forget)
+            # 纯异步版本: 非阻塞式并发执行
+            # 关键: 只创建任务, 不等待完成(fire-and-forget)
             for handler in self.event_handlers[event_name]:
                 if inspect.iscoroutinefunction(handler):
-                    # 创建异步任务,让它在后台运行
+                    # 创建异步任务, 让它在后台运行
                     asyncio.create_task(handler(event))
                 else:
-                    # 同步处理器在线程池中执行,避免阻塞事件循环
+                    # 同步处理器在线程池中执行, 避免阻塞事件循环
+                    # 同步处理器必须全部使用同步接口
+                    # TODO: docs
                     asyncio.create_task(asyncio.to_thread(handler, event))
 
         self.adapter.event_callback[event_name] = event_callback
