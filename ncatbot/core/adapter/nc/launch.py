@@ -20,7 +20,7 @@ from .install import install_or_update_napcat
 from .login import login, report_login_status
 from .config import config_napcat
 from .start import start_napcat
-from ....utils import ncatbot_config, get_log, run_coroutine
+from ....utils import ncatbot_config, get_log
 from ....utils import NcatBotError
 
 LOG = get_log("ncatbot.core.adapter.nc.launch")
@@ -50,7 +50,7 @@ async def test_websocket(report_status=False) -> bool:
 
 def napcat_service_ok(EXPIRE=0, show_info=True):
     if EXPIRE == 0:
-        return run_coroutine(test_websocket, show_info)
+        return asyncio(test_websocket, show_info)
     else:
         MAX_TIME_EXPIRE = time.time() + EXPIRE
         while not napcat_service_ok(show_info=(time.time() > MAX_TIME_EXPIRE)):
@@ -97,6 +97,8 @@ def check_napcat_service_remote():
 
 
 def launch_napcat_service(*args, **kwargs):
+    """一定由一个具有事件循环的线程调用，可以放心使用 asyncio.run()
+    """
     if ncatbot_config.napcat.remote_mode:
         LOG.info("正在以远端模式运行, 检查中...")
         if check_napcat_service_remote():

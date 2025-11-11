@@ -31,7 +31,7 @@ from .event import (
     RequestEvent,
     MetaEvent,
 )
-from ..utils import get_log, run_coroutine, ThreadPool
+from ..utils import get_log, ThreadPool
 from ..utils import status, ncatbot_config
 from ..utils import NcatBotError, NcatBotConnectionError
 from ..utils import (
@@ -76,6 +76,8 @@ class StartArgs(TypedDict, total=False):
 class BotClient:
     _initialized = False  # 兼容旧版本检查
     _running = False
+    _loop_created = False
+    loop = None
 
     def __init__(self, only_private: bool = False, max_workers: int = 16):
         if self._initialized:
@@ -95,6 +97,14 @@ class BotClient:
             self.create_official_event_handler_group(event_name)
 
         self.register_builtin_handler(only_private=only_private)
+
+    def _create_event_loop(self):
+        try:
+            self.loop = asyncio.get_running_loop()
+        except RuntimeError:
+            self.loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self.loop)
+            self._loop_created = True
 
     def register_builtin_handler(self, only_private: bool = False):
         # 注册插件系统事件处理器
@@ -308,7 +318,10 @@ class BotClient:
             LOG.warning("Bot 未处于运行状态, 无法退出")
             return
         status.exit = True
-        asyncio.run(self.plugin_loader.unload_all())
+        self.loop.run_until_complete(self.plugin_loader.unload_all())
+        if self._loop_created:
+            self.loop.close()
+        self._running = False
         LOG.info("Bot 已经正常退出")
 
     def run_frontend(self, **kwargs: Unpack[StartArgs]):
@@ -320,20 +333,17 @@ class BotClient:
             raise
 
     def run_backend(self, **kwargs: Unpack[StartArgs]):
-        def run_async_task():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+        def run_task():
             try:
                 self.start(**kwargs)
             except Exception as e:
                 LOG.error(f"Bot 启动失败: {e}")
                 LOG.info(traceback.format_exc())
             finally:
-                loop.close()
                 self.crash_flag = True
                 self.release_callback(None)
 
-        thread = threading.Thread(target=run_async_task)
+        thread = threading.Thread(target=run_task)
         thread.daemon = True  # 设置为守护线程
         self.lock = threading.Lock()
         self.lock.acquire()
@@ -348,7 +358,7 @@ class BotClient:
         return self.api
 
     def start(self, **kwargs):
-        # 配置参数
+        """阻塞执行"""
         legal_args = [
             "bt_uin",
             "root",
@@ -370,6 +380,7 @@ class BotClient:
             else:
                 ncatbot_config.update_value(key, value)
 
+        self._create_event_loop()
         ncatbot_config.validate_config()
 
         # 加载插件
@@ -379,16 +390,15 @@ class BotClient:
         self.plugin_loader = PluginLoader(self.event_bus, debug=ncatbot_config.debug)
 
         self._running = True
-
-        run_coroutine(self.plugin_loader.load_plugins)
+        self.loop.run_until_complete(self.plugin_loader.load_plugins())
 
         if getattr(self, "mock_mode", False):  # MockMixin 中提供
-            self.mock_start()
+            self.loop.run_until_complete(self.adapter.connect_websocket())
         else:
             # 启动服务（仅在非 mock 模式下）
             launch_napcat_service()
             try:
-                asyncio.run(self.adapter.connect_websocket())
+                self.loop.run_until_complete(self.adapter.connect_websocket())
             except NcatBotConnectionError:
                 self.bot_exit()
                 raise
