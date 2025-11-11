@@ -6,7 +6,7 @@ from ncatbot.utils.logger import get_log
 from ncatbot.utils.status import Status, status
 from ncatbot.utils.network_io import gen_url_with_proxy, get_json, post_json
 from ncatbot.utils.error import NcatBotError, NcatBotValueError, NcatBotConnectionError
-from ncatbot.utils.thread_pool import run_coroutine, ThreadPool
+from ncatbot.utils.thread_pool import ThreadPool, run_func_sync
 
 # Re-export assets
 from ncatbot.utils.assets import (
@@ -63,7 +63,7 @@ __all__ = [
     "NcatBotConnectionError",
     # 线程池
     "ThreadPool",
-    "run_coroutine",
+    "run_func_sync",
     # 资源/常量
     "Color",
     "NAPCAT_WEBUI_SALT",

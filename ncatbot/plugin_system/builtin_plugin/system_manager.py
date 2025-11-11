@@ -4,7 +4,8 @@ from .unified_registry.command_system.registry import option_group
 from ncatbot.core.event import BaseMessageEvent
 import psutil
 import ncatbot
-from ncatbot.utils import get_log, PermissionGroup, run_coroutine
+import asyncio
+from ncatbot.utils import get_log, PermissionGroup, run_func_sync
 
 LOG = get_log("SystemManager")
 
@@ -75,5 +76,5 @@ class SystemManager(NcatBotPlugin):
         config: Config = configs[config_name]
         oldvalue, newvalue = config.update(value)
         if config.on_change:
-            run_coroutine(config.on_change, oldvalue, newvalue)
+            await asyncio.to_thread(run_func_sync, config.on_change, oldvalue, newvalue)
         await event.reply(f"插件 {plugin_name} 配置 {config_name} 更新为 {value}")
