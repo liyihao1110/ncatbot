@@ -29,7 +29,7 @@ class ClientMixin:
         self.mock_mode = False
         LOG.info("Mock 模式已禁用")
 
-    def mock_start(self):
+    async def mock_start(self):
         LOG.info("Mock 模式启动：跳过 NapCat 服务和 WebSocket 连接")
         # 在 mock 模式下触发启动事件
         from ncatbot.core.event.meta import MetaEvent
@@ -45,13 +45,14 @@ class ClientMixin:
         )
         # 同步调用启动处理器
         import inspect
-        from ncatbot.utils import run_coroutine
+        from ncatbot.utils import run_func_sync
         from ncatbot.utils import OFFICIAL_STARTUP_EVENT
 
         for handler in self.event_handlers[OFFICIAL_STARTUP_EVENT]:
             if inspect.iscoroutinefunction(handler):
-                run_coroutine(handler, startup_event)
+                await handler(startup_event)
             else:
+                
                 handler(startup_event)
         return
 

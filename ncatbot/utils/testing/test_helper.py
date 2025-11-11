@@ -2,7 +2,7 @@ from typing import Literal, Optional, Dict, List, Union, TYPE_CHECKING
 from .event_factory import EventFactory
 from .mock_api import MockAPIAdapter
 from ncatbot.utils import get_log
-from ncatbot.utils import run_coroutine
+from ncatbot.utils import run_func_sync
 
 if TYPE_CHECKING:
     from ncatbot.core.event.message_segment import MessageArray
@@ -66,7 +66,7 @@ class TestHelper:
         **kwargs,
     ):
         """同步发送群聊消息事件并处理"""
-        run_coroutine(
+        run_func_sync(
             self.send_group_message, message, group_id, user_id, nickname, **kwargs
         )
 
@@ -78,7 +78,7 @@ class TestHelper:
         **kwargs,
     ):
         """同步发送私聊消息事件并处理"""
-        run_coroutine(self.send_private_message, message, user_id, nickname, **kwargs)
+        run_func_sync(self.send_private_message, message, user_id, nickname, **kwargs)
 
     def assert_reply_sent(self, expected_text: Optional[str] = None):
         """断言发送了回复"""

@@ -9,7 +9,7 @@ from typing import Type, TypeVar
 from ncatbot.core.client import BotClient
 from ncatbot.plugin_system import BasePlugin
 from ncatbot.utils import get_log
-from ncatbot.utils import run_coroutine
+from ncatbot.utils import run_func_sync
 
 T = TypeVar("T")
 LOG = get_log("TestClient")
@@ -35,7 +35,7 @@ class TestClient(ClientMixin, BotClient):
         BotClient.start(self, skip_plugin_load=self.skip_plugin_load, **kwargs)
 
     def register_plugin(self, plugin_class: Type[BasePlugin]):
-        run_coroutine(self.plugin_loader.load_plugin, plugin_class)
+        run_func_sync(self.plugin_loader.load_plugin, plugin_class)
 
     def unregister_plugin(self, plugin: BasePlugin):
         """从测试客户端移除插件
@@ -44,7 +44,7 @@ class TestClient(ClientMixin, BotClient):
             plugin: 要移除的插件实例
         """
         if plugin in self.get_registered_plugins():
-            run_coroutine(self.plugin_loader.unload_plugin, plugin.name)
+            run_func_sync(self.plugin_loader.unload_plugin, plugin.name)
             LOG.info(f"插件 {plugin.name} 已从测试客户端移除")
         else:
             LOG.warning(f"插件 {plugin.name} 未在测试客户端中注册")

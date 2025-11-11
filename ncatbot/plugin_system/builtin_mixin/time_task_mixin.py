@@ -7,7 +7,7 @@ import asyncio
 import functools
 import threading
 from schedule import Scheduler
-from ncatbot.utils import run_coroutine
+from ncatbot.utils import run_func_sync
 
 
 class TimeTaskScheduler:
@@ -214,7 +214,7 @@ class TimeTaskScheduler:
                 # 执行任务
                 try:
                     if asyncio.iscoroutinefunction(job_info["func"]):
-                        run_coroutine(job_info["func"], *final_args, **final_kwargs)
+                        run_func_sync(job_info["func"], *final_args, **final_kwargs)
                     else:
                         job_info["func"](*final_args, **final_kwargs)
                     job_info["run_count"] += 1
