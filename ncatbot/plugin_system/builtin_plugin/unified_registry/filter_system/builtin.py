@@ -1,7 +1,7 @@
 """内置过滤器实现 v2.0"""
 
 from typing import TYPE_CHECKING, Callable
-from ncatbot.core import BaseMessageEvent
+from ncatbot.core import BaseMessageEvent, MessageSentEvent
 from ncatbot.utils import status
 from ncatbot.utils.assets.literals import PermissionGroup
 from .base import BaseFilter
@@ -31,7 +31,6 @@ class MessageSentFilter(BaseFilter):
     
     def check(self, event: "BaseMessageEvent") -> bool:
         """检查是否为自身上报的消息"""
-        from ncatbot.core.event import MessageSentEvent
         return isinstance(event, MessageSentEvent)
 
 class AdminFilter(BaseFilter):
@@ -50,6 +49,35 @@ class AdminFilter(BaseFilter):
         )
 
 
+class GroupAdminFilter(BaseFilter):
+    """群管理员权限过滤器"""
+
+    def check(self, event: "BaseMessageEvent") -> bool:
+        """检查用户是否为群管理员"""
+        group_id = getattr(event, "group_id", None)
+        if not group_id:  # 不是群事件
+            return False
+        # FIXME: napcat 可能不会实时更新 sender 信息，同步问题修复后考虑通过api获取role信息
+        sender_info = event.sender
+        sender_role = getattr(sender_info,"role", None)
+        return sender_role in ["admin", "owner"]
+
+
+class GroupOwnerFilter(BaseFilter):
+    """群主权限过滤器"""
+
+    def check(self, event: "BaseMessageEvent") -> bool:
+        """检查用户是否为群主"""
+        # 与 GroupAdminFilter 类似，考虑重构
+        group_id = getattr(event, "group_id", None)
+        if not group_id:  # 不是群事件
+            return False
+        # FIXME: napcat 可能不会实时更新 sender 信息，同步问题修复后考虑通过api获取role信息
+        sender = event.sender
+        sender_role = getattr(sender,"role", None)
+        return sender_role == "owner"
+
+
 class RootFilter(BaseFilter):
     """Root权限过滤器"""
 
@@ -64,6 +92,13 @@ class RootFilter(BaseFilter):
         )
 
 
+class NonSelfFilter(BaseFilter):
+    """非自身消息过滤器"""
+
+    def check(self, event: "BaseMessageEvent") -> bool:
+        return not isinstance(event, MessageSentEvent)
+
+
 class TrueFilter(BaseFilter):
     """True过滤器, 用于注册发送消息时调用的功能"""
 
@@ -75,7 +110,7 @@ class CustomFilter(BaseFilter):
     """自定义函数过滤器包装器"""
 
     def __init__(
-        self, filter_func: Callable[[BaseMessageEvent], bool], name: str = None
+        self, filter_func: Callable[[BaseMessageEvent], bool], name: str = ""
     ):
         """初始化自定义过滤器
 

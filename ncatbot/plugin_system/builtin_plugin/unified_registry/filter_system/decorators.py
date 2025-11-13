@@ -6,7 +6,10 @@ from .builtin import (
     GroupFilter,
     PrivateFilter,
     MessageSentFilter,
+    NonSelfFilter,
     AdminFilter,
+    GroupAdminFilter,
+    GroupOwnerFilter,
     RootFilter,
     TrueFilter,
     CustomFilter,
@@ -55,6 +58,18 @@ def admin_filter(func: Callable) -> Callable:
     return deco(func)
 
 
+def group_admin_filter(func: Callable) -> Callable:
+    """群管理员专用装饰器"""
+    deco = filter(GroupAdminFilter())
+    return deco(func)
+
+
+def group_owner_filter(func: Callable) -> Callable:
+    """群主专用装饰器"""
+    deco = filter(GroupOwnerFilter())
+    return deco(func)
+
+
 def root_filter(func: Callable) -> Callable:
     """Root专用装饰器"""
     deco = filter(RootFilter())
@@ -63,7 +78,7 @@ def root_filter(func: Callable) -> Callable:
 
 def on_message(func: Callable) -> Callable:
     """消息专用装饰器"""
-    deco = filter(TrueFilter())
+    deco = filter(NonSelfFilter())
     return deco(func)
 
 def on_message_sent(func: Callable) -> Callable:
