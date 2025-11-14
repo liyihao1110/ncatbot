@@ -27,7 +27,7 @@ from ncatbot.utils import (
     OFFICIAL_STARTUP_EVENT,
     OFFICIAL_HEARTBEAT_EVENT,
 )
-from ncatbot.utils.error import NcatBotError, NcatBotConnectionError
+from ncatbot.utils.error import NcatBotError, NcatBotConnectionError, AdapterEventError
 
 LOG = get_log("Adapter")
 
@@ -120,6 +120,9 @@ class Adapter:
                 # TODO 细化判断
                 raise NcatBotConnectionError("NapCat 服务主动关闭了连接")
 
+            except AdapterEventError:
+                LOG.warning("构造事件时出错, 已抛弃该事件")
+            
             except Exception:
                 await self.cleanup()
                 LOG.info(traceback.format_exc())
@@ -137,7 +140,7 @@ class Adapter:
     async def _handle_event(self, message: dict):
         """处理事件, 不能阻塞"""
         try:
-            post_type: Literal["message", "notice", "request", "meta_event"] = (
+            post_type: Literal["message", "notice", "request", "meta_event", "message_sent"] = (
                 message.get("post_type")
             )
 
@@ -173,16 +176,19 @@ class Adapter:
             elif post_type == "message_sent":
                 event = MessageSentEvent(message)
                 callback = self.event_callback.get(OFFICIAL_MESSAGE_SENT_EVENT)
+        except Exception as e:
+            raise AdapterEventError(f"构造{post_type}事件时出错: {e}")
 
+        try:
             if callback:
                 try:
                     await callback(event)
                 except Exception as e:
-                    LOG.error(f"处理事件时出错: {e}")
+                    LOG.error(f"处理事件回调时出错: {e}")
             else:
                 LOG.warning(f"未找到事件回调: {post_type}")
         except Exception as e:
-            raise NcatBotError(f"处理事件时出错: {e}")
+            raise NcatBotError(f"处理事件回调时出错: {e}")
 
     async def cleanup(self):
         """清理资源"""
