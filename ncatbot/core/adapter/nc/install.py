@@ -28,6 +28,7 @@ LOG = get_log("ncatbot.core.adapter.nc.install")
 
 def get_napcat_version():
     """从GitHub获取 napcat 版本号"""
+    return "4.9.70"
     version_url = "https://raw.githubusercontent.com/NapNeko/NapCatQQ/main/package.json"
     version_url = gen_url_with_proxy(version_url)
     LOG.info(f"正在获取版号信息... {version_url}")
