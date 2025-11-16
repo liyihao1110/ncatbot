@@ -9,6 +9,7 @@ import websockets
 from .nc.launch import napcat_service_ok
 from websockets.exceptions import ConnectionClosedError
 from ncatbot.core.event import (
+    PokeNoticeEvent,
     PrivateMessageEvent,
     GroupMessageEvent,
     MessageSentEvent,
@@ -122,7 +123,7 @@ class Adapter:
 
             except AdapterEventError:
                 LOG.warning("构造事件时出错, 已抛弃该事件")
-            
+
             except Exception:
                 await self.cleanup()
                 LOG.info(traceback.format_exc())
@@ -140,9 +141,9 @@ class Adapter:
     async def _handle_event(self, message: dict):
         """处理事件, 不能阻塞"""
         try:
-            post_type: Literal["message", "notice", "request", "meta_event", "message_sent"] = (
-                message.get("post_type")
-            )
+            post_type: Literal[
+                "message", "notice", "request", "meta_event", "message_sent"
+            ] = message.get("post_type")
 
             callback = None
 
@@ -155,7 +156,10 @@ class Adapter:
                     event = GroupMessageEvent(message)
                     callback = self.event_callback.get(OFFICIAL_GROUP_MESSAGE_EVENT)
             elif post_type == "notice":
-                event = NoticeEvent(message)
+                if message.get("sub_type", "") == "poke":
+                    event = PokeNoticeEvent(message)
+                else:
+                    event = NoticeEvent(message)
                 callback = self.event_callback.get(OFFICIAL_NOTICE_EVENT)
             elif post_type == "request":
                 event = RequestEvent(message)
