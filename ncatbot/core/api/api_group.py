@@ -1,7 +1,7 @@
 from typing import Literal, Union, List
 from .utils import BaseAPI, APIReturnStatus
 from ncatbot.utils import run_coroutine
-from ncatbot.core.event import File
+from ncatbot.core.event import File, MessageArray
 from dataclasses import dataclass
 import time
 
@@ -159,6 +159,36 @@ class GroupMemberList:
         return f"GroupMemberList(members={self.members})"
 
 
+@dataclass
+class EssenceMessage:
+    msg_seq: int
+    msg_random: int
+    sender_id: str  # 实际应该为int
+    sender_nick: str
+    operator_id: str  # 实际应该为int
+    operator_nick: str
+    message_id: int
+    operator_time: int
+    content: MessageArray
+
+    def __init__(self, data_dict: dict):
+        self.msg_seq = data_dict["msg_seq"]
+        self.msg_random = data_dict["msg_random"]
+        self.sender_id = data_dict["sender_id"]
+        self.sender_nick = data_dict["sender_nick"]
+        self.operator_id = data_dict["operator_id"]
+        self.operator_nick = data_dict["operator_nick"]
+        self.message_id = data_dict["message_id"]
+        self.operator_time = data_dict["operator_time"]
+        content = data_dict["content"]
+        for index, seq in enumerate(content):
+            # 为 DownloadableMessageSegment 补全 file 字段
+            if seq["type"] in ["image", "file", "record", "video"]:
+                seq_url = seq["data"].get("url")
+                content[index]["data"]["file"] = seq_url.split("/")[-1] if seq_url else ""
+        self.content = MessageArray.from_list(content)
+
+
 class GroupAPI(BaseAPI):
     # ---------------------
     # region 群成员管理
@@ -283,13 +313,12 @@ class GroupAPI(BaseAPI):
         )
         APIReturnStatus.raise_if_failed(result)
 
-    async def get_group_essence_msg(self, group_id: Union[str, int]) -> List[dict]:
-        # TODO: 返回值(不紧急)
+    async def get_essence_msg_list(self, group_id: Union[str, int]) -> List[EssenceMessage]:
         result = await self.async_callback(
-            "/get_group_essence_msg", {"group_id": group_id}
+            "/get_essence_msg_list", {"group_id": group_id}
         )
         status = APIReturnStatus(result)
-        return status.data
+        return [EssenceMessage(msg) for msg in status.data]
 
     # --------------
     # region 群文件

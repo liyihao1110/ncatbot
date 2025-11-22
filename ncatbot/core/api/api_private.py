@@ -47,13 +47,14 @@ class PrivateAPI(BaseAPI):
     # ---------------------
     # region 其它
     # ---------------------
-    async def set_input_status(self, status: int) -> None:
+    async def set_input_status(self, event_type: int, user_id: Union[str, int]) -> None:
         """设置输入状态
 
         Args:
-            status (int): 状态码, 0 表示 "对方正在说话", 1 表示 "对方正在输入"
+            event_type (int): 事件类型, 0 表示 "对方正在说话", 1 表示 "对方正在输入"
+            user_id (Union[str, int]): 用户 QQ 号
         """
-        result = await self.async_callback("/set_input_status", {"status": status})
+        result = await self.async_callback("/set_input_status", {"event_type": event_type, "user_id": user_id})
         APIReturnStatus.raise_if_failed(result)
 
     # ---------------------
@@ -80,5 +81,5 @@ class PrivateAPI(BaseAPI):
             self.post_private_file, user_id, image, record, video, file
         )
 
-    def set_input_status_sync(self, status: int) -> None:
-        return run_coroutine(self.set_input_status, status)
+    def set_input_status_sync(self, event_type: int, user_id: Union[str, int]) -> None:
+        return run_coroutine(self.set_input_status, event_type, user_id)

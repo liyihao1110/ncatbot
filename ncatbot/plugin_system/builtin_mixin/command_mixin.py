@@ -64,14 +64,14 @@ class CommandMixin(FunctionMixin):
 
     def _create_command_handler(self, handler: Callable) -> Callable:
         @functools.wraps(handler)
-        async def warpped_handler(event: BaseMessageEvent, handler=handler):
+        async def wrapped_handler(event: BaseMessageEvent, handler=handler):
             args = event.raw_message.split()
             if asyncio.iscoroutinefunction(handler):
                 return await handler(event, args)
             else:
                 return handler(event, args)
 
-        return warpped_handler
+        return wrapped_handler
 
     def register_command(
         self,
@@ -91,10 +91,10 @@ class CommandMixin(FunctionMixin):
         if name in self._registered_commands:
             raise ValueError(f"命令 {name} 已经存在")
 
-        warpped_handler = self._create_command_handler(handler)
+        wrapped_handler = self._create_command_handler(handler)
         func = self._register_func(
             name,
-            warpped_handler,
+            wrapped_handler,
             AliasFilter(name, aliases).check,
             description=description,
             usage=usage,

@@ -33,12 +33,23 @@
 # 核心组件
 from .registry import FilterRegistry, FilterEntry, filter_registry
 from .base import BaseFilter
-from .builtin import GroupFilter, PrivateFilter, AdminFilter, RootFilter, CustomFilter
+from .builtin import (
+    GroupFilter,
+    PrivateFilter, 
+    MessageSentFilter, 
+    AdminFilter, 
+    GroupAdminFilter, 
+    GroupOwnerFilter,
+    RootFilter, 
+    CustomFilter
+)
 from .decorators import (
     filter,
     group_filter,
     private_filter,
     admin_filter,
+    group_admin_filter,
+    group_owner_filter,
     root_filter,
     admin_group_filter,
     admin_private_filter,
@@ -53,7 +64,10 @@ __all__ = [
     # 内置过滤器
     "GroupFilter",
     "PrivateFilter",
+    "MessageSentFilter",
     "AdminFilter",
+    "GroupAdminFilter",
+    "GroupOwnerFilter",
     "RootFilter",
     "CustomFilter",
     # 注册器实例
@@ -63,6 +77,8 @@ __all__ = [
     "group_filter",
     "private_filter",
     "admin_filter",
+    "group_admin_filter",
+    "group_owner_filter",
     "root_filter",
     "admin_group_filter",
     "admin_private_filter",
