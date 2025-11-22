@@ -196,7 +196,7 @@ class BotClient:
     def add_request_handler(
         self,
         handler: Callable[[RequestEvent], None],
-        filter: Literal["group", "friend"] = "group",
+        filter: Literal["group", "friend"] = None,
     ):
         async def wrapper(event: RequestEvent):
             if filter is None:
