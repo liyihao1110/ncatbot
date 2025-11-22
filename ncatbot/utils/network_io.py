@@ -12,7 +12,7 @@ _log = get_log()
 
 
 def post_json(
-    url: str, payload: dict = None, headers: dict = None, timeout: float = 5.0
+    url: str, payload: dict | None = None, headers: dict | None = None, timeout: float = 5.0
 ) -> dict:
     body = None
     req_headers = {
@@ -44,7 +44,7 @@ def post_json(
         raise
 
 
-def get_json(url: str, headers: dict = None, timeout: float = 5.0) -> dict:
+def get_json(url: str, headers: dict | None = None, timeout: float = 5.0) -> dict:
     req_headers = {
         "User-Agent": "ncatbot/1.0",
         "Accept": "application/json",
@@ -142,7 +142,7 @@ def get_proxy_url():
         return available_proxy[0]
     else:
         _log.warning("无法连接到任何 GitHub 代理, 将直接连接 GitHub")
-        status.current_github_proxy = ""
+        status.current_github_proxy = None
         return ""
 
 
