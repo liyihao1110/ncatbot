@@ -121,6 +121,7 @@ class BotClient:
             self.add_heartbeat_handler(make_async_handler(OFFICIAL_HEARTBEAT_EVENT))
 
     def create_official_event_handler_group(self, event_name):
+        # 创建官方事件处理器组，处理 NapCat 上报的事件
         async def event_callback(event: BaseEventData):
             # 处理回调, 不能阻塞
             for handler in self.event_handlers[event_name]:
@@ -160,7 +161,7 @@ class BotClient:
                 handler(event)
 
         self.add_handler(OFFICIAL_PRIVATE_MESSAGE_EVENT, wrapper)
-    
+
     def add_message_send_handler(
         self, handler: Callable[[MessageSendEvent], None], filter=None
     ):
@@ -172,21 +173,27 @@ class BotClient:
                 await handler(event)
             else:
                 handler(event)
+
         self.add_handler(OFFICIAL_MESSAGE_SEND_EVENT, handler)
 
     def add_notice_handler(self, handler: Callable[[NoticeEvent], None], filter=None):
         self.add_handler(OFFICIAL_NOTICE_EVENT, handler)
 
     def add_request_handler(
-        self, handler: Callable[[RequestEvent], None], filter=Literal["group", "friend"]
+        self,
+        handler: Callable[[RequestEvent], None],
+        filter: Literal["group", "friend"],
     ):
         async def wrapper(event: RequestEvent):
-            if filter != event.request_type:
-                return
-            if inspect.iscoroutinefunction(handler):
-                await handler(event)
-            else:
+            if filter is None:
                 handler(event)
+            else:
+                if filter != event.request_type:
+                    return
+                if inspect.iscoroutinefunction(handler):
+                    await handler(event)
+                else:
+                    handler(event)
 
         self.add_handler(OFFICIAL_REQUEST_EVENT, wrapper)
 
@@ -227,7 +234,7 @@ class BotClient:
             return f  # 其实没有必要
 
         return decorator
-    
+
     def on_message_send(
         self,
         filter: Union[Type[MessageSegment], None] = None,
@@ -238,7 +245,7 @@ class BotClient:
 
         def decorator(f: Callable[[MessageSendEvent], None]):
             self.add_message_send_handler(f, filter)
-        
+
         return decorator
 
     def on_notice(self, filter=None):
@@ -250,7 +257,7 @@ class BotClient:
 
         return decorator
 
-    def on_request(self, filter=Literal["group", "friend"]):
+    def on_request(self, filter: Literal["group", "friend"] = None):
         """装饰器注册请求事件处理器"""
 
         def decorator(f: Callable[[RequestEvent], None]):
