@@ -1,3 +1,4 @@
+import re
 from .event_data import BaseEventData
 from typing import Literal, Optional
 
@@ -68,12 +69,24 @@ class NoticeEvent(BaseEventData):
             self.target_id = str(data["target_id"])
         if "message_id" in data and data["message_id"] is not None:
             self.message_id = str(data["message_id"])
-        if "likes" in data and isinstance(data["likes"], list) and len(data["likes"]) == 1 and isinstance(data["likes"][0], dict) and data["likes"][0].get("emoji_id") is not None:
+        if (
+            "likes" in data
+            and isinstance(data["likes"], list)
+            and len(data["likes"]) == 1
+            and isinstance(data["likes"][0], dict)
+            and data["likes"][0].get("emoji_id") is not None
+        ):
             self.emoji_like_id = str(data["likes"][0]["emoji_id"])
 
         # 处理其他字段
         for k, v in data.items():
-            if k not in ["group_id", "user_id", "target_id", "message_id", "likes"]:  # 跳过已处理的字段
+            if k not in [
+                "group_id",
+                "user_id",
+                "target_id",
+                "message_id",
+                "likes",
+            ]:  # 跳过已处理的字段
                 setattr(self, k, v)
 
     def get_core_properties_str(self):
