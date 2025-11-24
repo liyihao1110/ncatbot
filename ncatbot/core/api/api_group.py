@@ -578,7 +578,7 @@ class GroupAPI(BaseAPI):
         tip_window_type = 0
         type = 0
         result = await self.async_callback(
-            "/send_group_notice",
+            "/_send_group_notice",
             {
                 "group_id": group_id,
                 "content": content,
