@@ -1,4 +1,3 @@
-import re
 from .event_data import BaseEventData
 from typing import Literal, Optional
 
@@ -85,6 +84,7 @@ class NoticeEvent(BaseEventData):
                 "user_id",
                 "target_id",
                 "message_id",
+                "self_id",
                 "likes",
             ]:  # 跳过已处理的字段
                 setattr(self, k, v)
