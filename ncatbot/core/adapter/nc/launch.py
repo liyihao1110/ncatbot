@@ -73,11 +73,12 @@ def check_napcat_service_remote():
         LOG.info(
             f"napcat 服务器 {ncatbot_config.napcat.ws_uri} 在线, 正在检查账号状态..."
         )
-        if not ncatbot_config.enable_webui_interaction:  # 跳过基于 WebUI 交互的检查
-            LOG.warning(
-                f"跳过基于 WebUI 交互的检查, 请自行确保 NapCat 已经登录了正确的 QQ {ncatbot_config.bt_uin}"
-            )
-            return True
+        if ncatbot_config.napcat.enable_webui:
+            if not ncatbot_config.enable_webui_interaction:  # 跳过基于 WebUI 交互的检查
+                LOG.warning(
+                    f"跳过基于 WebUI 交互的检查, 请自行确保 NapCat 已经登录了正确的 QQ {ncatbot_config.bt_uin}"
+                )
+                return True
         status = report_login_status()
         if status == 0:
             return True
@@ -118,19 +119,23 @@ def launch_napcat_service(*args, **kwargs):
                     raise NcatBotError("安装或更新 NapCat 失败")
                 config_napcat()
                 start_napcat()
-                if ncatbot_config.enable_webui_interaction:
-                    if not napcat_service_ok(3):
-                        LOG.info("登录中...")
-                        login(reset=True)
-                        connect_napcat()
-                        LOG.info("连接成功")
+                if ncatbot_config.napcat.enable_webui:
+                    if ncatbot_config.enable_webui_interaction:
+                        if not napcat_service_ok(3):
+                            LOG.info("登录中...")
+                            login(reset=True)
+                            connect_napcat()
+                            LOG.info("连接成功")
+                        else:
+                            LOG.info("快速登录成功, 跳过登录引导")
                     else:
-                        LOG.info("快速登录成功, 跳过登录引导")
+                        if not napcat_service_ok(15):
+                            raise NcatBotError("禁用 WebUI 交互时, 必须手动登录")
+                        else:
+                            pass
                 else:
-                    if not napcat_service_ok(15):
-                        raise NcatBotError("禁用 WebUI 交互时, 必须手动登录")
-                    else:
-                        pass
+                    if not napcat_service_ok(ncatbot_config.websocket_timeout):
+                        raise TimeoutError(f"NapCat 未能在 {ncatbot_config.websocket_timeout} 秒内启动, WebSocket 连接失败")
 
 
 if __name__ == "__main__":
