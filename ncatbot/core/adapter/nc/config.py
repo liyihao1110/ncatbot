@@ -124,33 +124,39 @@ def config_napcat():
                 ws_listen_ip = webui_config.get("wsListenIp", "0.0.0.0")
 
             update = False
-            if token != ncatbot_config.napcat.webui_token:
-                update = True
-                LOG.warning(
-                    "WebUI 令牌不匹配, 将修改为 NcatBot 配置的令牌: "
-                    + ncatbot_config.napcat.webui_token
-                )
-                webui_config["token"] = ncatbot_config.napcat.webui_token
-            if port != ncatbot_config.napcat.webui_port:
-                update = True
-                LOG.warning(
-                    "WebUI 端口不匹配, 将修改为 NcatBot 配置的端口: "
-                    + str(ncatbot_config.napcat.webui_port)
-                )
-                webui_config["port"] = ncatbot_config.napcat.webui_port
-            if ws_listen_ip != ncatbot_config.napcat.ws_listen_ip:
-                update = True
-                LOG.warning(
-                    "WebUI 监听 IP 不匹配, 将修改为 NcatBot 配置的监听 IP: "
-                    + ncatbot_config.napcat.ws_listen_ip
-                )
-                webui_config["wsListenIp"] = ncatbot_config.napcat.ws_listen_ip
+            if not ncatbot_config.napcat.enable_webui:
+                LOG.warning("WebUI 已禁用")
+                if port != 0:
+                    update = True
+                    webui_config["port"] = 0
+            else:
+                if token != ncatbot_config.napcat.webui_token:
+                    update = True
+                    LOG.warning(
+                        "WebUI 令牌不匹配, 将修改为 NcatBot 配置的令牌: "
+                        + ncatbot_config.napcat.webui_token
+                    )
+                    webui_config["token"] = ncatbot_config.napcat.webui_token
+                if port != ncatbot_config.napcat.webui_port:
+                    update = True
+                    LOG.warning(
+                        "WebUI 端口不匹配, 将修改为 NcatBot 配置的端口: "
+                        + str(ncatbot_config.napcat.webui_port)
+                    )
+                    webui_config["port"] = ncatbot_config.napcat.webui_port
+                if ws_listen_ip != ncatbot_config.napcat.ws_listen_ip:
+                    update = True
+                    LOG.warning(
+                        "WebUI 监听 IP 不匹配, 将修改为 NcatBot 配置的监听 IP: "
+                        + ncatbot_config.napcat.ws_listen_ip
+                    )
+                    webui_config["wsListenIp"] = ncatbot_config.napcat.ws_listen_ip
             if update:
                 with open(webui_config_path, "w") as f:
                     json.dump(webui_config, f, indent=4, ensure_ascii=False)
         except FileNotFoundError:
             LOG.warning("第一次运行 WebUI, 将创建 WebUI 配置文件")
-            default_webui_config["port"] = ncatbot_config.napcat.webui_port
+            default_webui_config["port"] = ncatbot_config.napcat.webui_port if ncatbot_config.napcat.enable_webui else 0
             default_webui_config["token"] = ncatbot_config.napcat.webui_token
             default_webui_config["wsListenIp"] = ncatbot_config.napcat.ws_listen_ip
             with open(webui_config_path, "w") as f:
