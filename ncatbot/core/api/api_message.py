@@ -226,15 +226,15 @@ class MessageAPI(BaseAPI):
     async def send_group_custom_music(
         self,
         group_id: Union[str, int],
-        audio: str,
         url: str,
         title: str,
+        image: str,
+        audio: Optional[str] = None,
         content: Optional[str] = None,
-        image: Optional[str] = None,
     ) -> str:
         """发送群音乐分享消息（NcatBot 接口）"""
         music = Music(
-            type="custom", id=None, url=url, title=title, content=content, image=image
+            type="custom", id=None, url=url, audio=audio, title=title, content=content, image=image
         )
         result = await self.async_callback(
             "/send_group_msg", {"group_id": group_id, "message": [music.to_dict()]}
@@ -422,15 +422,15 @@ class MessageAPI(BaseAPI):
     async def send_private_custom_music(
         self,
         user_id: Union[str, int],
-        audio: str,
         url: str,
         title: str,
+        image: str,
+        audio: Optional[str] = None,
         content: Optional[str] = None,
-        image: Optional[str] = None,
     ) -> str:
         """发送私聊音乐分享消息（NcatBot 接口）"""
         music = Music(
-            type="custom", id=None, url=url, title=title, content=content, image=image
+            type="custom", id=None, url=url, audio=audio, title=title, content=content, image=image
         )
         result = await self.async_callback(
             "/send_private_msg", {"user_id": user_id, "message": [music.to_dict()]}
