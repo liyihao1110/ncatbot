@@ -443,10 +443,10 @@ class RBACManager:
         self.add_role(PermissionGroup.ADMIN.value)
         self.add_role(PermissionGroup.ROOT.value)
         self.set_role_inheritance(
-            PermissionGroup.ADMIN.value, PermissionGroup.ROOT.value
+            PermissionGroup.ADMIN.value, PermissionGroup.USER.value
         )
         self.set_role_inheritance(
-            PermissionGroup.USER.value, PermissionGroup.ADMIN.value
+            PermissionGroup.ROOT.value, PermissionGroup.ADMIN.value
         )
         self.unassign_root_roles()
         self.assign_role_to_user(ncatbot_config.root, PermissionGroup.ROOT.value)
