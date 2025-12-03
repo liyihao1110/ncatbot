@@ -55,7 +55,6 @@ def start_napcat_linux():
         if ncatbot_config.napcat.stop_napcat:
             atexit.register(lambda: stop_napcat_linux(ncatbot_config.bt_uin))
     except Exception as e:
-        import traceback
 
         LOG.error(f"pgrep 命令执行失败, 无法判断 QQ 是否启动, 请检查错误: {e}")
         LOG.info(traceback.format_exc())
