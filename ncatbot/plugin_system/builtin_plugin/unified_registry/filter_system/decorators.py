@@ -53,7 +53,7 @@ def private_filter(func: Callable) -> Callable:
 
 
 def admin_filter(func: Callable) -> Callable:
-    """管理员专用装饰器"""
+    """BOT 管理员专用装饰器"""
     deco = filter(AdminFilter())
     return deco(func)
 
@@ -89,13 +89,13 @@ def on_message_sent(func: Callable) -> Callable:
 
 # 组合装饰器
 def admin_group_filter(func: Callable) -> Callable:
-    """管理员群聊专用装饰器"""
+    """BOT 管理员且群聊消息专用装饰器"""
     deco = filter(GroupFilter(), AdminFilter())
     return deco(func)
 
 
 def admin_private_filter(func: Callable) -> Callable:
-    """管理员私聊专用装饰器"""
+    """BOT 管理员且私聊消息专用装饰器"""
     deco = filter(PrivateFilter(), AdminFilter())
     return deco(func)
 
