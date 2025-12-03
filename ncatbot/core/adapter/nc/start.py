@@ -92,35 +92,37 @@ def start_napcat_windows():
     # Windows启动逻辑
     def get_launcher_name():
         """获取对应系统的launcher名称"""
-        is_server = "Server" in platform.release()
+        
+        # 使用 platform.platform() 获取完整系统信息
+        platform_info = platform.platform()
+        
+        # 或使用 win32_edition() 检测是否为 Server 版本
+        try:
+            edition = platform.win32_edition()
+            is_server = "Server" in edition
+        except AttributeError:
+            is_server = "Server" in platform_info
+        
         if is_server:
-            version = platform.release()
-            if "2016" in version:
-                LOG.info("当前操作系统为: Windows Server 2016")
+            if "2016" in platform_info or "2019" in platform_info or "2022" in platform_info:
+                LOG.info(f"当前操作系统为: Windows Server (旧版本)")
                 return "launcher-win10.bat"
-            elif "2019" in version:
-                LOG.info("当前操作系统为: Windows Server 2019")
-                return "launcher-win10.bat"
-            elif "2022" in version:
-                LOG.info("当前操作系统为: Windows Server 2022")
-                return "launcher-win10.bat"
-            elif "2025" in version:
+            elif "2025" in platform_info:
                 LOG.info("当前操作系统为：Windows Server 2025")
                 return "launcher.bat"
             else:
-                LOG.error(
-                    f"不支持的的 Windows Server 版本: {version}，将按照 Windows 10 内核启动"
-                )
+                LOG.error(f"不支持的 Windows Server 版本，将按照 Windows 10 内核启动")
                 return "launcher-win10.bat"
-
-        if platform.release() == "10":
+        
+        # 桌面版 Windows
+        release = platform.release()
+        if release == "10":
             LOG.info("当前操作系统为: Windows 10")
             return "launcher-win10.bat"
-
-        if platform.release() == "11":
+        elif release == "11":
             LOG.info("当前操作系统为: Windows 11")
             return "launcher.bat"
-
+        
         return "launcher-win10.bat"
 
     launcher = get_launcher_name()
