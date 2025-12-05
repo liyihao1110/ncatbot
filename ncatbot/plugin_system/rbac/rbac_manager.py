@@ -540,6 +540,19 @@ class RBACManager:
         if not self.user_has_role(user_name, role_name):
             self.manager.assign_role_to_user(role_name, user_name)
 
+    def unassign_role_to_user(
+        self, user_name: str, role_name: str, create_user_if_not_exists: bool = True
+    ):
+        if not self.user_exists(user_name):
+            if create_user_if_not_exists:
+                self.add_user(user_name)
+            else:
+                raise IndexError(f"用户 {user_name} 不存在")
+        if not self.role_exists(role_name):
+            raise IndexError(f"角色 {role_name} 不存在")
+        if self.user_has_role(user_name, role_name):
+            self.manager.unassign_role_to_user(role_name, user_name)
+
     def assign_permissions_to_role(
         self,
         role_name: str,
