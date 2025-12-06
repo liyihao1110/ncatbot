@@ -121,22 +121,22 @@ class FoldedLogger(logging.Logger):
     def debug(self, msg, *args, **kwargs):
         # 如果包含 base64 的大段内容，则折叠显示
         msg = self.reset(msg)
-        super().debug(msg, *args, **kwargs)
+        super().debug(msg, *args, **kwargs, stacklevel=2)
 
     def info(self, msg, *args, **kwargs):
         # 如果包含 base64 的大段内容，则折叠显示
         msg = self.reset(msg)
-        super().info(msg, *args, **kwargs)
+        super().info(msg, *args, **kwargs, stacklevel=2)
 
     def error(self, msg, *args, **kwargs):
         # 如果包含 base64 的大段内容，则折叠显示
         msg = self.reset(msg)
-        super().error(msg, *args, **kwargs)
+        super().error(msg, *args, **kwargs, stacklevel=2)
 
     def warning(self, msg, *args, **kwargs):
         # 如果包含 base64 的大段内容，则折叠显示
         msg = self.reset(msg)
-        super().warning(msg, *args, **kwargs)
+        super().warning(msg, *args, **kwargs, stacklevel=2)
 
 
 # -------------------------------------------------
