@@ -6,11 +6,11 @@ import traceback
 class NcatBotError(Exception):
     logger = get_log("NcatBotError")
 
-    def __init__(self, info, log: bool = True):
+    def __init__(self, info, log: bool = True, stacklevel: int = 3):
         if log:
-            self.logger.error(f"{info}")
+            self.logger.error(f"{info}", stacklevel=stacklevel)
             if ncatbot_config.debug:
-                self.logger.info(f"stacktrace:\n{traceback.format_exc()}")
+                self.logger.info(f"stacktrace:\n{traceback.format_exc()}", stacklevel=stacklevel)
         super().__init__(info)
 
 
@@ -19,7 +19,7 @@ class AdapterEventError(Exception):
 
     def __init__(self, info, log: bool = True):
         if log:
-            self.logger.error(f"{info}")
+            self.logger.error(f"{info}", stacklevel=2)
             if ncatbot_config.debug:
                 self.logger.info(f"stacktrace:\n{traceback.format_exc()}")
         super().__init__(info)
@@ -27,7 +27,7 @@ class AdapterEventError(Exception):
 
 class NcatBotValueError(NcatBotError):
     def __init__(self, var_name, val_name, must_be: bool = False):
-        super().__init__(f"{var_name} 的值{'必须' if must_be else '不能'}为 {val_name}")
+        super().__init__(f"{var_name} 的值{'必须' if must_be else '不能'}为 {val_name}", stacklevel=3)
 
 
 class NcatBotConnectionError(Exception):

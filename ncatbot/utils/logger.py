@@ -28,39 +28,40 @@ default_log_format = {
     "console": {
         "DEBUG": f"{Color.CYAN}[%(asctime)s.%(msecs)03d]{Color.RESET} "
         f"{Color.BLUE}%(colored_levelname)-8s{Color.RESET} "
-        f"{Color.GRAY}[%(threadName)s|%(processName)s]{Color.RESET} "
         f"{Color.MAGENTA}%(name)s{Color.RESET} "
-        f"{Color.YELLOW}%(filename)s:%(funcName)s:%(lineno)d{Color.RESET} "
+        f"{Color.YELLOW}'%(filename)s:%(lineno)d'{Color.RESET} "
         "| %(message)s",
         "INFO": f"{Color.CYAN}[%(asctime)s.%(msecs)03d]{Color.RESET} "
         f"{Color.GREEN}%(colored_levelname)-8s{Color.RESET} "
-        f"{Color.MAGENTA}%(name)s{Color.RESET} ➜ "
+        f"{Color.MAGENTA}%(name)s{Color.RESET} "
+        f"{Color.GRAY}'%(filename)s:%(lineno)d'{Color.RESET} ➜ "
         f"{Color.WHITE}%(message)s{Color.RESET}",
         "WARNING": f"{Color.CYAN}[%(asctime)s.%(msecs)03d]{Color.RESET} "
         f"{Color.YELLOW}%(colored_levelname)-8s{Color.RESET} "
         f"{Color.MAGENTA}%(name)s{Color.RESET} "
+        f"{Color.GRAY}'%(filename)s:%(lineno)d'{Color.RESET} "
         f"{Color.RED}➜{Color.RESET} "
         f"{Color.YELLOW}%(message)s{Color.RESET}",
         "ERROR": f"{Color.CYAN}[%(asctime)s.%(msecs)03d]{Color.RESET} "
         f"{Color.RED}%(colored_levelname)-8s{Color.RESET} "
-        f"{Color.GRAY}[%(filename)s]{Color.RESET}"
-        f"{Color.MAGENTA}%(name)s:%(lineno)d{Color.RESET} "
+        f"{Color.GRAY}'%(filename)s:%(lineno)d'{Color.RESET}"
+        f"{Color.MAGENTA} %(name)s{Color.RESET} "
         f"{Color.RED}➜{Color.RESET} "
         f"{Color.RED}%(message)s{Color.RESET}",
         "CRITICAL": f"{Color.CYAN}[%(asctime)s.%(msecs)03d]{Color.RESET} "
         f"{Color.BG_RED}{Color.WHITE}%(colored_levelname)-8s{Color.RESET} "
         f"{Color.GRAY}{{%(module)s}}{Color.RESET}"
-        f"{Color.MAGENTA}[%(filename)s]{Color.RESET}"
-        f"{Color.MAGENTA}%(name)s:%(lineno)d{Color.RESET} "
+        f"{Color.MAGENTA} '%(filename)s:%(lineno)d'{Color.RESET}"
+        f"{Color.MAGENTA} %(name)s{Color.RESET} "
         f"{Color.BG_RED}➜{Color.RESET} "
         f"{Color.BOLD}%(message)s{Color.RESET}",
     },
     "file": {
-        "DEBUG": "[%(asctime)s.%(msecs)03d] %(levelname)-8s [%(threadName)s|%(processName)s] %(name)s (%(filename)s:%(funcName)s:%(lineno)d) | %(message)s",
-        "INFO": "[%(asctime)s.%(msecs)03d] %(levelname)-8s %(name)s ➜ %(message)s",
-        "WARNING": "[%(asctime)s.%(msecs)03d] %(levelname)-8s %(name)s ➜ %(message)s",
-        "ERROR": "[%(asctime)s.%(msecs)03d] %(levelname)-8s [%(filename)s]%(name)s:%(lineno)d ➜ %(message)s",
-        "CRITICAL": "[%(asctime)s.%(msecs)03d] %(levelname)-8s {%(module)s}[%(filename)s]%(name)s:%(lineno)d ➜ %(message)s",
+        "DEBUG": "[%(asctime)s.%(msecs)03d] %(levelname)-8s %(name)s '%(filename)s:%(lineno)d' | %(message)s",
+        "INFO": "[%(asctime)s.%(msecs)03d] %(levelname)-8s %(name)s '%(filename)s:%(lineno)d' ➜ %(message)s",
+        "WARNING": "[%(asctime)s.%(msecs)03d] %(levelname)-8s %(name)s '%(filename)s:%(lineno)d' ➜ %(message)s",
+        "ERROR": "[%(asctime)s.%(msecs)03d] %(levelname)-8s %(name)s '%(filename)s:%(lineno)d' ➜ %(message)s",
+        "CRITICAL": "[%(asctime)s.%(msecs)03d] %(levelname)-8s {%(module)s} %(name)s '%(filename)s:%(lineno)d' ➜ %(message)s",
     },
 }
 
@@ -121,22 +122,30 @@ class FoldedLogger(logging.Logger):
     def debug(self, msg, *args, **kwargs):
         # 如果包含 base64 的大段内容，则折叠显示
         msg = self.reset(msg)
-        super().debug(msg, *args, **kwargs, stacklevel=2)
+        if "stacklevel" not in kwargs:
+            kwargs["stacklevel"] = 2
+        super().debug(msg, *args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
         # 如果包含 base64 的大段内容，则折叠显示
         msg = self.reset(msg)
-        super().info(msg, *args, **kwargs, stacklevel=2)
+        if "stacklevel" not in kwargs:
+            kwargs["stacklevel"] = 2        
+        super().info(msg, *args, **kwargs)
 
     def error(self, msg, *args, **kwargs):
         # 如果包含 base64 的大段内容，则折叠显示
         msg = self.reset(msg)
-        super().error(msg, *args, **kwargs, stacklevel=2)
+        if "stacklevel" not in kwargs:
+            kwargs["stacklevel"] = 2
+        super().error(msg, *args, **kwargs)
 
     def warning(self, msg, *args, **kwargs):
         # 如果包含 base64 的大段内容，则折叠显示
         msg = self.reset(msg)
-        super().warning(msg, *args, **kwargs, stacklevel=2)
+        if "stacklevel" not in kwargs:
+            kwargs["stacklevel"] = 2
+        super().warning(msg, *args, **kwargs)
 
 
 # -------------------------------------------------
@@ -342,43 +351,4 @@ setup_logging()
 # -------------------------------------------------
 if __name__ == "__main__":
     pass
-    # import time
-    # from tqdm.contrib.logging import logging_redirect_tqdm
-    log = get_log("test")
 
-    log.info("这是一个调试信息")
-    log.info(
-        r"包含base64的调试信息: C:Users/huan-yp/cnLosJtSzkjlOK23e\3huvsN6swDoeTw7jTiTsxYxIiXQo+Gg\T3X4xfciz3WI6zdMKKGg7dkv4dr2FQPm+z3HNKKaEA930Ah8gzTTNYb\T6yRKiRbXLcVHhwdh5JdlEwTx5eMn5xfnfhBABDQli6ysippQ5vlunERI1whlUDfT\d7z\ZrI6+v5bLq+n64tx5lOF\tdxgHoDvpNg3Vdq+tSIHRzt1hti4f17mFVvrxaXN2t\vrvf32\pcv9jkGoe9EqrSvCdnnz5mZxP13czMtXV3MKVFa1d\frq+vZrig\OikIezl67v1Pt2k5W+\ezNfZ1SqN9PdL\7LNw\L3c1s\fpm8bDaUQWKFm82myDpmbZNSJOlWwRVv98NwrDIirrl3cHw9OLc9cPtLt3t97vtPoiS1XJdlvWrV2+atlEA1G3NKAvCUApumlBDWosbpWS6y\wwVgDF3a4UUkpQt5gL4brOcNinnGs6bNqWMb7fpwAox\OPTieaYWfpTtP1\nAIIDo8PpRCkLbdbpaObXPBCaGmaWzX6+16HXciCEXb1Lgtd+tFnu8oLhEUCCkh+eWTR67jLuczKYSmI9cPoqRnu4GuaZTRumk1HUSBm2eZkjIMPF3TOJdKAk65Y1sAAQSRrhmmjqRg68WibUqgwMHk6PTs7PbuFkHoOnaW523TGJrmBmEQd7wgevvyh916JSlt6yZLMx1quo4wrhEA79Fw27ORYVi2FSexphtO4AIoqiKtmzLPMymU63ndfvfu5grjlhHStKRtsVLANE0FQFXVTdtounY4GZmWkWV5nqWdXuK41sFhr9vvtC3VDRvpZrc3dB3\4fp1k61NDQgli7pGyOj1u1yopm40DXDGP\qZzpSfn+sh9Hd978xgTB1VyqllABCQA0hDUIIgFRAyX8m1JGGAARKQKB0iDQEoZRASaQgVEBDQAnJGceE1G1LCOGMvw8KhRAIqQglhFGllBBKStVku1mdPvmTPwBI+9Xf\cNuuzMtS9M1glnTYs4EANLRjf\h3\yP9WIK6xJpjgDwvQqRCyEZk1IAKAEAEGkKKAAkRBBCBIAuFRCKc8E4B4Qy3GKCsRRCQSi5ZJQqCZSSgtH3BnTBOZBS1yCAgEuuFORUAcar\XJHy+M\+jlyLagkAGp+91oBme6Lxf1CKA1JJrkq0jrpdI5PDj\99ENG21ev33z7uxdKEank4mE1GvX8wL++mlq62enGYeiPJ4dxr3dwMLYd+9vffO+6um3D3T5rCRkMO7OH5exm5jrGdp9v1+s8L5WEAMjBMDZN2NTtdpPaloUx7nQ7CgCIQJkXCkjXc0wTXjw+6\YHm3U2Gvc\++JD07KqvDg9mxyfjr3AHfSSpq5fvnir6\Dk7Kism0G\s9nud9t0s94yKfd50e3F+XZPCeOCvz+IVHkhOQOGIRnJ0+JwPFSCEUKVFJ4fKIp7w9755dnF+fH9w+Kbb15s1svpwwxxApTKsvz0ZBR3guls\fbVNcGswoxTqiPwcL8uC+w4hh94SijKZBB6nu8SxtK0Ggz7jmul631N5WgQW46z3WVVWZiWrpsa4zzpxHHiX35wYZo2aQkEajTsJbE\GvVdx8z3xWq+ms\n33\zQ9wJe4PhYDwWEo7Hg\12ff3uNt2nSsgy3zu+\8OLl69e3r5+c7Xd7n732+\runn24TlCcHq3YIz5kd\td3DL7u9WhDBNN4fj3qPL4\5o8OSDi8ODHlCiLJumqP3QP5j0x+NBr9f9P\8\oPf\sPv="
-    )
-    # root = get_log()
-    # db = get_log("database")
-    # net = get_log("network")
-    # test = get_log("test.module")
-
-    # root.info("启动测试")
-    # db.warning("数据库连接池 90% - 这条日志应该出现在db.log和bot.log")
-    # net.info("网络初始化 - 这条日志应该出现在控制台和network.log")
-    # net.error("连接超时 - 这条日志应该出现在控制台和network.log")
-    # test.info("测试模块日志 - 这条日志应该出现在bot.log")
-
-    # with logging_redirect_tqdm():
-    #     for i in tqdm(range(50), desc="Task"):
-    #         if i % 10 == 0:
-    #             root.info(f"step {i}")
-    #         time.sleep(0.05)
-
-    # root.info("测试完成")
-    # db.info("数据库关闭")
-    # net.info("网络关闭")
-
-    # # 打印所有处理器的信息用于调试
-    # print("\n日志处理器调试信息:")
-    # print(f"根记录器处理器数量: {len(root.handlers)}")
-    # for i, handler in enumerate(root.handlers):
-    #     handler_type = type(handler).__name__
-    #     if isinstance(handler, TimedRotatingFileHandler):
-    #         print(f" 处理器 {i + 1}: {handler_type} (文件: {handler.baseFilename})")
-    #     elif isinstance(handler, logging.StreamHandler):
-    #         print(f" 处理器 {i + 1}: {handler_type} (控制台)")
-    #     else:
-    #         print(f" 处理器 {i + 1}: {handler_type}")
