@@ -5,6 +5,7 @@ import os
 import time
 import urllib.parse
 import warnings
+from re import search
 from dataclasses import dataclass, field, fields
 from typing import Any, List, Optional, TextIO, TypeVar, Dict
 
@@ -25,12 +26,13 @@ T = TypeVar("T", bound="BaseConfig")
 
 def strong_password_check(password: str) -> bool:
     # 包含 数字、大小写字母、特殊符号，至少 12 位
-    special_chars = "!@#$%^&*()_+-=[]{}|;:,.<>?"
+    # 改成正则表达式判断力
+    special_chars = r"!@#$%^&*()_+-=[]{}|;:,.<>?"
+    patterns = [r'\d', '[a-z]', '[A-Z]', f'[{special_chars}]']
+
     return (
         len(password) >= 12
-        and any(char.isdigit() for char in password)
-        and any(char.isalpha() for char in password)
-        and any(char in special_chars for char in password)
+        and all(search(pattern, password) for pattern in patterns)
     )
 
 
@@ -202,29 +204,28 @@ class NapCatConfig(BaseConfig):
         self.webui_port = parsed.port
 
     def _security_check(self) -> None:
+        def generate_password():
+            password = generate_strong_password()
+            logger.info(f"已生成强密码: {password}")
+            return password
+
         if self.ws_listen_ip == "0.0.0.0":
             if not strong_password_check(self.ws_token):
                 logger.error(
                     "WS 令牌强度不足，请修改为强密码，或者修改 ws_listen_ip 本地监听 `localhost`"
                 )
                 if input("WS 令牌强度不足，是否修改为强密码？(y/n): ").lower() == "y":
-                    pwd = generate_strong_password()
-                    logger.info(f"已生成强密码: {pwd}")
-                    self.ws_token = pwd
+                    self.ws_token = generate_password()
                 else:
                     raise ValueError(
                         "WS 令牌强度不足, 请修改为强密码, 或者修改 ws_listen_ip 本地监听 `localhost`"
                     )
 
+        # 默认启动 webui
         if self.enable_webui:
             if not strong_password_check(self.webui_token):
-                if (
-                    input("WebUI 令牌强度不足，是否修改为强密码？(y/n): ").lower()
-                    == "y"
-                ):
-                    pwd = generate_strong_password()
-                    logger.info(f"已生成强密码: {pwd}")
-                    self.webui_token = pwd
+                if input("WebUI 令牌强度不足，是否修改为强密码？(y/n): ").lower() == "y":
+                    self.webui_token = generate_password()
                 else:
                     raise ValueError("WebUI 令牌强度不足, 请修改为强密码")
 
