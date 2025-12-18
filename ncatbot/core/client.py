@@ -58,7 +58,6 @@ EVENTS = (
     OFFICIAL_HEARTBEAT_EVENT,
 )
 
-
 class StartArgs(TypedDict, total=False):
     bt_uin: Union[str, int]
     root: Optional[str]
@@ -68,9 +67,14 @@ class StartArgs(TypedDict, total=False):
     webui_token: Optional[str]
     ws_listen_ip: Optional[str]
     remote_mode: Optional[bool]
+    enable_webui: Optional[bool]
     enable_webui_interaction: Optional[bool]
     debug: Optional[bool]
     # 以后再加参数直接在这里补一行即可，无需改函数签名
+
+
+# 合法参数可以直接套用 StartArgs 了
+LEGAL_ARGS = StartArgs.__annotations__.keys()
 
 
 class BotClient:
@@ -353,22 +357,8 @@ class BotClient:
         return self.api
 
     def start(self, **kwargs):
-        # 配置参数
-        legal_args = [
-            "bt_uin",
-            "root",
-            "ws_uri",
-            "webui_uri",
-            "ws_token",
-            "webui_token",
-            "ws_listen_ip",
-            "remote_mode",
-            "enable_webui_interaction",
-            "debug",
-            "skip_plugin_load",
-        ]
         for key, value in kwargs.items():
-            if key not in legal_args:
+            if key not in LEGAL_ARGS:
                 raise NcatBotError(f"非法参数: {key}")
             elif value is None:
                 continue
