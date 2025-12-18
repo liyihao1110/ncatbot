@@ -204,15 +204,12 @@ class BotClient:
         filter: Literal["group", "friend"] = None,
     ):
         async def wrapper(event: RequestEvent):
-            if filter is None:
-                handler(event)
+            if filter is not None and filter != event.request_type:
+                    return 
+            if inspect.iscoroutinefunction(handler):
+                await handler(event)
             else:
-                if filter != event.request_type:
-                    return
-                if inspect.iscoroutinefunction(handler):
-                    await handler(event)
-                else:
-                    handler(event)
+                handler(event)
 
         self.add_handler(OFFICIAL_REQUEST_EVENT, wrapper)
 
