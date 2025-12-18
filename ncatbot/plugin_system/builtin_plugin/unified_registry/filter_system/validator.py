@@ -7,7 +7,7 @@ from ncatbot.utils import get_log
 if TYPE_CHECKING:
     from ncatbot.core.event import BaseMessageEvent
 
-LOG = get_log(__name__)
+LOG = get_log("Validator")
 
 
 class FilterValidator:

@@ -212,6 +212,7 @@ class FunctionMixin:
         timeout: float = None,
     ) -> Func:
         # 默认权限路径: 插件名.功能名
+        LOG.warning(f"功能和命令将在未来弃用，请迁移到 UnifiedRegistry 系统")
         self.rbac_manager.assign_permissions_to_role(
             permission, f"{self.name}.{name}", "white"
         )

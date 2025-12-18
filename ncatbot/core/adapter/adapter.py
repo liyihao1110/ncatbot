@@ -140,6 +140,7 @@ class Adapter:
 
     async def _handle_event(self, message: dict):
         """处理事件, 不能阻塞"""
+        LOG.debug(f"收到事件: {message}")
         try:
             post_type: Literal[
                 "message", "notice", "request", "meta_event", "message_sent"

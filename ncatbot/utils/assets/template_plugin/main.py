@@ -2,6 +2,7 @@
 
 from ncatbot.core import BaseMessageEvent
 from ncatbot.plugin_system import NcatBotPlugin
+from ncatbot.plugin_system import command_registry
 
 
 class Plugin(NcatBotPlugin):
@@ -18,18 +19,6 @@ class Plugin(NcatBotPlugin):
         print(f"{self.name} 插件已加载")
         print(f"插件版本: {self.version}")
 
-        # 注册功能示例
-        self.register_user_func(
-            name="test",
-            handler=self.test_handler,
-            prefix="/test",
-            description="测试功能",
-            usage="/test",
-            examples=["/test"],
-            tags=["test", "example"],
-            metadata={"category": "utility"},
-        )
-
         # 注册配置项示例
         self.register_config(
             key="greeting",
@@ -41,10 +30,11 @@ class Plugin(NcatBotPlugin):
             metadata={"category": "greeting", "max_length": 20},
         )
 
-    async def test_handler(self, msg: BaseMessageEvent):
+    @command_registry.command("test", description="测试命令")
+    async def test_command(self, event: BaseMessageEvent):
         """测试功能处理函数."""
-        await msg.reply_text(f"测试功能调用成功！当前问候语: {self.config['greeting']}")
+        await event.reply(f"测试功能调用成功！当前问候语: {self.config['greeting']}")
 
-    async def on_greeting_change(self, value, msg: BaseMessageEvent):
+    async def on_greeting_change(self, value, event: BaseMessageEvent):
         """配置变更回调函数."""
-        await msg.reply_text(f"问候语已修改为: {value}")
+        await event.reply(f"问候语已修改为: {value}")

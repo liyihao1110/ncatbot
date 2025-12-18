@@ -35,7 +35,7 @@ class TestClient(ClientMixin, BotClient):
         BotClient.start(self, skip_plugin_load=self.skip_plugin_load, **kwargs)
 
     def register_plugin(self, plugin_class: Type[BasePlugin]):
-        run_coroutine(self.plugin_loader.load_plugin, plugin_class)
+        run_coroutine(self.plugin_loader.load_plugin_by_class, plugin_class, plugin_class.name)
 
     def unregister_plugin(self, plugin: BasePlugin):
         """从测试客户端移除插件

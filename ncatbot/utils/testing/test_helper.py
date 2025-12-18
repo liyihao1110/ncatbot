@@ -124,7 +124,6 @@ class TestHelper:
 
     def clear_history(self):
         """清空所有历史记录"""
-        self.client.clear_event_history()
         self.mock_api.clear_call_history()
 
     def set_api_response(self, endpoint: str, response: Dict):

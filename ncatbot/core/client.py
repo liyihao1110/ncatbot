@@ -98,9 +98,9 @@ class BotClient:
 
     def register_builtin_handler(self, only_private: bool = False):
         # 注册插件系统事件处理器
+        LOG.debug("正在注册内置事件处理器...")
         def make_async_handler(event_name):
             async def wrapper(event: BaseEventData):
-                LOG.debug(f"已发布 {event_name} 事件")
                 from ncatbot.plugin_system.event import NcatBotEvent
 
                 await self.event_bus.publish(NcatBotEvent(event_name, event))
@@ -132,7 +132,8 @@ class BotClient:
         # 创建官方事件处理器组，处理 NapCat 上报的事件
         async def event_callback(event: BaseEventData):
             # 纯异步版本:非阻塞式并发执行
-            # 关键:只创建任务,不等待完成(fire-and-forget)
+            # 关键:只创建任务, 不等待完成(fire-and-forget)
+            # Mock 的时候需要等待处理跑完再继续判断流程
             for handler in self.event_handlers[event_name]:
                 if inspect.iscoroutinefunction(handler):
                     # 创建异步任务,让它在后台运行

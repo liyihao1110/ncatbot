@@ -89,17 +89,16 @@ class SystemManager(NcatBotPlugin):
             return False
         await self._loader.unload_plugin(name)
         await self.event_bus.publish(NcatBotEventFactory.create_event("plugin_unload", name=name))
-        LOG.info(f"插件 {name} 已卸载")
         return True
 
-    async def load_plugin(self, name):
+    async def load_plugin(self, event: NcatBotEvent):
         """加载插件"""
+        name = event.data.get("name")
         plugin = await self._loader.load_plugin(name)
-        if not plugin:
+        if self._loader.get_plugin(name) is None:
             LOG.warning(f"尝试加载失败的插件 {name}")
             return False
         await self.event_bus.publish(NcatBotEventFactory.create_event("plugin_load", name=plugin.name))
-        LOG.info(f"插件 {plugin.name} 已加载")
         return True
 
     

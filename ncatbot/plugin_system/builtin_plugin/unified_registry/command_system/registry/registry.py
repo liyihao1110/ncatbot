@@ -4,7 +4,7 @@
 """
 
 from typing import Callable, Dict, List, Optional, Tuple
-
+from copy import copy
 from ..analyzer.func_analyzer import FuncAnalyser
 from ..utils import (
     CommandRegistrationError,
@@ -125,6 +125,29 @@ class CommandGroup:
             for aliases in command.aliases:
                 all_aliases[(aliases,)] = command
         return all_aliases
+    
+    def revoke_plugin(self, plugin_name: str):
+        """撤销插件的命令"""
+        deleted_commands = []
+        for command in self.commands.values():
+            if command.plugin_name == plugin_name:
+                deleted_commands.append(command.name)
+
+        for cmd_name in deleted_commands:
+            del self.commands[cmd_name]
+            
+        for subgroup in self.subgroups.values():
+            subgroup.revoke_plugin(plugin_name)
+        
+        deleted_aliases = []
+        for alias in self.aliases.values():
+            if alias.plugin_name == plugin_name:
+                deleted_aliases.extend(alias.aliases)
+        
+        deleted_aliases = set(deleted_aliases)
+        
+        for alias_name in deleted_aliases:
+            del self.aliases[alias_name]
 
 
 class ModernRegistry:

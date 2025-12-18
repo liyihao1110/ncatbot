@@ -158,7 +158,6 @@ class BasePlugin:
     # ------------------------------------------------------------------
     # 框架专用方法 (禁止插件开发者重写)
     # ------------------------------------------------------------------
-    @final
     async def __onload__(self) -> None:
         """由框架在加载插件时调用。"""
         self.workspace.mkdir(exist_ok=True, parents=True)
@@ -172,7 +171,6 @@ class BasePlugin:
         self._init_()
         await self.on_load()
 
-    @final
     async def __unload__(self, *a: Any, **kw: Any) -> None:
         """由框架在卸载插件时调用。"""
         try:

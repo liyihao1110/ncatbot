@@ -110,7 +110,7 @@ class NcatBotEventFactory:
     """
 
     @staticmethod
-    def create_event(name: str, **kwargs: Any) -> NcatBotEvent:
+    def create_event(event_name: str, **kwargs: Any) -> NcatBotEvent:
         """创建事件实例
 
         Args:
@@ -119,4 +119,4 @@ class NcatBotEventFactory:
         Returns:
             NcatBotEvent: 创建的事件实例
         """
-        return NcatBotEvent(f"ncatbot.{name}", data=kwargs)
+        return NcatBotEvent(f"ncatbot.{event_name}", data=kwargs)

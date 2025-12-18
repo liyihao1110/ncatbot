@@ -365,10 +365,10 @@ class PluginLoader:
         LOG.info("已加载插件数 [%d]", len(self.plugins))
         # self._load_compatible_data()
 
-    async def load_plugin(self, name) -> bool:
+    async def load_plugin(self, name) -> BasePlugin:
         try:
             module = self._importer.load_module(name, Path(ncatbot_config.plugin.plugins_dir) / name)
-            await self.load_plugin_by_class(self._find_plugin_class_in_module(module), name)
+            return await self.load_plugin_by_class(self._find_plugin_class_in_module(module), name)
         except Exception as e:
             LOG.error(f"尝试加载失败的插件 {name}: {e}")
 

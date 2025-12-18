@@ -27,6 +27,8 @@ class TimeTaskScheduler:
     def __init__(self):
         self._scheduler = Scheduler()
         self._jobs = []
+        # schedule.Scheduler 不是线程安全的，这里加锁，避免调度线程和外部线程并发增删任务时出现竞态
+        self._lock = threading.RLock()
         threading.Thread(target=self.loop, daemon=True).start()
 
     def loop(self):
@@ -247,7 +249,9 @@ class TimeTaskScheduler:
 
     def step(self) -> None:
         """单步执行"""
-        self._scheduler.run_pending()
+        # 所有与内部 scheduler 交互的地方都需要加锁，保证线程安全
+        with self._lock:
+            self._scheduler.run_pending()
 
     def run(self) -> None:
         """独立运行"""
@@ -256,13 +260,14 @@ class TimeTaskScheduler:
                 self.step()
                 # 计算下一次任务的最早执行时间
                 next_run_time = None
-                for job in self._jobs:
-                    if job["schedule_job"].next_run is not None:
-                        if (
-                            next_run_time is None
-                            or job["schedule_job"].next_run < next_run_time
-                        ):
-                            next_run_time = job["schedule_job"].next_run
+                with self._lock:
+                    for job in self._jobs:
+                        if job["schedule_job"].next_run is not None:
+                            if (
+                                next_run_time is None
+                                or job["schedule_job"].next_run < next_run_time
+                            ):
+                                next_run_time = job["schedule_job"].next_run
                 # 如果有任务待执行，计算需要等待的时间
                 if next_run_time is not None:
                     sleep_time = (next_run_time - datetime.now()).total_seconds()
@@ -287,11 +292,13 @@ class TimeTaskScheduler:
         Returns:
             bool: 是否成功找到并移除任务
         """
-        for job in self._jobs:
-            if job["name"] == name:
-                self._scheduler.cancel_job(job["schedule_job"])
-                self._jobs.remove(job)
-                return True
+        with self._lock:
+            for job in self._jobs:
+                if job["name"] == name:
+                    # 先从 scheduler 中取消，再从本地列表中移除
+                    self._scheduler.cancel_job(job["schedule_job"])
+                    self._jobs.remove(job)
+                    return True
         return False
 
     def get_job_status(self, name: str) -> Optional[dict]:
@@ -370,6 +377,9 @@ class TimeTaskMixin:
         Returns:
             bool: 如果任务添加成功返回True，否则返回False。
         """
+        if not hasattr(self, "_time_task_jobs"):
+            self._time_task_jobs = []
+        self._time_task_jobs.append(name)
         job_info = {
             "name": name,
             "job_func": job_func,
@@ -394,6 +404,7 @@ class TimeTaskMixin:
             bool: 如果任务移除成功返回True，否则返回False。
         """
         return self._time_task_scheduler.remove_job(name=task_name)
+
 
     @final
     def restart_scheduler(self) -> None:

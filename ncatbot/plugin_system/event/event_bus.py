@@ -67,7 +67,7 @@ class EventBus:
                 return await asyncio.to_thread(handler, event)
         except Exception as e:
             LOG.error(f"执行处理程序 {handler.__name__} 时发生错误: {e}")
-            LOG.debug(f"错误堆栈: {traceback.format_exc()}")
+            LOG.info(f"错误堆栈: {traceback.format_exc()}")
             raise e
 
     def subscribe(
@@ -147,7 +147,6 @@ class EventBus:
         这是重构的核心改进:
         - 使用 asyncio.create_task() 创建并发任务
         - 使用 asyncio.gather() 等待所有任务完成
-        - 真正的异步并发,不再串行阻塞!
 
         Args:
             event: 要发布的事件
@@ -155,6 +154,7 @@ class EventBus:
         Returns:
             所有处理器的返回结果列表
         """
+        LOG.debug(f"发布事件: {event.type} 数据: {event.data if len(str(event.data)) < 50 else str(event.data)[:50] + '...'}")
         handlers = self._collect_handlers(event.type)
 
         # 创建所有处理器的并发任务
@@ -162,21 +162,9 @@ class EventBus:
         for _, priority, handler, hid, timeout in handlers:
             if event._propagation_stopped:
                 break
-
-            # 创建带超时的任务
-            # task = asyncio.create_task(
-            #     asyncio.wait_for(
-            #         self._run_handler(handler, event),
-            #         timeout=timeout
-            #     )
-            # )
-            # task = asyncio.wait_for(
-            #     self._run_handler(handler, event),
-            #     timeout=timeout
-            # )
             tasks.append((handler, handler, hid, timeout))
 
-        # 并发等待所有任务完成
+        # 等待所有任务完成
         for task, handler, hid, timeout in tasks:
             if event._propagation_stopped:
                 break
@@ -195,12 +183,7 @@ class EventBus:
                     )
                 )
             except Exception as e:
-                LOG.error(f"处理器 {handler.__name__} (ID: {hid}) 错误: {e}")
                 event.add_exception(e)
-
-        # 记录所有异常
-        for e in event.exceptions:
-            LOG.error(f"事件处理异常: {str(e)}")
 
         return event._results.copy()
 
