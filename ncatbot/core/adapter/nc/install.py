@@ -27,17 +27,27 @@ LOG = get_log("ncatbot.core.adapter.nc.install")
 
 
 def get_napcat_version():
-    """从GitHub获取 napcat 版本号"""
-    version_url = "https://raw.githubusercontent.com/NapNeko/NapCatQQ/main/package.json"
-    version_url = gen_url_with_proxy(version_url)
-    LOG.info(f"正在获取版号信息... {version_url}")
-    data = get_json(version_url)
-    version = data.get("version", None)
-    if version:
-        LOG.debug(f"获取最新版本信息成功, 版本号: {version}")
-        return version
-    else:
-        LOG.info("获取最新版本信息失败: package.json 中缺少 version 字段")
+    """从 GitHub tags 获取 napcat 版本号"""
+    # 使用 GitHub API 获取最新的 release 或 tag
+    api_url = "https://api.github.com/repos/NapNeko/NapCatQQ/tags"
+    # api 应该不能用代理吧
+    # api_url = gen_url_with_proxy(api_url)
+    LOG.info(f"正在获取版号信息... {api_url}")
+    
+    try:
+        data = get_json(api_url)
+        if data and isinstance(data, list) and len(data) > 0:
+            latest_tag = data[0].get("name", "")
+            # 移除 'v' 前缀（如果存在）
+            version = latest_tag.lstrip("v")
+            if version:
+                LOG.debug(f"获取最新版本信息成功, 版本号: {version}")
+                return version
+        
+        LOG.warning("获取最新版本信息失败: 无法从 tags 中解析版本号")
+    except Exception as e:
+        LOG.error(f"获取版本信息时发生错误: {e}")
+    
     return None
 
 

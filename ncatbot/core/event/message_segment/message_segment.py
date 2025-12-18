@@ -350,7 +350,7 @@ class Image(DownloadableMessageSegment):
     sub_type: int = field(default=0)  
     type: Literal["flash"] = None
 
-    def is_flase_image(self) -> bool:
+    def is_flash_image(self) -> bool:
         return getattr(self, "type", None) == "flash"
 
     def is_animated_image(self) -> bool:
@@ -483,6 +483,7 @@ class Music(MessageSegment):
     # TODO 测试收发
     id: str
     url: str
+    audio: str
     title: str
     content: str
     image: str
@@ -494,6 +495,7 @@ class Music(MessageSegment):
         type: Literal["qq", "163", "custom"],
         id: Union[int, str],
         url: Optional[str] = None,
+        audio: Optional[str] = None,
         title: Optional[str] = None,
         content: Optional[str] = None,
         image: Optional[str] = None,
@@ -502,6 +504,7 @@ class Music(MessageSegment):
         self.type = type
         if type == "custom":
             self.url = url
+            self.audio = audio
             self.title = title
             self.content = content
             self.image = convert_uploadable_object(image)

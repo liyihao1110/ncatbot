@@ -40,7 +40,7 @@ class ForwardConstructor:
     def attach_file(self, file: str, user_id: str = None, nickname: str = None):
         self.attach(MessageArray(File(file)), user_id, nickname)
 
-    def attach_viedo(self, video: str, user_id: str = None, nickname: str = None):
+    def attach_video(self, video: str, user_id: str = None, nickname: str = None):
         self.attach(MessageArray(Video(video)), user_id, nickname)
 
     def attach_forward(

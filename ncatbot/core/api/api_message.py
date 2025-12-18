@@ -16,8 +16,47 @@ from .utils import (
     APIReturnStatus,
     MessageAPIReturnStatus,
     check_exclusive_argument,
+    get_log,
 )
 from ncatbot.utils import run_coroutine
+
+LOG = get_log("ncatbot.core.api.api_message")
+
+
+def _validate_msg(msg: List[dict]) -> str:
+    """验证消息格式是否合法"""
+    SINGLE_MSG_ONLY = (
+        "music",
+        "forward",
+        "file",
+        "record",
+        "video",
+        "rps",
+        "dice",
+        "share",
+        "poke",
+        "contact",
+        "location",
+    )
+
+    if len(msg) == 0:
+        return "消息不能为空"
+    if len(msg) != 1:
+        types = [m["type"] for m in msg if m["type"]]
+        first_single = next((m for m in types if m in SINGLE_MSG_ONLY), None)
+        if first_single:
+            if any(m["reply"] == "reply" for m in msg):
+                return f"{first_single} 不允许通过回复发送, 请使用 `BotAPI.post_xxx_array_msg(msg=[...])` 直接发送"
+            return f"{first_single} 不允许与其他消息混合发送，仅能发送单条此类消息"
+    return "OK"
+
+
+def validate_msg(msg: List[dict]) -> bool:
+    """验证消息格式是否合法"""
+    res = _validate_msg(msg)
+    if res != "OK":
+        LOG.error(f"消息格式验证失败: {res}")
+    return res == "OK"
 
 
 class MessageAPI(BaseAPI):
@@ -28,9 +67,10 @@ class MessageAPI(BaseAPI):
         self, group_id: Union[str, int], message: List[dict]
     ) -> str:
         """顶级群聊消息发送接口（一般不开放使用）"""
-        if len(message) == 0:
-            raise NcatBotValueError("message", "Empty")
-        # TODO validate message
+        if not validate_msg(message):
+            LOG.warning("消息格式验证失败，发送群聊消息取消")
+            return ""
+
         result = await self.async_callback(
             "/send_group_msg", {"group_id": group_id, "message": message}
         )
@@ -42,11 +82,7 @@ class MessageAPI(BaseAPI):
     ) -> str:
         """发送群聊消息（NcatBot 接口）"""
         # TODO: 检查消息合法性
-        result = await self.async_callback(
-            "/send_group_msg", {"group_id": group_id, "message": msg.to_list()}
-        )
-        status = MessageAPIReturnStatus(result)
-        return status.message_id
+        return await self.send_group_msg(group_id, msg.to_list())
 
     async def post_all_group_array_msg(self, msg: MessageArray) -> List[int]:
         """发送群聊消息到所有群（NcatBot 接口）
@@ -226,15 +262,21 @@ class MessageAPI(BaseAPI):
     async def send_group_custom_music(
         self,
         group_id: Union[str, int],
-        audio: str,
         url: str,
         title: str,
+        image: str,
+        audio: Optional[str] = None,
         content: Optional[str] = None,
-        image: Optional[str] = None,
     ) -> str:
         """发送群音乐分享消息（NcatBot 接口）"""
         music = Music(
-            type="custom", id=None, url=url, title=title, content=content, image=image
+            type="custom",
+            id=None,
+            url=url,
+            audio=audio,
+            title=title,
+            content=content,
+            image=image,
         )
         result = await self.async_callback(
             "/send_group_msg", {"group_id": group_id, "message": [music.to_dict()]}
@@ -270,8 +312,9 @@ class MessageAPI(BaseAPI):
         self, user_id: Union[str, int], message: List[dict]
     ) -> str:
         """顶级私聊消息接口（一般不开放使用）"""
-        if len(message) == 0:
-            raise NcatBotValueError("message", "Empty")
+        if not validate_msg(message):
+            LOG.warning("消息格式验证失败，发送私聊消息取消")
+            return ""
         # TODO validate message
         result = await self.async_callback(
             "/send_private_msg", {"user_id": user_id, "message": message}
@@ -283,11 +326,7 @@ class MessageAPI(BaseAPI):
         self, user_id: Union[str, int], msg: MessageArray
     ) -> str:
         """发送私聊消息（NcatBot 接口）"""
-        result = await self.async_callback(
-            "/send_private_msg", {"user_id": user_id, "message": msg.to_list()}
-        )
-        status = MessageAPIReturnStatus(result)
-        return status.message_id
+        return await self.send_private_msg(user_id, msg.to_list())
 
     async def post_private_msg(
         self,
@@ -422,15 +461,21 @@ class MessageAPI(BaseAPI):
     async def send_private_custom_music(
         self,
         user_id: Union[str, int],
-        audio: str,
         url: str,
         title: str,
+        image: str,
+        audio: Optional[str] = None,
         content: Optional[str] = None,
-        image: Optional[str] = None,
     ) -> str:
         """发送私聊音乐分享消息（NcatBot 接口）"""
         music = Music(
-            type="custom", id=None, url=url, title=title, content=content, image=image
+            type="custom",
+            id=None,
+            url=url,
+            audio=audio,
+            title=title,
+            content=content,
+            image=image,
         )
         result = await self.async_callback(
             "/send_private_msg", {"user_id": user_id, "message": [music.to_dict()]}
@@ -596,7 +641,6 @@ class MessageAPI(BaseAPI):
         result = await self.async_callback("/get_group_msg_history", data)
         status = APIReturnStatus(result)
         return [GroupMessageEvent(data) for data in status.data.get("messages")]
-
 
     async def get_msg(self, message_id: Union[str, int]) -> BaseMessageEvent:
         result = await self.async_callback("/get_msg", {"message_id": message_id})

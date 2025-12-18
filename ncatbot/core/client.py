@@ -31,7 +31,7 @@ from .event import (
     RequestEvent,
     MetaEvent,
 )
-from ..utils import get_log, run_coroutine, ThreadPool
+from ..utils import get_log, run_coroutine
 from ..utils import status, ncatbot_config
 from ..utils import NcatBotError, NcatBotConnectionError
 from ..utils import (
@@ -60,7 +60,7 @@ EVENTS = (
 
 
 class StartArgs(TypedDict, total=False):
-    bt_uin: Optional[int]
+    bt_uin: Union[str, int]
     root: Optional[str]
     ws_uri: Optional[str]
     webui_uri: Optional[str]
@@ -129,6 +129,7 @@ class BotClient:
             self.add_heartbeat_handler(make_async_handler(OFFICIAL_HEARTBEAT_EVENT))
 
     def create_official_event_handler_group(self, event_name):
+        # 创建官方事件处理器组，处理 NapCat 上报的事件
         async def event_callback(event: BaseEventData):
             # 纯异步版本:非阻塞式并发执行
             # 关键:只创建任务,不等待完成(fire-and-forget)
@@ -195,15 +196,18 @@ class BotClient:
     def add_request_handler(
         self,
         handler: Callable[[RequestEvent], None],
-        filter: Literal["group", "friend"] = "group",
+        filter: Literal["group", "friend"] = None,
     ):
         async def wrapper(event: RequestEvent):
-            if filter != event.request_type:
-                return
-            if inspect.iscoroutinefunction(handler):
-                await handler(event)
-            else:
+            if filter is None:
                 handler(event)
+            else:
+                if filter != event.request_type:
+                    return
+                if inspect.iscoroutinefunction(handler):
+                    await handler(event)
+                else:
+                    handler(event)
 
         self.add_handler(OFFICIAL_REQUEST_EVENT, wrapper)
 
@@ -267,7 +271,7 @@ class BotClient:
 
         return decorator
 
-    def on_request(self, filter=Literal["group", "friend"]):
+    def on_request(self, filter: Literal["group", "friend"] = None):
         """装饰器注册请求事件处理器"""
 
         def decorator(f: Callable[[RequestEvent], None]):

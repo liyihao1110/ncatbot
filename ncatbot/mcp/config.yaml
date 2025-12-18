@@ -1,0 +1,25 @@
+root: '管理员QQ号'
+bt_uin: '机器人QQ号'
+enable_webui_interaction: true
+debug: false
+github_proxy: null
+check_ncatbot_update: true
+skip_ncatbot_install_check: false
+websocket_timeout: 15
+napcat:
+  ws_uri: ws://localhost:3001
+  ws_token: YQnj193278@!jwdjo
+  ws_listen_ip: localhost
+  webui_uri: http://localhost:6099
+  webui_token: '>%i2M#RqEVB{}8P$'
+  enable_webui: true
+  check_napcat_update: false
+  stop_napcat: false
+  remote_mode: false
+  report_self_message: false
+  report_forward_message_detail: true
+plugin:
+  plugins_dir: plugins
+  plugin_whitelist: []
+  plugin_blacklist: []
+  skip_plugin_load: false

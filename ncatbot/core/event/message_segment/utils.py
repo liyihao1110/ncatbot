@@ -42,8 +42,9 @@ def convert_uploadable_object(i):
             )
             return f"base64://{m.group(2)}"
         return f"base64://{s}"
-
-    if i.startswith("http"):
+    if i is None:
+        return None
+    elif i.startswith("http"):
         return i
     elif is_base64(i):
         return to_base64(i)

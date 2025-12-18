@@ -33,14 +33,14 @@ class AccountAPI(BaseAPI):
         APIReturnStatus.raise_if_failed(result)
 
     async def set_online_status(
-        self, status: int, ext_status: int, battary_status: int
+        self, status: int, ext_status: int, battery_status: int
     ) -> None:
         result = await self.async_callback(
             "/set_online_status",
             {
                 "status": status,
                 "ext_status": ext_status,
-                "battary_status": battary_status,
+                "battery_status": battery_status,
             },
         )
         APIReturnStatus.raise_if_failed(result)

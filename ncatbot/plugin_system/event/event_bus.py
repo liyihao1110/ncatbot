@@ -34,7 +34,7 @@ class EventBus:
     def __init__(self, default_timeout: float = 120, max_workers: int = 1) -> None:
         """
         事件总线实现 - 纯异步版本
-        
+
         Args:
             default_timeout: 默认处理器超时时间（秒）
             max_workers: 兼容性参数,已废弃(纯异步架构不需要)
@@ -42,10 +42,10 @@ class EventBus:
         self._exact: Dict[str, List[Tuple]] = {}
         self._regex: List[Tuple] = []
         self.default_timeout = default_timeout
-        
+
         # 存储处理器元数据
         self._handler_meta: Dict[uuid.UUID, Dict] = {}
-        
+
         if max_workers != 1:
             LOG.warning(
                 f"EventBus 已重构为纯异步架构,max_workers 参数已废弃(传入值: {max_workers})"
@@ -54,7 +54,7 @@ class EventBus:
     async def _run_handler(self, handler: Callable, event: NcatBotEvent) -> Any:
         """
         执行处理器(异步版本)
-        
+
         对于异步处理器: 直接 await
         对于同步处理器: 使用 asyncio.to_thread() 避免阻塞事件循环
         """
@@ -80,14 +80,14 @@ class EventBus:
     ) -> uuid.UUID:
         """
         订阅事件处理程序
-        
+
         Args:
             event_type: 事件类型,支持精确匹配或 "re:" 前缀的正则表达式
             handler: 事件处理函数(支持同步和异步)
             priority: 处理优先级,数值越大优先级越高
             timeout: 处理器超时时间(秒),None 则使用默认值
             plugin: 插件实例,用于记录元数据
-            
+
         Returns:
             处理器唯一标识符
         """
@@ -106,21 +106,21 @@ class EventBus:
             bucket = self._exact.setdefault(event_type, [])
             bucket.append((None, priority, handler, hid, timeout_val))
             bucket.sort(key=lambda t: (-t[1], t[2].__name__))
-        
+
         return hid
 
     def unsubscribe(self, handler_id: uuid.UUID) -> bool:
         """
         取消订阅事件处理程序
-        
+
         Args:
             handler_id: subscribe() 返回的处理器标识符
-            
+
         Returns:
             是否成功移除处理器
         """
         removed = False
-        
+
         # 删除元数据
         if handler_id in self._handler_meta:
             del self._handler_meta[handler_id]
@@ -137,73 +137,80 @@ class EventBus:
         original_len = len(self._regex)
         self._regex = [h for h in self._regex if h[3] != handler_id]
         removed |= len(self._regex) != original_len
-        
+
         return removed
 
     async def publish(self, event: NcatBotEvent) -> List[Any]:
         """
         发布事件并并发执行所有处理器
-        
+
         这是重构的核心改进:
         - 使用 asyncio.create_task() 创建并发任务
         - 使用 asyncio.gather() 等待所有任务完成
         - 真正的异步并发,不再串行阻塞!
-        
+
         Args:
             event: 要发布的事件
-            
+
         Returns:
             所有处理器的返回结果列表
         """
         handlers = self._collect_handlers(event.type)
-        
+
         # 创建所有处理器的并发任务
         tasks = []
         for _, priority, handler, hid, timeout in handlers:
             if event._propagation_stopped:
                 break
-            
+
             # 创建带超时的任务
-            task = asyncio.create_task(
-                asyncio.wait_for(
-                    self._run_handler(handler, event),
-                    timeout=timeout
-                )
-            )
-            tasks.append((task, handler, hid, timeout))
-        
+            # task = asyncio.create_task(
+            #     asyncio.wait_for(
+            #         self._run_handler(handler, event),
+            #         timeout=timeout
+            #     )
+            # )
+            # task = asyncio.wait_for(
+            #     self._run_handler(handler, event),
+            #     timeout=timeout
+            # )
+            tasks.append((handler, handler, hid, timeout))
+
         # 并发等待所有任务完成
         for task, handler, hid, timeout in tasks:
+            if event._propagation_stopped:
+                break
+
             try:
-                result = await task
+                result = await asyncio.wait_for(
+                    self._run_handler(handler, event), timeout=timeout
+                )
                 event._results.append(result)
             except asyncio.TimeoutError:
                 LOG.error(f"处理器 {handler.__name__} (ID: {hid}) 超时({timeout}秒)")
                 meta_data = self._handler_meta.get(hid, {"name": "Unknown"})
                 event.add_exception(
                     HandlerTimeoutError(
-                        meta_data=meta_data,
-                        handler=handler.__name__,
-                        time=timeout
+                        meta_data=meta_data, handler=handler.__name__, time=timeout
                     )
                 )
             except Exception as e:
                 LOG.error(f"处理器 {handler.__name__} (ID: {hid}) 错误: {e}")
                 event.add_exception(e)
-        
+
         # 记录所有异常
         for e in event.exceptions:
             LOG.error(f"事件处理异常: {str(e)}")
-        
+
         return event._results.copy()
 
     def _collect_handlers(self, event_type: str) -> List[Tuple]:
         """
         收集匹配的事件处理程序
-        
+
         Args:
             event_type: 事件类型
-            
+
         Returns:
             匹配的处理器列表(已排序)
         """
@@ -224,7 +231,7 @@ class EventBus:
     def shutdown(self):
         """
         关闭事件总线并清理资源
-        
+
         纯异步版本不需要清理线程,只需清空处理器
         """
         self._exact.clear()
