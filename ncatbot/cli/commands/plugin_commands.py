@@ -197,7 +197,7 @@ def create_plugin_template(
         if os.path.exists(plugin_dir):
             try:
                 shutil.rmtree(plugin_dir)
-            except:
+            except Exception:
                 pass
 
 

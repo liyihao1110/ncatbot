@@ -154,7 +154,9 @@ class EventBus:
         Returns:
             所有处理器的返回结果列表
         """
-        LOG.debug(f"发布事件: {event.type} 数据: {event.data if len(str(event.data)) < 50 else str(event.data)[:50] + '...'}")
+        LOG.debug(
+            f"发布事件: {event.type} 数据: {event.data if len(str(event.data)) < 50 else str(event.data)[:50] + '...'}"
+        )
         handlers = self._collect_handlers(event.type)
 
         # 创建所有处理器的并发任务

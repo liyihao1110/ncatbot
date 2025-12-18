@@ -185,7 +185,9 @@ class EssenceMessage:
             # 为 DownloadableMessageSegment 补全 file 字段
             if seq["type"] in ["image", "file", "record", "video"]:
                 seq_url = seq["data"].get("url")
-                content[index]["data"]["file"] = seq_url.split("/")[-1] if seq_url else ""
+                content[index]["data"]["file"] = (
+                    seq_url.split("/")[-1] if seq_url else ""
+                )
         self.content = MessageArray.from_list(content)
 
 
@@ -313,7 +315,9 @@ class GroupAPI(BaseAPI):
         )
         APIReturnStatus.raise_if_failed(result)
 
-    async def get_essence_msg_list(self, group_id: Union[str, int]) -> List[EssenceMessage]:
+    async def get_essence_msg_list(
+        self, group_id: Union[str, int]
+    ) -> List[EssenceMessage]:
         result = await self.async_callback(
             "/get_essence_msg_list", {"group_id": group_id}
         )
@@ -529,15 +533,31 @@ class GroupAPI(BaseAPI):
         result = await self.async_callback("/send_group_sign", {"group_id": group_id})
         APIReturnStatus.raise_if_failed(result)
 
-    async def get_group_album_list(self, group_id:Union[str, int]) -> list[dict]:
+    async def get_group_album_list(self, group_id: Union[str, int]) -> list[dict]:
         """获取群相册列表"""
-        result = await self.async_callback("/get_qun_album_list", {"group_id": group_id})
+        result = await self.async_callback(
+            "/get_qun_album_list", {"group_id": group_id}
+        )
         status = APIReturnStatus(result)
         return status.data
-    
-    async def upload_image_to_group_album(self, group_id:Union[str, int], file:str, album_id:str="", album_name:str="") -> None:
+
+    async def upload_image_to_group_album(
+        self,
+        group_id: Union[str, int],
+        file: str,
+        album_id: str = "",
+        album_name: str = "",
+    ) -> None:
         """上传图片到群相册"""
-        result = await self.async_callback("/upload_image_to_qun_album", {"group_id": group_id, "album_name": album_name, "album_id": album_id, "file": file})
+        result = await self.async_callback(
+            "/upload_image_to_qun_album",
+            {
+                "group_id": group_id,
+                "album_name": album_name,
+                "album_id": album_id,
+                "file": file,
+            },
+        )
         APIReturnStatus.raise_if_failed(result)
 
     # --------------
@@ -592,7 +612,9 @@ class GroupAPI(BaseAPI):
         )
         APIReturnStatus.raise_if_failed(result)
 
-    async def set_group_todo(self, group_id: Union[str, int], message_id: Union[str, int]) -> dict:
+    async def set_group_todo(
+        self, group_id: Union[str, int], message_id: Union[str, int]
+    ) -> dict:
         """设置群待办"""
         result = await self.async_callback(
             "/set_group_todo", {"group_id": group_id, "message_id": message_id}

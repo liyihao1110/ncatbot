@@ -35,13 +35,13 @@ from .registry import FilterRegistry, FilterEntry, filter_registry
 from .base import BaseFilter
 from .builtin import (
     GroupFilter,
-    PrivateFilter, 
-    MessageSentFilter, 
-    AdminFilter, 
-    GroupAdminFilter, 
+    PrivateFilter,
+    MessageSentFilter,
+    AdminFilter,
+    GroupAdminFilter,
     GroupOwnerFilter,
-    RootFilter, 
-    CustomFilter
+    RootFilter,
+    CustomFilter,
 )
 from .decorators import (
     filter,

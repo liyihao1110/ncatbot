@@ -5,6 +5,7 @@ from ncatbot.core.event import BaseMessageEvent
 # 记录 Bot 启动时间
 start_time = time.time()
 
+
 class StatusPlugin(NcatBotPlugin):
     name = "StatusPlugin"
     version = "1.0.0"
@@ -23,10 +24,10 @@ class StatusPlugin(NcatBotPlugin):
         hours = int((running_time % (24 * 3600)) // 3600)
         minutes = int((running_time % 3600) // 60)
         seconds = int(running_time % 60)
-        
+
         status_message = (
             f"NcatBot 正在运行中...\n"
             f"运行时长: {days}天 {hours}小时 {minutes}分钟 {seconds}秒"
         )
-        
+
         await event.reply(status_message)

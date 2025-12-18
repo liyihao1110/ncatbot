@@ -156,7 +156,11 @@ def config_napcat():
                     json.dump(webui_config, f, indent=4, ensure_ascii=False)
         except FileNotFoundError:
             LOG.warning("第一次运行 WebUI, 将创建 WebUI 配置文件")
-            default_webui_config["port"] = ncatbot_config.napcat.webui_port if ncatbot_config.napcat.enable_webui else 0
+            default_webui_config["port"] = (
+                ncatbot_config.napcat.webui_port
+                if ncatbot_config.napcat.enable_webui
+                else 0
+            )
             default_webui_config["token"] = ncatbot_config.napcat.webui_token
             default_webui_config["wsListenIp"] = ncatbot_config.napcat.ws_listen_ip
             with open(webui_config_path, "w") as f:

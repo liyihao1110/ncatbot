@@ -2,7 +2,6 @@
 
 from typing import Dict, List, Callable, Optional, Union, Any
 from dataclasses import dataclass
-from copy import copy
 from .base import BaseFilter
 from .builtin import CustomFilter
 from ncatbot.utils import get_log
@@ -164,9 +163,12 @@ class FilterRegistry:
 
     def revoke_plugin(self, plugin_name: str):
         """撤销插件的过滤器"""
-        deleted_filters = [name for name in self._function_filters.keys() if name == plugin_name]
+        deleted_filters = [
+            name for name in self._function_filters.keys() if name == plugin_name
+        ]
         for name in deleted_filters:
             del self._function_filters[name]
+
 
 # 全局单例
 filter_registry = FilterRegistry()

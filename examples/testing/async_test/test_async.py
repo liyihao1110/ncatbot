@@ -28,7 +28,7 @@ async def test_hello_plugin():
     # 4. 测试 sleep 命令
     await helper.send_private_message("/sleep", user_id="test_user")
     await asyncio.sleep(1)  # 等待一段时间以确保命令被处理
-    
+
     # 5. 验证回复
     helper.assert_reply_sent("正在进入睡眠状态...")
 
@@ -41,19 +41,19 @@ async def test_hello_plugin():
     await helper.send_private_message("/asleep", user_id="test_user")
     await asyncio.sleep(1)  # 等待一段时间以确保命令被处理
     helper.assert_reply_sent("正在异步进入睡眠状态...")
-    
+
     # 8. 测试阻塞
     await helper.send_private_message("/status", user_id="test_user")
     await asyncio.sleep(1)  # 等待一段时间以确保命令被
     helper.assert_reply_sent("NcatBot 正在运行中...")
-    
+
     await asyncio.sleep(9)  # 等待足够时间让 sleep 完成
     helper.assert_reply_sent("睡眠结束，bot 已唤醒。")
-    
+
     await helper.send_private_message("/status", user_id="test_user")
     await asyncio.sleep(1)  # 等待一段时间以确保命令被
     helper.assert_reply_sent("NcatBot 正在运行中...")
-    
+
     # 9. 汇报结果
     print("所有测试通过！")
 

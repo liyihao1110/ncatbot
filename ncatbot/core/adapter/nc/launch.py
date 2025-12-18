@@ -135,7 +135,9 @@ def launch_napcat_service(*args, **kwargs):
                             pass
                 else:
                     if not napcat_service_ok(ncatbot_config.websocket_timeout):
-                        raise TimeoutError(f"NapCat 未能在 {ncatbot_config.websocket_timeout} 秒内启动, WebSocket 连接失败")
+                        raise TimeoutError(
+                            f"NapCat 未能在 {ncatbot_config.websocket_timeout} 秒内启动, WebSocket 连接失败"
+                        )
 
 
 if __name__ == "__main__":

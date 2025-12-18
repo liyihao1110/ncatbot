@@ -11,7 +11,7 @@ import aiofiles
 import inspect
 from uuid import UUID
 from pathlib import Path
-from typing import Any, Dict, List, Set, Union, final, TYPE_CHECKING
+from typing import Any, Dict, List, Set, Union, TYPE_CHECKING
 from concurrent.futures import ThreadPoolExecutor
 
 from .config import config

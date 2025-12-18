@@ -32,9 +32,9 @@ class SystemManager(NcatBotPlugin):
     def _file_change_callback(self, file_path: str) -> None:
         """文件变化的回调函数"""
         LOG.info(f"检测到文件变化: {file_path}")
-        
+
         # 如果 debug 模式开启，处理插件目录并发送卸载/加载请求
-        if getattr(config, 'debug', False):
+        if getattr(config, "debug", False):
             plugins_dir = config.plugin.plugins_dir
             try:
                 # 获取相对路径
@@ -51,91 +51,98 @@ class SystemManager(NcatBotPlugin):
     def _watch_plugin_files(self) -> None:
         """守护线程：监视插件目录中的 .py 文件变化"""
         plugins_dir = config.plugin.plugins_dir
-        
+
         if not os.path.exists(plugins_dir):
             LOG.warning(f"插件目录不存在: {plugins_dir}")
             return
-        
+
         LOG.info(f"启动文件监视线程，监视目录: {plugins_dir}")
-        
+
         while not self._watch_stop_event.is_set():
             try:
                 # 遍历所有 .py 文件
                 for py_file in Path(plugins_dir).rglob("*.py"):
                     file_path = str(py_file)
-                    
+
                     # 排除 site-packages 中的文件
                     if "site-packages" in file_path:
                         continue
-                    
+
                     try:
                         mod_time = os.path.getmtime(file_path)
-                        
+
                         # 如果文件不在缓存中，或修改时间改变了
-                        if file_path not in self._file_cache or self._file_cache[file_path] != mod_time:
+                        if (
+                            file_path not in self._file_cache
+                            or self._file_cache[file_path] != mod_time
+                        ):
                             self._file_cache[file_path] = mod_time
                             # 触发回调函数
                             self._file_change_callback(file_path)
                     except OSError as e:
                         LOG.warning(f"无法获取文件信息 {file_path}: {e}")
-                
+
                 # 检查是否有删除的文件（排除 site-packages）
-                deleted_files = [f for f in self._file_cache.keys() if not os.path.exists(f) or "site-packages" in f]
+                deleted_files = [
+                    f
+                    for f in self._file_cache.keys()
+                    if not os.path.exists(f) or "site-packages" in f
+                ]
                 for deleted_file in deleted_files:
                     del self._file_cache[deleted_file]
                     if os.path.exists(deleted_file):
                         continue
                     LOG.info(f"检测到文件删除: {deleted_file}")
                     self._file_change_callback(deleted_file)
-                
+
                 # 处理待处理的插件目录
                 current_time = time.time()
-                if self._pending_plugin_dirs and (current_time - self._last_process_time) >= 1:
+                if (
+                    self._pending_plugin_dirs
+                    and (current_time - self._last_process_time) >= 1
+                ):
                     # 至少间隔 1 秒处理一次，避免频繁重复加载
                     # 100% 有线程安全问题，但是我不管了
                     asyncio.run(self._process_pending_plugin_dirs())
                     self._last_process_time = current_time
-                
+
                 # 每秒检查一次
                 time.sleep(1)
             except Exception as e:
                 LOG.error(f"文件监视线程出错: {e}")
                 time.sleep(1)
-    
+
     async def _process_pending_plugin_dirs(self) -> None:
         """处理待处理的插件目录：发送卸载和加载请求"""
         if not self._pending_plugin_dirs:
             return
-        
+
         if not hasattr(self, "_first_process"):
             self._pending_plugin_dirs.clear()
             self._first_process = True
             return  # 跳过第一次处理，避免启动时误触发
-        
-        
+
         # 复制并清空待处理集合，避免重复处理
         dirs_to_process = self._pending_plugin_dirs.copy()
         self._pending_plugin_dirs.clear()
-        
+
         LOG.info(f"处理修改的插件目录: {dirs_to_process}")
-        
+
         for plugin_dir in dirs_to_process:
             try:
                 # 发送卸载请求
                 unload_event = NcatBotEventFactory.create_event(
-                    "plugin_unload_request",
-                    name=plugin_dir
+                    "plugin_unload_request", name=plugin_dir
                 )
                 await self.event_bus.publish(unload_event)
                 LOG.info(f"发送插件卸载请求: {plugin_dir}")
-                
+
                 # 稍微延迟后发送加载请求
-                await run_coroutine(lambda: __import__('asyncio').sleep(0.5))
-                
+                await run_coroutine(lambda: __import__("asyncio").sleep(0.5))
+
                 # 发送加载请求
                 load_event = NcatBotEventFactory.create_event(
-                    "plugin_load_request",
-                    name=plugin_dir
+                    "plugin_load_request", name=plugin_dir
                 )
                 await self.event_bus.publish(load_event)
                 LOG.info(f"发送插件加载请求: {plugin_dir}")
@@ -145,13 +152,11 @@ class SystemManager(NcatBotPlugin):
     async def on_load(self) -> None:
         self.register_handler("ncatbot.plugin_load_request", self.load_plugin)
         self.register_handler("ncatbot.plugin_unload_request", self.unload_plugin)
-        
+
         # 启动文件监视守护线程
         self._watch_stop_event.clear()
         self._file_watcher_thread = threading.Thread(
-            target=self._watch_plugin_files, 
-            daemon=True,
-            name="PluginFileWatcher"
+            target=self._watch_plugin_files, daemon=True, name="PluginFileWatcher"
         )
         self._file_watcher_thread.start()
         LOG.info("文件监视守护线程已启动")
@@ -224,7 +229,9 @@ class SystemManager(NcatBotPlugin):
             LOG.warning(f"尝试卸载不存在的插件 {name}")
             return False
         await self._loader.unload_plugin(name)
-        await self.event_bus.publish(NcatBotEventFactory.create_event("plugin_unload", name=name))
+        await self.event_bus.publish(
+            NcatBotEventFactory.create_event("plugin_unload", name=name)
+        )
         return True
 
     async def load_plugin(self, event: NcatBotEvent):
@@ -234,7 +241,9 @@ class SystemManager(NcatBotPlugin):
         if self._loader.get_plugin(name) is None:
             LOG.warning(f"尝试加载失败的插件 {name}")
             return False
-        await self.event_bus.publish(NcatBotEventFactory.create_event("plugin_load", name=plugin.name))
+        await self.event_bus.publish(
+            NcatBotEventFactory.create_event("plugin_load", name=plugin.name)
+        )
         return True
 
     async def on_unload(self) -> None:
@@ -244,5 +253,3 @@ class SystemManager(NcatBotPlugin):
             self._watch_stop_event.set()
             self._file_watcher_thread.join(timeout=5)
             LOG.info("文件监视守护线程已停止")
-
-    

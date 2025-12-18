@@ -54,7 +54,9 @@ class PrivateAPI(BaseAPI):
             event_type (int): 事件类型, 0 表示 "对方正在说话", 1 表示 "对方正在输入"
             user_id (Union[str, int]): 用户 QQ 号
         """
-        result = await self.async_callback("/set_input_status", {"event_type": event_type, "user_id": user_id})
+        result = await self.async_callback(
+            "/set_input_status", {"event_type": event_type, "user_id": user_id}
+        )
         APIReturnStatus.raise_if_failed(result)
 
     # ---------------------

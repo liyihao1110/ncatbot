@@ -33,7 +33,7 @@ def get_napcat_version():
     # api 应该不能用代理吧
     # api_url = gen_url_with_proxy(api_url)
     LOG.info(f"正在获取版号信息... {api_url}")
-    
+
     try:
         data = get_json(api_url)
         if data and isinstance(data, list) and len(data) > 0:
@@ -43,11 +43,11 @@ def get_napcat_version():
             if version:
                 LOG.debug(f"获取最新版本信息成功, 版本号: {version}")
                 return version
-        
+
         LOG.warning("获取最新版本信息失败: 无法从 tags 中解析版本号")
     except Exception as e:
         LOG.error(f"获取版本信息时发生错误: {e}")
-    
+
     return None
 
 

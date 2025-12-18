@@ -28,11 +28,10 @@ def strong_password_check(password: str) -> bool:
     # 包含 数字、大小写字母、特殊符号，至少 12 位
     # 改成正则表达式判断力
     special_chars = r"!@#$%^&*()_+-=[]{}|;:,.<>?"
-    patterns = [r'\d', '[a-z]', '[A-Z]', f'[{special_chars}]']
+    patterns = [r"\d", "[a-z]", "[A-Z]", f"[{special_chars}]"]
 
-    return (
-        len(password) >= 12
-        and all(search(pattern, password) for pattern in patterns)
+    return len(password) >= 12 and all(
+        search(pattern, password) for pattern in patterns
     )
 
 
@@ -224,7 +223,10 @@ class NapCatConfig(BaseConfig):
         # 默认启动 webui
         if self.enable_webui:
             if not strong_password_check(self.webui_token):
-                if input("WebUI 令牌强度不足，是否修改为强密码？(y/n): ").lower() == "y":
+                if (
+                    input("WebUI 令牌强度不足，是否修改为强密码？(y/n): ").lower()
+                    == "y"
+                ):
                     self.webui_token = generate_password()
                 else:
                     raise ValueError("WebUI 令牌强度不足, 请修改为强密码")

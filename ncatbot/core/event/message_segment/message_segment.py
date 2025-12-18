@@ -4,7 +4,17 @@ import httpx
 import urllib.parse
 import copy
 from dataclasses import dataclass, field, fields
-from typing import Literal, Optional, Union, Any, TYPE_CHECKING, TypeVar, Dict, Type, List
+from typing import (
+    Literal,
+    Optional,
+    Union,
+    Any,
+    TYPE_CHECKING,
+    TypeVar,
+    Dict,
+    Type,
+    List,
+)
 from ....utils import get_log, run_coroutine, NcatBotError, status
 from .utils import convert_uploadable_object
 
@@ -293,7 +303,7 @@ class DownloadableMessageSegment(MessageSegment):
 
     def __str__(self):
         return self.__repr__()
-    
+
     def __repr__(self):
         res = super().__repr__()
         if len(res) > 2024:
@@ -303,7 +313,8 @@ class DownloadableMessageSegment(MessageSegment):
             return cp.__repr__()
         else:
             return res
-    
+
+
 @dataclass(repr=False)
 class PlainText(MessageSegment):
     # 不转义的纯文本消息
@@ -347,7 +358,7 @@ class Image(DownloadableMessageSegment):
     msg_seg_type: Literal["image"] = field(init=False, repr=False, default="image")
     summary: str = field(default="[图片]")
     # 0: 一般图片或 QQ 商城内的动画表情； 1: QQ 用户保存的动画表情，为 1 时发送的图片会在 QQ 内以合适的大小显示
-    sub_type: int = field(default=0)  
+    sub_type: int = field(default=0)
     type: Literal["flash"] = None
 
     def is_flash_image(self) -> bool:
@@ -355,6 +366,7 @@ class Image(DownloadableMessageSegment):
 
     def is_animated_image(self) -> bool:
         return self.sub_type == 1
+
 
 @dataclass(repr=False)
 class File(DownloadableMessageSegment):

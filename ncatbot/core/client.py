@@ -58,6 +58,7 @@ EVENTS = (
     OFFICIAL_HEARTBEAT_EVENT,
 )
 
+
 class StartArgs(TypedDict, total=False):
     bt_uin: Union[str, int]
     root: Optional[str]
@@ -103,6 +104,7 @@ class BotClient:
     def register_builtin_handler(self, only_private: bool = False):
         # 注册插件系统事件处理器
         LOG.debug("正在注册内置事件处理器...")
+
         def make_async_handler(event_name):
             async def wrapper(event: BaseEventData):
                 from ncatbot.plugin_system.event import NcatBotEvent
@@ -205,7 +207,7 @@ class BotClient:
     ):
         async def wrapper(event: RequestEvent):
             if filter is not None and filter != event.request_type:
-                    return 
+                return
             if inspect.iscoroutinefunction(handler):
                 await handler(event)
             else:

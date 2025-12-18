@@ -130,7 +130,7 @@ class FoldedLogger(logging.Logger):
         # 如果包含 base64 的大段内容，则折叠显示
         msg = self.reset(msg)
         if "stacklevel" not in kwargs:
-            kwargs["stacklevel"] = 2        
+            kwargs["stacklevel"] = 2
         super().info(msg, *args, **kwargs)
 
     def error(self, msg, *args, **kwargs):
@@ -351,4 +351,3 @@ setup_logging()
 # -------------------------------------------------
 if __name__ == "__main__":
     pass
-

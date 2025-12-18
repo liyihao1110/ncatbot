@@ -136,11 +136,7 @@ class TestHelper:
         # 暂时留空，等待 RBAC 系统的接口
         LOG.warning(f"set_user_permission 方法尚未实现: {user_id} -> {role}")
 
-    async def on_friend_request(
-        self,
-        user_id: str = "987654321",
-        comment: str = " "
-    ):
+    async def on_friend_request(self, user_id: str = "987654321", comment: str = " "):
         """创建添加好友请求事件并处理"""
         event = EventFactory.create_friend_request_event(
             user_id=user_id, comment=comment
@@ -152,7 +148,7 @@ class TestHelper:
         self,
         user_id: str = "987654321",
         group_id: str = "123456789",
-        comment: str = " "
+        comment: str = " ",
     ):
         """创建加入群聊请求事件并处理"""
         event = EventFactory.create_group_add_request_event(
@@ -167,13 +163,17 @@ class TestHelper:
         group_id: str = "123456789",
         operator_id: str = "88888888",
         comment: str = " ",
-        sub_type: Literal["approve", "invite"] = "approve"
+        sub_type: Literal["approve", "invite"] = "approve",
     ):
         """创建群成员增加通知事件并处理"""
         if sub_type not in ["approve", "invite"]:
             raise ValueError("sub_type must be 'approve' or 'invite'")
         event = EventFactory.create_group_increase_notice_event(
-            user_id=user_id, group_id=group_id, operator_id=operator_id, comment=comment, sub_type=sub_type
+            user_id=user_id,
+            group_id=group_id,
+            operator_id=operator_id,
+            comment=comment,
+            sub_type=sub_type,
         )
         LOG.info(f"创建群成员增加通知事件（sub_type={sub_type}）: {event}")
         await self.client.inject_event(event)
@@ -184,7 +184,7 @@ class TestHelper:
         group_id: str = "123456789",
         operator_id: str = "88888888",
         comment: str = " ",
-        sub_type: Literal["leave", "kick"] = "leave"
+        sub_type: Literal["leave", "kick"] = "leave",
     ):
         """创建群成员减少通知事件并处理"""
         if sub_type not in ["leave", "kick"]:
@@ -192,7 +192,11 @@ class TestHelper:
         if sub_type == "leave":
             operator_id = "0"
         event = EventFactory.create_group_decrease_notice_event(
-            user_id=user_id, group_id=group_id, operator_id=operator_id, comment=comment, sub_type=sub_type
+            user_id=user_id,
+            group_id=group_id,
+            operator_id=operator_id,
+            comment=comment,
+            sub_type=sub_type,
         )
         LOG.info(f"创建群成员减少通知事件（sub_type={sub_type}）: {event}")
         await self.client.inject_event(event)
@@ -202,7 +206,7 @@ class TestHelper:
         user_id: str = "987654321",
         group_id: str = "123456789",
         target_id: str = "77777777",
-        raw_info: Optional[Dict] = None
+        raw_info: Optional[Dict] = None,
     ):
         """创建群成员戳一戳通知事件并处理，raw_info 没有进行数据验证，谨慎传入。"""
         event = EventFactory.create_group_poke_notice_event(

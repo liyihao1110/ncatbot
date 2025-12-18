@@ -15,7 +15,7 @@ import toml
 from collections import defaultdict, deque
 from pathlib import Path
 from types import ModuleType
-from typing import Dict, Iterable, List, Optional, Set, Type, Union, TYPE_CHECKING
+from typing import Dict, List, Optional, Set, Type, Union, TYPE_CHECKING
 
 from packaging.specifiers import SpecifierSet
 from packaging.version import parse as parse_version
@@ -67,27 +67,28 @@ class _ModuleImporter:
     def unload_module(self, name: str) -> bool:
         """
         卸载指定模块及其所有子模块
-        
+
         Args:
             name: 模块完整名称，如 'plugins.my_plugin'
-        
+
         Returns:
             bool: 是否成功卸载（若模块不存在也返回True）
         """
         if not name or not isinstance(name, str):
             LOG.warning("无效的模块名称: %s", name)
             return False
-        
+
         # 收集目标模块及其所有子模块
         modules_to_remove = [
-            module_name for module_name in list(sys.modules.keys())
+            module_name
+            for module_name in list(sys.modules.keys())
             if module_name == name or module_name.startswith(f"{name}.")
         ]
-        
+
         if not modules_to_remove:
             LOG.debug("模块 %s 未加载，无需卸载", name)
             return True
-        
+
         # 执行卸载
         removed_count = 0
         for module_name in modules_to_remove:
@@ -97,48 +98,49 @@ class _ModuleImporter:
                 LOG.debug("已卸载模块: %s", module_name)
             except KeyError:
                 pass  # 可能已被其他线程卸载
-        
+
         LOG.info("成功卸载模块 %s (共 %d 个模块)", name, removed_count)
         return True
 
     def load_module(self, name: str, path: Path) -> Optional[ModuleType]:
         """
         加载模块并自动处理依赖
-        
+
         Args:
             name: 模块名称
             path: 模块路径（文件或目录）
-        
+
         Returns:
             加载成功的模块对象，失败返回 None
         """
         if not name or not path:
             LOG.error("模块名称或路径无效: name=%s, path=%s", name, path)
             return None
-        
+
         if not path.exists():
             LOG.error("模块路径不存在: %s", path)
             return None
-        
+
         try:
             # 清理旧版本，确保干净加载环境
             self.unload_module(name)
-            
+
             # 自动安装依赖
             LOG.debug("正在检查并安装模块 %s 的依赖", name)
             self._maybe_install_deps(path)
-            
+
             # 执行导入
             LOG.info("正在加载模块: %s from %s", name, path)
             module = self._import_single(name, path)
             LOG.info("模块 %s 加载成功", name)
             return module
-            
+
         except Exception as e:
             LOG.error("加载模块 %s 失败: %s", name, e, exc_info=True)
             # 清理残留
             self.unload_module(name)
             return None
+
     # ------------------------------------------------------------------
     # 私有
     # ------------------------------------------------------------------
@@ -254,6 +256,7 @@ class _DependencyResolver:
 # ---------------------------------------------------------------------------
 class PluginLoader:
     """插件加载器：负责插件的加载、卸载、重载、生命周期管理。"""
+
     """对于没有被任何插件依赖的插件，可以进行动态的加载和卸载"""
 
     def __init__(self, event_bus: EventBus, *, debug: bool = False) -> None:
@@ -287,7 +290,9 @@ class PluginLoader:
         # 在插件的线程池中执行初始化
         await asyncio.get_event_loop().run_in_executor(plugin.thread_pool, _run_init)
 
-    async def load_plugin_by_class(self, plugin_class: Type[BasePlugin], name: str, **kwargs) -> BasePlugin:
+    async def load_plugin_by_class(
+        self, plugin_class: Type[BasePlugin], name: str, **kwargs
+    ) -> BasePlugin:
         plugin = plugin_class(
             event_bus=self.event_bus,
             debug=self._debug,
@@ -298,13 +303,15 @@ class PluginLoader:
         self.plugins[name] = plugin
         await self._init_plugin_in_thread(plugin)
         return plugin
-    
+
     async def load_all_plugins_by_class(
         self, plugin_classes: Dict[str, Type[BasePlugin]], **kwargs
     ) -> None:
         """从「插件类对象」加载。"""
         print(plugin_classes)
-        valid_classes = {name: cls for name, cls in plugin_classes.items() if self._is_valid(cls)}
+        valid_classes = {
+            name: cls for name, cls in plugin_classes.items() if self._is_valid(cls)
+        }
         self._resolver.build(valid_classes)
 
         load_order = self._resolver.resolve()
@@ -323,7 +330,10 @@ class PluginLoader:
     async def load_builtin_plugins(self) -> None:
         """加载内置插件。"""
         # 内置插件要在这里声明
-        plugins = {"system_manager": SystemManager, "unified_registry": UnifiedRegistryPlugin}
+        plugins = {
+            "system_manager": SystemManager,
+            "unified_registry": UnifiedRegistryPlugin,
+        }
         for name, plg in plugins.items():
             await self.load_plugin_by_class(plg, name)
         LOG.info("已加载内置插件数 [%d]", len(self.plugins))
@@ -345,7 +355,10 @@ class PluginLoader:
         plugin_classes: Dict[str, Type[BasePlugin]] = {}
         importer = self._importer
         for name in plugin_folder_names:
-            if ncatbot_config.plugin.plugin_whitelist and name not in ncatbot_config.plugin.plugin_whitelist:
+            if (
+                ncatbot_config.plugin.plugin_whitelist
+                and name not in ncatbot_config.plugin.plugin_whitelist
+            ):
                 LOG.info("插件 '%s' 不在白名单中，跳过加载", name)
                 continue
             if name in ncatbot_config.plugin.plugin_blacklist:
@@ -367,8 +380,12 @@ class PluginLoader:
 
     async def load_plugin(self, name) -> BasePlugin:
         try:
-            module = self._importer.load_module(name, Path(ncatbot_config.plugin.plugins_dir) / name)
-            return await self.load_plugin_by_class(self._find_plugin_class_in_module(module), name)
+            module = self._importer.load_module(
+                name, Path(ncatbot_config.plugin.plugins_dir) / name
+            )
+            return await self.load_plugin_by_class(
+                self._find_plugin_class_in_module(module), name
+            )
         except Exception as e:
             LOG.error(f"尝试加载失败的插件 {name}: {e}")
 
@@ -452,11 +469,6 @@ class PluginLoader:
         self, module: ModuleType
     ) -> Optional[Type[BasePlugin]]:
         for obj in vars(module).values():
-            if (
-                isinstance(obj, type)
-                and issubclass(obj, BasePlugin)
-            ):
+            if isinstance(obj, type) and issubclass(obj, BasePlugin):
                 return obj
         return None
-
-

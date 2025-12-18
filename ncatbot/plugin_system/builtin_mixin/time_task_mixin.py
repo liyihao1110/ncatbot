@@ -405,7 +405,6 @@ class TimeTaskMixin:
         """
         return self._time_task_scheduler.remove_job(name=task_name)
 
-
     @final
     def restart_scheduler(self) -> None:
         """重启定时任务调度器。"""

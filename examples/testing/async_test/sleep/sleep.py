@@ -3,6 +3,7 @@ import asyncio
 from ncatbot.plugin_system import NcatBotPlugin, command_registry
 from ncatbot.core.event import BaseMessageEvent
 
+
 class SleepPlugin(NcatBotPlugin):
     name = "SleepPlugin"
     version = "1.0.0"
@@ -26,4 +27,3 @@ class SleepPlugin(NcatBotPlugin):
         await event.reply("正在异步进入睡眠状态...")
         await asyncio.sleep(9)  # 模拟睡眠99秒
         await event.reply("异步睡眠结束，bot 已唤醒。")
-    

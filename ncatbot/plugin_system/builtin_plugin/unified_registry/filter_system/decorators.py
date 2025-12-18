@@ -11,7 +11,6 @@ from .builtin import (
     GroupAdminFilter,
     GroupOwnerFilter,
     RootFilter,
-    TrueFilter,
     CustomFilter,
 )
 from .base import BaseFilter
@@ -80,6 +79,7 @@ def on_message(func: Callable) -> Callable:
     """消息专用装饰器"""
     deco = filter(NonSelfFilter())
     return deco(func)
+
 
 def on_message_sent(func: Callable) -> Callable:
     """自身上报消息专用装饰器"""

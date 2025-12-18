@@ -26,12 +26,14 @@ class PrivateFilter(BaseFilter):
         """检查是否为私聊消息"""
         return not event.is_group_event()
 
+
 class MessageSentFilter(BaseFilter):
     """自身上报消息过滤器"""
-    
+
     def check(self, event: "BaseMessageEvent") -> bool:
         """检查是否为自身上报的消息"""
         return isinstance(event, MessageSentEvent)
+
 
 class AdminFilter(BaseFilter):
     """管理员权限过滤器"""
@@ -59,7 +61,7 @@ class GroupAdminFilter(BaseFilter):
             return False
         # FIXME: napcat 可能不会实时更新 sender 信息，同步问题修复后考虑通过api获取role信息
         sender_info = event.sender
-        sender_role = getattr(sender_info,"role", None)
+        sender_role = getattr(sender_info, "role", None)
         return sender_role in ["admin", "owner"]
 
 
@@ -74,7 +76,7 @@ class GroupOwnerFilter(BaseFilter):
             return False
         # FIXME: napcat 可能不会实时更新 sender 信息，同步问题修复后考虑通过api获取role信息
         sender = event.sender
-        sender_role = getattr(sender,"role", None)
+        sender_role = getattr(sender, "role", None)
         return sender_role == "owner"
 
 
@@ -109,9 +111,7 @@ class TrueFilter(BaseFilter):
 class CustomFilter(BaseFilter):
     """自定义函数过滤器包装器"""
 
-    def __init__(
-        self, filter_func: Callable[[BaseMessageEvent], bool], name: str = ""
-    ):
+    def __init__(self, filter_func: Callable[[BaseMessageEvent], bool], name: str = ""):
         """初始化自定义过滤器
 
         Args:

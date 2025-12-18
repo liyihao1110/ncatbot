@@ -87,7 +87,7 @@ class AccountAPI(BaseAPI):
         )
         try:
             APIReturnStatus.raise_if_failed(result)
-        except Exception as e:
+        except Exception:
             return result
         return result
 

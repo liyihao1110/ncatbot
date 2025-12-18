@@ -10,7 +10,9 @@ class NcatBotError(Exception):
         if log:
             self.logger.error(f"{info}", stacklevel=stacklevel)
             if ncatbot_config.debug:
-                self.logger.info(f"stacktrace:\n{traceback.format_exc()}", stacklevel=stacklevel)
+                self.logger.info(
+                    f"stacktrace:\n{traceback.format_exc()}", stacklevel=stacklevel
+                )
         super().__init__(info)
 
 
@@ -27,7 +29,9 @@ class AdapterEventError(Exception):
 
 class NcatBotValueError(NcatBotError):
     def __init__(self, var_name, val_name, must_be: bool = False):
-        super().__init__(f"{var_name} 的值{'必须' if must_be else '不能'}为 {val_name}", stacklevel=3)
+        super().__init__(
+            f"{var_name} 的值{'必须' if must_be else '不能'}为 {val_name}", stacklevel=3
+        )
 
 
 class NcatBotConnectionError(Exception):

@@ -1,18 +1,77 @@
 # 贡献指南
-欢迎参与ncatbot项目！我们致力于打造一个友好的开源社区，以下是参与贡献的规范流程。
+
+欢迎参与 NcatBot 项目！我们致力于打造一个友好的开源社区，以下是参与 NcatBot 项目本体贡献的规范流程。
+
 ## 📌 开始之前
+
 1. 确认项目采用
 2. 阅读 [项目文档](README.md)
 3. 加入开发者交流群：`201487478`
+
 ## 🌱 开发流程
+
 ### 分支管理
+
 ```bash
 git clone https://github.com/liyihao1110/ncatbot
 git checkout -b feat/Function-development  # 功能开发分支
 # 或
 git checkout -b fix/issue-fix         # 问题修复分支
 ```
+
+### pre-commit 钩子
+
+本项目使用 `pre-commit` 框架自动检查代码质量和规范，每次提交时自动运行。
+
+#### 安装步骤
+
+```bash
+# 1. 安装 pre-commit（首次）
+pip install pre-commit
+
+# 2. 在项目根目录安装 git 钩子
+pre-commit install
+
+# 3. 验证所有文件（可选）
+pre-commit run --all-files
+```
+
+#### 检查规范
+
+启用后将自动检查以下内容：
+
+1. **代码检查与格式化**
+   - `ruff`：Python 代码检查和自动修复
+   - `ruff-format`：代码格式化（遵循 PEP8 规范）
+
+2. **拼写检查**
+   - `codespell`：检查文本中的拼写错误
+
+3. **文件规范**
+   - 移除行尾空白
+   - 文件结尾确保为单个换行符
+   - 混合行尾修复
+
+4. **安全检查**
+   - 检测私钥文件（防止泄露敏感信息）
+   - 检测调试语句
+   - 检查符号链接完整性
+
+5. **配置文件验证**
+   - YAML 文件格式检查
+   - TOML 文件格式检查
+
+6. **Python 语法检查**
+   - 验证 Python 代码的 AST 有效性
+
+提交前如需跳过钩子检查，使用 `git commit --no-verify`
+
+每次提交（commit）代码时， pre-commit 会自动运行配置的检查工具，如代码格式化、类型检查等，确保代码符合项目规范。并自动修复一些简单的问题。**你需要手动再次执行 `git add` 来添加修复后的文件。**
+
+如果存在 `pre-commit` 无法自动修复的问题，应该手动修复后再提交。如果确认代码无误，可以在 commit 时添加 `--no-verify` 参数跳过检查，但不建议频繁使用。
+
 ### 提交规范
+
 采用 [Conventional Commits](https://www.conventionalcommits.org/) 规范：
 ```bash
 git commit -m "feat: 添加消息撤回功能"
@@ -20,23 +79,21 @@ git commit -m "fix(api): 修复消息队列溢出问题 #123"
 git commit -m "docs: 更新安装指南"
 ```
 ### Pull Request
+
 1. 推送分支到远程仓库
-2. 在Github创建Pull Request
-3. 关联相关Issue（如 `#123`）
-4. 通过CI测试后等待审核
-## 🧪 测试要求(待更新...)[tests文件夹未更新]
-所有代码修改必须通过测试：
-```bash
-# 运行单元测试
-pytest tests/
-# 检查代码风格
-flake8 ncatbot_sync/
-# 验证类型提示
-mypy ncatbot_sync/
-```
+2. 在 Github 创建 Pull Request
+3. 关联相关 Issue（如 `#123`）
+
+## 🧪 测试要求
+
+所有代码修改必须通过测试。
+
+后续我们将引入标准的测试框架，目前请确保手动测试你增加的功能。
+
 ## 🖋 代码规范
+
 1. 遵循 PEP8 规范
-2. 类型提示强制要求：
+2. **必须添加类型提示**：
 ```python
 def send_message(content: str, group_id: int) -> MessageResult:
     ...
@@ -51,43 +108,3 @@ def handle_event(event: Event):
         无返回值，可能产生副作用
     """
 ```
-## 📚 文档贡献
-1. 模块文档需包含使用示例
-2. 中文文档在 `/docs/zh` 目录
-3. 英文文档在 `/docs/en` 目录（如果你愿意的话）
-4. 使用Markdown格式编写
-## 🐛 Issue规范
-提交问题请包含：
-```markdown
-## 环境信息
-- 系统版本：Windows 11 22H2
-- Python版本：3.10.6
-- 框架版本：v0.2.1
-- 项目版本：v0.0.1
-## 重现步骤
-1. 调用API发送图片
-2. 连续发送10次请求
-3. 观察控制台输出
-## 预期行为
-正常返回消息ID
-## 实际行为
-抛出ConnectionError异常
-```
-## 💡 新功能提案
-提交提案需包含：
-1. 功能使用场景
-2. 建议的API设计
-3. 与其他模块的兼容性分析
-## 🚫 行为准则
-1. 禁止提交恶意代码
-2. 讨论时保持专业态度
-3. 尊重不同技术选择
-4. 及时响应代码审查意见
-## 🙌 鸣谢
-所有贡献者将加入贡献者名单，重大贡献者授予Committer角色。
-## 📜 版本发布
-在开发者交流群内通知所有成员后全员同意后进行版本发布,违者将被踢出开发者
-## 📜 额外信息
-1. 在不确定是否可用的情况下,请对源文件进行备份,备份目录定位于`/resources`文件夹
-2. 请不要提交任何非必要的文件,如`.idea`,`__pycache__`等
-3. 该文件可能会持续更新,请定期查看

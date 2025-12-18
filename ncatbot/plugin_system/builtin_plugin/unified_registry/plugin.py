@@ -155,14 +155,12 @@ class UnifiedRegistryPlugin(NcatBotPlugin):
                 match.command, event, ignore_words, [prefix]
             )
         except Exception as e:
-            await self.event_bus.publish(NcatBotEvent(
-                type="ncatbot.param_bind_failed",
-                data={
-                    "event": event,
-                    "msg": str(e),
-                    "cmd": match.command.name
-                }
-            ))
+            await self.event_bus.publish(
+                NcatBotEvent(
+                    type="ncatbot.param_bind_failed",
+                    data={"event": event, "msg": str(e), "cmd": match.command.name},
+                )
+            )
             return False
 
         await self._execute_function(

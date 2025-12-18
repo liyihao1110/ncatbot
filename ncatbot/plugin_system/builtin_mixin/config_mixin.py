@@ -1,4 +1,3 @@
-from .command_mixin import CommandMixin
 from typing import Any, Dict, Union, Callable
 from ncatbot.utils import get_log
 

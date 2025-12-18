@@ -12,7 +12,10 @@ _log = get_log()
 
 
 def post_json(
-    url: str, payload: dict | None = None, headers: dict | None = None, timeout: float = 5.0
+    url: str,
+    payload: dict | None = None,
+    headers: dict | None = None,
+    timeout: float = 5.0,
 ) -> dict:
     body = None
     req_headers = {

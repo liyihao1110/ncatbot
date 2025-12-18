@@ -1,11 +1,5 @@
 from typing import List, Tuple
 from ncatbot.core.event import BaseEventData
-from ncatbot.utils import (
-    OFFICIAL_PRIVATE_MESSAGE_EVENT,
-    OFFICIAL_GROUP_MESSAGE_EVENT,
-    OFFICIAL_NOTICE_EVENT,
-    OFFICIAL_REQUEST_EVENT,
-)
 from ncatbot.utils import get_log
 
 LOG = get_log("ClientMixin")

@@ -55,7 +55,6 @@ def start_napcat_linux():
         if ncatbot_config.napcat.stop_napcat:
             atexit.register(lambda: stop_napcat_linux(ncatbot_config.bt_uin))
     except Exception as e:
-
         LOG.error(f"pgrep 命令执行失败, 无法判断 QQ 是否启动, 请检查错误: {e}")
         LOG.info(traceback.format_exc())
         raise e
@@ -92,28 +91,32 @@ def start_napcat_windows():
     # Windows启动逻辑
     def get_launcher_name():
         """获取对应系统的launcher名称"""
-        
+
         # 使用 platform.platform() 获取完整系统信息
         platform_info = platform.platform()
-        
+
         # 或使用 win32_edition() 检测是否为 Server 版本
         try:
             edition = platform.win32_edition()
             is_server = "Server" in edition
         except AttributeError:
             is_server = "Server" in platform_info
-        
+
         if is_server:
-            if "2016" in platform_info or "2019" in platform_info or "2022" in platform_info:
-                LOG.info(f"当前操作系统为: Windows Server (旧版本)")
+            if (
+                "2016" in platform_info
+                or "2019" in platform_info
+                or "2022" in platform_info
+            ):
+                LOG.info("当前操作系统为: Windows Server (旧版本)")
                 return "launcher-win10.bat"
             elif "2025" in platform_info:
                 LOG.info("当前操作系统为：Windows Server 2025")
                 return "launcher.bat"
             else:
-                LOG.error(f"不支持的 Windows Server 版本，将按照 Windows 10 内核启动")
+                LOG.error("不支持的 Windows Server 版本，将按照 Windows 10 内核启动")
                 return "launcher-win10.bat"
-        
+
         # 桌面版 Windows
         release = platform.release()
         if release == "10":
@@ -122,7 +125,7 @@ def start_napcat_windows():
         elif release == "11":
             LOG.info("当前操作系统为: Windows 11")
             return "launcher.bat"
-        
+
         return "launcher-win10.bat"
 
     launcher = get_launcher_name()
