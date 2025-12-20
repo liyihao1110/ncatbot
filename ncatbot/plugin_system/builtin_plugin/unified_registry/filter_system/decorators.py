@@ -14,6 +14,7 @@ from .builtin import (
     CustomFilter,
 )
 from .base import BaseFilter
+from .base import CombinedFilter
 
 if TYPE_CHECKING:
     from .base import BaseFilter
@@ -37,67 +38,6 @@ def filter(*filters: Union[str, "BaseFilter"]):
         return func
 
     return decorator
-
-
-def group_filter(func: Callable) -> Callable:
-    """群聊专用装饰器"""
-    deco = filter(GroupFilter())
-    return deco(func)
-
-
-def private_filter(func: Callable) -> Callable:
-    """私聊专用装饰器"""
-    deco = filter(PrivateFilter())
-    return deco(func)
-
-
-def admin_filter(func: Callable) -> Callable:
-    """BOT 管理员专用装饰器"""
-    deco = filter(AdminFilter())
-    return deco(func)
-
-
-def group_admin_filter(func: Callable) -> Callable:
-    """群管理员专用装饰器"""
-    deco = filter(GroupAdminFilter())
-    return deco(func)
-
-
-def group_owner_filter(func: Callable) -> Callable:
-    """群主专用装饰器"""
-    deco = filter(GroupOwnerFilter())
-    return deco(func)
-
-
-def root_filter(func: Callable) -> Callable:
-    """Root专用装饰器"""
-    deco = filter(RootFilter())
-    return deco(func)
-
-
-def on_message(func: Callable) -> Callable:
-    """消息专用装饰器"""
-    deco = filter(NonSelfFilter())
-    return deco(func)
-
-
-def on_message_sent(func: Callable) -> Callable:
-    """自身上报消息专用装饰器"""
-    deco = filter(MessageSentFilter())
-    return deco(func)
-
-
-# 组合装饰器
-def admin_group_filter(func: Callable) -> Callable:
-    """BOT 管理员且群聊消息专用装饰器"""
-    deco = filter(GroupFilter(), AdminFilter())
-    return deco(func)
-
-
-def admin_private_filter(func: Callable) -> Callable:
-    """BOT 管理员且私聊消息专用装饰器"""
-    deco = filter(PrivateFilter(), AdminFilter())
-    return deco(func)
 
 
 # 专用事件过滤器
@@ -197,8 +137,53 @@ def on_group_request(func: Callable) -> Callable:
     return on_request(decorated_func)
 
 
-# 兼容
+# 兼容与可组合包装器
+class FilterDecorator:
+    """将 BaseFilter 包装为既可用作装饰器也可进行 | & 组合的对象"""
+
+    def __init__(self, filter_instance: BaseFilter):
+        self.filter = filter_instance
+
+    def __call__(self, func: Callable) -> Callable:
+        from .registry import filter_registry
+
+        filter_registry.add_filter_to_function(func, self.filter)
+        return func
+
+    def __or__(self, other):
+        from .base import CombinedFilter
+
+        other_filter = other.filter if isinstance(other, FilterDecorator) else other
+        if not isinstance(other_filter, BaseFilter):
+            raise TypeError("右操作数必须是 BaseFilter 或 FilterDecorator")
+        return CombinedFilter(self.filter, other_filter, "or")
+
+    def __and__(self, other):
+        from .base import CombinedFilter
+
+        other_filter = other.filter if isinstance(other, FilterDecorator) else other
+        if not isinstance(other_filter, BaseFilter):
+            raise TypeError("右操作数必须是 BaseFilter 或 FilterDecorator")
+        return CombinedFilter(self.filter, other_filter, "and")
+
+
+# 用包装器替换原始函数式装饰器以支持组合
+group_filter = FilterDecorator(GroupFilter())
+private_filter = FilterDecorator(PrivateFilter())
+admin_filter = FilterDecorator(AdminFilter())
+group_admin_filter = FilterDecorator(GroupAdminFilter())
+group_owner_filter = FilterDecorator(GroupOwnerFilter())
+root_filter = FilterDecorator(RootFilter())
+on_message = FilterDecorator(NonSelfFilter())
+on_message_sent = FilterDecorator(MessageSentFilter())
 admin_only = admin_filter
 root_only = root_filter
 private_only = private_filter
 group_only = group_filter
+# 组合装饰器（保留“且”逻辑）
+admin_group_filter = FilterDecorator(
+    CombinedFilter(GroupFilter(), AdminFilter(), "and")
+)
+admin_private_filter = FilterDecorator(
+    CombinedFilter(PrivateFilter(), AdminFilter(), "and")
+)
