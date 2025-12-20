@@ -168,6 +168,10 @@ class MessageArray:
                     "消息格式错误, 合并转发消息严禁和其它类型消息混用"
                 )
 
+    # -------------------
+    # region 构造用接口
+    # -------------------
+
     def add_by_list(self, data: List[Union[dict, MessageSegment]]):
         self.messages.extend(process_item(data))
         return self
@@ -230,6 +234,13 @@ class MessageArray:
         if len(msg) == 0:
             return self.messages
         return await status.global_api.get_forward_msg(msg[0].id)
+
+    # -------------------
+    # region 解析用接口
+    # -------------------
+
+    def concatenate_text(self) -> str:
+        return "".join(msg.text for msg in self.filter(Text))
 
     def filter(self, cls: Union[Type[T], None] = None) -> List[T]:
         if cls is None:
