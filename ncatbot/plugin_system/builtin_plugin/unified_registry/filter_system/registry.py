@@ -117,7 +117,8 @@ class FilterRegistry:
         """
         if not hasattr(func, "__filters__"):
             setattr(func, "__filters__", [])
-            self._function_filters[get_func_plugin_name(func)] = func
+            function_name = f"{get_func_plugin_name(func)}::{func.__name__}"
+            self._function_filters[function_name] = func
 
         filter_list: List[BaseFilter] = getattr(func, "__filters__")
 
@@ -150,8 +151,7 @@ class FilterRegistry:
         """为函数添加多个过滤器"""
 
         def wrapper(func: Callable):
-            for filter in filters:
-                self.add_filter_to_function(func, *filters)
+            self.add_filter_to_function(func, *filters)
             return func
 
         return wrapper
@@ -164,7 +164,7 @@ class FilterRegistry:
     def revoke_plugin(self, plugin_name: str):
         """撤销插件的过滤器"""
         deleted_filters = [
-            name for name in self._function_filters.keys() if name == plugin_name
+            name for name in self._function_filters.keys() if name.split("::")[0] == plugin_name
         ]
         for name in deleted_filters:
             del self._function_filters[name]
