@@ -3,6 +3,7 @@ import inspect
 import traceback
 import threading
 from typing import (
+    Awaitable,
     Callable,
     Optional,
     Type,
@@ -233,7 +234,7 @@ class BotClient:
         if filter is not None and not issubclass(filter, MessageSegment):
             raise TypeError("filter 必须是 MessageSegment 的子类")
 
-        def decorator(f: Callable[[GroupMessageEvent], None]):
+        def decorator(f: Callable[[GroupMessageEvent], Union[None, Awaitable[None]]]):
             self.add_group_message_handler(f, filter)
             return f  # 其实没有必要
 
@@ -247,7 +248,7 @@ class BotClient:
         if filter is not None and not issubclass(filter, MessageSegment):
             raise TypeError("filter 必须是 MessageSegment 的子类")
 
-        def decorator(f: Callable[[PrivateMessageEvent], None]):
+        def decorator(f: Callable[[PrivateMessageEvent], Union[None, Awaitable[None]]]):
             self.add_private_message_handler(f, filter)
             return f  # 其实没有必要
 
@@ -261,7 +262,7 @@ class BotClient:
         if filter is not None and not issubclass(filter, MessageSegment):
             raise TypeError("filter 必须是 MessageSegment 的子类")
 
-        def decorator(f: Callable[[MessageSentEvent], None]):
+        def decorator(f: Callable[[MessageSentEvent], Union[None, Awaitable[None]]]):
             self.add_message_sent_handler(f, filter)
 
         return decorator
@@ -269,7 +270,7 @@ class BotClient:
     def on_notice(self, filter=None):
         """装饰器注册通知事件处理器"""
 
-        def decorator(f: Callable[[NoticeEvent], None]):
+        def decorator(f: Callable[[NoticeEvent], Union[None, Awaitable[None]]]):
             self.add_notice_handler(f, filter)
             return f
 
@@ -278,7 +279,7 @@ class BotClient:
     def on_request(self, filter: Literal["group", "friend"] = None):
         """装饰器注册请求事件处理器"""
 
-        def decorator(f: Callable[[RequestEvent], None]):
+        def decorator(f: Callable[[RequestEvent], Union[None, Awaitable[None]]]):
             self.add_request_handler(f, filter)
             return f
 
@@ -287,7 +288,7 @@ class BotClient:
     def on_startup(self):
         """装饰器注册启动事件处理器"""
 
-        def decorator(f: Callable[[MetaEvent], None]):
+        def decorator(f: Callable[[MetaEvent], Union[None, Awaitable[None]]]):
             self.add_startup_handler(f)
             return f
 
@@ -296,7 +297,7 @@ class BotClient:
     def on_shutdown(self):
         """装饰器注册关闭事件处理器"""
 
-        def decorator(f: Callable[[MetaEvent], None]):
+        def decorator(f: Callable[[MetaEvent], Union[None, Awaitable[None]]]):
             self.add_shutdown_handler(f)
             return f
 
@@ -305,7 +306,7 @@ class BotClient:
     def on_heartbeat(self):
         """装饰器注册心跳事件处理器"""
 
-        def decorator(f: Callable[[MetaEvent], None]):
+        def decorator(f: Callable[[MetaEvent], Union[None, Awaitable[None]]]):
             self.add_heartbeat_handler(f)
             return f
 
