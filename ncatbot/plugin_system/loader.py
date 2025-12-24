@@ -52,17 +52,17 @@ class _ModuleImporter:
     def __init__(self, directory: str):
         self.directory = Path(directory).resolve()
 
-    def inspect_all(self) -> List[str]:
-        """返回 {插件名: 模块对象}。"""
-        plugin_folder_names: List[str] = []
+    def inspect_all(self) -> Dict[str, Path]:
+        """返回 {插件名: 路径}。"""
+        plugins: Dict[str, Path] = {}
         for entry in self.directory.iterdir():
-            name = entry.stem
             if entry.is_dir() and (entry / "__init__.py").exists():
-                name, path = entry.name, entry
+                plugins[entry.name] = entry
+            elif entry.is_file() and entry.suffix == ".py":
+                plugins[entry.stem] = entry
             else:
                 LOG.warning("跳过非插件文件/目录: %s", entry)
-            plugin_folder_names.append(name)
-        return plugin_folder_names
+        return plugins
 
     def unload_module(self, name: str) -> bool:
         """
@@ -351,10 +351,10 @@ class PluginLoader:
             return
 
         LOG.info("从 %s 导入插件", path)
-        plugin_folder_names = self._importer.inspect_all()
+        plugin_info = self._importer.inspect_all()
         plugin_classes: Dict[str, Type[BasePlugin]] = {}
         importer = self._importer
-        for name in plugin_folder_names:
+        for name, plugin_path in plugin_info.items():
             if (
                 ncatbot_config.plugin.plugin_whitelist
                 and name not in ncatbot_config.plugin.plugin_whitelist
@@ -364,7 +364,7 @@ class PluginLoader:
             if name in ncatbot_config.plugin.plugin_blacklist:
                 LOG.info("插件 '%s' 在黑名单中，跳过加载", name)
                 continue
-            module = importer.load_module(name, path / name)
+            module = importer.load_module(name, plugin_path)
             if not module:
                 continue
             cls = self._find_plugin_class_in_module(module)
@@ -470,5 +470,7 @@ class PluginLoader:
     ) -> Optional[Type[BasePlugin]]:
         for obj in vars(module).values():
             if isinstance(obj, type) and issubclass(obj, BasePlugin):
-                return obj
+                # 排除基类本身，只返回当前模块定义的类
+                if obj.__module__ == module.__name__:
+                    return obj
         return None
