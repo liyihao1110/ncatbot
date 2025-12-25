@@ -470,7 +470,7 @@ class PluginLoader:
     ) -> Optional[Type[BasePlugin]]:
         for obj in vars(module).values():
             if isinstance(obj, type) and issubclass(obj, BasePlugin):
-                # 排除基类本身，只返回当前模块定义的类
-                if obj.__module__ == module.__name__:
+                # 排除 ncatbot 内置基类，只返回当前模块或其子模块定义的类
+                if obj.__module__.startswith(module.__name__):
                     return obj
         return None
